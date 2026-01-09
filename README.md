@@ -8,7 +8,7 @@ Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported
 
 ## We need you!
 - This project is open source! Your small monthly support on [Buy Me a Coffee](https://buymeacoffee.com/dejniel) can make a real difference and help keep it going—even a one-time donation helps. Building and maintaining a project like this takes a lot of time; if you find it useful, please consider supporting it so I can keep improving it: [support the project](https://buymeacoffee.com/dejniel).
-- If you’re a developer, contributions and bug reports are always welcome—please jump in.
+- If you're a developer, contributions and bug reports are always welcome—please jump in. Especially if you use or build on non-Linux systems, please consider contributing fixes or improvements.
 
 ## Requirements
 - Python 3.8+
@@ -48,6 +48,7 @@ Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported
 - For Bluetooth printing, you can pass `--model` to override auto-detection.
 - If no arguments are provided, a GUI opens. You can scan, connect/disconnect,
   choose a file, and print.
+- I only test personally on Ubuntu-based systems.
 
 ## PDF rendering dependencies (optional)
 - PyMuPDF: pip install pymupdf
