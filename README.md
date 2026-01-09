@@ -2,7 +2,7 @@
 
 Alternative firmware/software replacing the “[Tiny Print](https://play.google.com/store/apps/details?id=com.frogtosea.tinyPrint)” Bluetooth thermal printers app.
 Enables printing images, PDFs, or plain text directly from a desktop computer.
-Supports GUI mode and a CLI "fire-and-forget" mode. Supports all [Bluetooth printer models](#supported-printer-models).
+Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported Bluetooth printer models](#supported-printer-models).
 
 ![TiMini Print LOGO EMX-040256 Printer Psi Patrol](EMX_040256.jpg)
 
