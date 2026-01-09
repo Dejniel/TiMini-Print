@@ -33,7 +33,7 @@ class TiMiniPrintGUI(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("TiMini Print")
-        self.geometry("800x600")
+        self.geometry("800x400")
         self.resizable(False, False)
 
         self.registry = PrinterModelRegistry.load()
