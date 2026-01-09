@@ -8,10 +8,11 @@ import sys
 import threading
 import time
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Any, List, Optional
 
 SPP_UUID = "00001101-0000-1000-8000-00805f9b34fb"
 RFCOMM_CHANNELS = [1, 2, 3, 4, 5]
+SocketLike = Any
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,7 @@ class _BluetoothAdapter:
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
         raise NotImplementedError
 
-    def create_socket(self) -> socket.socket:
+    def create_socket(self) -> SocketLike:
         raise NotImplementedError
 
     def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
@@ -38,7 +39,7 @@ class _BlueZAdapter(_BluetoothAdapter):
             return devices
         return _scan_bleak(timeout)
 
-    def create_socket(self) -> socket.socket:
+    def create_socket(self) -> SocketLike:
         if not hasattr(socket, "AF_BLUETOOTH") or not hasattr(socket, "BTPROTO_RFCOMM"):
             raise RuntimeError(
                 "RFCOMM sockets are not supported on this system. Use --serial or run on Linux."
@@ -53,12 +54,23 @@ class _WindowsBluetoothAdapter(_BluetoothAdapter):
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
         return _scan_pybluez(timeout)
 
-    def create_socket(self) -> socket.socket:
-        if not hasattr(socket, "AF_BTH") or not hasattr(socket, "BTHPROTO_RFCOMM"):
+    def create_socket(self) -> SocketLike:
+        if hasattr(socket, "AF_BTH") and hasattr(socket, "BTHPROTO_RFCOMM"):
+            return socket.socket(socket.AF_BTH, socket.SOCK_STREAM, socket.BTHPROTO_RFCOMM)
+        try:
+            import bluetooth  # type: ignore
+        except Exception as exc:
             raise RuntimeError(
-                "Windows Bluetooth RFCOMM sockets are not supported by this Python build."
-            )
-        return socket.socket(socket.AF_BTH, socket.SOCK_STREAM, socket.BTHPROTO_RFCOMM)
+                "Windows Bluetooth RFCOMM sockets are not supported by this Python build. "
+                "Install PyBluez or use a Python build with AF_BTH enabled."
+            ) from exc
+        try:
+            return bluetooth.BluetoothSocket(bluetooth.RFCOMM)
+        except Exception as exc:
+            raise RuntimeError(
+                "Windows Bluetooth RFCOMM sockets are not supported by this Python build. "
+                f"PyBluez socket creation failed: {exc}"
+            ) from exc
 
     def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
         return _resolve_rfcomm_channel_windows(address)
@@ -79,7 +91,7 @@ def _get_adapter() -> _BluetoothAdapter:
 
 class SppBackend:
     def __init__(self) -> None:
-        self._sock: Optional[socket.socket] = None
+        self._sock: Optional[SocketLike] = None
         self._lock = threading.Lock()
         self._connected = False
         self._channel: Optional[int] = None
@@ -111,7 +123,9 @@ class SppBackend:
         last_error = None
         for channel in channels:
             sock = _get_adapter().create_socket()
-            sock.settimeout(8)
+            set_timeout = getattr(sock, "settimeout", None)
+            if callable(set_timeout):
+                set_timeout(8)
             try:
                 sock.connect((address, channel))
                 self._sock = sock
@@ -149,7 +163,7 @@ class SppBackend:
         while offset < len(data):
             chunk = data[offset : offset + chunk_size]
             with self._lock:
-                self._sock.sendall(chunk)
+                _send_all(self._sock, chunk)
             offset += len(chunk)
             if interval:
                 time.sleep(interval)
@@ -158,6 +172,21 @@ class SppBackend:
 def _scan_blocking(timeout: float) -> List[DeviceInfo]:
     return _get_adapter().scan_blocking(timeout)
 
+
+def _send_all(sock: SocketLike, data: bytes) -> None:
+    sendall = getattr(sock, "sendall", None)
+    if callable(sendall):
+        sendall(data)
+        return
+    send = getattr(sock, "send", None)
+    if not callable(send):
+        raise RuntimeError("Bluetooth socket does not support send")
+    offset = 0
+    while offset < len(data):
+        sent = send(data[offset:])
+        if not sent:
+            raise RuntimeError("Bluetooth send failed")
+        offset += sent
 
 def _scan_bluetoothctl(timeout: float) -> List[DeviceInfo]:
     if not shutil.which("bluetoothctl"):
