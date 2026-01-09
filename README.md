@@ -1,20 +1,20 @@
 # TiMini Print Bluetooth Printer Tool
 
-An alternative desktop software for “[Tiny Print](https://play.google.com/store/apps/details?id=com.frogtosea.tinyPrint)”-compatible Bluetooth thermal printers.
-Enables printing images, PDFs, or plain text directly from a desktop computer.
-Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported Bluetooth printer models](#supported-printer-models).
+An alternative desktop software for “[Tiny Print](https://play.google.com/store/apps/details?id=com.frogtosea.tinyPrint)”-compatible Bluetooth thermal printers
+Enables printing images, PDFs, or plain text directly from a desktop computer
+Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported Bluetooth printer models](#supported-printer-models)
 
 ![TiMini Print LOGO EMX-040256 Printer Psi Patrol](EMX_040256.jpg)
 
 ## We need you!
-- This project is open source! Your small monthly support on [Buy Me a Coffee](https://buymeacoffee.com/dejniel) can make a real difference and help keep it going—even a one-time donation helps. Building and maintaining a project like this takes a lot of time; if you find it useful, please consider supporting it so I can keep improving it: [support the project](https://buymeacoffee.com/dejniel).
-- If you're a developer, contributions and bug reports are always welcome—please jump in. Especially if you use or build on non-Linux systems, please consider contributing fixes or improvements.
+- This project is open source! Your small monthly support on [Buy Me a Coffee](https://buymeacoffee.com/dejniel) can make a real difference and help keep it going—even a one-time donation helps. Building and maintaining a project like this takes a lot of time; if you find it useful, please consider supporting it so I can keep improving it: [support the project](https://buymeacoffee.com/dejniel)
+- If you're a developer, contributions and bug reports are always welcome—please jump in. Especially if you use or build on non-Linux systems, please consider contributing fixes or improvements
 
 ## Requirements
 - Python 3.8+
 - pip install -r requirements.txt
 - Pair the printer in your OS Bluetooth settings and accept the trust/pairing
-  prompt if shown. The app expects the device to be paired already.
+  prompt if shown. The app expects the device to be paired already
 
 ## Quick start (GUI)
 - Run with no arguments:
@@ -42,13 +42,13 @@ Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported
 - Text: .txt (monospace, bold if available)
 
 ## Notes
-- Any CLI option/argument disables the GUI (no arguments = GUI mode).
-- If `--bluetooth` is omitted, the first supported printer found is used.
-- For `--serial`, you must pass `--model` (see `--list-models`).
-- For Bluetooth printing, you can pass `--model` to override auto-detection.
+- Any CLI option/argument disables the GUI (no arguments = GUI mode)
+- If `--bluetooth` is omitted, the first supported printer found is used
+- For `--serial`, you must pass `--model` (see `--list-models`)
+- For Bluetooth printing, you can pass `--model` to override auto-detection
 - If no arguments are provided, a GUI opens. You can scan, connect/disconnect,
-  choose a file, and print.
-- I only test personally on Ubuntu-based systems.
+  choose a file, and print
+- I only test personally on Ubuntu-based systems
 
 ## PDF rendering dependencies (optional)
 - PyMuPDF: pip install pymupdf
