@@ -4,6 +4,7 @@ import asyncio
 import shutil
 import socket
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -17,6 +18,63 @@ RFCOMM_CHANNELS = [1, 2, 3, 4, 5]
 class DeviceInfo:
     name: str
     address: str
+
+
+class _BluetoothAdapter:
+    def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
+        raise NotImplementedError
+
+    def create_socket(self) -> socket.socket:
+        raise NotImplementedError
+
+    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
+        return None
+
+
+class _BlueZAdapter(_BluetoothAdapter):
+    def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
+        devices = _scan_bluetoothctl(timeout)
+        if devices:
+            return devices
+        return _scan_bleak(timeout)
+
+    def create_socket(self) -> socket.socket:
+        if not hasattr(socket, "AF_BLUETOOTH") or not hasattr(socket, "BTPROTO_RFCOMM"):
+            raise RuntimeError(
+                "RFCOMM sockets are not supported on this system. Use --serial or run on Linux."
+            )
+        return socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+
+    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
+        return _resolve_rfcomm_channel_linux(address)
+
+
+class _WindowsBluetoothAdapter(_BluetoothAdapter):
+    def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
+        return _scan_pybluez(timeout)
+
+    def create_socket(self) -> socket.socket:
+        if not hasattr(socket, "AF_BTH") or not hasattr(socket, "BTHPROTO_RFCOMM"):
+            raise RuntimeError(
+                "Windows Bluetooth RFCOMM sockets are not supported by this Python build."
+            )
+        return socket.socket(socket.AF_BTH, socket.SOCK_STREAM, socket.BTHPROTO_RFCOMM)
+
+    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
+        return _resolve_rfcomm_channel_windows(address)
+
+
+_ADAPTER: Optional[_BluetoothAdapter] = None
+
+
+def _get_adapter() -> _BluetoothAdapter:
+    global _ADAPTER
+    if _ADAPTER is None:
+        if sys.platform.startswith("win"):
+            _ADAPTER = _WindowsBluetoothAdapter()
+        else:
+            _ADAPTER = _BlueZAdapter()
+    return _ADAPTER
 
 
 class SppBackend:
@@ -49,14 +107,10 @@ class SppBackend:
     def _connect_blocking(self, address: str) -> None:
         if self._connected:
             return
-        if not hasattr(socket, "AF_BLUETOOTH") or not hasattr(socket, "BTPROTO_RFCOMM"):
-            raise RuntimeError(
-                "RFCOMM sockets are not supported on this system. Use --serial or run on Linux."
-            )
         channels = _resolve_rfcomm_channels(address)
         last_error = None
         for channel in channels:
-            sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+            sock = _get_adapter().create_socket()
             sock.settimeout(8)
             try:
                 sock.connect((address, channel))
@@ -102,10 +156,7 @@ class SppBackend:
 
 
 def _scan_blocking(timeout: float) -> List[DeviceInfo]:
-    devices = _scan_bluetoothctl(timeout)
-    if devices:
-        return devices
-    return _scan_bleak(timeout)
+    return _get_adapter().scan_blocking(timeout)
 
 
 def _scan_bluetoothctl(timeout: float) -> List[DeviceInfo]:
@@ -167,6 +218,29 @@ def _scan_bleak(timeout: float) -> List[DeviceInfo]:
     return _dedupe_devices(devices)
 
 
+def _scan_pybluez(timeout: float) -> List[DeviceInfo]:
+    try:
+        import bluetooth  # type: ignore
+    except Exception as exc:
+        raise RuntimeError(
+            "PyBluez is required for Bluetooth scanning on Windows. "
+            "Install with: pip install -r requirements.txt"
+        ) from exc
+    timeout_s = max(1, int(timeout))
+    try:
+        found = bluetooth.discover_devices(duration=timeout_s, lookup_names=True)
+    except Exception as exc:
+        raise RuntimeError(f"Bluetooth scan failed: {exc}") from exc
+    devices = []
+    for item in found:
+        if isinstance(item, (list, tuple)) and len(item) >= 2:
+            address, name = item[0], item[1]
+        else:
+            address, name = item, ""
+        devices.append(DeviceInfo(name=name or "", address=address))
+    return _dedupe_devices(devices)
+
+
 def _dedupe_devices(devices: List[DeviceInfo]) -> List[DeviceInfo]:
     by_addr = {}
     for device in devices:
@@ -179,7 +253,7 @@ def _dedupe_devices(devices: List[DeviceInfo]) -> List[DeviceInfo]:
 
 
 def _resolve_rfcomm_channels(address: str) -> List[int]:
-    channel = _resolve_rfcomm_channel(address)
+    channel = _get_adapter().resolve_rfcomm_channel(address)
     if channel is None:
         return list(RFCOMM_CHANNELS)
     channels = [channel]
@@ -189,7 +263,7 @@ def _resolve_rfcomm_channels(address: str) -> List[int]:
     return channels
 
 
-def _resolve_rfcomm_channel(address: str) -> Optional[int]:
+def _resolve_rfcomm_channel_linux(address: str) -> Optional[int]:
     if not shutil.which("sdptool"):
         return None
     try:
@@ -225,3 +299,32 @@ def _resolve_rfcomm_channel(address: str) -> Optional[int]:
         elif not line:
             seen_serial = False
     return channel
+
+
+def _resolve_rfcomm_channel_windows(address: str) -> Optional[int]:
+    try:
+        import bluetooth  # type: ignore
+    except Exception:
+        return None
+    try:
+        services = bluetooth.find_service(address=address)
+    except Exception:
+        return None
+    preferred = None
+    for service in services:
+        protocol = (service.get("protocol") or "").lower()
+        if protocol != "rfcomm":
+            continue
+        port = service.get("port")
+        if port is None:
+            continue
+        try:
+            port_value = int(port)
+        except (TypeError, ValueError):
+            continue
+        name = (service.get("name") or "").lower()
+        if any(key in name for key in ("serial", "spp", "printer")):
+            return port_value
+        if preferred is None:
+            preferred = port_value
+    return preferred
