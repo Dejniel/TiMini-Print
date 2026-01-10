@@ -7,12 +7,15 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from dataclasses import dataclass
-from typing import Any, List, Optional
+from typing import Any, Awaitable, Dict, List, Optional, Tuple, TypeVar
 
-SPP_UUID = "00001101-0000-1000-8000-00805f9b34fb"
+SPP_UUID = uuid.UUID("00001101-0000-1000-8000-00805f9b34fb")
 RFCOMM_CHANNELS = [1, 2, 3, 4, 5]
 SocketLike = Any
+IS_WINDOWS = sys.platform.startswith("win")
+T = TypeVar("T")
 
 
 @dataclass(frozen=True)
@@ -21,7 +24,18 @@ class DeviceInfo:
     address: str
 
 
+@dataclass(frozen=True)
+class WinRtServiceInfo:
+    service_id: str
+    service_name: Optional[str]
+
+
+WinRtScanResult = Tuple[List[DeviceInfo], Dict[str, WinRtServiceInfo]]
+
+
 class _BluetoothAdapter:
+    single_channel = False
+
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
         raise NotImplementedError
 
@@ -32,7 +46,7 @@ class _BluetoothAdapter:
         return None
 
 
-class _BlueZAdapter(_BluetoothAdapter):
+class _LinuxBluetoothAdapter(_BluetoothAdapter):
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
         devices = _scan_bluetoothctl(timeout)
         if devices:
@@ -51,29 +65,37 @@ class _BlueZAdapter(_BluetoothAdapter):
 
 
 class _WindowsBluetoothAdapter(_BluetoothAdapter):
+    def __init__(self) -> None:
+        self._use_stdlib = _has_windows_rfcomm_socket()
+        self.single_channel = not self._use_stdlib
+        self._service_by_address: Dict[str, WinRtServiceInfo] = {}
+
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
-        return _scan_pybluez(timeout)
+        devices, mapping = _scan_winrt(timeout)
+        self._service_by_address = mapping
+        return devices
 
     def create_socket(self) -> SocketLike:
-        if hasattr(socket, "AF_BTH") and hasattr(socket, "BTHPROTO_RFCOMM"):
+        if self._use_stdlib:
             return socket.socket(socket.AF_BTH, socket.SOCK_STREAM, socket.BTHPROTO_RFCOMM)
-        try:
-            import bluetooth  # type: ignore
-        except Exception as exc:
-            raise RuntimeError(
-                "Windows Bluetooth RFCOMM sockets are not supported by this Python build. "
-                "Install PyBluez or use a Python build with AF_BTH enabled."
-            ) from exc
-        try:
-            return bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-        except Exception as exc:
-            raise RuntimeError(
-                "Windows Bluetooth RFCOMM sockets are not supported by this Python build. "
-                f"PyBluez socket creation failed: {exc}"
-            ) from exc
+        return _WinRtSocket(self)
 
     def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
-        return _resolve_rfcomm_channel_windows(address)
+        if self._use_stdlib:
+            service_info = self._service_by_address.get(address)
+            return _parse_service_channel(service_info.service_name if service_info else None)
+        return RFCOMM_CHANNELS[0]
+
+    async def _resolve_service_async(self, address: str, timeout: float = 5.0):
+        service_id = self._service_by_address.get(address)
+        if not service_id:
+            _, mapping = await _scan_winrt_async(timeout)
+            self._service_by_address = mapping
+            service_id = self._service_by_address.get(address)
+        if not service_id:
+            return None
+        _, _, RfcommDeviceService, _, _, _ = _winrt_imports()
+        return await RfcommDeviceService.from_id_async(service_id.service_id)
 
 
 _ADAPTER: Optional[_BluetoothAdapter] = None
@@ -82,11 +104,58 @@ _ADAPTER: Optional[_BluetoothAdapter] = None
 def _get_adapter() -> _BluetoothAdapter:
     global _ADAPTER
     if _ADAPTER is None:
-        if sys.platform.startswith("win"):
+        if IS_WINDOWS:
             _ADAPTER = _WindowsBluetoothAdapter()
         else:
-            _ADAPTER = _BlueZAdapter()
+            _ADAPTER = _LinuxBluetoothAdapter()
     return _ADAPTER
+
+
+class _WinRtSocket:
+    def __init__(self, adapter: _WindowsBluetoothAdapter) -> None:
+        self._adapter = adapter
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
+        self._socket = None
+        self._writer = None
+
+    def _run(self, coro: Awaitable[T]) -> T:
+        if self._loop is None:
+            self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        return self._loop.run_until_complete(coro)
+
+    def connect(self, target) -> None:
+        address, _channel = target
+        service = self._run(self._adapter._resolve_service_async(address))
+        if not service:
+            raise RuntimeError("Bluetooth SPP service not found for device")
+        _, _, _, _, StreamSocket, DataWriter = _winrt_imports()
+        self._socket = StreamSocket()
+        self._run(self._socket.connect_async(service.connection_host_name, service.connection_service_name))
+        self._writer = DataWriter(self._socket.output_stream)
+
+    def sendall(self, data: bytes) -> None:
+        if not self._writer:
+            raise RuntimeError("Not connected to a Bluetooth SPP device")
+        self._writer.write_bytes(bytearray(data))
+        self._run(self._writer.store_async())
+        self._run(self._writer.flush_async())
+
+    def close(self) -> None:
+        if self._writer:
+            close_writer = getattr(self._writer, "close", None)
+            if callable(close_writer):
+                close_writer()
+            self._writer = None
+        if self._socket:
+            close_socket = getattr(self._socket, "close", None)
+            if callable(close_socket):
+                close_socket()
+            self._socket = None
+        if self._loop:
+            asyncio.set_event_loop(None)
+            self._loop.close()
+            self._loop = None
 
 
 class SppBackend:
@@ -122,22 +191,20 @@ class SppBackend:
         channels = _resolve_rfcomm_channels(address)
         last_error = None
         for channel in channels:
-            sock = _get_adapter().create_socket()
-            set_timeout = getattr(sock, "settimeout", None)
-            if callable(set_timeout):
-                set_timeout(8)
+            sock = None
             try:
+                sock = _get_adapter().create_socket()
+                set_timeout = getattr(sock, "settimeout", None)
+                if callable(set_timeout):
+                    set_timeout(8)
                 sock.connect((address, channel))
                 self._sock = sock
                 self._connected = True
                 self._channel = channel
                 return
-            except OSError as exc:
+            except Exception as exc:
                 last_error = exc
-                try:
-                    sock.close()
-                except Exception:
-                    pass
+                _safe_close(sock)
         detail = f"channels tried: {channels}"
         if last_error:
             detail += f", last error: {last_error}"
@@ -173,6 +240,15 @@ def _scan_blocking(timeout: float) -> List[DeviceInfo]:
     return _get_adapter().scan_blocking(timeout)
 
 
+def _safe_close(sock: Optional[SocketLike]) -> None:
+    if not sock:
+        return
+    try:
+        sock.close()
+    except Exception:
+        pass
+
+
 def _send_all(sock: SocketLike, data: bytes) -> None:
     sendall = getattr(sock, "sendall", None)
     if callable(sendall):
@@ -187,6 +263,20 @@ def _send_all(sock: SocketLike, data: bytes) -> None:
         if not sent:
             raise RuntimeError("Bluetooth send failed")
         offset += sent
+
+
+def _has_windows_rfcomm_socket() -> bool:
+    return hasattr(socket, "AF_BTH") and hasattr(socket, "BTHPROTO_RFCOMM")
+
+
+def _parse_service_channel(service_name: Optional[str]) -> Optional[int]:
+    if not service_name:
+        return None
+    try:
+        return int(service_name)
+    except ValueError:
+        return None
+
 
 def _scan_bluetoothctl(timeout: float) -> List[DeviceInfo]:
     if not shutil.which("bluetoothctl"):
@@ -247,27 +337,81 @@ def _scan_bleak(timeout: float) -> List[DeviceInfo]:
     return _dedupe_devices(devices)
 
 
-def _scan_pybluez(timeout: float) -> List[DeviceInfo]:
+def _winrt_missing_message() -> str:
+    return (
+        "WinRT Bluetooth support on Windows requires the 'winsdk' package. "
+        "Install with: pip install -r requirements.txt"
+    )
+
+
+def _winrt_imports():
     try:
-        import bluetooth  # type: ignore
+        from winsdk.windows.devices.bluetooth.rfcomm import RfcommDeviceService, RfcommServiceId
+        from winsdk.windows.devices.enumeration import DeviceInformation, DeviceInformationKind
+        from winsdk.windows.networking.sockets import StreamSocket
+        from winsdk.windows.storage.streams import DataWriter
     except Exception as exc:
-        raise RuntimeError(
-            "PyBluez is required for Bluetooth scanning on Windows. "
-            "Install with: pip install -r requirements.txt"
-        ) from exc
-    timeout_s = max(1, int(timeout))
+        raise RuntimeError(_winrt_missing_message()) from exc
+    return DeviceInformation, DeviceInformationKind, RfcommDeviceService, RfcommServiceId, StreamSocket, DataWriter
+
+
+def _run_winrt(coro: Awaitable[T]) -> T:
+    loop = asyncio.new_event_loop()
     try:
-        found = bluetooth.discover_devices(duration=timeout_s, lookup_names=True)
-    except Exception as exc:
-        raise RuntimeError(f"Bluetooth scan failed: {exc}") from exc
-    devices = []
-    for item in found:
-        if isinstance(item, (list, tuple)) and len(item) >= 2:
-            address, name = item[0], item[1]
-        else:
-            address, name = item, ""
-        devices.append(DeviceInfo(name=name or "", address=address))
-    return _dedupe_devices(devices)
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(coro)
+    finally:
+        try:
+            asyncio.set_event_loop(None)
+        finally:
+            loop.close()
+
+
+def _format_bt_address(value: int) -> str:
+    if not value:
+        return ""
+    text = f"{value:012X}"
+    return ":".join(text[i : i + 2] for i in range(0, 12, 2))
+
+
+async def _scan_winrt_async(timeout: float) -> WinRtScanResult:
+    DeviceInformation, DeviceInformationKind, RfcommDeviceService, RfcommServiceId, _, _ = _winrt_imports()
+    selector = str(RfcommDeviceService.get_device_selector(RfcommServiceId.from_uuid(SPP_UUID)))
+
+    async def find_all():
+        try:
+            return await DeviceInformation.find_all_async(selector)
+        except TypeError:
+            return await DeviceInformation.find_all_async(
+                selector, [], DeviceInformationKind.ASSOCIATION_ENDPOINT
+            )
+
+    if timeout:
+        infos = await asyncio.wait_for(find_all(), timeout=timeout)
+    else:
+        infos = await find_all()
+    devices: List[DeviceInfo] = []
+    mapping: Dict[str, WinRtServiceInfo] = {}
+    for info in infos:
+        service = await RfcommDeviceService.from_id_async(info.id)
+        if not service:
+            continue
+        device = service.device
+        name = (device.name or info.name or "").strip()
+        address = _format_bt_address(getattr(device, "bluetooth_address", 0))
+        if not address:
+            address = info.id
+        if address not in mapping:
+            mapping[address] = WinRtServiceInfo(
+                service_id=info.id,
+                service_name=getattr(service, "connection_service_name", None),
+            )
+        devices.append(DeviceInfo(name=name, address=address))
+    return _dedupe_devices(devices), mapping
+
+
+def _scan_winrt(timeout: float) -> WinRtScanResult:
+    return _run_winrt(_scan_winrt_async(timeout))
 
 
 def _dedupe_devices(devices: List[DeviceInfo]) -> List[DeviceInfo]:
@@ -282,7 +426,10 @@ def _dedupe_devices(devices: List[DeviceInfo]) -> List[DeviceInfo]:
 
 
 def _resolve_rfcomm_channels(address: str) -> List[int]:
-    channel = _get_adapter().resolve_rfcomm_channel(address)
+    adapter = _get_adapter()
+    channel = adapter.resolve_rfcomm_channel(address)
+    if getattr(adapter, "single_channel", False):
+        return [channel or RFCOMM_CHANNELS[0]]
     if channel is None:
         return list(RFCOMM_CHANNELS)
     channels = [channel]
@@ -328,32 +475,3 @@ def _resolve_rfcomm_channel_linux(address: str) -> Optional[int]:
         elif not line:
             seen_serial = False
     return channel
-
-
-def _resolve_rfcomm_channel_windows(address: str) -> Optional[int]:
-    try:
-        import bluetooth  # type: ignore
-    except Exception:
-        return None
-    try:
-        services = bluetooth.find_service(address=address)
-    except Exception:
-        return None
-    preferred = None
-    for service in services:
-        protocol = (service.get("protocol") or "").lower()
-        if protocol != "rfcomm":
-            continue
-        port = service.get("port")
-        if port is None:
-            continue
-        try:
-            port_value = int(port)
-        except (TypeError, ValueError):
-            continue
-        name = (service.get("name") or "").lower()
-        if any(key in name for key in ("serial", "spp", "printer")):
-            return port_value
-        if preferred is None:
-            preferred = port_value
-    return preferred

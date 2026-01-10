@@ -2,4 +2,4 @@ Pillow>=9.0
 bleak>=0.22
 crc8>=0.2.0
 pyserial>=3.5
-pybluez; sys_platform == "win32"
+winsdk>=1.0.0b10; sys_platform == "win32"

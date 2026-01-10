@@ -17,7 +17,8 @@ Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported
   prompt if shown. The app expects the device to be paired already
 
 ## Quick start (GUI)
-- Run with no arguments:
+- If no arguments are provided, a GUI opens. You can scan, connect/disconnect,
+  choose a file, and print. Run with no arguments:
   python3 timiniprint.py
 
 ## Quick start (CLI)
@@ -36,19 +37,20 @@ Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported
 - Scan for supported printers:
   python3 timiniprint.py --scan
 
+### Notes
+- Any CLI option/argument disables the GUI (no arguments = GUI mode)
+- If `--bluetooth` is omitted, the first supported printer found is used
+- For `--serial`, you must pass `--model` (see `--list-models`)
+- For Bluetooth printing, you can pass `--model` to override auto-detection
+
 ## Supported formats
 - Images: .png .jpg .jpeg .gif .bmp
 - PDF: prints all pages
 - Text: .txt (monospace, bold if available)
 
 ## Notes
-- Any CLI option/argument disables the GUI (no arguments = GUI mode)
-- If `--bluetooth` is omitted, the first supported printer found is used
-- For `--serial`, you must pass `--model` (see `--list-models`)
-- For Bluetooth printing, you can pass `--model` to override auto-detection
-- If no arguments are provided, a GUI opens. You can scan, connect/disconnect,
-  choose a file, and print
-- I only test personally on Ubuntu-based systems
+- I test builds only on Ubuntu-like systems—if you need to run this elsewhere, please report issues or submit a fix :P
+- Windows + Python 3.13+: installing `winsdk` may require building binaries during download
 
 ## PDF rendering dependencies (optional)
 - PyMuPDF: pip install pymupdf
