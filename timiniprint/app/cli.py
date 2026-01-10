@@ -5,9 +5,9 @@ import asyncio
 import sys
 
 from ..devices import DeviceResolver, PrinterModel, PrinterModelRegistry
-from ..printing import PrintJobBuilder, PrintSettings
 from ..transport.bluetooth import SppBackend
 from ..transport.serial import SerialTransport
+from .diagnostics import emit_startup_warnings
 
 
 def parse_args() -> argparse.Namespace:
@@ -57,6 +57,8 @@ def launch_gui() -> int:
 
 
 def build_print_data(model: PrinterModel, path: str) -> bytes:
+    from ..printing import PrintJobBuilder, PrintSettings
+
     settings = PrintSettings()
     builder = PrintJobBuilder(model, settings)
     return builder.build_from_file(path)
@@ -94,6 +96,7 @@ def print_serial(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
+    emit_startup_warnings()
     if len(sys.argv) == 1:
         return launch_gui()
     args = parse_args()

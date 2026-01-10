@@ -57,10 +57,15 @@ class SppBackend:
             except Exception as exc:
                 last_error = exc
                 _safe_close(sock)
+        if last_error and _is_timeout_error(last_error):
+            raise RuntimeError(
+                "Bluetooth connection timed out. Make sure the printer is on, in range, and paired. "
+                f"Tried RFCOMM channels: {channels}."
+            )
         detail = f"channels tried: {channels}"
         if last_error:
             detail += f", last error: {last_error}"
-        raise RuntimeError("SPP connection failed (" + detail + ")")
+        raise RuntimeError("Bluetooth SPP connection failed (" + detail + ")")
 
     def _disconnect_blocking(self) -> None:
         if not self._sock:
@@ -115,6 +120,18 @@ def _send_all(sock: SocketLike, data: bytes) -> None:
         if not sent:
             raise RuntimeError("Bluetooth send failed")
         offset += sent
+
+
+def _is_timeout_error(exc: Exception) -> bool:
+    if isinstance(exc, TimeoutError):
+        return True
+    if isinstance(exc, OSError):
+        if exc.errno in {60, 110, 10060}:
+            return True
+        winerror = getattr(exc, "winerror", None)
+        if winerror in {60, 110, 10060}:
+            return True
+    return False
 
 
 def _resolve_rfcomm_channels(address: str) -> List[int]:
