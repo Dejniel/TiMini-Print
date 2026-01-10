@@ -5,7 +5,7 @@ import shutil
 import subprocess
 from typing import Dict, List, Optional
 
-from .constants import IS_WINDOWS, RFCOMM_CHANNELS
+from .constants import IS_LINUX, IS_WINDOWS, RFCOMM_CHANNELS
 from .scan import _scan_bleak, _scan_bluetoothctl
 from .types import DeviceInfo, SocketLike
 from .winrt import _scan_winrt, _scan_winrt_async, _WinRtSocket, _winrt_imports
@@ -79,8 +79,13 @@ def _get_adapter() -> _BluetoothAdapter:
     if _ADAPTER is None:
         if IS_WINDOWS:
             _ADAPTER = _WindowsBluetoothAdapter()
-        else:
+        elif IS_LINUX:
             _ADAPTER = _LinuxBluetoothAdapter()
+        else:
+            raise RuntimeError(
+                "Bluetooth SPP is supported only on Linux or Windows. "
+                "Try the CLI with --serial and provide an RFCOMM socket path if available."
+            )
     return _ADAPTER
 
 

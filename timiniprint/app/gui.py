@@ -6,8 +6,8 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from .diagnostics import emit_startup_warnings
 from ..devices import DeviceResolver, PrinterModelRegistry
-from ..printing import PrintJobBuilder, PrintSettings
 from ..transport.bluetooth import SppBackend
 
 
@@ -31,6 +31,7 @@ class BleLoop:
 class TiMiniPrintGUI(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
+        emit_startup_warnings()
         self.title("TiMini Print")
         self.geometry("800x400")
         self.resizable(False, False)
@@ -49,6 +50,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.file_var = tk.StringVar()
         self.status_var = tk.StringVar(value="Idle")
         self.connected_model = None
+        self._connecting = False
 
         self._build_ui()
         self._set_connected_state(False)
@@ -125,6 +127,8 @@ class TiMiniPrintGUI(tk.Tk):
                 self._set_connected_state(False)
             elif action == "error":
                 self.status_var.set(f"Error: {payload}")
+            elif action == "connecting":
+                self._set_connecting_state(bool(payload))
         self.after(100, self._process_queue)
 
     def _device_label(self, device) -> str:
@@ -160,6 +164,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._queue_error("Select a Bluetooth device")
             return
         self._queue_status("Connecting...")
+        self.queue.put(("connecting", True))
 
         def done(fut):
             try:
@@ -169,6 +174,7 @@ class TiMiniPrintGUI(tk.Tk):
                 self.device_var.set(self._device_label(device))
             except Exception as exc:
                 self._queue_error(str(exc))
+                self.queue.put(("connecting", False))
 
         self.ble_loop.submit(self.backend.connect(device.address), callback=done)
 
@@ -197,6 +203,8 @@ class TiMiniPrintGUI(tk.Tk):
             self.file_var.set(path)
 
     def print_file(self) -> None:
+        from ..printing import PrintJobBuilder, PrintSettings
+
         label = self.device_var.get()
         device = self.device_map.get(label)
         if not device:
@@ -230,6 +238,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.ble_loop.submit(run(), callback=done)
 
     def _set_connected_state(self, connected: bool, device=None) -> None:
+        self._connecting = False
         self.connected_model = None
         if connected and device:
             try:
@@ -256,6 +265,21 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.file_entry, False)
         self._set_widget_state(self.browse_button, False)
         self._set_widget_state(self.print_button, False)
+        self._set_widget_state(self.connect_button, True)
+        self._set_widget_state(self.disconnect_button, False)
+
+    def _set_connecting_state(self, connecting: bool) -> None:
+        self._connecting = connecting
+        if connecting:
+            self._set_device_combo_state(False)
+            self._set_widget_state(self.refresh_button, False)
+            self._set_widget_state(self.connect_button, False)
+            self._set_widget_state(self.disconnect_button, False)
+            return
+        if self.connected_model:
+            return
+        self._set_device_combo_state(True)
+        self._set_widget_state(self.refresh_button, True)
         self._set_widget_state(self.connect_button, True)
         self._set_widget_state(self.disconnect_button, False)
 
