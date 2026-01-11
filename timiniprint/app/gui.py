@@ -33,8 +33,8 @@ class TiMiniPrintGUI(tk.Tk):
         super().__init__()
         emit_startup_warnings()
         self.title("TiMini Print")
-        self.geometry("800x400")
-        self.resizable(False, False)
+        self.geometry("800x380")
+        self.resizable(True, True)
 
         self.registry = PrinterModelRegistry.load()
         self.resolver = DeviceResolver(self.registry)
@@ -53,6 +53,8 @@ class TiMiniPrintGUI(tk.Tk):
         self._connecting = False
 
         self._build_ui()
+        self.update_idletasks()
+        self.minsize(int(self.winfo_reqwidth()*.75),self.winfo_reqheight())
         self._set_connected_state(False)
         self.after(100, self._process_queue)
         self.after(200, self.scan)
@@ -62,10 +64,11 @@ class TiMiniPrintGUI(tk.Tk):
 
         device_frame = ttk.LabelFrame(self, text="Bluetooth")
         device_frame.pack(fill="x", padx=10, pady=10)
+        device_frame.columnconfigure(1, weight=1)
 
         ttk.Label(device_frame, text="Device:").grid(row=0, column=0, sticky="w", **padding)
         self.device_combo = ttk.Combobox(device_frame, textvariable=self.device_var, width=48, state="readonly")
-        self.device_combo.grid(row=0, column=1, sticky="w", **padding)
+        self.device_combo.grid(row=0, column=1, sticky="ew", **padding)
 
         self.refresh_button = ttk.Button(device_frame, text="Refresh", command=self.scan)
         self.refresh_button.grid(row=0, column=2, **padding)
@@ -76,17 +79,19 @@ class TiMiniPrintGUI(tk.Tk):
 
         model_frame = ttk.LabelFrame(self, text="Printer Model")
         model_frame.pack(fill="x", padx=10, pady=10)
+        model_frame.columnconfigure(1, weight=1)
 
         ttk.Label(model_frame, text="Model:").grid(row=0, column=0, sticky="w", **padding)
         self.model_label = ttk.Label(model_frame, textvariable=self.model_var, width=48)
-        self.model_label.grid(row=0, column=1, sticky="w", **padding)
+        self.model_label.grid(row=0, column=1, sticky="ew", **padding)
 
         file_frame = ttk.LabelFrame(self, text="File")
         file_frame.pack(fill="x", padx=10, pady=10)
+        file_frame.columnconfigure(1, weight=1)
 
         ttk.Label(file_frame, text="Path:").grid(row=0, column=0, sticky="w", **padding)
         self.file_entry = ttk.Entry(file_frame, textvariable=self.file_var, width=48)
-        self.file_entry.grid(row=0, column=1, sticky="w", **padding)
+        self.file_entry.grid(row=0, column=1, sticky="ew", **padding)
         self.browse_button = ttk.Button(file_frame, text="Browse", command=self.browse)
         self.browse_button.grid(row=0, column=2, **padding)
 
