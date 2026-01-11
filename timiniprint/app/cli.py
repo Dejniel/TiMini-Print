@@ -39,10 +39,11 @@ def scan_devices() -> int:
         devices = resolver.filter_printer_devices(devices)
         for device in devices:
             name = device.name or ""
+            status = " [unpaired]" if device.paired is False else ""
             if name:
-                print(f"{name} ({device.address})")
+                print(f"{name} ({device.address}){status}")
             else:
-                print(device.address)
+                print(f"{device.address}{status}")
 
     asyncio.run(run())
     return 0
