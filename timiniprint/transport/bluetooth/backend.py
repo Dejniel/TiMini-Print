@@ -40,6 +40,11 @@ class SppBackend:
     def _connect_blocking(self, address: str) -> None:
         if self._connected:
             return
+        pair_error = None
+        try:
+            _get_adapter().ensure_paired(address)
+        except Exception as exc:
+            pair_error = exc
         channels = _resolve_rfcomm_channels(address)
         last_error = None
         for channel in channels:
@@ -58,11 +63,18 @@ class SppBackend:
                 last_error = exc
                 _safe_close(sock)
         if last_error and _is_timeout_error(last_error):
+            if pair_error:
+                raise RuntimeError(
+                    "Bluetooth connection timed out. Pairing attempt failed: "
+                    f"{pair_error}. Tried RFCOMM channels: {channels}."
+                )
             raise RuntimeError(
                 "Bluetooth connection timed out. Make sure the printer is on, in range, and paired. "
                 f"Tried RFCOMM channels: {channels}."
             )
         detail = f"channels tried: {channels}"
+        if pair_error:
+            detail += f", pairing failed: {pair_error}"
         if last_error:
             detail += f", last error: {last_error}"
         raise RuntimeError("Bluetooth SPP connection failed (" + detail + ")")

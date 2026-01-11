@@ -13,8 +13,6 @@ Supports GUI mode and a CLI "fire-and-forget" mode. Check the list of [supported
 ## Requirements
 - Python 3.8+
 - pip install -r requirements.txt
-- Pair the printer in your OS Bluetooth settings and accept the trust/pairing
-  prompt if shown. The app expects the device to be paired already
 
 ## Quick start (GUI)
 - If no arguments are provided, a GUI opens. You can scan, connect/disconnect,
