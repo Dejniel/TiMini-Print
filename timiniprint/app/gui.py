@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import queue
 import threading
 import tkinter as tk
@@ -48,9 +49,11 @@ class TiMiniPrintGUI(tk.Tk):
         self.device_var = tk.StringVar()
         self.model_var = tk.StringVar(value="")
         self.file_var = tk.StringVar()
+        self.text_mode_var = tk.BooleanVar(value=False)
         self.status_var = tk.StringVar(value="Idle")
         self.connected_model = None
         self._connecting = False
+        self.file_var.trace_add("write", self._on_file_path_change)
 
         self._build_ui()
         self.update_idletasks()
@@ -94,6 +97,15 @@ class TiMiniPrintGUI(tk.Tk):
         self.file_entry.grid(row=0, column=1, sticky="ew", **padding)
         self.browse_button = ttk.Button(file_frame, text="Browse", command=self.browse)
         self.browse_button.grid(row=0, column=2, **padding)
+
+        options_frame = ttk.LabelFrame(self, text="Options")
+        options_frame.pack(fill="x", padx=10, pady=10)
+        self.text_mode_check = ttk.Checkbutton(
+            options_frame,
+            text="Text mode",
+            variable=self.text_mode_var,
+        )
+        self.text_mode_check.grid(row=0, column=0, sticky="w", **padding)
 
         action_frame = ttk.Frame(self)
         action_frame.pack(fill="x", padx=10, pady=10)
@@ -231,6 +243,17 @@ class TiMiniPrintGUI(tk.Tk):
         if path:
             self.file_var.set(path)
 
+    def _on_file_path_change(self, *_args) -> None:
+        self._set_text_mode_for_path(self.file_var.get())
+
+    def _set_text_mode_for_path(self, path: str) -> None:
+        path = path.strip()
+        if not path:
+            self.text_mode_var.set(False)
+            return
+        ext = os.path.splitext(path)[1].lower()
+        self.text_mode_var.set(ext == ".txt")
+
     def print_file(self) -> None:
         from ..printing import PrintJobBuilder, PrintSettings
 
@@ -247,7 +270,7 @@ class TiMiniPrintGUI(tk.Tk):
         if not model:
             self._queue_error("Printer model not detected")
             return
-        settings = PrintSettings()
+        settings = PrintSettings(text_mode=self.text_mode_var.get())
         builder = PrintJobBuilder(model, settings)
 
         def done(fut):
@@ -283,6 +306,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.refresh_button, False)
             self._set_widget_state(self.file_entry, True)
             self._set_widget_state(self.browse_button, True)
+            self._set_widget_state(self.text_mode_check, True)
             self._set_widget_state(self.print_button, True)
             self._set_widget_state(self.connect_button, False)
             self._set_widget_state(self.disconnect_button, True)
@@ -293,6 +317,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.refresh_button, True)
         self._set_widget_state(self.file_entry, False)
         self._set_widget_state(self.browse_button, False)
+        self._set_widget_state(self.text_mode_check, False)
         self._set_widget_state(self.print_button, False)
         self._set_widget_state(self.connect_button, True)
         self._set_widget_state(self.disconnect_button, False)

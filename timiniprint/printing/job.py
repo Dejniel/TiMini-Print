@@ -20,6 +20,7 @@ class PrintSettings:
     compress: Optional[bool] = None
     dither: bool = True
     lsb_first: Optional[bool] = None
+    text_mode: Optional[bool] = None
     blackening: int = DEFAULT_BLACKENING
     feed_padding: int = DEFAULT_FEED_PADDING
 
@@ -41,13 +42,14 @@ class PrintJobBuilder:
         pages = self.page_loader.load(path, width)
         data_parts: List[bytes] = []
         for page in pages:
+            is_text = self._select_text_mode(page)
             pixels = image_to_bw_pixels(page.image, dither=self._use_dither(page))
-            speed = self.model.text_print_speed if page.is_text else self.model.img_print_speed
-            energy = self._select_energy(page)
+            speed = self.model.text_print_speed if is_text else self.model.img_print_speed
+            energy = self._select_energy(is_text)
             job = build_job(
                 pixels,
                 width,
-                is_text=page.is_text,
+                is_text=is_text,
                 speed=speed,
                 energy=energy,
                 blackening=self.settings.blackening,
@@ -73,8 +75,13 @@ class PrintJobBuilder:
             return self.settings.lsb_first
         return not self.model.a4xii
 
-    def _select_energy(self, page: Page) -> int:
-        if page.is_text:
+    def _select_text_mode(self, page: Page) -> bool:
+        if self.settings.text_mode is not None:
+            return self.settings.text_mode
+        return page.is_text
+
+    def _select_energy(self, is_text: bool) -> int:
+        if is_text:
             return self.model.text_energy or DEFAULT_TEXT_ENERGY
         return self.model.moderation_energy or DEFAULT_IMAGE_ENERGY
 
