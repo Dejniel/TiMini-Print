@@ -21,6 +21,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--model", help="Printer model number (required for --serial)")
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-models", action="store_true", help="List known printer models and exit")
+    parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument("--text-mode", action="store_true", help="Force text mode printing")
     mode_group.add_argument("--image-mode", action="store_true", help="Force image mode printing")
@@ -61,10 +62,17 @@ def launch_gui() -> int:
     return 0
 
 
-def build_print_data(model: PrinterModel, path: str, text_mode: Optional[bool] = None) -> bytes:
+def build_print_data(
+    model: PrinterModel,
+    path: str,
+    text_mode: Optional[bool] = None,
+    blackening: Optional[int] = None,
+) -> bytes:
     from ..printing import PrintJobBuilder, PrintSettings
 
     settings = PrintSettings(text_mode=text_mode)
+    if blackening is not None:
+        settings.blackening = blackening
     builder = PrintJobBuilder(model, settings)
     return builder.build_from_file(path)
 
@@ -77,6 +85,10 @@ def _resolve_text_mode(args: argparse.Namespace) -> Optional[bool]:
     return None
 
 
+def _resolve_blackening(args: argparse.Namespace) -> Optional[int]:
+    return args.darkness
+
+
 def print_bluetooth(args: argparse.Namespace) -> int:
     registry = PrinterModelRegistry.load()
     resolver = DeviceResolver(registry)
@@ -84,7 +96,7 @@ def print_bluetooth(args: argparse.Namespace) -> int:
     async def run() -> None:
         device = await resolver.resolve_printer_device(args.bluetooth)
         model = resolver.resolve_model(device.name or "", args.model)
-        data = build_print_data(model, args.path, _resolve_text_mode(args))
+        data = build_print_data(model, args.path, _resolve_text_mode(args), _resolve_blackening(args))
         backend = SppBackend()
         await backend.connect(device.address)
         await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
@@ -98,7 +110,7 @@ def print_serial(args: argparse.Namespace) -> int:
     registry = PrinterModelRegistry.load()
     resolver = DeviceResolver(registry)
     model = resolver.require_model(args.model)
-    data = build_print_data(model, args.path, _resolve_text_mode(args))
+    data = build_print_data(model, args.path, _resolve_text_mode(args), _resolve_blackening(args))
 
     async def run() -> None:
         transport = SerialTransport(args.serial)
