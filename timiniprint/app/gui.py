@@ -50,6 +50,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.model_var = tk.StringVar(value="")
         self.file_var = tk.StringVar()
         self.text_mode_var = tk.BooleanVar(value=False)
+        self.darkness_var = tk.IntVar(value=3)
         self.status_var = tk.StringVar(value="Idle")
         self.connected_model = None
         self._connecting = False
@@ -106,6 +107,21 @@ class TiMiniPrintGUI(tk.Tk):
             variable=self.text_mode_var,
         )
         self.text_mode_check.grid(row=0, column=0, sticky="w", **padding)
+        ttk.Label(options_frame, text="Darkness:").grid(row=0, column=1, sticky="w", **padding)
+        self.darkness_scale = tk.Scale(
+            options_frame,
+            from_=1,
+            to=5,
+            orient="horizontal",
+            resolution=1,
+            showvalue=False,
+            length=120,
+            variable=self.darkness_var,
+        )
+        self.darkness_scale.grid(row=0, column=2, sticky="w", **padding)
+        self.darkness_value_label = ttk.Label(options_frame, textvariable=self.darkness_var, width=2)
+        self.darkness_value_label.grid(row=0, column=3, sticky="w", **padding)
+        options_frame.columnconfigure(4, weight=1)
 
         action_frame = ttk.Frame(self)
         action_frame.pack(fill="x", padx=10, pady=10)
@@ -270,7 +286,10 @@ class TiMiniPrintGUI(tk.Tk):
         if not model:
             self._queue_error("Printer model not detected")
             return
-        settings = PrintSettings(text_mode=self.text_mode_var.get())
+        settings = PrintSettings(
+            text_mode=self.text_mode_var.get(),
+            blackening=self.darkness_var.get(),
+        )
         builder = PrintJobBuilder(model, settings)
 
         def done(fut):
@@ -307,6 +326,8 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.file_entry, True)
             self._set_widget_state(self.browse_button, True)
             self._set_widget_state(self.text_mode_check, True)
+            self._set_widget_state(self.darkness_scale, True)
+            self._set_widget_state(self.darkness_value_label, True)
             self._set_widget_state(self.print_button, True)
             self._set_widget_state(self.connect_button, False)
             self._set_widget_state(self.disconnect_button, True)
@@ -318,6 +339,8 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.file_entry, False)
         self._set_widget_state(self.browse_button, False)
         self._set_widget_state(self.text_mode_check, False)
+        self._set_widget_state(self.darkness_scale, False)
+        self._set_widget_state(self.darkness_value_label, False)
         self._set_widget_state(self.print_button, False)
         self._set_widget_state(self.connect_button, True)
         self._set_widget_state(self.disconnect_button, False)
@@ -339,10 +362,14 @@ class TiMiniPrintGUI(tk.Tk):
 
     @staticmethod
     def _set_widget_state(widget, enabled: bool) -> None:
-        if enabled:
-            widget.state(["!disabled"])
-        else:
-            widget.state(["disabled"])
+        if isinstance(widget, ttk.Widget):
+            if enabled:
+                widget.state(["!disabled"])
+            else:
+                widget.state(["disabled"])
+            return
+        state = "normal" if enabled else "disabled"
+        widget.configure(state=state)
 
     def _set_device_combo_state(self, enabled: bool) -> None:
         state = "readonly" if enabled else "disabled"
