@@ -39,6 +39,9 @@ def parse_args() -> argparse.Namespace:
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument("--force-text-mode", action="store_true", help="Force printer protocol text mode")
     mode_group.add_argument("--force-image-mode", action="store_true", help="Force printer protocol image mode")
+    motion_group = parser.add_mutually_exclusive_group()
+    motion_group.add_argument("--feed", action="store_true", help="Advance paper")
+    motion_group.add_argument("--retract", action="store_true", help="Retract paper")
     parser.epilog = "If any CLI options/arguments are provided, the GUI will not be launched."
     return parser.parse_args()
 
@@ -110,6 +113,16 @@ def build_print_data(
             os.remove(temp_path)
 
 
+def build_paper_motion_data(model: PrinterModel, action: str) -> bytes:
+    from ..protocol import advance_paper_cmd, retract_paper_cmd
+
+    if action == "feed":
+        return advance_paper_cmd(model.dev_dpi, model.new_format)
+    if action == "retract":
+        return retract_paper_cmd(model.dev_dpi, model.new_format)
+    raise ValueError(f"Unknown paper motion action: {action}")
+
+
 def _resolve_text_mode(args: argparse.Namespace) -> Optional[bool]:
     if args.force_text_mode:
         return True
@@ -140,6 +153,14 @@ def _resolve_text_columns(args: argparse.Namespace) -> Optional[int]:
     if args.text_columns < 1:
         raise ValueError("Text columns must be at least 1")
     return args.text_columns
+
+
+def _resolve_paper_motion_action(args: argparse.Namespace) -> Optional[str]:
+    if args.feed:
+        return "feed"
+    if args.retract:
+        return "retract"
+    return None
 
 
 def print_bluetooth(args: argparse.Namespace) -> int:
@@ -189,6 +210,37 @@ def print_serial(args: argparse.Namespace) -> int:
     return 0
 
 
+def paper_motion_bluetooth(args: argparse.Namespace, action: str) -> int:
+    registry = PrinterModelRegistry.load()
+    resolver = DeviceResolver(registry)
+
+    async def run() -> None:
+        device = await resolver.resolve_printer_device(args.bluetooth)
+        model = resolver.resolve_model(device.name or "", args.model)
+        data = build_paper_motion_data(model, action)
+        backend = SppBackend()
+        await backend.connect(device.address)
+        await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
+        await backend.disconnect()
+
+    asyncio.run(run())
+    return 0
+
+
+def paper_motion_serial(args: argparse.Namespace, action: str) -> int:
+    registry = PrinterModelRegistry.load()
+    resolver = DeviceResolver(registry)
+    model = resolver.require_model(args.model)
+    data = build_paper_motion_data(model, action)
+
+    async def run() -> None:
+        transport = SerialTransport(args.serial)
+        await transport.write(data, model.img_mtu or 180, model.interval_ms or 4)
+
+    asyncio.run(run())
+    return 0
+
+
 def main() -> int:
     emit_startup_warnings()
     if len(sys.argv) == 1:
@@ -198,13 +250,24 @@ def main() -> int:
         return list_models()
     if args.scan:
         return scan_devices()
+    action = _resolve_paper_motion_action(args)
+    if action and (args.path or args.text is not None):
+        print(
+            "Provide either --feed/--retract or a file path/--text, not both. Use --help for usage.",
+            file=sys.stderr,
+        )
+        return 2
     if args.path and args.text is not None:
         print("Provide either a file path or --text, not both. Use --help for usage.", file=sys.stderr)
         return 2
-    if not args.path and args.text is None:
-        print("Missing file path or --text. Use --help for usage.", file=sys.stderr)
+    if not action and not args.path and args.text is None:
+        print("Missing file path, --text, or a paper motion option. Use --help for usage.", file=sys.stderr)
         return 2
     try:
+        if action:
+            if args.serial:
+                return paper_motion_serial(args, action)
+            return paper_motion_bluetooth(args, action)
         if args.serial:
             return print_serial(args)
         return print_bluetooth(args)
