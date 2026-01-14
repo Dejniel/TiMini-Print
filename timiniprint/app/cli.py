@@ -163,13 +163,29 @@ def _resolve_paper_motion_action(args: argparse.Namespace) -> Optional[str]:
     return None
 
 
+def _warn_alias_usage(match, device) -> None:
+    if not match.used_alias:
+        return
+    name = device.name or "unknown"
+    address = device.address or "unknown"
+    print(
+        "Warning: detected printer via alias (name: "
+        f"{name}, address: {address}). Using standard profile settings for "
+        f"{match.model.model_no}. If you can, please help improve the model "
+        "parameters and share details with the project.",
+        file=sys.stderr,
+    )
+
+
 def print_bluetooth(args: argparse.Namespace) -> int:
     registry = PrinterModelRegistry.load()
     resolver = DeviceResolver(registry)
 
     async def run() -> None:
         device = await resolver.resolve_printer_device(args.bluetooth)
-        model = resolver.resolve_model(device.name or "", args.model)
+        match = resolver.resolve_model_with_origin(device.name or "", args.model, device.address)
+        _warn_alias_usage(match, device)
+        model = match.model
         data = build_print_data(
             model,
             args.path,
@@ -216,7 +232,9 @@ def paper_motion_bluetooth(args: argparse.Namespace, action: str) -> int:
 
     async def run() -> None:
         device = await resolver.resolve_printer_device(args.bluetooth)
-        model = resolver.resolve_model(device.name or "", args.model)
+        match = resolver.resolve_model_with_origin(device.name or "", args.model, device.address)
+        _warn_alias_usage(match, device)
+        model = match.model
         data = build_paper_motion_data(model, action)
         backend = SppBackend()
         await backend.connect(device.address)

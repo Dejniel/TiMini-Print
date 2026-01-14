@@ -4,7 +4,7 @@ import re
 from typing import Iterable, List, Optional
 
 from ..transport.bluetooth import DeviceInfo, SppBackend
-from .models import PrinterModel, PrinterModelRegistry
+from .models import PrinterModel, PrinterModelMatch, PrinterModelMatchSource, PrinterModelRegistry
 
 _ADDRESS_RE = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 
@@ -16,7 +16,7 @@ class DeviceResolver:
     def filter_printer_devices(self, devices: Iterable[DeviceInfo]) -> List[DeviceInfo]:
         filtered = []
         for device in devices:
-            if self._registry.detect_from_device_name(device.name or ""):
+            if self._registry.detect_from_device_name(device.name or "", device.address):
                 filtered.append(device)
         return filtered
 
@@ -32,15 +32,23 @@ class DeviceResolver:
             return device
         return devices[0]
 
-    def resolve_model(self, device_name: str, model_no: Optional[str] = None) -> PrinterModel:
+    def resolve_model(
+        self, device_name: str, model_no: Optional[str] = None, address: Optional[str] = None
+    ) -> PrinterModel:
+        match = self.resolve_model_with_origin(device_name, model_no, address)
+        return match.model
+
+    def resolve_model_with_origin(
+        self, device_name: str, model_no: Optional[str] = None, address: Optional[str] = None
+    ) -> PrinterModelMatch:
         if model_no:
             model = self._registry.get(model_no)
             if not model:
                 raise RuntimeError(f"Unknown printer model '{model_no}'")
-            return model
-        model = self._registry.detect_from_device_name(device_name)
-        if model:
-            return model
+            return PrinterModelMatch(model=model, source=PrinterModelMatchSource.MODEL_NO)
+        match = self._registry.detect_with_origin(device_name, address)
+        if match:
+            return match
         raise RuntimeError("Printer model not detected from Bluetooth name")
 
     def require_model(self, model_no: Optional[str]) -> PrinterModel:
