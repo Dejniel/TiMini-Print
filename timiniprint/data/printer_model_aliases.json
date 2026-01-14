@@ -1,0 +1,63 @@
+[
+  {
+    "head_name": {
+      "prefixes": [
+        "YT01",
+        "YT02",
+        "MX01",
+        "MX02",
+        "MX03",
+        "MX05",
+        "MX06",
+        "MX07",
+        "MINIPRINTER",
+        "JL-BR22",
+        "MX08",
+        "MX09",
+        "URBANWORXKIDSCAMERA",
+        "CYLOBTPRINTER",
+        "MXTP-100",
+        "AZ-P2108X",
+        "MX10",
+        "MX11",
+        "MX12",
+        "PD01",
+        "XOPOPPY",
+        "MX13",
+        "BQ01",
+        "BQ02",
+        "EWTTOET-Z0499",
+        "BQ05",
+        "BQ06",
+        "BQ07",
+        "BQ7A",
+        "BQ7B",
+        "BQ08",
+        "BQ95",
+        "BQ96",
+        "MXW009",
+        "MXW010",
+        "EWTTOET-N3689",
+        "EWTTOET-N3687",
+        "MXPC-100",
+        "GV-MA211",
+        "KP-IM606",
+        "BQ95B",
+        "BQ03",
+        "BQ95C",
+        "BQ06B",
+        "X6",
+        "K06"
+      ]
+    },
+    "map_model_head_name": "GT01-"
+  },
+  {
+    "mac": {
+      "suffixes": [
+        "59"
+      ]
+    },
+    "map_model_head_name": "GT02-"
+  }
+]

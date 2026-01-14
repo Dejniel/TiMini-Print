@@ -435,14 +435,19 @@ class TiMiniPrintGUI(tk.Tk):
         self.connected_model = None
         if connected and device:
             try:
-                model = self.resolver.resolve_model(device.name or "")
+                match = self.resolver.resolve_model_with_origin(device.name or "", address=device.address)
             except Exception as exc:
                 self._queue_error(str(exc))
                 self.ble_loop.submit(self.backend.disconnect())
                 self._set_connected_state(False)
                 return
-            self.connected_model = model
-            self.model_var.set(model.model_no)
+            self.connected_model = match.model
+            self.model_var.set(match.model.model_no)
+            if match.used_alias:
+                self._queue_status(
+                    "Warning: model detected via alias; using standard settings. "
+                    "Please help us tune better parameters."
+                )
             self._set_device_combo_state(False)
             self._set_widget_state(self.refresh_button, False)
             self._set_widget_state(self.file_entry, True)
@@ -460,7 +465,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.print_button, True)
             self._set_widget_state(self.connect_button, False)
             self._set_widget_state(self.disconnect_button, True)
-            self._configure_text_columns(model)
+            self._configure_text_columns(match.model)
             return
 
         self.model_var.set("")
