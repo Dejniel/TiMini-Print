@@ -17,6 +17,7 @@ class PageLoader:
         converters: Optional[Dict[str, PageConverter]] = None,
         text_font: Optional[str] = None,
         text_columns: Optional[int] = None,
+        text_wrap: bool = True,
     ) -> None:
         if converters is None:
             converters = {}
@@ -24,7 +25,11 @@ class PageLoader:
             for ext in (".png", ".jpg", ".jpeg", ".gif", ".bmp"):
                 converters[ext] = image_converter
             converters[".pdf"] = PdfConverter()
-            converters[".txt"] = TextConverter(font_path=text_font, columns=text_columns)
+            converters[".txt"] = TextConverter(
+                font_path=text_font,
+                columns=text_columns,
+                wrap_lines=text_wrap,
+            )
         self._converters = converters
 
     @property

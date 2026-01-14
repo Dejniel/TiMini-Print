@@ -48,7 +48,7 @@ Supports both a GUI and a “fire-and-forget” CLI mode. Check the list of [sup
 ## Supported formats
 - Images: .png .jpg .jpeg .gif .bmp
 - PDF: prints all pages
-- Text: .txt (monospace, bold if available)
+- Text: .txt (monospace bold, word-wrapped by default)
 
 ## Notes
 - I test builds only on Ubuntu-like systems—if you need to run this elsewhere, please report issues or submit a fix :P

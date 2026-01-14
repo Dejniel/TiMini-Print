@@ -23,6 +23,7 @@ class PrintSettings:
     text_mode: Optional[bool] = None
     text_font: Optional[str] = None
     text_columns: Optional[int] = None
+    text_wrap: bool = True
     blackening: int = DEFAULT_BLACKENING
     feed_padding: int = DEFAULT_FEED_PADDING
 
@@ -39,6 +40,7 @@ class PrintJobBuilder:
         self.page_loader = page_loader or PageLoader(
             text_font=self.settings.text_font,
             text_columns=self.settings.text_columns,
+            text_wrap=self.settings.text_wrap,
         )
 
     def build_from_file(self, path: str) -> bytes:

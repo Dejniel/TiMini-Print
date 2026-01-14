@@ -12,9 +12,15 @@ REFERENCE_PATTERN = "M.I"
 
 
 class TextConverter(PageConverter):
-    def __init__(self, font_path: Optional[str] = None, columns: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        font_path: Optional[str] = None,
+        columns: Optional[int] = None,
+        wrap_lines: bool = True,
+    ) -> None:
         self._font_path = font_path
         self._columns_override = columns
+        self._word_wrap = wrap_lines
 
     def load(self, path: str, width: int) -> List[Page]:
         with open(path, "r", encoding="utf-8", errors="replace") as handle:
@@ -85,7 +91,7 @@ class TextConverter(PageConverter):
             if raw_line == "":
                 lines.append("")
                 continue
-            lines.extend(self._wrap_line_by_width(raw_line, width, font))
+            lines.extend(self._wrap_line_by_width(raw_line, width, font, word_wrap=self._word_wrap))
         return lines
 
     def _wrap_line_by_width(
@@ -93,6 +99,7 @@ class TextConverter(PageConverter):
         line: str,
         width: int,
         font: ImageFont.FreeTypeFont,
+        word_wrap: bool = True,
     ) -> List[str]:
         if self._text_width(font, line) <= width:
             return [line]
@@ -108,13 +115,14 @@ class TextConverter(PageConverter):
                 remaining = remaining[1:]
                 continue
             slice_text = remaining[:cut]
-            split_at = slice_text.rfind(" ")
-            if split_at > 0:
-                lines.append(slice_text[:split_at])
-                remaining = remaining[split_at + 1 :]
-            else:
-                lines.append(slice_text)
-                remaining = remaining[cut:]
+            if word_wrap:
+                split_at = slice_text.rfind(" ")
+                if split_at > 0:
+                    lines.append(slice_text[:split_at])
+                    remaining = remaining[split_at + 1 :]
+                    continue
+            lines.append(slice_text)
+            remaining = remaining[cut:]
         return lines
 
     def _fit_substring_length(

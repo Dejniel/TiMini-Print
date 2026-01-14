@@ -56,6 +56,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.darkness_var = tk.IntVar(value=3)
         self.text_font_var = tk.StringVar()
         self.text_columns_var = tk.IntVar(value=35)
+        self.text_wrap_var = tk.BooleanVar(value=True)
         self.status_var = tk.StringVar(value="Idle")
         self.connected_model = None
         self._connecting = False
@@ -155,6 +156,12 @@ class TiMiniPrintGUI(tk.Tk):
         self.text_columns_scale.grid(row=1, column=1, sticky="w", **padding)
         self.text_columns_value_label = ttk.Label(text_frame, textvariable=self.text_columns_var, width=4)
         self.text_columns_value_label.grid(row=1, column=2, sticky="w", **padding)
+        self.text_wrap_check = ttk.Checkbutton(
+            text_frame,
+            text="Whitespace wrap",
+            variable=self.text_wrap_var,
+        )
+        self.text_wrap_check.grid(row=1, column=3, sticky="w", **padding)
 
         action_frame = ttk.Frame(self)
         action_frame.pack(fill="x", padx=10, pady=10)
@@ -348,6 +355,7 @@ class TiMiniPrintGUI(tk.Tk):
             blackening=self.darkness_var.get(),
             text_font=self.text_font_var.get().strip() or None,
             text_columns=self.text_columns_var.get(),
+            text_wrap=self.text_wrap_var.get(),
         )
         builder = PrintJobBuilder(model, settings)
 
@@ -460,6 +468,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.text_font_clear, True)
             self._set_widget_state(self.text_columns_scale, True)
             self._set_widget_state(self.text_columns_value_label, True)
+            self._set_widget_state(self.text_wrap_check, True)
             self._set_widget_state(self.feed_button, True)
             self._set_widget_state(self.retract_button, True)
             self._set_widget_state(self.print_button, True)
@@ -481,6 +490,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.text_font_clear, False)
         self._set_widget_state(self.text_columns_scale, False)
         self._set_widget_state(self.text_columns_value_label, False)
+        self._set_widget_state(self.text_wrap_check, False)
         self._set_widget_state(self.feed_button, False)
         self._set_widget_state(self.retract_button, False)
         self._set_widget_state(self.print_button, False)
