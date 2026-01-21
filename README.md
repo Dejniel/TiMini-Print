@@ -57,11 +57,6 @@ These printers are often sold on AliExpress and under generic names such as “t
 - Windows + Python 3.13+: installing `winsdk` may require building binaries during download
 - Protocol integration guide: [docs/protocol.md](docs/protocol.md)
 
-## PDF rendering dependencies (optional)
-- PyMuPDF: pip install pymupdf
-- pdf2image: pip install pdf2image (plus system poppler)
-- Or system pdftoppm (poppler-utils)
-
 ## Supported printer models
 A200, A33, A41II, A41III, A42II, A43, A4300, CMT-0510, CP01, D1, D100, DL GE225, DL X2, DL X2 Pro,
 DL X7, DL X7 Pro, DT1-0, DTR-R0, DY03, DY49, EMX-040256, FC02, GB02SH, GB03PH, GB03PL, GB03SH,

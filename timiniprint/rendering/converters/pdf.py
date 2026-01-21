@@ -1,142 +1,144 @@
 from __future__ import annotations
 
-import glob
-import os
-import shutil
-import subprocess
-import tempfile
-from typing import List
+from typing import List, Optional, Sequence
 
-from PIL import Image, ImageSequence
+from PIL import Image
 
 from .base import Page, RasterConverter
 
+DEFAULT_RENDER_DPI = 200
+
 
 class PdfConverter(RasterConverter):
+    def __init__(
+        self,
+        page_selection: Optional[str] = None,
+        page_gap_px: int = 0,
+        trim_side_margins: bool = True,
+        trim_top_bottom_margins: bool = True,
+        render_dpi: int = DEFAULT_RENDER_DPI,
+    ) -> None:
+        super().__init__(
+            trim_side_margins=trim_side_margins,
+            trim_top_bottom_margins=trim_top_bottom_margins,
+        )
+        self._page_selection = page_selection
+        self._page_gap_px = max(0, int(page_gap_px or 0))
+        self._render_dpi = render_dpi
+
     def load(self, path: str, width: int) -> List[Page]:
         pages = self._load_pdf_pages(path)
-        out = []
-        for page in pages:
-            img = self._resize_to_width(self._normalize_image(page), width)
+        out: List[Page] = []
+        last_index = len(pages) - 1
+        for idx, page in enumerate(pages):
+            img = self._normalize_image(page)
+            img = self._maybe_trim_margins(img)
+            img = self._resize_to_width(img, width)
+            if self._page_gap_px > 0 and idx < last_index:
+                img = self._append_page_gap(img, self._page_gap_px)
             out.append(Page(img, dither=True, is_text=False))
         return out
 
     def _load_pdf_pages(self, path: str) -> List[Image.Image]:
-        errors: List[str] = []
+        import pypdfium2 as pdfium
 
-        pages = self._load_with_pillow(path, errors)
-        if pages:
-            return pages
-
-        pages = self._load_with_pymupdf(path, errors)
-        if pages:
-            return pages
-
-        pages = self._load_with_pdf2image(path, errors)
-        if pages:
-            return pages
-
-        pages = self._load_with_pdftoppm(path, errors)
-        if pages:
-            return pages
-
-        detail = "; ".join(errors) if errors else "no details"
-        raise RuntimeError(
-            "PDF render failed. Install PyMuPDF (pip install pymupdf) or pdf2image + poppler, "
-            "or install system pdftoppm. Details: " + detail
-        )
-
-    def _load_with_pillow(self, path: str, errors: List[str]) -> List[Image.Image]:
+        doc = pdfium.PdfDocument(path)
+        pages: List[Image.Image] = []
         try:
-            pages: List[Image.Image] = []
-            with Image.open(path) as img:
-                for page in ImageSequence.Iterator(img):
-                    page.load()
-                    pages.append(self._normalize_image(page).copy())
-            if pages:
-                return pages
-            errors.append("Pillow: no pages rendered")
-        except Exception as exc:
-            errors.append(f"Pillow: {exc}")
-        return []
-
-    def _load_with_pymupdf(self, path: str, errors: List[str]) -> List[Image.Image]:
-        try:
-            import fitz  # type: ignore
-        except Exception:
-            fitz = None
-        if not fitz:
-            return []
-        try:
-            doc = fitz.open(path)
-            pages = []
-            try:
-                for page in doc:
-                    pix = page.get_pixmap(dpi=200)
-                    mode = "RGBA" if pix.n >= 4 else "RGB"
-                    img = Image.frombytes(mode, (pix.width, pix.height), pix.samples)
-                    pages.append(self._normalize_image(img))
-            finally:
-                doc.close()
-            if pages:
-                return pages
-            errors.append("PyMuPDF: no pages rendered")
-        except Exception as exc:
-            errors.append(f"PyMuPDF: {exc}")
-        return []
-
-    def _load_with_pdf2image(self, path: str, errors: List[str]) -> List[Image.Image]:
-        try:
-            from pdf2image import convert_from_path  # type: ignore
-        except Exception:
-            convert_from_path = None
-        if not convert_from_path:
-            return []
-        try:
-            images = convert_from_path(path, dpi=200)
-            if images:
-                return [self._normalize_image(img) for img in images]
-            errors.append("pdf2image: no pages rendered")
-        except Exception as exc:
-            errors.append(f"pdf2image: {exc}")
-        return []
-
-    def _load_with_pdftoppm(self, path: str, errors: List[str]) -> List[Image.Image]:
-        pdftoppm = shutil.which("pdftoppm")
-        if not pdftoppm:
-            errors.append("pdftoppm: not found")
-            return []
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                output_base = os.path.join(tmpdir, "page")
-                cmd = [pdftoppm, "-png", "-r", "200", path, output_base]
-                result = subprocess.run(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                )
-                if result.returncode != 0:
-                    msg = result.stderr.strip() or result.stdout.strip()
-                    raise RuntimeError(msg or f"pdftoppm exited with {result.returncode}")
-                output_paths = glob.glob(output_base + "-*.png")
-                if not output_paths:
-                    raise RuntimeError("no pages rendered")
-                pages = []
-                for output_path in sorted(output_paths, key=self._pdftoppm_page_sort_key):
-                    with Image.open(output_path) as img:
-                        img.load()
-                        pages.append(self._normalize_image(img).copy())
-                return pages
-        except Exception as exc:
-            errors.append(f"pdftoppm: {exc}")
-        return []
+            total_pages = len(doc)
+            if total_pages <= 0:
+                raise RuntimeError("PDF has no pages")
+            page_indexes = self._select_page_indexes(total_pages)
+            scale = self._render_dpi / 72.0
+            for index in page_indexes:
+                page = self._get_pdf_page(doc, index)
+                try:
+                    pages.append(self._render_page_to_pil(page, scale))
+                finally:
+                    self._close_pdf_page(page)
+        finally:
+            self._close_pdf_document(doc)
+        if not pages:
+            raise RuntimeError("PDF render failed (no pages)")
+        return pages
 
     @staticmethod
-    def _pdftoppm_page_sort_key(path: str) -> int:
-        stem = os.path.splitext(path)[0]
-        suffix = stem.rsplit("-", 1)[-1]
+    def _get_pdf_page(doc, index: int):
         try:
-            return int(suffix)
-        except ValueError:
-            return 0
+            return doc[index]
+        except Exception:
+            return doc.get_page(index)
+
+    @staticmethod
+    def _close_pdf_page(page) -> None:
+        close = getattr(page, "close", None)
+        if callable(close):
+            close()
+
+    @staticmethod
+    def _close_pdf_document(doc) -> None:
+        close = getattr(doc, "close", None)
+        if callable(close):
+            close()
+
+    @staticmethod
+    def _render_page_to_pil(page, scale: float) -> Image.Image:
+        if hasattr(page, "render_topil"):
+            try:
+                return page.render_topil(scale=scale)
+            except TypeError:
+                return page.render_topil(scale)
+        try:
+            bitmap = page.render(scale=scale)
+        except TypeError:
+            bitmap = page.render(scale)
+        to_pil = getattr(bitmap, "to_pil", None)
+        if callable(to_pil):
+            return to_pil()
+        raise RuntimeError("pypdfium2 render did not return a PIL image")
+
+    def _select_page_indexes(self, total_pages: int) -> Sequence[int]:
+        selection = (self._page_selection or "").strip()
+        if not selection:
+            return list(range(total_pages))
+        tokens = [token.strip() for token in selection.split(",") if token.strip()]
+        if not tokens:
+            return list(range(total_pages))
+        requested: List[int] = []
+        for token in tokens:
+            if "-" in token:
+                start_str, end_str = token.split("-", 1)
+                start_str = start_str.strip()
+                end_str = end_str.strip()
+                if not (start_str.isdigit() and end_str.isdigit()):
+                    raise ValueError(f"Invalid PDF page range: {token}")
+                start = int(start_str)
+                end = int(end_str)
+                if start < 1 or end < 1:
+                    raise ValueError("PDF pages start at 1")
+                if start > end:
+                    raise ValueError(f"Invalid PDF page range: {token}")
+                requested.extend(range(start, end + 1))
+                continue
+            if not token.isdigit():
+                raise ValueError(f"Invalid PDF page selection: {token}")
+            requested.append(int(token))
+        page_indexes: List[int] = []
+        for page in requested:
+            if page < 1 or page > total_pages:
+                raise ValueError(f"PDF page {page} out of range (1-{total_pages})")
+            index = page - 1
+            if index not in page_indexes:
+                page_indexes.append(index)
+        if not page_indexes:
+            raise ValueError("No PDF pages selected")
+        return page_indexes
+
+    @staticmethod
+    def _append_page_gap(img: Image.Image, gap: int) -> Image.Image:
+        if gap <= 0:
+            return img
+        fill = 255 if img.mode == "L" else (255, 255, 255)
+        out = Image.new(img.mode, (img.width, img.height + gap), fill)
+        out.paste(img, (0, 0))
+        return out

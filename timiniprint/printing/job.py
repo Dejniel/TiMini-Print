@@ -26,6 +26,10 @@ class PrintSettings:
     text_wrap: bool = True
     blackening: int = DEFAULT_BLACKENING
     feed_padding: int = DEFAULT_FEED_PADDING
+    trim_side_margins: bool = True
+    trim_top_bottom_margins: bool = True
+    pdf_pages: Optional[str] = None
+    pdf_page_gap_mm: int = 5
 
 
 class PrintJobBuilder:
@@ -37,10 +41,15 @@ class PrintJobBuilder:
     ) -> None:
         self.model = model
         self.settings = settings or PrintSettings()
+        pdf_page_gap_px = self._mm_to_px(self.settings.pdf_page_gap_mm, self.model.dev_dpi)
         self.page_loader = page_loader or PageLoader(
             text_font=self.settings.text_font,
             text_columns=self.settings.text_columns,
             text_wrap=self.settings.text_wrap,
+            trim_side_margins=self.settings.trim_side_margins,
+            trim_top_bottom_margins=self.settings.trim_top_bottom_margins,
+            pdf_pages=self.settings.pdf_pages,
+            pdf_page_gap_px=pdf_page_gap_px,
         )
 
     def build_from_file(self, path: str) -> bytes:
@@ -91,6 +100,12 @@ class PrintJobBuilder:
         if is_text:
             return self.model.text_energy or DEFAULT_TEXT_ENERGY
         return self.model.moderation_energy or DEFAULT_IMAGE_ENERGY
+
+    @staticmethod
+    def _mm_to_px(mm: int, dpi: int) -> int:
+        if mm <= 0:
+            return 0
+        return max(0, int(round(mm * dpi / 25.4)))
 
     @staticmethod
     def _normalized_width(width: int) -> int:
