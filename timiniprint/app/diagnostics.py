@@ -31,7 +31,10 @@ def collect_dependency_warnings() -> List[str]:
     for requirement in requirements:
         if requirement == "pillow":
             if not _has_module("PIL"):
-                warnings.append("Missing Pillow (PIL). Image/PDF/text rendering will not work.")
+                warnings.append("Missing Pillow (PIL). Image/text rendering will not work, and PDF raster output will fail.")
+        elif requirement == "pypdfium2":
+            if not _has_module("pypdfium2"):
+                warnings.append("Missing pypdfium2. PDF rendering will not work.")
         elif requirement == "crc8":
             if not _has_module("crc8"):
                 warnings.append("Missing crc8. Printer protocol encoding will not work.")
@@ -49,22 +52,8 @@ def collect_dependency_warnings() -> List[str]:
                 warnings.append("Missing winsdk. Windows Bluetooth SPP scanning/connection will not work.")
         elif not _has_module(requirement):
             warnings.append(f"Missing dependency: {requirement}.")
-    if _missing_pdf_backends():
-        warnings.append(
-            "PDF rendering backend not found. Install PyMuPDF (pymupdf), pdf2image + poppler, or system pdftoppm."
-        )
     return warnings
 
 
 def _has_module(name: str) -> bool:
     return importlib.util.find_spec(name) is not None
-
-
-def _missing_pdf_backends() -> bool:
-    if _has_module("fitz"):
-        return False
-    if _has_module("pdf2image"):
-        return False
-    if shutil.which("pdftoppm"):
-        return False
-    return True

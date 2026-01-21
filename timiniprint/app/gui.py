@@ -1,3 +1,7 @@
+# TODO: DO NOT READ. This code is waiting to be rewritten :P
+# One day I’ll refactor the whole GUI properly;
+# for now, the terrible single-file monolith stays.
+
 from __future__ import annotations
 
 import asyncio
@@ -37,7 +41,6 @@ class TiMiniPrintGUI(tk.Tk):
         super().__init__()
         emit_startup_warnings()
         self.title("TiMini Print")
-        self.geometry("800x380")
         self.resizable(True, True)
 
         self.registry = PrinterModelRegistry.load()
@@ -57,21 +60,28 @@ class TiMiniPrintGUI(tk.Tk):
         self.text_font_var = tk.StringVar()
         self.text_columns_var = tk.IntVar(value=35)
         self.text_wrap_var = tk.BooleanVar(value=True)
+        self.trim_margins_var = tk.BooleanVar(value=True)
+        self.trim_top_bottom_margins_var = tk.BooleanVar(value=True)
+        self.pdf_pages_var = tk.StringVar()
+        self.pdf_gap_var = tk.IntVar(value=5)
         self.status_var = tk.StringVar(value="Idle")
         self.connected_model = None
         self._connecting = False
         self._paper_motion_action = None
         self._paper_motion_job = None
         self._paper_motion_busy = False
+        self._layout_ready = False
         self.file_var.trace_add("write", self._on_file_path_change)
 
         self._build_ui()
         self.update_idletasks()
-        self.minsize(int(self.winfo_reqwidth()*.75),self.winfo_reqheight())
+        self.minsize(int(self.winfo_reqwidth()*.9), self.winfo_reqheight())
+
+        self._layout_ready = True
         self._set_connected_state(False)
         self.after(100, self._process_queue)
         self.after(200, self.scan)
-
+        
     def _build_ui(self) -> None:
         padding = {"padx": 10, "pady": 6}
 
@@ -104,13 +114,27 @@ class TiMiniPrintGUI(tk.Tk):
 
         options_frame = ttk.LabelFrame(self, text="Options")
         options_frame.pack(fill="x", padx=10, pady=10)
+        checks_frame = ttk.Frame(options_frame)
+        checks_frame.grid(row=0, column=0, columnspan=3, sticky="w", **padding)
         self.text_mode_check = ttk.Checkbutton(
-            options_frame,
+            checks_frame,
             text="Firmware text mode",
             variable=self.text_mode_var,
         )
-        self.text_mode_check.grid(row=0, column=0, sticky="w", **padding)
-        ttk.Label(options_frame, text="Darkness:").grid(row=0, column=1, sticky="w", **padding)
+        self.text_mode_check.pack(side="left", padx=(0, 12))
+        self.trim_margins_check = ttk.Checkbutton(
+            checks_frame,
+            text="Trim side margins",
+            variable=self.trim_margins_var,
+        )
+        self.trim_margins_check.pack(side="left", padx=(0, 12))
+        self.trim_top_bottom_margins_check = ttk.Checkbutton(
+            checks_frame,
+            text="Trim vertical margins",
+            variable=self.trim_top_bottom_margins_var,
+        )
+        self.trim_top_bottom_margins_check.pack(side="left")
+        ttk.Label(options_frame, text="Darkness:").grid(row=1, column=0, sticky="w", **padding)
         self.darkness_scale = tk.Scale(
             options_frame,
             from_=1,
@@ -118,50 +142,66 @@ class TiMiniPrintGUI(tk.Tk):
             orient="horizontal",
             resolution=1,
             showvalue=False,
-            length=120,
             variable=self.darkness_var,
         )
-        self.darkness_scale.grid(row=0, column=2, sticky="w", **padding)
+        self.darkness_scale.grid(row=1, column=1, sticky="ew", **padding)
         self.darkness_value_label = ttk.Label(options_frame, textvariable=self.darkness_var, width=2)
-        self.darkness_value_label.grid(row=0, column=3, sticky="w", **padding)
-        options_frame.columnconfigure(4, weight=1)
+        self.darkness_value_label.grid(row=1, column=2, sticky="w", **padding)
+        options_frame.columnconfigure(1, weight=1)
 
-        text_frame = ttk.LabelFrame(self, text="Txt Options")
-        text_frame.pack(fill="x", padx=10, pady=10)
-        text_frame.columnconfigure(1, weight=1)
-        ttk.Label(text_frame, text="Font:").grid(row=0, column=0, sticky="w", **padding)
-        self.text_font_entry = ttk.Entry(text_frame, textvariable=self.text_font_var, width=48)
+        self.text_frame = ttk.LabelFrame(self, text="Txt Options")
+        self.text_frame.columnconfigure(1, weight=1)
+        ttk.Label(self.text_frame, text="Font:").grid(row=0, column=0, sticky="w", **padding)
+        self.text_font_entry = ttk.Entry(self.text_frame, textvariable=self.text_font_var, width=48)
         self.text_font_entry.grid(row=0, column=1, sticky="ew", **padding)
-        self.text_font_browse = ttk.Button(text_frame, text="Browse", command=self.browse_text_font)
+        self.text_font_browse = ttk.Button(self.text_frame, text="Browse", command=self.browse_text_font)
         self.text_font_browse.grid(row=0, column=2, **padding)
-        self.text_font_clear = ttk.Button(text_frame, text="Default", command=self.clear_text_font)
+        self.text_font_clear = ttk.Button(self.text_frame, text="Default", command=self.clear_text_font)
         self.text_font_clear.grid(row=0, column=3, **padding)
-        ttk.Label(text_frame, text="Letters per line:").grid(row=1, column=0, sticky="w", **padding)
+        ttk.Label(self.text_frame, text="Letters per line:").grid(row=1, column=0, sticky="w", **padding)
         self.text_columns_scale = tk.Scale(
-            text_frame,
+            self.text_frame,
             from_=30,
             to=40,
             orient="horizontal",
             resolution=1,
             showvalue=False,
-            length=160,
             variable=self.text_columns_var,
         )
-        self.text_columns_scale.grid(row=1, column=1, sticky="w", **padding)
-        self.text_columns_value_label = ttk.Label(text_frame, textvariable=self.text_columns_var, width=4)
+        self.text_columns_scale.grid(row=1, column=1, sticky="ew", **padding)
+        self.text_columns_value_label = ttk.Label(self.text_frame, textvariable=self.text_columns_var, width=4)
         self.text_columns_value_label.grid(row=1, column=2, sticky="w", **padding)
         self.text_wrap_check = ttk.Checkbutton(
-            text_frame,
+            self.text_frame,
             text="Whitespace wrap",
             variable=self.text_wrap_var,
         )
         self.text_wrap_check.grid(row=1, column=3, sticky="w", **padding)
 
-        action_frame = ttk.Frame(self)
-        action_frame.pack(fill="x", padx=10, pady=10)
-        self.print_button = ttk.Button(action_frame, text="Print", command=self.print_file)
-        self.retract_button = ttk.Button(action_frame, text="Retract")
-        self.feed_button = ttk.Button(action_frame, text="Feed")
+        self.pdf_frame = ttk.LabelFrame(self, text="PDF Options")
+        self.pdf_frame.columnconfigure(1, weight=1)
+        ttk.Label(self.pdf_frame, text="Pages (e.g. 1-3,5):").grid(row=0, column=0, sticky="w", **padding)
+        self.pdf_pages_entry = ttk.Entry(self.pdf_frame, textvariable=self.pdf_pages_var, width=48)
+        self.pdf_pages_entry.grid(row=0, column=1, sticky="ew", **padding)
+        ttk.Label(self.pdf_frame, text="Page gap (mm):").grid(row=1, column=0, sticky="w", **padding)
+        self.pdf_gap_scale = tk.Scale(
+            self.pdf_frame,
+            from_=0,
+            to=50,
+            orient="horizontal",
+            resolution=1,
+            showvalue=False,
+            variable=self.pdf_gap_var,
+        )
+        self.pdf_gap_scale.grid(row=1, column=1, sticky="ew", **padding)
+        self.pdf_gap_value_label = ttk.Label(self.pdf_frame, textvariable=self.pdf_gap_var, width=4)
+        self.pdf_gap_value_label.grid(row=1, column=2, sticky="w", **padding)
+
+        self.action_frame = ttk.Frame(self)
+        self.action_frame.pack(fill="x", padx=10, pady=10)
+        self.print_button = ttk.Button(self.action_frame, text="Print", command=self.print_file)
+        self.retract_button = ttk.Button(self.action_frame, text="Retract")
+        self.feed_button = ttk.Button(self.action_frame, text="Feed")
         self.feed_button.pack(side="left")
         self.retract_button.pack(side="left", padx=(6, 0))
         self.print_button.pack(side="right")
@@ -176,6 +216,8 @@ class TiMiniPrintGUI(tk.Tk):
         status_frame.pack(fill="x", padx=10, pady=10)
         ttk.Label(status_frame, text="Status:").pack(side="left")
         ttk.Label(status_frame, textvariable=self.status_var).pack(side="left", padx=6)
+
+        self._update_option_sections(self.file_var.get())
 
     def _process_queue(self) -> None:
         while True:
@@ -326,7 +368,9 @@ class TiMiniPrintGUI(tk.Tk):
         self.text_font_var.set("")
 
     def _on_file_path_change(self, *_args) -> None:
-        self._set_text_mode_for_path(self.file_var.get())
+        path = self.file_var.get()
+        self._set_text_mode_for_path(path)
+        self._update_option_sections(path)
 
     def _set_text_mode_for_path(self, path: str) -> None:
         path = path.strip()
@@ -335,6 +379,29 @@ class TiMiniPrintGUI(tk.Tk):
             return
         ext = os.path.splitext(path)[1].lower()
         self.text_mode_var.set(ext == ".txt")
+
+    def _update_option_sections(self, path: str) -> None:
+        ext = os.path.splitext(path.strip())[1].lower()
+        self._set_section_visible(self.text_frame, ext == ".txt")
+        self._set_section_visible(self.pdf_frame, ext == ".pdf")
+        self._refresh_min_height()
+
+    def _set_section_visible(self, frame: ttk.LabelFrame, visible: bool) -> None:
+        if visible:
+            if not frame.winfo_manager():
+                frame.pack(before=self.action_frame, fill="x", padx=10, pady=10)
+            return
+        if frame.winfo_manager():
+            frame.pack_forget()
+
+    def _refresh_min_height(self) -> None:
+        if not self._layout_ready:
+            return
+        self.update_idletasks()
+        min_width, _min_height = self.minsize()
+        req_height = self.winfo_reqheight()
+        if req_height > 0:
+            self.minsize(min_width, req_height)
 
     def print_file(self) -> None:
         from ..printing import PrintJobBuilder, PrintSettings
@@ -352,12 +419,22 @@ class TiMiniPrintGUI(tk.Tk):
         if not model:
             self._queue_error("Printer model not detected")
             return
+        ext = os.path.splitext(path)[1].lower()
+        pdf_pages = None
+        pdf_page_gap_mm = 0
+        if ext == ".pdf":
+            pdf_pages = self.pdf_pages_var.get().strip() or None
+            pdf_page_gap_mm = int(self.pdf_gap_var.get())
         settings = PrintSettings(
             text_mode=self.text_mode_var.get(),
             blackening=self.darkness_var.get(),
             text_font=self.text_font_var.get().strip() or None,
             text_columns=self.text_columns_var.get(),
             text_wrap=self.text_wrap_var.get(),
+            trim_side_margins=self.trim_margins_var.get(),
+            trim_top_bottom_margins=self.trim_top_bottom_margins_var.get(),
+            pdf_pages=pdf_pages,
+            pdf_page_gap_mm=pdf_page_gap_mm,
         )
         builder = PrintJobBuilder(model, settings)
 
@@ -471,6 +548,11 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.text_columns_scale, True)
             self._set_widget_state(self.text_columns_value_label, True)
             self._set_widget_state(self.text_wrap_check, True)
+            self._set_widget_state(self.trim_margins_check, True)
+            self._set_widget_state(self.trim_top_bottom_margins_check, True)
+            self._set_widget_state(self.pdf_pages_entry, True)
+            self._set_widget_state(self.pdf_gap_scale, True)
+            self._set_widget_state(self.pdf_gap_value_label, True)
             self._set_widget_state(self.feed_button, True)
             self._set_widget_state(self.retract_button, True)
             self._set_widget_state(self.print_button, True)
@@ -492,6 +574,11 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.text_columns_scale, False)
         self._set_widget_state(self.text_columns_value_label, False)
         self._set_widget_state(self.text_wrap_check, False)
+        self._set_widget_state(self.trim_margins_check, False)
+        self._set_widget_state(self.trim_top_bottom_margins_check, False)
+        self._set_widget_state(self.pdf_pages_entry, False)
+        self._set_widget_state(self.pdf_gap_scale, False)
+        self._set_widget_state(self.pdf_gap_value_label, False)
         self._set_widget_state(self.feed_button, False)
         self._set_widget_state(self.retract_button, False)
         self._set_widget_state(self.print_button, False)

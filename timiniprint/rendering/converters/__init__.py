@@ -18,13 +18,25 @@ class PageLoader:
         text_font: Optional[str] = None,
         text_columns: Optional[int] = None,
         text_wrap: bool = True,
+        trim_side_margins: bool = True,
+        trim_top_bottom_margins: bool = True,
+        pdf_pages: Optional[str] = None,
+        pdf_page_gap_px: int = 0,
     ) -> None:
         if converters is None:
             converters = {}
-            image_converter = ImageConverter()
+            image_converter = ImageConverter(
+                trim_side_margins=trim_side_margins,
+                trim_top_bottom_margins=trim_top_bottom_margins,
+            )
             for ext in (".png", ".jpg", ".jpeg", ".gif", ".bmp"):
                 converters[ext] = image_converter
-            converters[".pdf"] = PdfConverter()
+            converters[".pdf"] = PdfConverter(
+                page_selection=pdf_pages,
+                page_gap_px=pdf_page_gap_px,
+                trim_side_margins=trim_side_margins,
+                trim_top_bottom_margins=trim_top_bottom_margins,
+            )
             converters[".txt"] = TextConverter(
                 font_path=text_font,
                 columns=text_columns,

@@ -1,4 +1,5 @@
 Pillow>=9.0
+pypdfium2>=4.0
 bleak>=0.22
 crc8>=0.2.0
 pyserial>=3.5

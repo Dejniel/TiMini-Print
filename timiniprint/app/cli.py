@@ -24,23 +24,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-models", action="store_true", help="List known printer models and exit")
     parser.add_argument("--text", metavar="TEXT", help="Print raw text instead of a file path")
-    parser.add_argument(
-        "--text-font",
-        metavar="PATH",
-        help="Path to a .ttf/.otf font used for text rendering (default: monospace bold)",
-    )
-    parser.add_argument(
-        "--text-columns",
-        type=int,
-        metavar="N",
-        help="Target number of characters per line for text rendering",
-    )
-    parser.add_argument(
-        "--text-hard-wrap",
-        action="store_true",
-        help="Disable whitespace word wrapping (enable hard-wrap by width) for text rendering (.txt or --text)",
-    )
+    parser.add_argument("--text-font", metavar="PATH", help="Path to a .ttf/.otf font used for text rendering (default: monospace bold)")
+    parser.add_argument("--text-columns", type=int, metavar="N", help="Target number of characters per line for text rendering")
+    parser.add_argument("--text-hard-wrap", action="store_true", help="Disable whitespace word wrapping (enable hard-wrap by width) for text rendering (.txt or --text)")
+    parser.add_argument("--pdf-pages", metavar="PAGES", help="PDF pages to print (e.g. 1,3-5). Default: all pages")
+    parser.add_argument("--pdf-page-gap", type=int, metavar="MM", help="Extra vertical gap between PDF pages in millimeters (default: 5)")
+    parser.add_argument("--no-trim-side-margins", action="store_false", dest="trim_side_margins", help="Disable auto-trimming white side margins for images and PDFs")
+    parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins", help="Disable auto-trimming white top/bottom margins for images and PDFs")
     parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
+    parser.set_defaults(trim_side_margins=True)
+    parser.set_defaults(trim_top_bottom_margins=True)
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument("--force-text-mode", action="store_true", help="Force printer protocol text mode")
     mode_group.add_argument("--force-image-mode", action="store_true", help="Force printer protocol image mode")
@@ -93,6 +86,10 @@ def build_print_data(
     text_font: Optional[str] = None,
     text_columns: Optional[int] = None,
     text_wrap: bool = True,
+    trim_side_margins: bool = True,
+    trim_top_bottom_margins: bool = True,
+    pdf_pages: Optional[str] = None,
+    pdf_page_gap_mm: int = 5,
 ) -> bytes:
     from ..printing import PrintJobBuilder, PrintSettings
 
@@ -101,6 +98,10 @@ def build_print_data(
         text_font=text_font,
         text_columns=text_columns,
         text_wrap=text_wrap,
+        trim_side_margins=trim_side_margins,
+        trim_top_bottom_margins=trim_top_bottom_margins,
+        pdf_pages=pdf_pages,
+        pdf_page_gap_mm=pdf_page_gap_mm,
     )
     if blackening is not None:
         settings.blackening = blackening
@@ -163,7 +164,29 @@ def _resolve_text_columns(args: argparse.Namespace) -> Optional[int]:
 
 
 def _resolve_text_wrap(args: argparse.Namespace) -> bool:
-    return not args.text_no_wrap
+    return not args.text_hard_wrap
+
+
+def _resolve_pdf_pages(args: argparse.Namespace) -> Optional[str]:
+    if not args.pdf_pages:
+        return None
+    return args.pdf_pages
+
+
+def _resolve_pdf_page_gap(args: argparse.Namespace) -> int:
+    if args.pdf_page_gap is None:
+        return 5
+    if args.pdf_page_gap < 0:
+        raise ValueError("PDF page gap must be >= 0 mm")
+    return args.pdf_page_gap
+
+
+def _resolve_trim_side_margins(args: argparse.Namespace) -> bool:
+    return bool(args.trim_side_margins)
+
+
+def _resolve_trim_top_bottom_margins(args: argparse.Namespace) -> bool:
+    return bool(args.trim_top_bottom_margins)
 
 
 def _resolve_paper_motion_action(args: argparse.Namespace) -> Optional[str]:
@@ -206,6 +229,10 @@ def print_bluetooth(args: argparse.Namespace) -> int:
             _resolve_text_font(args),
             _resolve_text_columns(args),
             _resolve_text_wrap(args),
+            _resolve_trim_side_margins(args),
+            _resolve_trim_top_bottom_margins(args),
+            _resolve_pdf_pages(args),
+            _resolve_pdf_page_gap(args),
         )
         backend = SppBackend()
         await backend.connect(device.address)
@@ -229,6 +256,10 @@ def print_serial(args: argparse.Namespace) -> int:
         _resolve_text_font(args),
         _resolve_text_columns(args),
         _resolve_text_wrap(args),
+        _resolve_trim_side_margins(args),
+        _resolve_trim_top_bottom_margins(args),
+        _resolve_pdf_pages(args),
+        _resolve_pdf_page_gap(args),
     )
 
     async def run() -> None:
