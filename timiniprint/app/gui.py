@@ -85,18 +85,12 @@ class TiMiniPrintGUI(tk.Tk):
 
         self.refresh_button = ttk.Button(device_frame, text="Refresh", command=self.scan)
         self.refresh_button.grid(row=0, column=2, **padding)
-        self.connect_button = ttk.Button(device_frame, text="Connect", command=self.connect)
-        self.connect_button.grid(row=1, column=1, sticky="w", **padding)
-        self.disconnect_button = ttk.Button(device_frame, text="Disconnect", command=self.disconnect)
-        self.disconnect_button.grid(row=1, column=2, **padding)
+        ttk.Label(device_frame, text="Model:").grid(row=1, column=0, sticky="w", **padding)
+        self.model_label = ttk.Label(device_frame, textvariable=self.model_var, width=48)
+        self.model_label.grid(row=1, column=1, sticky="ew", **padding)
 
-        model_frame = ttk.LabelFrame(self, text="Printer Model")
-        model_frame.pack(fill="x", padx=10, pady=10)
-        model_frame.columnconfigure(1, weight=1)
-
-        ttk.Label(model_frame, text="Model:").grid(row=0, column=0, sticky="w", **padding)
-        self.model_label = ttk.Label(model_frame, textvariable=self.model_var, width=48)
-        self.model_label.grid(row=0, column=1, sticky="ew", **padding)
+        self.connection_button = ttk.Button(device_frame, text="Connect", command=self.toggle_connection)
+        self.connection_button.grid(row=1, column=2, sticky="e", **padding)
 
         file_frame = ttk.LabelFrame(self, text="File")
         file_frame.pack(fill="x", padx=10, pady=10)
@@ -285,6 +279,14 @@ class TiMiniPrintGUI(tk.Tk):
 
         self.ble_loop.submit(self.backend.connect(device.address), callback=done)
 
+    def toggle_connection(self) -> None:
+        if self._connecting:
+            return
+        if self.connected_model:
+            self.disconnect()
+        else:
+            self.connect()
+
     def disconnect(self) -> None:
         self._queue_status("Disconnecting...")
 
@@ -472,8 +474,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.feed_button, True)
             self._set_widget_state(self.retract_button, True)
             self._set_widget_state(self.print_button, True)
-            self._set_widget_state(self.connect_button, False)
-            self._set_widget_state(self.disconnect_button, True)
+            self._set_connection_button("Disconnect", True)
             self._configure_text_columns(match.model)
             return
 
@@ -494,8 +495,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.feed_button, False)
         self._set_widget_state(self.retract_button, False)
         self._set_widget_state(self.print_button, False)
-        self._set_widget_state(self.connect_button, True)
-        self._set_widget_state(self.disconnect_button, False)
+        self._set_connection_button("Connect", True)
         self._stop_paper_motion()
 
     def _configure_text_columns(self, model) -> None:
@@ -517,15 +517,17 @@ class TiMiniPrintGUI(tk.Tk):
         if connecting:
             self._set_device_combo_state(False)
             self._set_widget_state(self.refresh_button, False)
-            self._set_widget_state(self.connect_button, False)
-            self._set_widget_state(self.disconnect_button, False)
+            self._set_connection_button("Connecting...", False)
             return
         if self.connected_model:
             return
         self._set_device_combo_state(True)
         self._set_widget_state(self.refresh_button, True)
-        self._set_widget_state(self.connect_button, True)
-        self._set_widget_state(self.disconnect_button, False)
+        self._set_connection_button("Connect", True)
+
+    def _set_connection_button(self, label: str, enabled: bool) -> None:
+        self.connection_button.configure(text=label)
+        self._set_widget_state(self.connection_button, enabled)
 
     @staticmethod
     def _set_widget_state(widget, enabled: bool) -> None:

@@ -17,7 +17,7 @@ These printers are often sold on AliExpress and under generic names such as “t
 - pip install -r requirements.txt
 
 ## Quick start (GUI)
-- If no arguments are provided, a GUI opens. You can scan, connect/disconnect,
+- If no arguments are provided, a GUI opens. You can scan, connect or disconnect with one button,
   choose a file, and print. Run with no arguments:
   python3 timiniprint.py
 
