@@ -19,6 +19,8 @@ STATUS_PAPER_RETRACT = "paper_retract"
 
 WARNING_MODEL_ALIAS = "model_alias"
 WARNING_DEPENDENCY = "dependency_missing"
+WARNING_SCAN_CLASSIC_FAILED = "scan_classic_failed"
+WARNING_SCAN_BLE_FAILED = "scan_ble_failed"
 
 ERROR_SCAN_FAILED = "scan_failed"
 ERROR_CONNECT_FAILED = "connect_failed"
@@ -48,6 +50,8 @@ class MessageCatalog:
     WARNING = {
         WARNING_MODEL_ALIAS: "Model detected via alias",
         WARNING_DEPENDENCY: "Missing dependency",
+        WARNING_SCAN_CLASSIC_FAILED: "Classic scan failed",
+        WARNING_SCAN_BLE_FAILED: "BLE scan failed",
     }
     ERROR = {
         ERROR_SCAN_FAILED: "Scan failed",

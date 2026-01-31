@@ -4,9 +4,11 @@ import re
 from typing import Iterable, List, Optional
 
 from ..transport.bluetooth import DeviceInfo, SppBackend
+from ..transport.bluetooth.types import DeviceTransport
 from .models import PrinterModel, PrinterModelMatch, PrinterModelMatchSource, PrinterModelRegistry
 
 _ADDRESS_RE = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
+_UUID_RE = re.compile(r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$")
 
 
 class DeviceResolver:
@@ -20,9 +22,20 @@ class DeviceResolver:
                 filtered.append(device)
         return filtered
 
-    async def resolve_printer_device(self, name_or_address: Optional[str]) -> DeviceInfo:
-        devices = await SppBackend.scan()
+    async def resolve_printer_device(
+        self,
+        name_or_address: Optional[str],
+        transport: Optional[DeviceTransport] = None,
+    ) -> DeviceInfo:
+        if transport == DeviceTransport.CLASSIC:
+            devices, _ = await SppBackend.scan_with_failures(include_classic=True, include_ble=False)
+        elif transport == DeviceTransport.BLE:
+            devices, _ = await SppBackend.scan_with_failures(include_classic=False, include_ble=True)
+        else:
+            devices = await SppBackend.scan()
         devices = self.filter_printer_devices(devices)
+        if transport is None:
+            devices = self._sort_devices(devices)
         if not devices:
             raise RuntimeError("No supported printers found")
         if name_or_address:
@@ -61,7 +74,15 @@ class DeviceResolver:
 
     @staticmethod
     def _looks_like_address(value: str) -> bool:
-        return bool(_ADDRESS_RE.match(value.strip()))
+        trimmed = value.strip()
+        return bool(_ADDRESS_RE.match(trimmed) or _UUID_RE.match(trimmed))
+
+    @staticmethod
+    def _sort_devices(devices: Iterable[DeviceInfo]) -> List[DeviceInfo]:
+        return sorted(
+            list(devices),
+            key=lambda item: (item.transport != DeviceTransport.CLASSIC, item.name or "", item.address),
+        )
 
     def _select_device(self, devices: Iterable[DeviceInfo], name_or_address: str) -> Optional[DeviceInfo]:
         if self._looks_like_address(name_or_address):

@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from __future__ import annotations
-
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple
 
 SocketLike = Any
+
+
+class DeviceTransport(str, Enum):
+    CLASSIC = "classic"
+    BLE = "ble"
 
 
 @dataclass(frozen=True)
@@ -13,10 +17,11 @@ class DeviceInfo:
     name: str
     address: str
     paired: Optional[bool] = None
+    transport: DeviceTransport = DeviceTransport.CLASSIC
 
     def merge(self, other: "DeviceInfo") -> "DeviceInfo":
-        if self.address != other.address:
-            raise ValueError("Cannot merge devices with different addresses")
+        if self.address != other.address or self.transport != other.transport:
+            raise ValueError("Cannot merge devices with different addresses or transports")
         if self.name and other.name:
             name = self.name if len(self.name) >= len(other.name) else other.name
         else:
@@ -27,17 +32,24 @@ class DeviceInfo:
             paired = False
         else:
             paired = None
-        return DeviceInfo(name=name, address=self.address, paired=paired)
+        return DeviceInfo(name=name, address=self.address, paired=paired, transport=self.transport)
 
     @staticmethod
     def dedupe(devices: List["DeviceInfo"]) -> List["DeviceInfo"]:
-        by_addr: Dict[str, DeviceInfo] = {}
+        by_addr: Dict[Tuple[str, DeviceTransport], DeviceInfo] = {}
         for device in devices:
-            existing = by_addr.get(device.address)
+            key = (device.address, device.transport)
+            existing = by_addr.get(key)
             if existing is None:
-                by_addr[device.address] = device
+                by_addr[key] = device
             else:
-                by_addr[device.address] = existing.merge(device)
+                by_addr[key] = existing.merge(device)
         results = list(by_addr.values())
-        results.sort(key=lambda item: (item.name or "", item.address))
+        results.sort(key=lambda item: (item.name or "", item.address, item.transport.value))
         return results
+
+
+@dataclass(frozen=True)
+class ScanFailure:
+    transport: DeviceTransport
+    error: Exception

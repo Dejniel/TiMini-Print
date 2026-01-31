@@ -5,7 +5,7 @@ It supports almost all mini printers! Check the huge list of [supported Bluetoot
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode.
 
 These printers are often sold on AliExpress and under generic names such as “thermal printer”, “mini printer”, or “cat printer”.
-TiMini Print works as a standalone tool without a system printer driver (it does not emulate a driver or print spooler).
+TiMini Print works on Windows, Linux, and macOS as a standalone tool without a system printer driver (it does not emulate a driver or print spooler)
 
 ![TiMini Print LOGO EMX-040256 Printer Psi Patrol](EMX_040256.jpg)
 
@@ -46,7 +46,6 @@ TiMini Print works as a standalone tool without a system printer driver (it does
 - If `--bluetooth` is omitted, the first supported printer found is used
 - For `--serial`, you must pass `--model` (see `--list-models`)
 - For Bluetooth printing, you can pass `--model` to override auto-detection
-- `--force-text-mode` / `--force-image-mode` force the printer protocol mode
 
 ## Supported formats
 - Images: .png .jpg .jpeg .gif .bmp
@@ -54,8 +53,9 @@ TiMini Print works as a standalone tool without a system printer driver (it does
 - Text: .txt (monospace bold, word-wrapped by default)
 
 ## Notes
-- I test builds only on Ubuntu-like systems—if you need to run this elsewhere, please report issues or submit a fix :P
+- Theoretically, I support Windows, macOS, and Linux, but I test builds only on Ubuntu-like systems—if you need to run this elsewhere, please report issues or submit a fix :P
 - Windows + Python 3.13+: installing `winsdk` may require building binaries during download
+- On macOS, only BLE (Bluetooth Low Energy) devices work for now
 - Protocol integration guide: [docs/protocol.md](docs/protocol.md)
 
 ## Supported printer models

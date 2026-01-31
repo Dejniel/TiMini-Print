@@ -4,13 +4,13 @@ import shutil
 import subprocess
 from typing import List, Optional, Set, Tuple
 
-from ..types import DeviceInfo
+from ..types import DeviceInfo, DeviceTransport
 
 
 class LinuxCommandTools:
     def scan_devices(self, timeout: float) -> Tuple[List[DeviceInfo], Optional[Set[str]]]:
         if not self._has_bluetoothctl():
-            return [], None
+            raise RuntimeError("bluetoothctl not found")
         timeout_s = max(1, int(timeout))
         self._run_bluetoothctl(["--timeout", str(timeout_s), "scan", "on"], timeout=timeout_s)
         devices_output = self._run_bluetoothctl(["devices"])
@@ -39,7 +39,14 @@ class LinuxCommandTools:
                 paired = self._bluetoothctl_is_paired(normalized)
                 if paired and derived_paired is not None:
                     derived_paired.add(normalized)
-            devices.append(DeviceInfo(name=name, address=address, paired=paired))
+            devices.append(
+                DeviceInfo(
+                    name=name,
+                    address=address,
+                    paired=paired,
+                    transport=DeviceTransport.CLASSIC,
+                )
+            )
         if paired_addresses:
             return DeviceInfo.dedupe(devices), paired_addresses
         if derived_paired:
