@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import importlib.util
-import shutil
 import sys
 from pathlib import Path
 from typing import List, Optional
 
-from ..transport.bluetooth.constants import IS_LINUX, IS_WINDOWS
+from ..transport.bluetooth.constants import IS_WINDOWS
 from .. import reporting
 
 _WARNED = False
@@ -46,11 +45,8 @@ def collect_dependency_warnings() -> List[str]:
             if not _has_module("crc8"):
                 warnings.append("Missing crc8. Printer protocol encoding will not work.")
         elif requirement == "bleak":
-            if IS_LINUX and not _has_module("bleak"):
-                if shutil.which("bluetoothctl"):
-                    warnings.append("Missing bleak. Bluetooth scanning will use bluetoothctl only.")
-                else:
-                    warnings.append("Missing bleak and bluetoothctl. Bluetooth scanning will not work.")
+            if not _has_module("bleak"):
+                warnings.append("Missing bleak. BLE scanning/printing will not work.")
         elif requirement == "pyserial":
             if not _has_module("serial"):
                 warnings.append("Missing pyserial. Serial printing via --serial will not work.")

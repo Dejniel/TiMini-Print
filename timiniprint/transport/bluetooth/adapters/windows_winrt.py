@@ -2,13 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Awaitable, Dict, List, Optional, Tuple, TypeVar, TYPE_CHECKING
+from typing import Awaitable, Dict, List, Optional, Tuple, TypeVar
 
 from ..constants import SPP_UUID
-from ..types import DeviceInfo
-
-if TYPE_CHECKING:
-    from .windows_adapter import _WindowsBluetoothAdapter
+from ..types import DeviceInfo, DeviceTransport
 
 T = TypeVar("T")
 ScanResult = Tuple[List[DeviceInfo], Dict[str, str]]
@@ -156,7 +153,14 @@ async def _scan_winrt_async(timeout: float) -> ScanResult:
             mapping[address] = info.id
         pairing = getattr(info, "pairing", None)
         is_paired = getattr(pairing, "is_paired", None) if pairing else None
-        devices.append(DeviceInfo(name=name, address=address, paired=is_paired))
+        devices.append(
+            DeviceInfo(
+                name=name,
+                address=address,
+                paired=is_paired,
+                transport=DeviceTransport.CLASSIC,
+            )
+        )
     return DeviceInfo.dedupe(devices), mapping
 
 
@@ -165,8 +169,8 @@ def _scan_winrt(timeout: float) -> ScanResult:
 
 
 class _WinRtSocket:
-    def __init__(self, adapter: "_WindowsBluetoothAdapter") -> None:
-        self._adapter = adapter
+    def __init__(self, backend: "_WinRtClassicBackend") -> None:
+        self._backend = backend
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._socket = None
         self._writer = None
@@ -179,7 +183,7 @@ class _WinRtSocket:
 
     def connect(self, target) -> None:
         address, _channel = target
-        service = self._run(self._adapter._resolve_service_async(address))
+        service = self._run(self._backend._resolve_service_async(address))
         if not service:
             raise RuntimeError("Bluetooth SPP service not found for device")
         _, _, _, _, StreamSocket, DataWriter = _winrt_imports()
@@ -209,3 +213,42 @@ class _WinRtSocket:
             asyncio.set_event_loop(None)
             self._loop.close()
             self._loop = None
+
+
+class _WinRtClassicBackend:
+    def __init__(self) -> None:
+        self._service_by_address: Dict[str, str] = {}
+
+    def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
+        devices, mapping = _scan_winrt(timeout)
+        self._service_by_address = mapping
+        return devices
+
+    def refresh_mapping(self, timeout: float) -> Dict[str, str]:
+        _, mapping = _scan_winrt(timeout)
+        self._service_by_address = mapping
+        return mapping
+
+    def has_service(self, address: str) -> bool:
+        return address in self._service_by_address
+
+    def get_service_id(self, address: str) -> Optional[str]:
+        return self._service_by_address.get(address)
+
+    def ensure_paired(self, address: str) -> None:
+        service_id = self._service_by_address.get(address)
+        _run_winrt(_pair_winrt_async(address, service_id))
+
+    def create_socket(self) -> _WinRtSocket:
+        return _WinRtSocket(self)
+
+    async def _resolve_service_async(self, address: str, timeout: float = 5.0):
+        service_id = self._service_by_address.get(address)
+        if not service_id:
+            _, mapping = await _scan_winrt_async(timeout)
+            self._service_by_address = mapping
+            service_id = self._service_by_address.get(address)
+        if not service_id:
+            return None
+        _, _, RfcommDeviceService, _, _, _ = _winrt_imports()
+        return await RfcommDeviceService.from_id_async(service_id)

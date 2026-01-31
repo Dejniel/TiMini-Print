@@ -1,52 +1,24 @@
-"""macOS Bluetooth adapter using bleak for BLE communication.
-
-macOS does not support Bluetooth Classic RFCOMM sockets natively like Linux.
-This adapter uses Bluetooth Low Energy (BLE) via the bleak library, which works
-well on macOS via CoreBluetooth.
-
-Many thermal printers support BLE with GATT characteristics for data transmission.
-Common service/characteristic UUIDs are tried automatically.
-"""
+"""Bluetooth Low Energy adapter using bleak for BLE communication."""
 from __future__ import annotations
 
 import asyncio
-import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
-from .base import _BluetoothAdapter
-from ..types import DeviceInfo, SocketLike
+from .base import _BleBluetoothAdapter
+from ..constants import IS_MACOS
+from ..types import DeviceInfo, DeviceTransport, SocketLike
 
 
-# Common BLE service and characteristic UUIDs used by thermal printers
-# Nordic UART Service (NUS) - very common
-NUS_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
-NUS_TX_CHAR_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  # Write to printer
-NUS_RX_CHAR_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  # Notifications from printer
-
-# Common thermal printer service UUIDs
-COMMON_PRINTER_SERVICES = [
-    NUS_SERVICE_UUID,
-    "0000ff00-0000-1000-8000-00805f9b34fb",  # Common for Cat Printer and similar
-    "0000ae30-0000-1000-8000-00805f9b34fb",  # Some Asian thermal printers
-    "49535343-fe7d-4ae5-8fa9-9fafd205e455",  # Microchip BLE UART
-    "0000fff0-0000-1000-8000-00805f9b34fb",  # Generic printer service
-]
-
-# Common write characteristic UUIDs
-COMMON_WRITE_CHARS = [
-    NUS_TX_CHAR_UUID,
-    "0000ff02-0000-1000-8000-00805f9b34fb",  # Cat Printer write char
-    "0000ae01-0000-1000-8000-00805f9b34fb",  # Some Asian thermal printers
-    "49535343-8841-43f4-a8d4-ecbe34729bb3",  # Microchip BLE UART TX
-    "0000fff2-0000-1000-8000-00805f9b34fb",  # Generic write char
-]
+def _missing_bleak_error() -> RuntimeError:
+    return RuntimeError(
+        "bleak is required for BLE Bluetooth support. Install it with: pip install bleak"
+    )
 
 
 class _BleakSocket:
     """Socket-like wrapper around a bleak BLE client for GATT write operations."""
 
-    def __init__(self, adapter: "_MacOSBluetoothAdapter") -> None:
-        self._adapter = adapter
+    def __init__(self, pairing_hint: Optional[bool] = None) -> None:
         self._client: Any = None
         self._write_char: Any = None
         self._address: Optional[str] = None
@@ -56,6 +28,7 @@ class _BleakSocket:
         self._timeout = 30.0
         # BLE thermal printers need longer delays than classic Bluetooth
         self._write_delay_ms = 50  # ms between BLE GATT writes
+        self._pairing_hint = pairing_hint is True and not IS_MACOS
 
     def settimeout(self, timeout: float) -> None:
         """Set socket timeout (stored for use in async operations)."""
@@ -83,12 +56,8 @@ class _BleakSocket:
         """Async connection to BLE device."""
         try:
             from bleak import BleakClient, BleakScanner
-            from bleak.exc import BleakError
         except ImportError as exc:
-            raise RuntimeError(
-                "bleak is required for macOS Bluetooth support. "
-                "Install it with: pip install bleak"
-            ) from exc
+            raise _missing_bleak_error() from exc
 
         # On macOS, we might have a UUID instead of MAC address
         # Try to find the device first
@@ -134,6 +103,10 @@ class _BleakSocket:
             # Use the negotiated MTU but cap at a reasonable size for thermal printers
             self._mtu_size = min(negotiated_mtu, 512)
 
+        # Pair on platforms that support it if hinted.
+        if self._pairing_hint:
+            await self._pair_if_supported()
+
         # Discover services and find write characteristic
         self._write_char = await self._find_write_characteristic()
         if not self._write_char:
@@ -150,22 +123,17 @@ class _BleakSocket:
             return None
 
         services = self._client.services
-        
-        # First, try known printer service/characteristic UUIDs
-        for service_uuid in COMMON_PRINTER_SERVICES:
-            service = services.get_service(service_uuid)
-            if service:
-                for char_uuid in COMMON_WRITE_CHARS:
-                    char = service.get_characteristic(char_uuid)
-                    if char and ("write" in char.properties or "write-without-response" in char.properties):
-                        return char
 
-        # If no known service found, search all services for writable characteristics
+        # Find first writable characteristic; prefer write-with-response for reliability.
         for service in services:
             for char in service.characteristics:
                 props = char.properties
-                if "write" in props or "write-without-response" in props:
-                    # Prefer write-without-response for better throughput
+                if "write" in props:
+                    return char
+        for service in services:
+            for char in service.characteristics:
+                props = char.properties
+                if "write-without-response" in props:
                     return char
 
         return None
@@ -215,6 +183,17 @@ class _BleakSocket:
             # This delay is critical for reliable printing
             await asyncio.sleep(delay_seconds)
 
+    async def _pair_if_supported(self) -> None:
+        pair = getattr(self._client, "pair", None)
+        if not callable(pair):
+            return
+        try:
+            result = await pair()
+        except Exception as exc:
+            raise RuntimeError(f"BLE pairing failed: {exc}") from exc
+        if result is False:
+            raise RuntimeError("BLE pairing failed")
+
     def close(self) -> None:
         """Close the BLE connection."""
         if self._loop and self._client and self._connected:
@@ -235,37 +214,32 @@ class _BleakSocket:
             self._loop = None
 
 
-class _MacOSBluetoothAdapter(_BluetoothAdapter):
-    """macOS Bluetooth adapter using bleak for BLE communication."""
-
-    # BLE doesn't use RFCOMM channels
-    single_channel = True
+class _BleakBleAdapter(_BleBluetoothAdapter):
+    """Bluetooth Low Energy adapter using bleak for GATT writes."""
 
     def __init__(self) -> None:
         self._device_cache: Dict[str, DeviceInfo] = {}
 
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
-        """Scan for BLE devices.
-        
-        On macOS, CoreBluetooth uses UUIDs instead of MAC addresses.
-        The returned addresses will be these UUIDs.
-        """
+        """Scan for BLE devices."""
         try:
             from bleak import BleakScanner
-        except ImportError:
-            return []
+        except ImportError as exc:
+            raise _missing_bleak_error() from exc
 
         async def scan() -> List[DeviceInfo]:
             devices = await BleakScanner.discover(timeout=timeout)
             results = []
             for device in devices:
                 name = device.name or ""
-                # On macOS, device.address is a CoreBluetooth UUID
-                results.append(DeviceInfo(
-                    name=name,
-                    address=device.address,
-                    paired=None  # BLE doesn't have traditional pairing concept
-                ))
+                results.append(
+                    DeviceInfo(
+                        name=name,
+                        address=device.address,
+                        paired=None,
+                        transport=DeviceTransport.BLE,
+                    )
+                )
             return results
 
         try:
@@ -275,8 +249,8 @@ class _MacOSBluetoothAdapter(_BluetoothAdapter):
                 devices = loop.run_until_complete(scan())
             finally:
                 loop.close()
-        except Exception:
-            return []
+        except Exception as exc:
+            raise RuntimeError(f"BLE scan failed: {exc}") from exc
 
         # Cache devices for later connection
         for device in devices:
@@ -284,19 +258,10 @@ class _MacOSBluetoothAdapter(_BluetoothAdapter):
 
         return devices
 
-    def create_socket(self) -> SocketLike:
+    def create_socket(self, pairing_hint: Optional[bool] = None) -> SocketLike:
         """Create a BLE socket-like object for communication."""
-        return _BleakSocket(self)
+        return _BleakSocket(pairing_hint=pairing_hint)
 
-    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
-        """BLE doesn't use RFCOMM channels, return a dummy value."""
-        return 1
-
-    def ensure_paired(self, address: str) -> None:
-        """BLE pairing is handled automatically by CoreBluetooth.
-        
-        On macOS, pairing happens automatically when accessing protected
-        characteristics. The OS will prompt the user if needed.
-        """
-        # No explicit pairing needed for BLE on macOS
-        pass
+    def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:
+        # BLE pairing is handled during connect if requested and supported.
+        return None

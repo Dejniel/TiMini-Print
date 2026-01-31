@@ -9,6 +9,7 @@ from typing import Optional
 
 from ..devices import DeviceResolver, PrinterModel, PrinterModelRegistry
 from ..transport.bluetooth import SppBackend
+from ..transport.bluetooth.types import DeviceTransport
 from ..transport.serial import SerialTransport
 from .diagnostics import emit_startup_warnings
 from .. import reporting
@@ -52,21 +53,34 @@ def list_models() -> int:
     return 0
 
 
-def scan_devices() -> int:
+def scan_devices(reporter: reporting.Reporter) -> int:
     async def run() -> None:
         registry = PrinterModelRegistry.load()
         resolver = DeviceResolver(registry)
-        devices = await SppBackend.scan()
+        devices, failures = await SppBackend.scan_with_failures(
+            include_classic=True,
+            include_ble=True,
+        )
         devices = resolver.filter_printer_devices(devices)
+        for failure in failures:
+            if failure.transport == DeviceTransport.BLE:
+                reporter.warning(reporting.WARNING_SCAN_BLE_FAILED, detail=str(failure.error))
+            else:
+                reporter.warning(reporting.WARNING_SCAN_CLASSIC_FAILED, detail=str(failure.error))
         for device in devices:
             name = device.name or ""
+            transport_label = f" [{device.transport.value}]"
             status = " [unpaired]" if device.paired is False else ""
             if name:
-                print(f"{name} ({device.address}){status}")
+                print(f"{name} ({device.address}){transport_label}{status}")
             else:
-                print(f"{device.address}{status}")
+                print(f"{device.address}{transport_label}{status}")
 
-    asyncio.run(run())
+    try:
+        asyncio.run(run())
+    except Exception as exc:
+        reporter.error(reporting.ERROR_SCAN_FAILED, detail=str(exc), exc=exc)
+        return 2
     return 0
 
 
@@ -214,7 +228,10 @@ def _warn_alias_usage(match, device, reporter: reporting.Reporter) -> None:
     )
 
 
-def print_bluetooth(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
+def print_bluetooth(
+    args: argparse.Namespace,
+    reporter: reporting.Reporter,
+) -> int:
     registry = PrinterModelRegistry.load()
     resolver = DeviceResolver(registry)
 
@@ -238,7 +255,7 @@ def print_bluetooth(args: argparse.Namespace, reporter: reporting.Reporter) -> i
             _resolve_pdf_page_gap(args),
         )
         backend = SppBackend(reporter=reporter)
-        await backend.connect(device.address, pairing_hint=device.paired is False)
+        await backend.connect(device, pairing_hint=device.paired is False)
         await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
         await backend.disconnect()
 
@@ -273,7 +290,11 @@ def print_serial(args: argparse.Namespace) -> int:
     return 0
 
 
-def paper_motion_bluetooth(args: argparse.Namespace, action: str, reporter: reporting.Reporter) -> int:
+def paper_motion_bluetooth(
+    args: argparse.Namespace,
+    action: str,
+    reporter: reporting.Reporter,
+) -> int:
     registry = PrinterModelRegistry.load()
     resolver = DeviceResolver(registry)
 
@@ -284,7 +305,7 @@ def paper_motion_bluetooth(args: argparse.Namespace, action: str, reporter: repo
         model = match.model
         data = build_paper_motion_data(model, action)
         backend = SppBackend(reporter=reporter)
-        await backend.connect(device.address, pairing_hint=device.paired is False)
+        await backend.connect(device, pairing_hint=device.paired is False)
         await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
         await backend.disconnect()
 
@@ -315,7 +336,7 @@ def main() -> int:
     if args.list_models:
         return list_models()
     if args.scan:
-        return scan_devices()
+        return scan_devices(reporter)
     action = _resolve_paper_motion_action(args)
     if action and (args.path or args.text is not None):
         reporter.error(

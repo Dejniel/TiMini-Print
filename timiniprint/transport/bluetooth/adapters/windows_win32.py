@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from typing import List
 
-from ..types import DeviceInfo
+from ..types import DeviceInfo, DeviceTransport
+
+
+class _Win32ClassicBackend:
+    def scan_inquiry(self, timeout: float) -> List[DeviceInfo]:
+        return scan_inquiry(timeout)
+
+    def pair_device(self, address: str) -> bool:
+        return pair_device(address)
 
 
 def scan_inquiry(timeout: float) -> List[DeviceInfo]:
@@ -117,7 +125,12 @@ def scan_inquiry(timeout: float) -> List[DeviceInfo]:
                 address = ":".join(f"{b:02X}" for b in addr_bytes[::-1])
                 paired = bool(info.fAuthenticated or info.fRemembered)
                 if address not in seen:
-                    seen[address] = DeviceInfo(name=name, address=address, paired=paired)
+                    seen[address] = DeviceInfo(
+                        name=name,
+                        address=address,
+                        paired=paired,
+                        transport=DeviceTransport.CLASSIC,
+                    )
                 if not bt.BluetoothFindNextDevice(h_find, ctypes.byref(info)):
                     break
             bt.BluetoothFindDeviceClose(h_find)

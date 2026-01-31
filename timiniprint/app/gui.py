@@ -16,6 +16,7 @@ from .. import reporting
 from ..devices import DeviceResolver, PrinterModelRegistry
 from ..rendering.converters.text import TextConverter
 from ..transport.bluetooth import DeviceInfo, SppBackend
+from ..transport.bluetooth.types import DeviceTransport
 
 PAPER_MOTION_INTERVAL_MS = 1000
 
@@ -264,19 +265,30 @@ class TiMiniPrintGUI(tk.Tk):
 
     def _device_label(self, device) -> str:
         name = device.name or ""
+        transport = f" [{device.transport.value}]"
         status = " [unpaired]" if device.paired is False else ""
         if name:
-            return f"{name} ({device.address}){status}"
-        return f"{device.address}{status}"
+            return f"{name} ({device.address}){transport}{status}"
+        return f"{device.address}{transport}{status}"
 
     def _mark_device_paired(self, device: DeviceInfo) -> DeviceInfo:
         updated_devices = []
-        updated = DeviceInfo(name=device.name or "", address=device.address, paired=True)
+        updated = DeviceInfo(
+            name=device.name or "",
+            address=device.address,
+            paired=True,
+            transport=device.transport,
+        )
         found = False
         for item in self.devices:
             if item.address == device.address:
                 name = item.name or updated.name
-                updated = DeviceInfo(name=name, address=item.address, paired=True)
+                updated = DeviceInfo(
+                    name=name,
+                    address=item.address,
+                    paired=True,
+                    transport=item.transport,
+                )
                 updated_devices.append(updated)
                 found = True
             else:
@@ -304,14 +316,19 @@ class TiMiniPrintGUI(tk.Tk):
 
         def done(fut):
             try:
-                devices = fut.result()
+                devices, failures = fut.result()
                 filtered = self.resolver.filter_printer_devices(devices)
                 self.queue.put(("devices", filtered))
+                for failure in failures:
+                    if failure.transport == DeviceTransport.BLE:
+                        self._queue_warning(reporting.WARNING_SCAN_BLE_FAILED, detail=str(failure.error))
+                    else:
+                        self._queue_warning(reporting.WARNING_SCAN_CLASSIC_FAILED, detail=str(failure.error))
                 self._queue_status(reporting.STATUS_SCAN_DONE, count=len(filtered))
             except Exception as exc:
                 self._queue_error(reporting.ERROR_SCAN_FAILED, detail=str(exc), exc=exc)
 
-        self.ble_loop.submit(self.backend.scan(), callback=done)
+        self.ble_loop.submit(self.backend.scan_with_failures(), callback=done)
 
     def connect(self) -> None:
         label = self.device_var.get()
@@ -332,7 +349,7 @@ class TiMiniPrintGUI(tk.Tk):
                 self.queue.put(("connecting", False))
 
         self.ble_loop.submit(
-            self.backend.connect(device.address, pairing_hint=device.paired is False),
+            self.backend.connect(device, pairing_hint=device.paired is False),
             callback=done,
         )
 
@@ -462,7 +479,7 @@ class TiMiniPrintGUI(tk.Tk):
 
         async def run() -> None:
             if not self.backend.is_connected():
-                await self.backend.connect(device.address, pairing_hint=device.paired is False)
+                await self.backend.connect(device, pairing_hint=device.paired is False)
             self._queue_status(reporting.STATUS_PRINTING)
             data = builder.build_from_file(path)
             await self.backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
@@ -524,7 +541,7 @@ class TiMiniPrintGUI(tk.Tk):
 
         async def run() -> None:
             if not self.backend.is_connected():
-                await self.backend.connect(device.address, pairing_hint=device.paired is False)
+                await self.backend.connect(device, pairing_hint=device.paired is False)
             if action == "feed":
                 self._queue_status(reporting.STATUS_PAPER_FEED)
             else:

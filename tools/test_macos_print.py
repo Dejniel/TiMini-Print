@@ -149,7 +149,11 @@ def create_test_pattern(width: int = 384, margin: int = 50) -> Raster:
 async def scan_devices() -> list[DeviceInfo]:
     """Scan for nearby BLE devices."""
     print("Scanning for Bluetooth devices (10 seconds)...")
-    devices = await SppBackend.scan(timeout=10.0)
+    devices, _failures = await SppBackend.scan_with_failures(
+        timeout=10.0,
+        include_classic=False,
+        include_ble=True,
+    )
     return devices
 
 
@@ -236,7 +240,7 @@ async def test_print(device: DeviceInfo, model_name: str | None = None) -> None:
     
     print(f"\nConnecting to {device.name or device.address}...")
     try:
-        await backend.connect(device.address)
+        await backend.connect(device, pairing_hint=device.paired is False)
         print("Connected!")
     except Exception as e:
         print(f"Connection failed: {e}")
@@ -310,7 +314,7 @@ async def main() -> int:
         print("No device selected. Exiting.")
         return 0
     
-    print(f"\nSelected: {device.name or device.address}")
+    print(f"\nSelected: {device.name or device.address} [{device.transport.value}]")
     
     # Ask for confirmation
     confirm = input("\nSend test print? [y/N]: ").strip().lower()
