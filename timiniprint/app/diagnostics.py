@@ -4,21 +4,28 @@ import importlib.util
 import shutil
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from ..transport.bluetooth.constants import IS_LINUX, IS_WINDOWS
+from .. import reporting
 
 _WARNED = False
 _REQUIREMENTS_PATH = Path(__file__).resolve().parents[2] / "requirements.txt"
 
 
-def emit_startup_warnings() -> None:
+def emit_startup_warnings(reporter: Optional[reporting.Reporter] = None) -> None:
     global _WARNED
     if _WARNED:
         return
     _WARNED = True
+    if reporter is None:
+        reporter = reporting.Reporter([reporting.StderrSink()])
     for message in collect_dependency_warnings():
-        print(f"Warning: {message}", file=sys.stderr)
+        reporter.warning(
+            reporting.WARNING_DEPENDENCY,
+            short=reporting.summarize_detail(message),
+            detail=message,
+        )
 
 
 def collect_dependency_warnings() -> List[str]:

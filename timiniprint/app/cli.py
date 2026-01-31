@@ -11,6 +11,7 @@ from ..devices import DeviceResolver, PrinterModel, PrinterModelRegistry
 from ..transport.bluetooth import SppBackend
 from ..transport.serial import SerialTransport
 from .diagnostics import emit_startup_warnings
+from .. import reporting
 
 
 def parse_args() -> argparse.Namespace:
@@ -197,28 +198,30 @@ def _resolve_paper_motion_action(args: argparse.Namespace) -> Optional[str]:
     return None
 
 
-def _warn_alias_usage(match, device) -> None:
+def _warn_alias_usage(match, device, reporter: reporting.Reporter) -> None:
     if not match.used_alias:
         return
     name = device.name or "unknown"
     address = device.address or "unknown"
-    print(
-        "Warning: detected printer via alias (name: "
-        f"{name}, address: {address}). Using standard profile settings for "
-        f"{match.model.model_no}. If you can, please help improve the model "
-        "parameters and share details with the project.",
-        file=sys.stderr,
+    reporter.warning(
+        reporting.WARNING_MODEL_ALIAS,
+        detail=(
+            "Detected printer via alias (name: "
+            f"{name}, address: {address}). Using standard profile settings for "
+            f"{match.model.model_no}. If you can, please help improve the model "
+            "parameters and share details with the project."
+        ),
     )
 
 
-def print_bluetooth(args: argparse.Namespace) -> int:
+def print_bluetooth(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
     registry = PrinterModelRegistry.load()
     resolver = DeviceResolver(registry)
 
     async def run() -> None:
         device = await resolver.resolve_printer_device(args.bluetooth)
         match = resolver.resolve_model_with_origin(device.name or "", args.model, device.address)
-        _warn_alias_usage(match, device)
+        _warn_alias_usage(match, device, reporter)
         model = match.model
         data = build_print_data(
             model,
@@ -234,8 +237,8 @@ def print_bluetooth(args: argparse.Namespace) -> int:
             _resolve_pdf_pages(args),
             _resolve_pdf_page_gap(args),
         )
-        backend = SppBackend()
-        await backend.connect(device.address)
+        backend = SppBackend(reporter=reporter)
+        await backend.connect(device.address, pairing_hint=device.paired is False)
         await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
         await backend.disconnect()
 
@@ -270,18 +273,18 @@ def print_serial(args: argparse.Namespace) -> int:
     return 0
 
 
-def paper_motion_bluetooth(args: argparse.Namespace, action: str) -> int:
+def paper_motion_bluetooth(args: argparse.Namespace, action: str, reporter: reporting.Reporter) -> int:
     registry = PrinterModelRegistry.load()
     resolver = DeviceResolver(registry)
 
     async def run() -> None:
         device = await resolver.resolve_printer_device(args.bluetooth)
         match = resolver.resolve_model_with_origin(device.name or "", args.model, device.address)
-        _warn_alias_usage(match, device)
+        _warn_alias_usage(match, device, reporter)
         model = match.model
         data = build_paper_motion_data(model, action)
-        backend = SppBackend()
-        await backend.connect(device.address)
+        backend = SppBackend(reporter=reporter)
+        await backend.connect(device.address, pairing_hint=device.paired is False)
         await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
         await backend.disconnect()
 
@@ -304,7 +307,8 @@ def paper_motion_serial(args: argparse.Namespace, action: str) -> int:
 
 
 def main() -> int:
-    emit_startup_warnings()
+    reporter = reporting.Reporter([reporting.StderrSink()])
+    emit_startup_warnings(reporter)
     if len(sys.argv) == 1:
         return launch_gui()
     args = parse_args()
@@ -314,27 +318,26 @@ def main() -> int:
         return scan_devices()
     action = _resolve_paper_motion_action(args)
     if action and (args.path or args.text is not None):
-        print(
-            "Provide either --feed/--retract or a file path/--text, not both. Use --help for usage.",
-            file=sys.stderr,
+        reporter.error(
+            detail="Provide either --feed/--retract or a file path/--text, not both. Use --help for usage."
         )
         return 2
     if args.path and args.text is not None:
-        print("Provide either a file path or --text, not both. Use --help for usage.", file=sys.stderr)
+        reporter.error(detail="Provide either a file path or --text, not both. Use --help for usage.")
         return 2
     if not action and not args.path and args.text is None:
-        print("Missing file path, --text, or a paper motion option. Use --help for usage.", file=sys.stderr)
+        reporter.error(detail="Missing file path, --text, or a paper motion option. Use --help for usage.")
         return 2
     try:
         if action:
             if args.serial:
                 return paper_motion_serial(args, action)
-            return paper_motion_bluetooth(args, action)
+            return paper_motion_bluetooth(args, action, reporter)
         if args.serial:
             return print_serial(args)
-        return print_bluetooth(args)
+        return print_bluetooth(args, reporter)
     except Exception as exc:
-        print(str(exc), file=sys.stderr)
+        reporter.error(detail=str(exc), exc=exc)
         return 2
     return 2
 

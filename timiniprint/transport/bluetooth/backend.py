@@ -6,25 +6,27 @@ import time
 from typing import List, Optional
 
 from .adapters import _get_adapter
-from .constants import RFCOMM_CHANNELS
+from .constants import RFCOMM_CHANNELS, IS_WINDOWS
 from .types import DeviceInfo, SocketLike
+from ... import reporting
 
 
 class SppBackend:
-    def __init__(self) -> None:
+    def __init__(self, reporter: Optional[reporting.Reporter] = None) -> None:
         self._sock: Optional[SocketLike] = None
         self._lock = threading.Lock()
         self._connected = False
         self._channel: Optional[int] = None
+        self._reporter = reporter
 
     @staticmethod
     async def scan(timeout: float = 5.0) -> List[DeviceInfo]:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, _scan_blocking, timeout)
 
-    async def connect(self, address: str) -> None:
+    async def connect(self, address: str, pairing_hint: Optional[bool] = None) -> None:
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._connect_blocking, address)
+        await loop.run_in_executor(None, self._connect_blocking, address, pairing_hint)
 
     def is_connected(self) -> bool:
         return self._connected
@@ -37,11 +39,13 @@ class SppBackend:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._write_blocking, data, chunk_size, interval_ms)
 
-    def _connect_blocking(self, address: str) -> None:
+    def _connect_blocking(self, address: str, pairing_hint: Optional[bool]) -> None:
         if self._connected:
             return
         pair_error = None
         try:
+            if pairing_hint and IS_WINDOWS:
+                self._report_status(reporting.STATUS_PAIRING_CONFIRM)
             _get_adapter().ensure_paired(address)
         except Exception as exc:
             pair_error = exc
@@ -78,6 +82,10 @@ class SppBackend:
         if last_error:
             detail += f", last error: {last_error}"
         raise RuntimeError("Bluetooth SPP connection failed (" + detail + ")")
+
+    def _report_status(self, key: str, **ctx) -> None:
+        if self._reporter:
+            self._reporter.status(key, **ctx)
 
     def _disconnect_blocking(self) -> None:
         if not self._sock:

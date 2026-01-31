@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 
 from .diagnostics import emit_startup_warnings
+from .. import reporting
 from ..devices import DeviceResolver, PrinterModelRegistry
 from ..rendering.converters.text import TextConverter
 from ..transport.bluetooth import DeviceInfo, SppBackend
@@ -45,9 +46,15 @@ class TiMiniPrintGUI(tk.Tk):
 
         self.registry = PrinterModelRegistry.load()
         self.resolver = DeviceResolver(self.registry)
-        self.backend = SppBackend()
         self.ble_loop = BleLoop()
         self.queue: queue.Queue = queue.Queue()
+        self.reporter = reporting.Reporter(
+            [
+                reporting.QueueStatusSink(self.queue, show_warnings=True),
+                reporting.StderrSink(),
+            ]
+        )
+        self.backend = SppBackend(reporter=self.reporter)
 
         self.devices = []
         self.device_map = {}
@@ -64,7 +71,9 @@ class TiMiniPrintGUI(tk.Tk):
         self.trim_top_bottom_margins_var = tk.BooleanVar(value=True)
         self.pdf_pages_var = tk.StringVar()
         self.pdf_gap_var = tk.IntVar(value=5)
-        self.status_var = tk.StringVar(value="Idle")
+        self.status_var = tk.StringVar(
+            value=reporting.MessageCatalog.resolve("status", reporting.STATUS_IDLE) or "Idle"
+        )
         self.connected_model = None
         self._connecting = False
         self._paper_motion_action = None
@@ -281,23 +290,26 @@ class TiMiniPrintGUI(tk.Tk):
         self.device_var.set(self._device_label(updated))
         return updated
 
-    def _queue_status(self, message: str) -> None:
-        self.queue.put(("status", message))
+    def _queue_status(self, key: str, **ctx) -> None:
+        self.reporter.status(key, **ctx)
 
-    def _queue_error(self, message: str) -> None:
-        self.queue.put(("error", message))
+    def _queue_warning(self, key: str, detail=None, **ctx) -> None:
+        self.reporter.warning(key, detail=detail, **ctx)
+
+    def _queue_error(self, key: str, detail=None, exc=None, **ctx) -> None:
+        self.reporter.error(key, detail=detail, exc=exc, **ctx)
 
     def scan(self) -> None:
-        self._queue_status("Refreshing devices...")
+        self._queue_status(reporting.STATUS_SCAN_START)
 
         def done(fut):
             try:
                 devices = fut.result()
                 filtered = self.resolver.filter_printer_devices(devices)
                 self.queue.put(("devices", filtered))
-                self._queue_status(f"Found {len(filtered)} devices")
+                self._queue_status(reporting.STATUS_SCAN_DONE, count=len(filtered))
             except Exception as exc:
-                self._queue_error(str(exc))
+                self._queue_error(reporting.ERROR_SCAN_FAILED, detail=str(exc), exc=exc)
 
         self.ble_loop.submit(self.backend.scan(), callback=done)
 
@@ -305,21 +317,24 @@ class TiMiniPrintGUI(tk.Tk):
         label = self.device_var.get()
         device = self.device_map.get(label)
         if not device:
-            self._queue_error("Select a Bluetooth device")
+            self._queue_error(reporting.ERROR_NO_DEVICE)
             return
-        self._queue_status("Connecting...")
+        self._queue_status(reporting.STATUS_CONNECT_START)
         self.queue.put(("connecting", True))
 
         def done(fut):
             try:
                 fut.result()
-                self._queue_status("Connected")
+                self._queue_status(reporting.STATUS_CONNECT_DONE)
                 self.queue.put(("connected", device))
             except Exception as exc:
-                self._queue_error(str(exc))
+                self._queue_error(reporting.ERROR_CONNECT_FAILED, detail=str(exc), exc=exc)
                 self.queue.put(("connecting", False))
 
-        self.ble_loop.submit(self.backend.connect(device.address), callback=done)
+        self.ble_loop.submit(
+            self.backend.connect(device.address, pairing_hint=device.paired is False),
+            callback=done,
+        )
 
     def toggle_connection(self) -> None:
         if self._connecting:
@@ -330,15 +345,15 @@ class TiMiniPrintGUI(tk.Tk):
             self.connect()
 
     def disconnect(self) -> None:
-        self._queue_status("Disconnecting...")
+        self._queue_status(reporting.STATUS_DISCONNECT_START)
 
         def done(fut):
             try:
                 fut.result()
-                self._queue_status("Disconnected")
+                self._queue_status(reporting.STATUS_DISCONNECT_DONE)
                 self.queue.put(("disconnected", None))
             except Exception as exc:
-                self._queue_error(str(exc))
+                self._queue_error(reporting.ERROR_DISCONNECT_FAILED, detail=str(exc), exc=exc)
 
         self.ble_loop.submit(self.backend.disconnect(), callback=done)
 
@@ -409,15 +424,15 @@ class TiMiniPrintGUI(tk.Tk):
         label = self.device_var.get()
         device = self.device_map.get(label)
         if not device:
-            self._queue_error("Select a Bluetooth device")
+            self._queue_error(reporting.ERROR_NO_DEVICE)
             return
         path = self.file_var.get().strip()
         if not path:
-            self._queue_error("Select a file to print")
+            self._queue_error(reporting.ERROR_NO_FILE)
             return
         model = self.connected_model
         if not model:
-            self._queue_error("Printer model not detected")
+            self._queue_error(reporting.ERROR_MODEL_NOT_DETECTED)
             return
         ext = os.path.splitext(path)[1].lower()
         pdf_pages = None
@@ -441,23 +456,28 @@ class TiMiniPrintGUI(tk.Tk):
         def done(fut):
             try:
                 fut.result()
-                self._queue_status("Print job sent")
+                self._queue_status(reporting.STATUS_PRINT_SENT)
             except Exception as exc:
-                self._queue_error(str(exc))
+                self._queue_error(reporting.ERROR_PRINT_FAILED, detail=str(exc), exc=exc)
 
         async def run() -> None:
             if not self.backend.is_connected():
-                await self.backend.connect(device.address)
+                await self.backend.connect(device.address, pairing_hint=device.paired is False)
+            self._queue_status(reporting.STATUS_PRINTING)
             data = builder.build_from_file(path)
             await self.backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
 
-        self._queue_status("Printing...")
+        self._queue_status(reporting.STATUS_PRINTING)
         self.ble_loop.submit(run(), callback=done)
 
     def _start_paper_motion(self, action: str) -> None:
         if action not in {"feed", "retract"}:
             return
         self._stop_paper_motion()
+        if action == "feed":
+            self._queue_status(reporting.STATUS_PAPER_FEED)
+        else:
+            self._queue_status(reporting.STATUS_PAPER_RETRACT)
         self._paper_motion_action = action
         self._send_paper_motion(action)
         self._schedule_paper_motion()
@@ -485,12 +505,12 @@ class TiMiniPrintGUI(tk.Tk):
         label = self.device_var.get()
         device = self.device_map.get(label)
         if not device:
-            self._queue_error("Select a Bluetooth device")
+            self._queue_error(reporting.ERROR_NO_DEVICE)
             self._stop_paper_motion()
             return
         model = self.connected_model
         if not model:
-            self._queue_error("Printer model not detected")
+            self._queue_error(reporting.ERROR_MODEL_NOT_DETECTED)
             self._stop_paper_motion()
             return
 
@@ -504,7 +524,11 @@ class TiMiniPrintGUI(tk.Tk):
 
         async def run() -> None:
             if not self.backend.is_connected():
-                await self.backend.connect(device.address)
+                await self.backend.connect(device.address, pairing_hint=device.paired is False)
+            if action == "feed":
+                self._queue_status(reporting.STATUS_PAPER_FEED)
+            else:
+                self._queue_status(reporting.STATUS_PAPER_RETRACT)
             await self.backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
 
         def done(fut):
@@ -512,7 +536,7 @@ class TiMiniPrintGUI(tk.Tk):
             try:
                 fut.result()
             except Exception as exc:
-                self._queue_error(str(exc))
+                self._queue_error(reporting.ERROR_PAPER_MOTION_FAILED, detail=str(exc), exc=exc)
                 self._stop_paper_motion()
 
         self.ble_loop.submit(run(), callback=done)
@@ -524,16 +548,16 @@ class TiMiniPrintGUI(tk.Tk):
             try:
                 match = self.resolver.resolve_model_with_origin(device.name or "", address=device.address)
             except Exception as exc:
-                self._queue_error(str(exc))
+                self._queue_error(reporting.ERROR_MODEL_NOT_DETECTED, detail=str(exc), exc=exc)
                 self.ble_loop.submit(self.backend.disconnect())
                 self._set_connected_state(False)
                 return
             self.connected_model = match.model
             self.model_var.set(match.model.model_no)
             if match.used_alias:
-                self._queue_status(
-                    "Warning: model detected via alias; using standard settings. "
-                    "Please help us tune better parameters."
+                self._queue_warning(
+                    reporting.WARNING_MODEL_ALIAS,
+                    detail="Model detected via alias; using standard settings. Please help us tune better parameters.",
                 )
             self._set_device_combo_state(False)
             self._set_widget_state(self.refresh_button, False)
