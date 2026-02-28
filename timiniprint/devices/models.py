@@ -13,6 +13,7 @@ ALIAS_PATH = DATA_PATH.with_name("printer_model_aliases.json")
 class PrinterModelAliasNormalizer:
     _whitespace_re = re.compile(r"\s+")
     _non_hex_re = re.compile(r"[^0-9A-F]")
+    _mac_like_re = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 
     @classmethod
     def normalize_alias_name(cls, value: str) -> str:
@@ -21,6 +22,10 @@ class PrinterModelAliasNormalizer:
     @classmethod
     def normalize_mac_candidate(cls, value: str) -> str:
         return cls._non_hex_re.sub("", value.upper())
+
+    @classmethod
+    def is_mac_like_address(cls, value: str) -> bool:
+        return bool(cls._mac_like_re.match(value.strip()))
 
 
 class PrinterModelMatchSource(Enum):
@@ -118,6 +123,8 @@ class PrinterModelMacAlias:
 
     def matches(self, address: Optional[str]) -> bool:
         if not address:
+            return False
+        if not PrinterModelAliasNormalizer.is_mac_like_address(address):
             return False
         candidates = [address.strip().upper()]
         normalized = PrinterModelAliasNormalizer.normalize_mac_candidate(address)
