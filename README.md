@@ -55,7 +55,7 @@ TiMini Print works on Windows, Linux, and macOS as a standalone tool without a s
 ## Notes
 - Theoretically, I support Windows, macOS, and Linux, but I test builds only on Ubuntu-like systems—if you need to run this elsewhere, please report issues or submit a fix :P
 - Windows + Python 3.13+: installing `winsdk` may require building binaries during download
-- On macOS, only BLE (Bluetooth Low Energy) devices work for now
+- On first Classic connection on Windows/macOS, the system may request pairing confirmation
 - Protocol integration guide: [docs/protocol.md](docs/protocol.md)
 
 ## Supported printer models

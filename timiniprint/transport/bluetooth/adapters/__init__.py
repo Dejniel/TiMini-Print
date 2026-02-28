@@ -6,6 +6,7 @@ from ..constants import IS_LINUX, IS_MACOS, IS_WINDOWS
 from .base import _BleBluetoothAdapter, _ClassicBluetoothAdapter
 from .bleak_adapter import _BleakBleAdapter
 from .linux_adapter import _LinuxClassicAdapter
+from .macos_adapter import _MacClassicAdapter
 from .windows_adapter import _WindowsClassicAdapter
 
 _CLASSIC_ADAPTER: Optional[_ClassicBluetoothAdapter] = None
@@ -19,6 +20,8 @@ def _get_classic_adapter() -> Optional[_ClassicBluetoothAdapter]:
             _CLASSIC_ADAPTER = _WindowsClassicAdapter()
         elif IS_LINUX:
             _CLASSIC_ADAPTER = _LinuxClassicAdapter()
+        elif IS_MACOS:
+            _CLASSIC_ADAPTER = _MacClassicAdapter()
         else:
             _CLASSIC_ADAPTER = None
     return _CLASSIC_ADAPTER

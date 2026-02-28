@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from ..transport.bluetooth.constants import IS_WINDOWS
+from ..transport.bluetooth.constants import IS_MACOS, IS_WINDOWS
 from .. import reporting
 
 _WARNED = False
@@ -53,6 +53,12 @@ def collect_dependency_warnings() -> List[str]:
         elif requirement == "winsdk":
             if IS_WINDOWS and not _has_module("winsdk"):
                 warnings.append("Missing winsdk. Windows Bluetooth SPP scanning/connection will not work.")
+        elif requirement == "pyobjc-framework-iobluetooth":
+            if IS_MACOS and (not _has_module("objc") or not _has_module("IOBluetooth")):
+                warnings.append(
+                    "Missing pyobjc-framework-IOBluetooth. "
+                    "macOS Classic Bluetooth SPP scanning/connection will not work."
+                )
         elif not _has_module(requirement):
             warnings.append(f"Missing dependency: {requirement}.")
     return warnings
