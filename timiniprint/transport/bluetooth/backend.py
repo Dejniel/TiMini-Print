@@ -73,7 +73,7 @@ class SppBackend:
         for channel in channels:
             sock = None
             try:
-                sock = adapter.create_socket(pairing_hint)
+                sock = adapter.create_socket(pairing_hint, reporter=self._reporter)
                 set_timeout = getattr(sock, "settimeout", None)
                 if callable(set_timeout):
                     set_timeout(8)

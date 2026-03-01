@@ -34,6 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-trim-side-margins", action="store_false", dest="trim_side_margins", help="Disable auto-trimming white side margins for images and PDFs")
     parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins", help="Disable auto-trimming white top/bottom margins for images and PDFs")
     parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug logs (CLI only)")
     parser.set_defaults(trim_side_margins=True)
     parser.set_defaults(trim_top_bottom_margins=True)
     mode_group = parser.add_mutually_exclusive_group()
@@ -327,12 +328,19 @@ def paper_motion_serial(args: argparse.Namespace, action: str) -> int:
     return 0
 
 
+def _build_cli_reporter(verbose: bool) -> reporting.Reporter:
+    levels = {"warning", "error"}
+    if verbose:
+        levels.add("debug")
+    return reporting.Reporter([reporting.StderrSink(levels=levels)])
+
+
 def main() -> int:
-    reporter = reporting.Reporter([reporting.StderrSink()])
-    emit_startup_warnings(reporter)
     if len(sys.argv) == 1:
         return launch_gui()
     args = parse_args()
+    reporter = _build_cli_reporter(args.verbose)
+    emit_startup_warnings(reporter)
     if args.list_models:
         return list_models()
     if args.scan:

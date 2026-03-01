@@ -72,6 +72,8 @@ class MessageCatalog:
             mapping = cls.STATUS
         elif level == "warning":
             mapping = cls.WARNING
+        elif level == "debug":
+            mapping = {}
         else:
             mapping = cls.ERROR
         template = mapping.get(key)
@@ -187,6 +189,17 @@ class Reporter:
         **ctx: Any,
     ) -> None:
         self._emit("error", key, short, detail, exc, ctx)
+
+    def debug(
+        self,
+        key: Optional[str] = None,
+        *,
+        short: Optional[str] = None,
+        detail: Optional[str] = None,
+        exc: Optional[Exception] = None,
+        **ctx: Any,
+    ) -> None:
+        self._emit("debug", key, short, detail, exc, ctx)
 
     def _emit(
         self,
