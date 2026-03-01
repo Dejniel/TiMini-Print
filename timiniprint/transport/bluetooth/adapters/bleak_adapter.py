@@ -23,7 +23,7 @@ class _BleakSocket:
     def __init__(
         self,
         pairing_hint: Optional[bool] = None,
-        reporter: Optional[reporting.Reporter] = None,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
     ) -> None:
         self._client: Any = None
         self._write_char: Any = None
@@ -55,14 +55,25 @@ class _BleakSocket:
         """
         address, _ = address_channel
         self._address = address
+        previous_loop = None
 
         try:
+            try:
+                previous_loop = asyncio.get_event_loop()
+            except RuntimeError:
+                previous_loop = None
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
             self._loop.run_until_complete(self._connect_async(address))
         except Exception:
+            self._disconnect_after_failed_connect()
             self._cleanup_loop()
             raise
+        finally:
+            try:
+                asyncio.set_event_loop(previous_loop)
+            except Exception:
+                pass
 
     async def _connect_async(self, address: str) -> None:
         """Async connection to BLE device."""
@@ -102,7 +113,8 @@ class _BleakSocket:
             await self._client.connect()
             self._connected = True
         except Exception as exc:
-            raise RuntimeError(f"Failed to connect to BLE device {address}: {exc}") from exc
+            detail = str(exc).strip() or repr(exc) or exc.__class__.__name__
+            raise RuntimeError(f"Failed to connect to BLE device {address}: {detail}") from exc
 
         # Update MTU size if available (ATT MTU minus 3 bytes header overhead)
         if hasattr(self._client, "mtu_size") and self._client.mtu_size:
@@ -205,13 +217,29 @@ class _BleakSocket:
 
     def close(self) -> None:
         """Close the BLE connection."""
-        if self._loop and self._client and self._connected:
+        self._disconnect_after_failed_connect()
+        self._cleanup_loop()
+
+    def _disconnect_after_failed_connect(self) -> None:
+        if self._loop and self._client:
             try:
-                self._loop.run_until_complete(self._client.disconnect())
+                self._loop.run_until_complete(self._safe_disconnect_async())
             except Exception:
                 pass
         self._connected = False
-        self._cleanup_loop()
+        self._client = None
+        self._write_char = None
+
+    async def _safe_disconnect_async(self) -> None:
+        if not self._client:
+            return
+        disconnect = getattr(self._client, "disconnect", None)
+        if not callable(disconnect):
+            return
+        try:
+            await disconnect()
+        except Exception:
+            pass
 
     def _cleanup_loop(self) -> None:
         """Clean up the event loop."""
@@ -223,8 +251,6 @@ class _BleakSocket:
             self._loop = None
 
     def _report_debug(self, message: str) -> None:
-        if not self._reporter:
-            return
         self._reporter.debug(short="BLE", detail=message)
 
 
@@ -275,7 +301,7 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
     def create_socket(
         self,
         pairing_hint: Optional[bool] = None,
-        reporter: Optional[reporting.Reporter] = None,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
     ) -> SocketLike:
         """Create a BLE socket-like object for communication."""
         return _BleakSocket(pairing_hint=pairing_hint, reporter=reporter)

@@ -205,29 +205,31 @@ def _service_channel_id(service) -> Optional[int]:
     return _extract_channel_id(result)
 
 
-def _resolve_rfcomm_channel_via_services(device) -> Optional[int]:
+def _resolve_rfcomm_channels_via_services(device) -> List[int]:
     try:
         services = device.services()
     except Exception:
         services = None
     if services is None:
-        return None
+        return []
 
+    channels: List[int] = []
     for service in list(services):
         channel_id = _service_channel_id(service)
-        if channel_id is not None:
-            return channel_id
-    return None
+        if channel_id is not None and channel_id not in channels:
+            channels.append(channel_id)
+    return channels
 
 
-def _find_spp_channel(device) -> Optional[int]:
+def _find_spp_channels(device) -> List[int]:
     uuid = _build_spp_uuid()
+    channels: List[int] = []
 
     service = device.getServiceRecordForUUID_(uuid)
     if service:
         channel_id = _service_channel_id(service)
-        if channel_id is not None:
-            return channel_id
+        if channel_id is not None and channel_id not in channels:
+            channels.append(channel_id)
 
     # If SPP record is not cached yet, refresh SDP once and retry.
     status = device.performSDPQuery_(None)
@@ -235,10 +237,13 @@ def _find_spp_channel(device) -> Optional[int]:
         service = device.getServiceRecordForUUID_(uuid)
         if service:
             channel_id = _service_channel_id(service)
-            if channel_id is not None:
-                return channel_id
+            if channel_id is not None and channel_id not in channels:
+                channels.append(channel_id)
 
-    return _resolve_rfcomm_channel_via_services(device)
+    for channel_id in _resolve_rfcomm_channels_via_services(device):
+        if channel_id not in channels:
+            channels.append(channel_id)
+    return channels
 
 
 def _attempt_pair_with_device_pair(device) -> bool:
@@ -369,14 +374,14 @@ class _MacClassicBackend:
             raise RuntimeError(f"macOS Classic Bluetooth scan failed: {inquiry_error}") from inquiry_error
         return []
 
-    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
+    def resolve_rfcomm_channels(self, address: str) -> List[int]:
         device = self.get_device(address, allow_discovery=True, timeout=5.0)
         if device is None:
-            return None
+            return []
         try:
-            return _find_spp_channel(device)
+            return _find_spp_channels(device)
         except Exception:
-            return None
+            return []
 
     def pair_device(self, address: str) -> bool:
         device = self.get_device(address, allow_discovery=True, timeout=8.0)

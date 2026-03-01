@@ -28,8 +28,8 @@ class _LinuxClassicAdapter(_ClassicBluetoothAdapter):
             )
         return socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
 
-    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
-        return self._commands.resolve_rfcomm_channel(address)
+    def resolve_rfcomm_channels(self, address: str) -> List[int]:
+        return self._commands.resolve_rfcomm_channels(address)
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:
         self._commands.ensure_paired(address)

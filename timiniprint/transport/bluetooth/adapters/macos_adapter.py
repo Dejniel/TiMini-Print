@@ -22,8 +22,8 @@ class _MacClassicAdapter(_ClassicBluetoothAdapter):
     ) -> SocketLike:
         return self._backend.create_socket()
 
-    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
-        return self._backend.resolve_rfcomm_channel(address)
+    def resolve_rfcomm_channels(self, address: str) -> List[int]:
+        return self._backend.resolve_rfcomm_channels(address)
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:
         self._backend.pair_device(address)

@@ -345,16 +345,24 @@ def _is_timeout_error(exc: Exception) -> bool:
 
 
 def _resolve_rfcomm_channels(adapter, address: str) -> List[int]:
-    channel = adapter.resolve_rfcomm_channel(address)
+    try:
+        resolved = list(adapter.resolve_rfcomm_channels(address) or [])
+    except Exception:
+        resolved = []
+    explicit_channels: List[int] = []
+    for item in resolved:
+        try:
+            channel_id = int(item)
+        except Exception:
+            continue
+        if channel_id > 0 and channel_id not in explicit_channels:
+            explicit_channels.append(channel_id)
+    if explicit_channels:
+        return explicit_channels
+
     if getattr(adapter, "single_channel", False):
-        return [channel or RFCOMM_CHANNELS[0]]
-    if channel is None:
-        return list(RFCOMM_CHANNELS)
-    channels = [channel]
-    for candidate in RFCOMM_CHANNELS:
-        if candidate != channel:
-            channels.append(candidate)
-    return channels
+        return [RFCOMM_CHANNELS[0]]
+    return list(RFCOMM_CHANNELS)
 
 
 def _transport_label(transport: DeviceTransport) -> str:

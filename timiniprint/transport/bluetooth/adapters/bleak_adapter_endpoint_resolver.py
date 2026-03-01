@@ -58,7 +58,7 @@ class _BleWriteEndpointResolver:
     }
     _PREFERRED_NOTIFY_SHORT = {"ae02", "ae04", "ae3c", "ab03"}
 
-    def __init__(self, reporter: Optional[reporting.Reporter] = None) -> None:
+    def __init__(self, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
         self._reporter = reporter
 
     def resolve(self, services: Iterable[object]) -> Optional[_WriteSelection]:
@@ -240,8 +240,6 @@ class _BleWriteEndpointResolver:
         return None
 
     def _log_candidates(self, candidates: Sequence[_WriteCandidate]) -> None:
-        if not self._reporter:
-            return
         for candidate in sorted(candidates, key=lambda c: (c.service_uuid, c.char_uuid)):
             self._reporter.debug(
                 short="BLE candidate",

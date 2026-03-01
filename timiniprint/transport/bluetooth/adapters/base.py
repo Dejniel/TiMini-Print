@@ -20,8 +20,8 @@ class _BaseBluetoothAdapter:
     ) -> SocketLike:
         raise NotImplementedError
 
-    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
-        return None
+    def resolve_rfcomm_channels(self, address: str) -> List[int]:
+        return []
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:
         return None
@@ -35,5 +35,5 @@ class _BleBluetoothAdapter(_BaseBluetoothAdapter):
     transport = DeviceTransport.BLE
     single_channel = True
 
-    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
-        return 1
+    def resolve_rfcomm_channels(self, address: str) -> List[int]:
+        return [1]

@@ -79,6 +79,19 @@ class DeviceResolver:
             include_classic=include_classic,
             include_ble=include_ble,
         )
+        if include_classic and include_ble:
+            resolved = self.build_resolved_bluetooth_devices(devices)
+            needs_retry = any(
+                item.classic_endpoint is not None and item.ble_endpoint is None
+                for item in resolved
+            )
+            if needs_retry:
+                ble_devices, _failures = await SppBackend.scan_with_failures(
+                    timeout=timeout,
+                    include_classic=False,
+                    include_ble=True,
+                )
+                devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
         return self.build_resolved_bluetooth_devices(devices), failures
 
     def build_resolved_bluetooth_devices(

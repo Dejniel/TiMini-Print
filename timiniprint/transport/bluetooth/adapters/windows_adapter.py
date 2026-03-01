@@ -35,8 +35,8 @@ class _WindowsClassicAdapter(_ClassicBluetoothAdapter):
     ) -> SocketLike:
         return self._winrt.create_socket()
 
-    def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
-        return RFCOMM_CHANNELS[0]
+    def resolve_rfcomm_channels(self, address: str) -> List[int]:
+        return [RFCOMM_CHANNELS[0]]
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:
         winrt_error = None
