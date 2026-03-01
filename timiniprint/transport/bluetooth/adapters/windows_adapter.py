@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from .base import _ClassicBluetoothAdapter
 from ..constants import RFCOMM_CHANNELS
 from ..types import DeviceInfo, SocketLike
 from .windows_win32 import _Win32ClassicBackend
 from .windows_winrt import _WinRtClassicBackend
-
-if TYPE_CHECKING:
-    from .... import reporting
+from .... import reporting
 
 
 class _WindowsClassicAdapter(_ClassicBluetoothAdapter):
@@ -33,7 +31,7 @@ class _WindowsClassicAdapter(_ClassicBluetoothAdapter):
     def create_socket(
         self,
         pairing_hint: Optional[bool] = None,
-        reporter: Optional["reporting.Reporter"] = None,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
     ) -> SocketLike:
         return self._winrt.create_socket()
 

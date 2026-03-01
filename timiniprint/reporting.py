@@ -228,3 +228,7 @@ class Reporter:
         )
         for sink in self._sinks:
             sink.emit(message)
+
+
+# Shared no-op reporter for tests and non-interactive call paths.
+DUMMY_REPORTER = Reporter(())

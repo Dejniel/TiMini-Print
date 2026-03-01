@@ -12,7 +12,7 @@ from ... import reporting
 
 
 class SppBackend:
-    def __init__(self, reporter: Optional[reporting.Reporter] = None) -> None:
+    def __init__(self, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
         self._sock: Optional[SocketLike] = None
         self._lock = threading.Lock()
         self._connected = False
@@ -40,9 +40,21 @@ class SppBackend:
             include_ble,
         )
 
-    async def connect(self, device: DeviceInfo, pairing_hint: Optional[bool] = None) -> None:
+    async def connect(
+        self,
+        device: DeviceInfo,
+        pairing_hint: Optional[bool] = None,
+    ) -> None:
         loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._connect_blocking, device, pairing_hint)
+        await loop.run_in_executor(None, self._connect_attempts_blocking, [device], pairing_hint)
+
+    async def connect_attempts(
+        self,
+        attempts: List[DeviceInfo],
+        pairing_hint: Optional[bool] = None,
+    ) -> None:
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self._connect_attempts_blocking, attempts, pairing_hint)
 
     def is_connected(self) -> bool:
         return self._connected
@@ -55,24 +67,111 @@ class SppBackend:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._write_blocking, data, chunk_size, interval_ms)
 
-    def _connect_blocking(self, device: DeviceInfo, pairing_hint: Optional[bool]) -> None:
+    def _connect_attempts_blocking(
+        self,
+        attempts: List[DeviceInfo],
+        pairing_hint: Optional[bool],
+    ) -> None:
         if self._connected:
+            self._reporter.debug(short="Bluetooth", detail="Bluetooth connect skipped: already connected")
             return
+        if not attempts:
+            raise RuntimeError("Bluetooth connection failed (no transport attempts provided)")
+        unique_attempts = _unique_attempts(attempts)
+        self._reporter.debug(
+            short="Bluetooth",
+            detail=(
+                "Bluetooth connect plan: "
+                + ", ".join(
+                    f"{item.transport.value}({item.address})"
+                    for item in unique_attempts
+                )
+            ),
+        )
+        errors: List[Tuple[DeviceInfo, Exception]] = []
+
+        for index, candidate in enumerate(unique_attempts):
+            self._reporter.debug(
+                short="Bluetooth",
+                detail=(
+                    f"Bluetooth attempt {index + 1}/{len(unique_attempts)}: "
+                    f"transport={candidate.transport.value} address={candidate.address}"
+                ),
+            )
+            try:
+                self._connect_with_device(candidate, pairing_hint)
+                self._reporter.debug(
+                    short="Bluetooth",
+                    detail=(
+                        f"Bluetooth attempt {index + 1} succeeded: "
+                        f"transport={candidate.transport.value} address={candidate.address}"
+                    ),
+                )
+                return
+            except Exception as exc:
+                errors.append((candidate, exc))
+                self._reporter.debug(
+                    short="Bluetooth",
+                    detail=(
+                        f"Bluetooth attempt {index + 1} failed: "
+                        f"transport={candidate.transport.value} address={candidate.address} error={exc}"
+                    ),
+                )
+                if index < len(unique_attempts) - 1:
+                    next_transport = unique_attempts[index + 1].transport
+                    self._reporter.warning(
+                        detail=(
+                            f"{_transport_label(candidate.transport)} Bluetooth connection failed, "
+                            f"retrying over {_transport_label(next_transport)} "
+                            f"(device: {candidate.name or candidate.address})."
+                        ),
+                    )
+
+        if not errors:
+            raise RuntimeError("Bluetooth connection failed")
+        if len(errors) == 1:
+            raise errors[0][1]
+
+        parts = []
+        for index, (attempt, error) in enumerate(errors):
+            suffix = "fallback error" if index else "error"
+            parts.append(f"{attempt.transport.value} {suffix}: {error}")
+        detail = "; ".join(parts)
+        raise RuntimeError(f"Bluetooth connection failed ({detail})")
+
+    def _connect_with_device(self, device: DeviceInfo, pairing_hint: Optional[bool]) -> None:
+        self._reporter.debug(
+            short="Bluetooth",
+            detail=(
+                f"Connecting using {device.transport.value}: "
+                f"address={device.address} pairing_hint={pairing_hint}"
+            ),
+        )
         adapter = _select_adapter(device.transport)
         if adapter is None:
             raise RuntimeError(f"{device.transport.value} Bluetooth is not supported on this platform")
         pair_error = None
         try:
             if pairing_hint and IS_WINDOWS:
-                self._report_status(reporting.STATUS_PAIRING_CONFIRM)
+                self._reporter.status(reporting.STATUS_PAIRING_CONFIRM)
             adapter.ensure_paired(device.address, pairing_hint)
+            self._reporter.debug(short="Bluetooth", detail=f"Pairing check done for {device.address}")
         except Exception as exc:
             pair_error = exc
+            self._reporter.debug(short="Bluetooth", detail=f"Pairing check failed for {device.address}: {exc}")
         channels = _resolve_rfcomm_channels(adapter, device.address)
+        self._reporter.debug(
+            short="Bluetooth",
+            detail=f"RFCOMM channels for {device.transport.value} {device.address}: {channels}",
+        )
         last_error = None
         for channel in channels:
             sock = None
             try:
+                self._reporter.debug(
+                    short="Bluetooth",
+                    detail=f"Trying RFCOMM channel {channel} for {device.address}",
+                )
                 sock = adapter.create_socket(pairing_hint, reporter=self._reporter)
                 set_timeout = getattr(sock, "settimeout", None)
                 if callable(set_timeout):
@@ -82,9 +181,20 @@ class SppBackend:
                 self._connected = True
                 self._channel = channel
                 self._transport = device.transport
+                self._reporter.debug(
+                    short="Bluetooth",
+                    detail=(
+                        f"Connected via {device.transport.value} {device.address} "
+                        f"on RFCOMM channel {channel}"
+                    ),
+                )
                 return
             except Exception as exc:
                 last_error = exc
+                self._reporter.debug(
+                    short="Bluetooth",
+                    detail=f"RFCOMM channel {channel} failed for {device.address}: {exc}",
+                )
                 _safe_close(sock)
         if last_error and _is_timeout_error(last_error):
             if pair_error:
@@ -102,10 +212,6 @@ class SppBackend:
         if last_error:
             detail += f", last error: {last_error}"
         raise RuntimeError("Bluetooth connection failed (" + detail + ")")
-
-    def _report_status(self, key: str, **ctx) -> None:
-        if self._reporter:
-            self._reporter.status(key, **ctx)
 
     def _disconnect_blocking(self) -> None:
         if not self._sock:
@@ -167,21 +273,13 @@ def _scan_blocking(
             except Exception as exc:
                 ble_failure = exc
 
-    if classic_devices:
-        devices = DeviceInfo.dedupe(classic_devices)
-        return devices, []
-    if ble_devices:
-        devices = DeviceInfo.dedupe(ble_devices)
-        if classic_failure:
-            failures.append(ScanFailure(DeviceTransport.CLASSIC, classic_failure))
-        if ble_failure:
-            failures.append(ScanFailure(DeviceTransport.BLE, ble_failure))
-        return devices, failures
-
     if classic_failure:
         failures.append(ScanFailure(DeviceTransport.CLASSIC, classic_failure))
     if ble_failure:
         failures.append(ScanFailure(DeviceTransport.BLE, ble_failure))
+    all_devices = classic_devices + ble_devices
+    if all_devices:
+        return DeviceInfo.dedupe(all_devices), failures
     if attempts and failures and len(failures) >= attempts:
         detail = "; ".join(f"{item.transport.value}: {item.error}" for item in failures)
         raise RuntimeError(f"Bluetooth scan failed ({detail})")
@@ -192,6 +290,21 @@ def _select_adapter(transport: DeviceTransport):
     if transport == DeviceTransport.BLE:
         return _get_ble_adapter()
     return _get_classic_adapter()
+
+
+def _unique_attempts(attempts: List[DeviceInfo]) -> List[DeviceInfo]:
+    unique: List[DeviceInfo] = []
+    seen = set()
+    for device in attempts:
+        key = (
+            device.transport,
+            (device.address or "").strip().lower(),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(device)
+    return unique
 
 
 def _safe_close(sock: Optional[SocketLike]) -> None:
@@ -242,3 +355,9 @@ def _resolve_rfcomm_channels(adapter, address: str) -> List[int]:
         if candidate != channel:
             channels.append(candidate)
     return channels
+
+
+def _transport_label(transport: DeviceTransport) -> str:
+    if transport == DeviceTransport.BLE:
+        return "BLE"
+    return "Classic"

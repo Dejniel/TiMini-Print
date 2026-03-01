@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import socket
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from .base import _ClassicBluetoothAdapter
 from .linux_cmd import LinuxCommandTools
 from ..types import DeviceInfo, SocketLike
-
-if TYPE_CHECKING:
-    from .... import reporting
+from .... import reporting
 
 
 class _LinuxClassicAdapter(_ClassicBluetoothAdapter):
@@ -22,7 +20,7 @@ class _LinuxClassicAdapter(_ClassicBluetoothAdapter):
     def create_socket(
         self,
         pairing_hint: Optional[bool] = None,
-        reporter: Optional["reporting.Reporter"] = None,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
     ) -> SocketLike:
         if not hasattr(socket, "AF_BLUETOOTH") or not hasattr(socket, "BTPROTO_RFCOMM"):
             raise RuntimeError(

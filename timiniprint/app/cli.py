@@ -58,11 +58,10 @@ def scan_devices(reporter: reporting.Reporter) -> int:
     async def run() -> None:
         registry = PrinterModelRegistry.load()
         resolver = DeviceResolver(registry)
-        devices, failures = await SppBackend.scan_with_failures(
+        devices, failures = await resolver.scan_printer_devices_with_failures(
             include_classic=True,
             include_ble=True,
         )
-        devices = resolver.filter_printer_devices(devices)
         for failure in failures:
             if failure.transport == DeviceTransport.BLE:
                 reporter.warning(reporting.WARNING_SCAN_BLE_FAILED, detail=str(failure.error))
@@ -70,12 +69,12 @@ def scan_devices(reporter: reporting.Reporter) -> int:
                 reporter.warning(reporting.WARNING_SCAN_CLASSIC_FAILED, detail=str(failure.error))
         for device in devices:
             name = device.name or ""
-            transport_label = f" [{device.transport.value}]"
+            transport_label = f" {device.transport_label}"
             status = " [unpaired]" if device.paired is False else ""
             if name:
-                print(f"{name} ({device.address}){transport_label}{status}")
+                print(f"{name} ({device.display_address}){transport_label}{status}")
             else:
-                print(f"{device.address}{transport_label}{status}")
+                print(f"{device.display_address}{transport_label}{status}")
 
     try:
         asyncio.run(run())
@@ -237,10 +236,24 @@ def print_bluetooth(
     resolver = DeviceResolver(registry)
 
     async def run() -> None:
-        device = await resolver.resolve_printer_device(args.bluetooth)
-        match = resolver.resolve_model_with_origin(device.name or "", args.model, device.address)
-        _warn_alias_usage(match, device, reporter)
+        resolved = await resolver.resolve_printer_device(args.bluetooth)
+        match = resolved.model_match
+        if args.model:
+            match = resolver.resolve_model_with_origin(resolved.name or "", args.model, resolved.address)
+        _warn_alias_usage(match, resolved, reporter)
         model = match.model
+        attempts = resolver.build_connection_attempts(resolved)
+        reporter.debug(
+            short="Bluetooth",
+            detail=(
+                "Resolved device for print: "
+                f"name={resolved.name or '<unknown>'} "
+                f"address={resolved.display_address} "
+                f"transport_label={resolved.transport_label} "
+                f"use_spp={model.use_spp} "
+                f"attempts={[f'{item.transport.value}:{item.address}' for item in attempts]}"
+            ),
+        )
         data = build_print_data(
             model,
             args.path,
@@ -256,7 +269,10 @@ def print_bluetooth(
             _resolve_pdf_page_gap(args),
         )
         backend = SppBackend(reporter=reporter)
-        await backend.connect(device, pairing_hint=device.paired is False)
+        await backend.connect_attempts(
+            attempts,
+            pairing_hint=resolved.paired is False,
+        )
         await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
         await backend.disconnect()
 
@@ -300,13 +316,30 @@ def paper_motion_bluetooth(
     resolver = DeviceResolver(registry)
 
     async def run() -> None:
-        device = await resolver.resolve_printer_device(args.bluetooth)
-        match = resolver.resolve_model_with_origin(device.name or "", args.model, device.address)
-        _warn_alias_usage(match, device, reporter)
+        resolved = await resolver.resolve_printer_device(args.bluetooth)
+        match = resolved.model_match
+        if args.model:
+            match = resolver.resolve_model_with_origin(resolved.name or "", args.model, resolved.address)
+        _warn_alias_usage(match, resolved, reporter)
         model = match.model
+        attempts = resolver.build_connection_attempts(resolved)
+        reporter.debug(
+            short="Bluetooth",
+            detail=(
+                f"Resolved device for {action}: "
+                f"name={resolved.name or '<unknown>'} "
+                f"address={resolved.display_address} "
+                f"transport_label={resolved.transport_label} "
+                f"use_spp={model.use_spp} "
+                f"attempts={[f'{item.transport.value}:{item.address}' for item in attempts]}"
+            ),
+        )
         data = build_paper_motion_data(model, action)
         backend = SppBackend(reporter=reporter)
-        await backend.connect(device, pairing_hint=device.paired is False)
+        await backend.connect_attempts(
+            attempts,
+            pairing_hint=resolved.paired is False,
+        )
         await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
         await backend.disconnect()
 

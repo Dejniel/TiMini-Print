@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import List, Optional
 
 from ..types import DeviceInfo, DeviceTransport, SocketLike
-
-if TYPE_CHECKING:
-    from .... import reporting
+from .... import reporting
 
 
 class _BaseBluetoothAdapter:
@@ -18,7 +16,7 @@ class _BaseBluetoothAdapter:
     def create_socket(
         self,
         pairing_hint: Optional[bool] = None,
-        reporter: Optional["reporting.Reporter"] = None,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
     ) -> SocketLike:
         raise NotImplementedError
 

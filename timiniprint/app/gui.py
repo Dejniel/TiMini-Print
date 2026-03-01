@@ -15,7 +15,7 @@ from .diagnostics import emit_startup_warnings
 from .. import reporting
 from ..devices import DeviceResolver, PrinterModelRegistry
 from ..rendering.converters.text import TextConverter
-from ..transport.bluetooth import DeviceInfo, SppBackend
+from ..transport.bluetooth import SppBackend
 from ..transport.bluetooth.types import DeviceTransport
 
 PAPER_MOTION_INTERVAL_MS = 1000
@@ -252,8 +252,6 @@ class TiMiniPrintGUI(tk.Tk):
                     self.device_var.set("")
             elif action == "connected":
                 device = payload
-                if device:
-                    device = self._mark_device_paired(device)
                 self._set_connected_state(True, device)
             elif action == "disconnected":
                 self._set_connected_state(False)
@@ -265,42 +263,11 @@ class TiMiniPrintGUI(tk.Tk):
 
     def _device_label(self, device) -> str:
         name = device.name or ""
-        transport = f" [{device.transport.value}]"
+        transport = f" {device.transport_label}"
         status = " [unpaired]" if device.paired is False else ""
         if name:
-            return f"{name} ({device.address}){transport}{status}"
-        return f"{device.address}{transport}{status}"
-
-    def _mark_device_paired(self, device: DeviceInfo) -> DeviceInfo:
-        updated_devices = []
-        updated = DeviceInfo(
-            name=device.name or "",
-            address=device.address,
-            paired=True,
-            transport=device.transport,
-        )
-        found = False
-        for item in self.devices:
-            if item.address == device.address:
-                name = item.name or updated.name
-                updated = DeviceInfo(
-                    name=name,
-                    address=item.address,
-                    paired=True,
-                    transport=item.transport,
-                )
-                updated_devices.append(updated)
-                found = True
-            else:
-                updated_devices.append(item)
-        if not found:
-            updated_devices.append(updated)
-        self.devices = updated_devices
-        self.device_map = {self._device_label(d): d for d in updated_devices}
-        values = list(self.device_map.keys())
-        self.device_combo["values"] = values
-        self.device_var.set(self._device_label(updated))
-        return updated
+            return f"{name} ({device.display_address}){transport}{status}"
+        return f"{device.display_address}{transport}{status}"
 
     def _queue_status(self, key: str, **ctx) -> None:
         self.reporter.status(key, **ctx)
@@ -316,19 +283,18 @@ class TiMiniPrintGUI(tk.Tk):
 
         def done(fut):
             try:
-                devices, failures = fut.result()
-                filtered = self.resolver.filter_printer_devices(devices)
-                self.queue.put(("devices", filtered))
+                resolved_devices, failures = fut.result()
+                self.queue.put(("devices", resolved_devices))
                 for failure in failures:
                     if failure.transport == DeviceTransport.BLE:
                         self._queue_warning(reporting.WARNING_SCAN_BLE_FAILED, detail=str(failure.error))
                     else:
                         self._queue_warning(reporting.WARNING_SCAN_CLASSIC_FAILED, detail=str(failure.error))
-                self._queue_status(reporting.STATUS_SCAN_DONE, count=len(filtered))
+                self._queue_status(reporting.STATUS_SCAN_DONE, count=len(resolved_devices))
             except Exception as exc:
                 self._queue_error(reporting.ERROR_SCAN_FAILED, detail=str(exc), exc=exc)
 
-        self.ble_loop.submit(self.backend.scan_with_failures(), callback=done)
+        self.ble_loop.submit(self.resolver.scan_printer_devices_with_failures(), callback=done)
 
     def connect(self) -> None:
         label = self.device_var.get()
@@ -336,6 +302,7 @@ class TiMiniPrintGUI(tk.Tk):
         if not device:
             self._queue_error(reporting.ERROR_NO_DEVICE)
             return
+        attempts = self.resolver.build_connection_attempts(device)
         self._queue_status(reporting.STATUS_CONNECT_START)
         self.queue.put(("connecting", True))
 
@@ -349,7 +316,10 @@ class TiMiniPrintGUI(tk.Tk):
                 self.queue.put(("connecting", False))
 
         self.ble_loop.submit(
-            self.backend.connect(device, pairing_hint=device.paired is False),
+            self.backend.connect_attempts(
+                attempts,
+                pairing_hint=device.paired is False,
+            ),
             callback=done,
         )
 
@@ -479,7 +449,10 @@ class TiMiniPrintGUI(tk.Tk):
 
         async def run() -> None:
             if not self.backend.is_connected():
-                await self.backend.connect(device, pairing_hint=device.paired is False)
+                await self.backend.connect_attempts(
+                    self.resolver.build_connection_attempts(device),
+                    pairing_hint=device.paired is False,
+                )
             self._queue_status(reporting.STATUS_PRINTING)
             data = builder.build_from_file(path)
             await self.backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
@@ -541,7 +514,10 @@ class TiMiniPrintGUI(tk.Tk):
 
         async def run() -> None:
             if not self.backend.is_connected():
-                await self.backend.connect(device, pairing_hint=device.paired is False)
+                await self.backend.connect_attempts(
+                    self.resolver.build_connection_attempts(device),
+                    pairing_hint=device.paired is False,
+                )
             if action == "feed":
                 self._queue_status(reporting.STATUS_PAPER_FEED)
             else:
@@ -562,13 +538,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._connecting = False
         self.connected_model = None
         if connected and device:
-            try:
-                match = self.resolver.resolve_model_with_origin(device.name or "", address=device.address)
-            except Exception as exc:
-                self._queue_error(reporting.ERROR_MODEL_NOT_DETECTED, detail=str(exc), exc=exc)
-                self.ble_loop.submit(self.backend.disconnect())
-                self._set_connected_state(False)
-                return
+            match = device.model_match
             self.connected_model = match.model
             self.model_var.set(match.model.model_no)
             if match.used_alias:
