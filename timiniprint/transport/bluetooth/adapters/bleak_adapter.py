@@ -5,8 +5,10 @@ import asyncio
 from typing import Any, Dict, List, Optional, Tuple
 
 from .base import _BleBluetoothAdapter
+from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSelection
 from ..constants import IS_MACOS
 from ..types import DeviceInfo, DeviceTransport, SocketLike
+from .... import reporting
 
 
 def _missing_bleak_error() -> RuntimeError:
@@ -18,7 +20,11 @@ def _missing_bleak_error() -> RuntimeError:
 class _BleakSocket:
     """Socket-like wrapper around a bleak BLE client for GATT write operations."""
 
-    def __init__(self, pairing_hint: Optional[bool] = None) -> None:
+    def __init__(
+        self,
+        pairing_hint: Optional[bool] = None,
+        reporter: Optional[reporting.Reporter] = None,
+    ) -> None:
         self._client: Any = None
         self._write_char: Any = None
         self._address: Optional[str] = None
@@ -29,6 +35,12 @@ class _BleakSocket:
         # BLE thermal printers need longer delays than classic Bluetooth
         self._write_delay_ms = 50  # ms between BLE GATT writes
         self._pairing_hint = pairing_hint is True and not IS_MACOS
+        self._write_selection_strategy = "unknown"
+        self._write_response_preference: Optional[bool] = None
+        self._write_service_uuid = ""
+        self._write_char_uuid = ""
+        self._reporter = reporter
+        self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
 
     def settimeout(self, timeout: float) -> None:
         """Set socket timeout (stored for use in async operations)."""
@@ -36,7 +48,7 @@ class _BleakSocket:
 
     def connect(self, address_channel: Tuple[str, int]) -> None:
         """Connect to a BLE device.
-        
+
         Args:
             address_channel: Tuple of (address, channel). Channel is ignored for BLE.
                            Address can be MAC address or macOS UUID.
@@ -62,10 +74,10 @@ class _BleakSocket:
         # On macOS, we might have a UUID instead of MAC address
         # Try to find the device first
         device = None
-        
+
         # Check if address looks like a UUID (macOS style) or MAC address
         is_uuid = len(address) == 36 and address.count("-") == 4
-        
+
         if is_uuid:
             # Direct connection with UUID
             self._client = BleakClient(address)
@@ -73,18 +85,13 @@ class _BleakSocket:
             # Try to find device by MAC address through scanning
             devices = await BleakScanner.discover(timeout=5.0)
             for dev in devices:
-                # On macOS, dev.address is a UUID, but we can check metadata
-                if hasattr(dev, "details") and dev.details:
-                    # Try to match by name or address in metadata
-                    pass
-                # Also check if the name matches (some devices include MAC in name)
                 if dev.address.upper() == address.upper():
                     device = dev
                     break
                 if dev.name and address.upper() in dev.name.upper():
                     device = dev
                     break
-            
+
             if device:
                 self._client = BleakClient(device)
             else:
@@ -107,9 +114,9 @@ class _BleakSocket:
         if self._pairing_hint:
             await self._pair_if_supported()
 
-        # Discover services and find write characteristic
-        self._write_char = await self._find_write_characteristic()
-        if not self._write_char:
+        # Resolve writable endpoint once and keep its strategy for all writes.
+        selection = await self._find_write_characteristic()
+        if not selection:
             await self._client.disconnect()
             self._connected = False
             raise RuntimeError(
@@ -117,26 +124,25 @@ class _BleakSocket:
                 "The device may not support BLE printing, or uses unknown UUIDs."
             )
 
-    async def _find_write_characteristic(self) -> Optional[Any]:
+        self._write_char = selection.char
+        self._write_selection_strategy = selection.strategy
+        self._write_response_preference = selection.response_preference
+        self._write_service_uuid = selection.service_uuid
+        self._write_char_uuid = selection.char_uuid
+
+        self._report_debug(
+            "selected write characteristic "
+            f"service={self._write_service_uuid} char={self._write_char_uuid} "
+            f"strategy={self._write_selection_strategy} "
+            f"response_preference={self._write_response_preference}"
+        )
+
+    async def _find_write_characteristic(self) -> Optional[_WriteSelection]:
         """Find a suitable write characteristic on the connected device."""
         if not self._client or not self._connected:
             return None
 
-        services = self._client.services
-
-        # Find first writable characteristic; prefer write-with-response for reliability.
-        for service in services:
-            for char in service.characteristics:
-                props = char.properties
-                if "write" in props:
-                    return char
-        for service in services:
-            for char in service.characteristics:
-                props = char.properties
-                if "write-without-response" in props:
-                    return char
-
-        return None
+        return self._write_resolver.resolve(self._client.services)
 
     def send(self, data: bytes) -> int:
         """Send data to the BLE device."""
@@ -149,7 +155,8 @@ class _BleakSocket:
             self._loop.run_until_complete(self._send_async(data))
             return len(data)
         except Exception as exc:
-            raise RuntimeError(f"BLE write failed: {exc}") from exc
+            detail = f"service={self._write_service_uuid} char={self._write_char_uuid}"
+            raise RuntimeError(f"BLE write failed ({detail}): {exc}") from exc
 
     def sendall(self, data: bytes) -> None:
         """Send all data to the BLE device."""
@@ -160,24 +167,26 @@ class _BleakSocket:
         if not self._write_char:
             raise RuntimeError("No write characteristic available")
 
-        # For thermal printers, prefer write-with-response for reliability
-        # Only use write-without-response if it's the only option
-        props = self._write_char.properties
-        if "write" in props:
-            response = True  # Use write-with-response for reliability
-        elif "write-without-response" in props:
-            response = False
-        else:
-            raise RuntimeError("Characteristic does not support writing")
-        
+        # Keep response mode aligned with resolver strategy (preferred vs fallback).
+        response = self._write_resolver.resolve_response_mode(
+            self._write_char.properties,
+            self._write_selection_strategy,
+            self._write_response_preference,
+        )
+
+        self._report_debug(
+            f"write mode response={response} strategy={self._write_selection_strategy} "
+            f"char={self._write_char_uuid}"
+        )
+
         # BLE has MTU limitations - use negotiated MTU or fallback
         # Most thermal printers work well with 20-byte chunks for maximum compatibility
         chunk_size = min(self._mtu_size, 20)  # Conservative chunk size for reliability
-        
+
         delay_seconds = self._write_delay_ms / 1000.0
-        
+
         for i in range(0, len(data), chunk_size):
-            chunk = data[i:i + chunk_size]
+            chunk = data[i : i + chunk_size]
             await self._client.write_gatt_char(self._write_char, chunk, response=response)
             # Thermal printers need time to process each chunk
             # This delay is critical for reliable printing
@@ -212,6 +221,11 @@ class _BleakSocket:
             except Exception:
                 pass
             self._loop = None
+
+    def _report_debug(self, message: str) -> None:
+        if not self._reporter:
+            return
+        self._reporter.debug(short="BLE", detail=message)
 
 
 class _BleakBleAdapter(_BleBluetoothAdapter):
@@ -258,9 +272,13 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
 
         return devices
 
-    def create_socket(self, pairing_hint: Optional[bool] = None) -> SocketLike:
+    def create_socket(
+        self,
+        pairing_hint: Optional[bool] = None,
+        reporter: Optional[reporting.Reporter] = None,
+    ) -> SocketLike:
         """Create a BLE socket-like object for communication."""
-        return _BleakSocket(pairing_hint=pairing_hint)
+        return _BleakSocket(pairing_hint=pairing_hint, reporter=reporter)
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:
         # BLE pairing is handled during connect if requested and supported.

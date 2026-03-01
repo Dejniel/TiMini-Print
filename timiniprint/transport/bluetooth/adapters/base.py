@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from ..types import DeviceInfo, DeviceTransport, SocketLike
+
+if TYPE_CHECKING:
+    from .... import reporting
 
 
 class _BaseBluetoothAdapter:
@@ -12,7 +15,11 @@ class _BaseBluetoothAdapter:
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
         raise NotImplementedError
 
-    def create_socket(self, pairing_hint: Optional[bool] = None) -> SocketLike:
+    def create_socket(
+        self,
+        pairing_hint: Optional[bool] = None,
+        reporter: Optional["reporting.Reporter"] = None,
+    ) -> SocketLike:
         raise NotImplementedError
 
     def resolve_rfcomm_channel(self, address: str) -> Optional[int]:
