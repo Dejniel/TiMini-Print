@@ -11,8 +11,6 @@ from .... import reporting
 
 
 class _WindowsClassicAdapter(_ClassicBluetoothAdapter):
-    single_channel = True
-
     def __init__(self) -> None:
         self._win32 = _Win32ClassicBackend()
         self._winrt = _WinRtClassicBackend()

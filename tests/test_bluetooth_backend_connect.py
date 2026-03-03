@@ -25,8 +25,6 @@ class _Socket:
 
 
 class _Adapter:
-    single_channel = False
-
     def __init__(self, channels, fail=False, pair_error=None):
         self._channels = channels
         self._fail = fail
@@ -49,7 +47,7 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         adapter = _Adapter([7, "x", 3, 7])
         self.assertEqual(_resolve_rfcomm_channels(adapter, "AA"), [7, 3])
         empty = _Adapter([])
-        self.assertEqual(_resolve_rfcomm_channels(empty, "AA"), [1, 2, 3, 4, 5])
+        self.assertEqual(_resolve_rfcomm_channels(empty, "AA"), [1])
 
     def test_connect_attempts_success_first(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)

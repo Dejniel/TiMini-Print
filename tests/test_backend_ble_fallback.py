@@ -42,8 +42,6 @@ class _SuccessSocket:
 
 
 class _ClassicAdapter:
-    single_channel = False
-
     def __init__(self, fail: bool) -> None:
         self._fail = fail
 
@@ -60,8 +58,6 @@ class _ClassicAdapter:
 
 
 class _BleAdapter:
-    single_channel = True
-
     def __init__(self, fail: bool) -> None:
         self._fail = fail
         self.socket = _SuccessSocket()
@@ -87,8 +83,6 @@ class _ScanAdapter:
 
 
 class _ExplicitChannelsAdapter:
-    single_channel = False
-
     def resolve_rfcomm_channels(self, _address: str):
         return [7, 3, 7]
 

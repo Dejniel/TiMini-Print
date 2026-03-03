@@ -8,7 +8,6 @@ from .... import reporting
 
 class _BaseBluetoothAdapter:
     transport: DeviceTransport
-    single_channel = False
 
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
         raise NotImplementedError
@@ -33,7 +32,6 @@ class _ClassicBluetoothAdapter(_BaseBluetoothAdapter):
 
 class _BleBluetoothAdapter(_BaseBluetoothAdapter):
     transport = DeviceTransport.BLE
-    single_channel = True
 
     def resolve_rfcomm_channels(self, address: str) -> List[int]:
         return [1]

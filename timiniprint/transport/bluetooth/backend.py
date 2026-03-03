@@ -360,9 +360,7 @@ def _resolve_rfcomm_channels(adapter, address: str) -> List[int]:
     if explicit_channels:
         return explicit_channels
 
-    if getattr(adapter, "single_channel", False):
-        return [RFCOMM_CHANNELS[0]]
-    return list(RFCOMM_CHANNELS)
+    return [RFCOMM_CHANNELS[0]]
 
 
 def _transport_label(transport: DeviceTransport) -> str:
