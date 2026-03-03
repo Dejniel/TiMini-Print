@@ -1,6 +1,6 @@
 # TiMini Print Bluetooth Printer Tool
 
-Alternative desktop software for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, or “iBleem”.
+Alternative desktop software for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Phomemo”, or “iBleem”.
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode.
 
@@ -72,9 +72,15 @@ JX006 JX06, JXM800 GG-D2100, LP100 LY10, LT01, LY01, LY02, LY03,
 LY05, LY10, LY11, M01, M2, MX05, MX06, MX08, MX09, MX10, MX11, P1, P10, P5AI, P7, PR02, PR07, PR30, PR35, PR88, PR89, PR893, RT034h,
 S01, S101, S102, XiaoWa, SC03, SC03h, SC04, SC04h, SC05, wts07, X1, X100, X101H, X102, X2H, X2h, X5,
 X5H, X5HP, X5h, X6, X6H, X6HP, X6h, X7, X7H, X7HP, X7h, X8, X8-L, X8-W, X9, XW001 PR20, XW002 PR30,
-XW003 PR25, XW004 PR35, XW005 PR88, XW006 PR89, XW007 PR893, XW008 PR02, XW009 PR07
+XW003 PR25, XW004 PR35, XW005 PR88, XW006 PR89, XW007 PR893, XW008 PR02, XW009 PR07,
+M08F, TP81, M832, Q302, T02
 
-Alias-based Bluetooth name prefixes (mapped to GT01-/GT02- defaults): YT02, MX01, MX02, MX03,
-MX07, MINIPRINTER, JL-BR22, URBANWORXKIDSCAMERA, CYLOBTPRINTER, MXTP-100, AZ-P2108X, MX12, PD01, XOPOPPY, MX13,
-BQ01, BQ02, EWTTOET-Z0499, BQ05, BQ06, BQ07, BQ7A, BQ7B, BQ08, BQ95, BQ96, MXW009, MXW010, EWTTOET-N3689,
-EWTTOET-N3687, MXPC-100, KP-IM606, BQ95B, BQ03, BQ95C, BQ06B, K06
+Alias-based Bluetooth name prefixes:
+- mapped to GT01-/GT02- defaults: YT02, MX01, MX02, MX03, MX07, MINIPRINTER, JL-BR22, URBANWORXKIDSCAMERA,
+  CYLOBTPRINTER, MXTP-100, AZ-P2108X, MX12, PD01, XOPOPPY, MX13, BQ01, BQ02, EWTTOET-Z0499, BQ05, BQ06,
+  BQ07, BQ7A, BQ7B, BQ08, BQ95, BQ96, MXW009, MXW010, EWTTOET-N3689, EWTTOET-N3687, MXPC-100, KP-IM606,
+  BQ95B, BQ03, BQ95C, BQ06B, K06
+- mapped to TP81- defaults: TP84, TP85, TP86, TP87, TP88
+- mapped to M832- defaults: M836
+- mapped to Q302- defaults: Q580
+- mapped to T02- defaults: T02E, Q02E, C02E

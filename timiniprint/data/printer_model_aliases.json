@@ -53,6 +53,44 @@
     "map_model_head_name": "GT01-"
   },
   {
+    "head_name": {
+      "prefixes": [
+        "TP84",
+        "TP85",
+        "TP86",
+        "TP87",
+        "TP88"
+      ]
+    },
+    "map_model_head_name": "TP81-"
+  },
+  {
+    "head_name": {
+      "prefixes": [
+        "M836"
+      ]
+    },
+    "map_model_head_name": "M832-"
+  },
+  {
+    "head_name": {
+      "prefixes": [
+        "Q580"
+      ]
+    },
+    "map_model_head_name": "Q302-"
+  },
+  {
+    "head_name": {
+      "prefixes": [
+        "T02E",
+        "Q02E",
+        "C02E"
+      ]
+    },
+    "map_model_head_name": "T02-"
+  },
+  {
     "mac": {
       "suffixes": [
         "59"

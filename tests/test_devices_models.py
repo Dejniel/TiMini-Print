@@ -80,6 +80,33 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(out)
         self.assertEqual(out.kind, PrinterModelAliasKind.MAC)
 
+    def test_phomemo_derived_aliases_map_to_new_base_models(self) -> None:
+        reg = PrinterModelRegistry.load()
+
+        tp84 = reg.detect_with_origin("TP84-ABCD")
+        self.assertIsNotNone(tp84)
+        self.assertEqual(tp84.model.model_no, "TP81")
+        self.assertEqual(tp84.source, PrinterModelMatchSource.ALIAS)
+
+        m836 = reg.detect_with_origin("M836-ABCD")
+        self.assertIsNotNone(m836)
+        self.assertEqual(m836.model.model_no, "M832")
+        self.assertEqual(m836.source, PrinterModelMatchSource.ALIAS)
+
+        q580 = reg.detect_with_origin("Q580-ABCD")
+        self.assertIsNotNone(q580)
+        self.assertEqual(q580.model.model_no, "Q302")
+        self.assertEqual(q580.source, PrinterModelMatchSource.ALIAS)
+
+        for derived in ("T02E-ABCD", "Q02E-ABCD", "C02E-ABCD"):
+            mapped = reg.detect_with_origin(derived)
+            self.assertIsNotNone(mapped)
+            self.assertEqual(mapped.model.model_no, "T02")
+            self.assertIn(
+                mapped.source,
+                (PrinterModelMatchSource.ALIAS, PrinterModelMatchSource.MODEL_NO),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
