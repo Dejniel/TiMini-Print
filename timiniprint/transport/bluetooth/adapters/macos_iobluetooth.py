@@ -314,12 +314,19 @@ class _MacClassicSocket:
     def connect(self, target) -> None:
         address, channel_id = target
         timeout = self._timeout if self._timeout is not None else 5.0
+        # Ensure stale channel/device handles never leak across reconnects.
+        self.close()
         device = self._backend.get_device(address, allow_discovery=True, timeout=timeout)
         if device is None:
             raise RuntimeError(f"Bluetooth device not found: {address}")
-
-        self._channel = _open_rfcomm_channel(device, int(channel_id))
         self._device = device
+        try:
+            self._channel = _open_rfcomm_channel(device, int(channel_id))
+        except Exception:
+            _close_device_connection(device)
+            self._device = None
+            self._channel = None
+            raise
 
     def sendall(self, data: bytes) -> None:
         if self._channel is None:

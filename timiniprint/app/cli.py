@@ -269,12 +269,17 @@ def print_bluetooth(
             _resolve_pdf_page_gap(args),
         )
         backend = SppBackend(reporter=reporter)
-        await backend.connect_attempts(
-            attempts,
-            pairing_hint=resolved.paired is False,
-        )
-        await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
-        await backend.disconnect()
+        try:
+            await backend.connect_attempts(
+                attempts,
+                pairing_hint=resolved.paired is False,
+            )
+            await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
+        finally:
+            try:
+                await backend.disconnect()
+            except Exception as exc:
+                reporter.debug(short="Bluetooth", detail=f"Disconnect cleanup failed: {exc}")
 
     asyncio.run(run())
     return 0
@@ -336,12 +341,17 @@ def paper_motion_bluetooth(
         )
         data = build_paper_motion_data(model, action)
         backend = SppBackend(reporter=reporter)
-        await backend.connect_attempts(
-            attempts,
-            pairing_hint=resolved.paired is False,
-        )
-        await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
-        await backend.disconnect()
+        try:
+            await backend.connect_attempts(
+                attempts,
+                pairing_hint=resolved.paired is False,
+            )
+            await backend.write(data, model.img_mtu or 180, model.interval_ms or 4)
+        finally:
+            try:
+                await backend.disconnect()
+            except Exception as exc:
+                reporter.debug(short="Bluetooth", detail=f"Disconnect cleanup failed: {exc}")
 
     asyncio.run(run())
     return 0

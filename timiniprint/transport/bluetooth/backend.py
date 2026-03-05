@@ -6,9 +6,12 @@ import time
 from typing import List, Optional, Tuple
 
 from .adapters import _get_ble_adapter, _get_classic_adapter
-from .constants import RFCOMM_CHANNELS, IS_WINDOWS
+from .constants import IS_MACOS, IS_WINDOWS, RFCOMM_CHANNELS
 from .types import DeviceInfo, DeviceTransport, ScanFailure, SocketLike
 from ... import reporting
+
+_MACOS_FALLBACK_COOLDOWN_SEC = 0.35
+_MACOS_BLE_REFRESH_TIMEOUT_SEC = 3.0
 
 
 class SppBackend:
@@ -91,6 +94,23 @@ class SppBackend:
         errors: List[Tuple[DeviceInfo, Exception]] = []
 
         for index, candidate in enumerate(unique_attempts):
+            if (
+                IS_MACOS
+                and index > 0
+                and candidate.transport == DeviceTransport.BLE
+                and unique_attempts[index - 1].transport == DeviceTransport.CLASSIC
+            ):
+                refreshed = _refresh_ble_attempt_macos_workaround(candidate, self._reporter)
+                if refreshed.address != candidate.address:
+                    self._reporter.debug(
+                        short="Bluetooth",
+                        detail=(
+                            "Refreshed BLE endpoint before fallback: "
+                            f"{candidate.address} -> {refreshed.address}"
+                        ),
+                    )
+                candidate = refreshed
+
             self._reporter.debug(
                 short="Bluetooth",
                 detail=(
@@ -119,6 +139,15 @@ class SppBackend:
                 )
                 if index < len(unique_attempts) - 1:
                     next_transport = unique_attempts[index + 1].transport
+                    if IS_MACOS and candidate.transport == DeviceTransport.CLASSIC and next_transport == DeviceTransport.BLE:
+                        self._reporter.debug(
+                            short="Bluetooth",
+                            detail=(
+                                "Applying macOS Classic->BLE cooldown "
+                                f"({_MACOS_FALLBACK_COOLDOWN_SEC:.2f}s)"
+                            ),
+                        )
+                        time.sleep(_MACOS_FALLBACK_COOLDOWN_SEC)
                     self._reporter.warning(
                         detail=(
                             f"{_transport_label(candidate.transport)} Bluetooth connection failed, "
@@ -367,3 +396,39 @@ def _transport_label(transport: DeviceTransport) -> str:
     if transport == DeviceTransport.BLE:
         return "BLE"
     return "Classic"
+
+
+def _refresh_ble_attempt_macos_workaround(
+    candidate: DeviceInfo,
+    reporter: reporting.Reporter,
+) -> DeviceInfo:
+    adapter = _get_ble_adapter()
+    if adapter is None:
+        return candidate
+    try:
+        scanned = adapter.scan_blocking(_MACOS_BLE_REFRESH_TIMEOUT_SEC)
+    except Exception as exc:
+        reporter.debug(short="Bluetooth", detail=f"BLE refresh scan failed: {exc}")
+        return candidate
+    ble_devices = [item for item in scanned if item.transport == DeviceTransport.BLE]
+    if not ble_devices:
+        return candidate
+
+    target_address = (candidate.address or "").strip().lower()
+    for item in ble_devices:
+        if (item.address or "").strip().lower() == target_address:
+            return item
+
+    target_name = (candidate.name or "").strip().lower()
+    if not target_name:
+        return candidate
+
+    name_matches = [
+        item
+        for item in ble_devices
+        if (item.name or "").strip().lower() == target_name
+    ]
+    if name_matches:
+        name_matches.sort(key=lambda item: (item.name or "", item.address))
+        return name_matches[0]
+    return candidate
