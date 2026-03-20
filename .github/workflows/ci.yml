@@ -9,18 +9,27 @@ on:
 
 jobs:
   test:
-    name: Test ${{ matrix.platform_name }}
-    runs-on: ${{ matrix.os }}
+    name: Test ${{ matrix.platform_name }} ${{ matrix.arch_name }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - runner: ubuntu-22.04
             platform_name: Linux
-          - os: windows-latest
+            arch_name: x86_64
+          - runner: ubuntu-22.04-arm
+            platform_name: Linux
+            arch_name: arm64
+          - runner: windows-latest
             platform_name: Windows
-          - os: macos-latest
+            arch_name: x86_64
+          - runner: macos-15
             platform_name: macOS
+            arch_name: arm64
+          - runner: macos-15-intel
+            platform_name: macOS
+            arch_name: x86_64
 
     steps:
       - name: Checkout

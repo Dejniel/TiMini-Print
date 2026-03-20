@@ -21,18 +21,27 @@ jobs:
           generate_release_notes: true
 
   test:
-    name: Test ${{ matrix.platform_name }}
-    runs-on: ${{ matrix.os }}
+    name: Test ${{ matrix.platform_name }} ${{ matrix.arch_name }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - runner: ubuntu-22.04
             platform_name: Linux
-          - os: windows-latest
+            arch_name: x86_64
+          - runner: ubuntu-22.04-arm
+            platform_name: Linux
+            arch_name: arm64
+          - runner: windows-latest
             platform_name: Windows
-          - os: macos-latest
+            arch_name: x86_64
+          - runner: macos-15
             platform_name: macOS
+            arch_name: arm64
+          - runner: macos-15-intel
+            platform_name: macOS
+            arch_name: x86_64
 
     steps:
       - name: Checkout
@@ -54,7 +63,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_*.py'
 
   build_cli:
-    name: Build CLI ${{ matrix.platform_name }}
+    name: Build CLI ${{ matrix.platform_name }} ${{ matrix.arch_name }}
     needs:
       - create_release
       - test
@@ -62,17 +71,26 @@ jobs:
       always() &&
       needs.test.result == 'success' &&
       (needs.create_release.result == 'success' || needs.create_release.result == 'skipped')
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - runner: ubuntu-22.04
             platform_name: Linux
-          - os: windows-latest
+            arch_name: x86_64
+          - runner: ubuntu-22.04-arm
+            platform_name: Linux
+            arch_name: arm64
+          - runner: windows-latest
             platform_name: Windows
-          - os: macos-latest
+            arch_name: x86_64
+          - runner: macos-15
             platform_name: macOS
+            arch_name: arm64
+          - runner: macos-15-intel
+            platform_name: macOS
+            arch_name: x86_64
 
     steps:
       - name: Checkout
@@ -96,7 +114,7 @@ jobs:
           arch="$RUNNER_ARCH"
           case "$arch" in
             X64) arch="x86_64" ;;
-            ARM64) arch="aarch64" ;;
+            ARM64) arch="arm64" ;;
             *) arch="$(echo "$arch" | tr '[:upper:]' '[:lower:]')" ;;
           esac
           artifact_name="TiMini-Print-Command-Line-${{ matrix.platform_name }}-$arch"
@@ -152,7 +170,7 @@ jobs:
           files: ${{ steps.built.outputs.path }}
 
   build_gui:
-    name: Build GUI ${{ matrix.platform_name }}
+    name: Build GUI ${{ matrix.platform_name }} ${{ matrix.arch_name }}
     needs:
       - create_release
       - test
@@ -160,17 +178,26 @@ jobs:
       always() &&
       needs.test.result == 'success' &&
       (needs.create_release.result == 'success' || needs.create_release.result == 'skipped')
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-22.04
+          - runner: ubuntu-22.04
             platform_name: Linux
-          - os: windows-latest
+            arch_name: x86_64
+          - runner: ubuntu-22.04-arm
+            platform_name: Linux
+            arch_name: arm64
+          - runner: windows-latest
             platform_name: Windows
-          - os: macos-latest
+            arch_name: x86_64
+          - runner: macos-15
             platform_name: macOS
+            arch_name: arm64
+          - runner: macos-15-intel
+            platform_name: macOS
+            arch_name: x86_64
 
     steps:
       - name: Checkout
@@ -205,7 +232,7 @@ jobs:
           arch="$RUNNER_ARCH"
           case "$arch" in
             X64) arch="x86_64" ;;
-            ARM64) arch="aarch64" ;;
+            ARM64) arch="arm64" ;;
             *) arch="$(echo "$arch" | tr '[:upper:]' '[:lower:]')" ;;
           esac
           artifact_name="TiMini-Print-GUI-${{ matrix.platform_name }}-$arch"
