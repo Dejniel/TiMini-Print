@@ -517,6 +517,8 @@ class TiMiniPrintGUI(tk.Tk):
         if self._paper_motion_job is not None:
             self.after_cancel(self._paper_motion_job)
             self._paper_motion_job = None
+        if not self._paper_motion_busy:
+            self._restore_status_after_paper_motion()
 
     def _send_paper_motion(self, action: str) -> None:
         if self._paper_motion_busy:
@@ -558,11 +560,19 @@ class TiMiniPrintGUI(tk.Tk):
             self._paper_motion_busy = False
             try:
                 fut.result()
+                if not self._paper_motion_action:
+                    self._restore_status_after_paper_motion()
             except Exception as exc:
                 self._queue_error(reporting.ERROR_PAPER_MOTION_FAILED, detail=str(exc), exc=exc)
                 self._stop_paper_motion()
 
         self.ble_loop.submit(run(), callback=done)
+
+    def _restore_status_after_paper_motion(self) -> None:
+        if self.connected_model:
+            self._queue_status(reporting.STATUS_CONNECT_DONE)
+            return
+        self._queue_status(reporting.STATUS_IDLE)
 
     def _set_connected_state(self, connected: bool, device=None) -> None:
         self._connecting = False
