@@ -40,9 +40,28 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install python-lzo system dependencies on Linux
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y liblzo2-dev
+
+      - name: Install python-lzo system dependencies on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: brew install lzo
+
       - name: Install dependencies
         shell: bash
         run: |
+          if [ "${{ runner.os }}" = "macOS" ]; then
+            lzo_prefix="$(brew --prefix lzo)"
+            export CFLAGS="-I${lzo_prefix}/include ${CFLAGS:-}"
+            export CPPFLAGS="-I${lzo_prefix}/include ${CPPFLAGS:-}"
+            export LDFLAGS="-L${lzo_prefix}/lib ${LDFLAGS:-}"
+            export PKG_CONFIG_PATH="${lzo_prefix}/lib/pkgconfig${PKG_CONFIG_PATH:+:${PKG_CONFIG_PATH}}"
+          fi
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
