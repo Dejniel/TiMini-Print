@@ -36,6 +36,7 @@ class _BleakSocket:
         pairing_hint: Optional[bool] = None,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        device_cache: Optional[Dict[str, Any]] = None,
     ) -> None:
         self._client: Any = None
         self._address: Optional[str] = None
@@ -48,6 +49,7 @@ class _BleakSocket:
         self._pairing_hint = pairing_hint is True and not IS_MACOS
         self._protocol_family = protocol_family
         self._reporter = reporter
+        self._device_cache = device_cache if device_cache is not None else {}
         self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
         self._transport = _BleakTransportSession(
             protocol_family=self._protocol_family_or_default(),
@@ -144,6 +146,9 @@ class _BleakSocket:
 
     async def _resolve_client_target(self, address: str) -> Any:
         """Return the address or discovered device object passed to BleakClient."""
+        cached = self._device_cache.get(address.upper())
+        if cached is not None:
+            return cached
         if len(address) == 36 and address.count("-") == 4:
             return address
 
@@ -269,7 +274,7 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
     """Bluetooth Low Energy adapter using bleak for GATT writes."""
 
     def __init__(self) -> None:
-        self._device_cache: Dict[str, DeviceInfo] = {}
+        self._device_cache: Dict[str, Any] = {}
 
     def scan_blocking(self, timeout: float) -> List[DeviceInfo]:
         try:
@@ -282,6 +287,7 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
             results = []
             for device in devices:
                 name = device.name or ""
+                self._device_cache[device.address.upper()] = device
                 results.append(
                     DeviceInfo(
                         name=name,
@@ -302,9 +308,6 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
         except Exception as exc:
             raise RuntimeError(f"BLE scan failed: {exc}") from exc
 
-        for device in devices:
-            self._device_cache[device.address] = device
-
         return devices
 
     def create_socket(
@@ -317,6 +320,7 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
             pairing_hint=pairing_hint,
             protocol_family=protocol_family,
             reporter=reporter,
+            device_cache=self._device_cache,
         )
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:

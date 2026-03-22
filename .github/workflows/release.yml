@@ -177,6 +177,7 @@ jobs:
             --specpath build/spec \
             --collect-data timiniprint \
             --collect-all bleak \
+            --collect-all dbus_fast \
             --collect-all pypdfium2 \
             --collect-all pypdfium2_raw \
             --name "${{ steps.meta.outputs.artifact_name }}" \
@@ -308,6 +309,7 @@ jobs:
             --specpath build/spec \
             --collect-data timiniprint \
             --collect-all bleak \
+            --collect-all dbus_fast \
             --collect-all pypdfium2 \
             --collect-all pypdfium2_raw \
             --name "${{ steps.meta.outputs.artifact_name }}" \
