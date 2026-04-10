@@ -146,11 +146,13 @@ class _BleakSocket:
 
     async def _resolve_client_target(self, address: str) -> Any:
         """Return the address or discovered device object passed to BleakClient."""
+        # On macOS, BLE addresses are UUIDs — pass them directly to avoid using
+        # a cached BleakDevice object that may be bound to a closed event loop.
+        if len(address) == 36 and address.count("-") == 4:
+            return address
         cached = self._device_cache.get(address.upper())
         if cached is not None:
             return cached
-        if len(address) == 36 and address.count("-") == 4:
-            return address
 
         try:
             from bleak import BleakScanner
