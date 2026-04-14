@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import unittest
+from unittest.mock import patch
 
 from timiniprint.transport.bluetooth.adapters.bleak_adapter import _BleakSocket
 from timiniprint.protocol.family import ProtocolFamily
@@ -186,6 +187,14 @@ class BleakSocketTests(unittest.TestCase):
         s = _BleakSocket(device_cache={"AA:BB:CC:DD:EE:FF": cached})
         target = asyncio.run(s._resolve_client_target("aa:bb:cc:dd:ee:ff"))
         self.assertIs(target, cached)
+
+    def test_resolve_client_target_bypasses_cache_for_uuid_addresses(self) -> None:
+        cached = object()
+        address = "2123321321-2CE0-8122-7AC5-29988EF86A08"
+        s = _BleakSocket(device_cache={address.upper(): cached})
+        with patch("timiniprint.transport.bluetooth.adapters.bleak_adapter.IS_MACOS", True):
+            target = asyncio.run(s._resolve_client_target(address.lower()))
+        self.assertEqual(target, address.lower())
 
     def test_close_cleanup_disconnect(self) -> None:
         s = _BleakSocket()
