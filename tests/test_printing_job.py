@@ -66,6 +66,31 @@ class PrintingJobTests(unittest.TestCase):
                 out = builder.build_from_file(str(path))
         self.assertEqual(out, b"AB")
 
+    def test_build_from_file_can_rotate_pages_clockwise_for_any_file_type(self) -> None:
+        img = Image.new("1", (8, 16), 1)
+        loader = _FakeLoader([Page(img, dither=False, is_text=False)])
+        builder = self.job_mod.PrintJobBuilder(
+            self.profile,
+            settings=self.job_mod.PrintSettings(rotate_90_clockwise=True),
+            page_loader=loader,
+        )
+        raster_set = RasterSet(
+            rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 8, width=8, pixel_format=PixelFormat.BW1)}
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "a.png"
+            path.write_bytes(b"x")
+            with patch("timiniprint.printing.job.image_to_raster_set", return_value=raster_set) as render_mock, patch(
+                "timiniprint.printing.job.build_job_from_raster_set",
+                return_value=b"A",
+            ):
+                out = builder.build_from_file(str(path))
+
+        self.assertEqual(out, b"A")
+        rotated = render_mock.call_args.args[0]
+        self.assertEqual(rotated.size, (16, 8))
+
     def test_mode_energy_speed_selection(self) -> None:
         settings = self.job_mod.PrintSettings(text_mode=None, lsb_first=None)
         builder = self.job_mod.PrintJobBuilder(self.profile, settings=settings, page_loader=_FakeLoader([]))

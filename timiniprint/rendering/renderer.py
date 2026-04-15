@@ -7,7 +7,21 @@ from PIL import ImageFilter
 from PIL import ImageOps
 from PIL import ImageStat
 
+from .converters.base import Page
 from ..protocol.types import PixelFormat, RasterBuffer, RasterSet
+
+
+def apply_page_transforms(pages: Sequence[Page], rotate_90_clockwise: bool = False) -> List[Page]:
+    if not rotate_90_clockwise:
+        return list(pages)
+    return [
+        Page(
+            image=page.image.transpose(Image.Transpose.ROTATE_270),
+            dither=page.dither,
+            is_text=page.is_text,
+        )
+        for page in pages
+    ]
 
 
 def image_to_bw_pixels(img: Image.Image, dither: bool) -> List[int]:

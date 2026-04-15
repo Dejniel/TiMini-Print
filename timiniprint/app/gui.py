@@ -78,6 +78,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.profile_var = tk.StringVar(value="")
         self.file_var = tk.StringVar()
         self.text_mode_var = tk.BooleanVar(value=False)
+        self.rotate_90_var = tk.BooleanVar(value=False)
         self.darkness_var = tk.IntVar(value=3)
         self.text_font_var = tk.StringVar()
         self.text_columns_var = tk.IntVar(value=35)
@@ -150,6 +151,12 @@ class TiMiniPrintGUI(tk.Tk):
             variable=self.text_mode_var,
         )
         self.text_mode_check.pack(side="left", padx=(0, 12))
+        self.rotate_90_check = ttk.Checkbutton(
+            checks_frame,
+            text="Rotate 90 deg clockwise",
+            variable=self.rotate_90_var,
+        )
+        self.rotate_90_check.pack(side="left", padx=(0, 12))
         self.trim_margins_check = ttk.Checkbutton(
             checks_frame,
             text="Trim side margins",
@@ -448,6 +455,7 @@ class TiMiniPrintGUI(tk.Tk):
             pdf_page_gap_mm = int(self.pdf_gap_var.get())
         settings = PrintSettings(
             text_mode=self.text_mode_var.get(),
+            rotate_90_clockwise=self.rotate_90_var.get(),
             blackening=self.darkness_var.get(),
             text_font=self.text_font_var.get().strip() or None,
             text_columns=self.text_columns_var.get(),
@@ -602,6 +610,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.file_entry, True)
             self._set_widget_state(self.browse_button, True)
             self._set_widget_state(self.text_mode_check, True)
+            self._set_widget_state(self.rotate_90_check, True)
             self._set_widget_state(self.darkness_scale, True)
             self._set_widget_state(self.darkness_value_label, True)
             self._set_widget_state(self.text_font_entry, True)
@@ -628,6 +637,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.file_entry, False)
         self._set_widget_state(self.browse_button, False)
         self._set_widget_state(self.text_mode_check, False)
+        self._set_widget_state(self.rotate_90_check, False)
         self._set_widget_state(self.darkness_scale, False)
         self._set_widget_state(self.darkness_value_label, False)
         self._set_widget_state(self.text_font_entry, False)

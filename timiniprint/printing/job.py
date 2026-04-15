@@ -16,7 +16,7 @@ from ..protocol import ImageEncoding, ImagePipelineConfig, PixelFormat, build_jo
 from ..protocol.family import ProtocolFamily
 from ..protocol.families import get_protocol_definition
 from ..rendering.converters import Page, PageLoader
-from ..rendering.renderer import image_to_raster_set
+from ..rendering.renderer import apply_page_transforms, image_to_raster_set
 
 DEFAULT_BLACKENING = 3
 DEFAULT_FEED_PADDING = 12
@@ -29,6 +29,7 @@ class PrintSettings:
     dither: bool = True
     lsb_first: Optional[bool] = None
     text_mode: Optional[bool] = None
+    rotate_90_clockwise: bool = False
     text_font: Optional[str] = None
     text_columns: Optional[int] = None
     text_wrap: bool = True
@@ -79,6 +80,7 @@ class PrintJobBuilder:
         self._validate_input_path(path)
         width = self._normalized_width(self.profile.width)
         pages = self.page_loader.load(path, width)
+        pages = apply_page_transforms(pages, rotate_90_clockwise=self.settings.rotate_90_clockwise)
         image_pipeline = self._resolve_image_pipeline()
         required_formats = (image_pipeline.default_format,)
         gamma_handle, gamma_value = self._resolve_gray_preprocessing(image_pipeline)
