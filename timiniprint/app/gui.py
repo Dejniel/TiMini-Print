@@ -152,7 +152,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.text_mode_check.pack(side="left", padx=(0, 12))
         self.rotate_90_check = ttk.Checkbutton(
             checks_frame,
-            text="Rotate 90 deg clockwise",
+            text="Rotate 90 deg",
             variable=self.rotate_90_var,
         )
         self.rotate_90_check.pack(side="left", padx=(0, 12))
@@ -557,7 +557,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.connected_device = None
         if connected and device:
             self.connected_device = device
-            self.profile_var.set(device.profile_key)
+            self.profile_var.set(device.profile_key.upper())
             self._set_device_combo_state(False)
             self._set_widget_state(self.refresh_button, False)
             self._set_widget_state(self.file_entry, True)
