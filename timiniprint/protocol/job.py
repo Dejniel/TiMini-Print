@@ -11,7 +11,7 @@ from .commands import (
 )
 from .families import get_protocol_behavior
 from .family import ProtocolFamily
-from .types import ImageEncoding, ImagePipelineConfig
+from .types import ImageEncoding, ImagePipelineConfig, PaperMode
 
 if TYPE_CHECKING:
     from ..devices.device import PrinterDevice
@@ -45,21 +45,44 @@ class PrinterProtocol:
         is_text: bool,
         blackening: int = 3,
         feed_padding: int = 0,
+        paper_mode: PaperMode | None = None,
         lsb_first: bool | None = None,
         image_pipeline: ImagePipelineConfig | None = None,
         image_encoding_override: ImageEncoding | None = None,
         pixel_format_override: PixelFormat | None = None,
+        page_index: int = 1,
+        page_count: int = 1,
     ) -> ProtocolJob:
         """Build a printable job from raster input for this device."""
-        payload = self._build_payload(
-            raster_set,
-            is_text=is_text,
-            blackening=blackening,
-            feed_padding=feed_padding,
-            lsb_first=lsb_first,
+        resolved_pipeline = self.resolve_image_pipeline(
             image_pipeline=image_pipeline,
             image_encoding_override=image_encoding_override,
             pixel_format_override=pixel_format_override,
+        )
+        payload = _build_job_from_raster_set(
+            raster_set=raster_set,
+            is_text=is_text,
+            speed=self.device.profile.select_speed(is_text=is_text),
+            energy=self.device.profile.select_energy(
+                is_text=is_text,
+                blackening=blackening,
+            ),
+            density=self.device.profile.select_density(
+                is_text=is_text,
+                blackening=blackening,
+            ),
+            blackening=blackening,
+            lsb_first=lsb_first if lsb_first is not None else not self.device.profile.a4xii,
+            protocol_family=self.device.protocol_family,
+            protocol_variant=self.device.protocol_variant,
+            feed_padding=feed_padding,
+            dev_dpi=self.device.profile.dev_dpi,
+            can_print_label=self.device.profile.can_print_label,
+            post_print_feed_count=self.device.profile.post_print_feed_count,
+            image_pipeline=resolved_pipeline,
+            paper_mode=paper_mode,
+            page_index=page_index,
+            page_count=page_count,
         )
         return ProtocolJob(
             payload=payload,
@@ -69,9 +92,17 @@ class PrinterProtocol:
     def build_paper_motion(self, action: str) -> ProtocolJob:
         """Build a feed or retract paper-motion job for this device."""
         if action == "feed":
-            payload = advance_paper_cmd(self.device.profile.dev_dpi, self.device.protocol_family)
+            payload = advance_paper_cmd(
+                self.device.profile.dev_dpi,
+                self.device.protocol_family,
+                self.device.protocol_variant,
+            )
         elif action == "retract":
-            payload = retract_paper_cmd(self.device.profile.dev_dpi, self.device.protocol_family)
+            payload = retract_paper_cmd(
+                self.device.profile.dev_dpi,
+                self.device.protocol_family,
+                self.device.protocol_variant,
+            )
         else:
             raise ValueError(f"Unknown paper motion action: {action}")
         return ProtocolJob(payload=payload, runtime_controller=None)
@@ -130,49 +161,9 @@ class PrinterProtocol:
                 )
         return pipeline
 
-    def _resolve_lsb_first(self, override: bool | None) -> bool:
-        if override is not None:
-            return override
-        return not self.device.profile.a4xii
-
-    def _select_density(self, *, is_text: bool, blackening: int) -> int | None:
-        return self.device.profile.select_density(
-            is_text=is_text,
-            blackening=blackening,
-        )
-
-    def _build_payload(
-        self,
-        raster_set: RasterSet,
-        *,
-        is_text: bool,
-        blackening: int,
-        feed_padding: int,
-        lsb_first: bool | None,
-        image_pipeline: ImagePipelineConfig | None,
-        image_encoding_override: ImageEncoding | None,
-        pixel_format_override: PixelFormat | None,
-    ) -> bytes:
-        resolved_pipeline = self.resolve_image_pipeline(
-            image_pipeline=image_pipeline,
-            image_encoding_override=image_encoding_override,
-            pixel_format_override=pixel_format_override,
-        )
-        return _build_job_from_raster_set(
-            raster_set=raster_set,
-            is_text=is_text,
-            speed=self.device.profile.select_speed(is_text=is_text),
-            energy=self.device.profile.select_energy(
-                is_text=is_text,
-                blackening=blackening,
-            ),
-            density=self._select_density(is_text=is_text, blackening=blackening),
-            blackening=blackening,
-            lsb_first=self._resolve_lsb_first(lsb_first),
-            protocol_family=self.device.protocol_family,
-            feed_padding=feed_padding,
-            dev_dpi=self.device.profile.dev_dpi,
-            can_print_label=self.device.profile.can_print_label,
-            post_print_feed_count=self.device.profile.post_print_feed_count,
-            image_pipeline=resolved_pipeline,
-        )
+    def supported_paper_modes(self) -> tuple[PaperMode, ...]:
+        """Return user-selectable paper modes supported by this device recipe."""
+        behavior = get_protocol_behavior(self.device.protocol_family)
+        if behavior.supported_paper_modes_resolver is not None:
+            return behavior.supported_paper_modes_resolver(self.device.protocol_variant)
+        return behavior.supported_paper_modes

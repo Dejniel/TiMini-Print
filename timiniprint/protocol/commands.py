@@ -43,21 +43,29 @@ def paper_cmd(dpi: int, protocol_family: ProtocolFamily | str) -> bytes:
     return make_packet(0xA1, _paper_payload(dpi), protocol_family)
 
 
-def advance_paper_cmd(dpi: int, protocol_family: ProtocolFamily | str) -> bytes:
+def advance_paper_cmd(
+    dpi: int,
+    protocol_family: ProtocolFamily | str,
+    protocol_variant: str | None = None,
+) -> bytes:
     """Build the manual feed command packet."""
     family = ProtocolFamily.from_value(protocol_family)
     builder = get_protocol_behavior(family).advance_paper_builder
     if builder is not None:
-        return builder(dpi, family)
+        return builder(dpi, family, protocol_variant)
     return make_packet(0xA1, _paper_payload(dpi), family)
 
 
-def retract_paper_cmd(dpi: int, protocol_family: ProtocolFamily | str) -> bytes:
+def retract_paper_cmd(
+    dpi: int,
+    protocol_family: ProtocolFamily | str,
+    protocol_variant: str | None = None,
+) -> bytes:
     """Build the manual retract command packet."""
     family = ProtocolFamily.from_value(protocol_family)
     builder = get_protocol_behavior(family).retract_paper_builder
     if builder is not None:
-        return builder(dpi, family)
+        return builder(dpi, family, protocol_variant)
     return make_packet(0xA0, _paper_payload(dpi), family)
 
 

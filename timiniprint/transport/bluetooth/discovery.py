@@ -242,6 +242,7 @@ class BluetoothDiscovery:
             display_name=merged_name,
             profile=classic_candidate.device.profile,
             protocol_family=classic_candidate.device.protocol_family,
+            protocol_variant=classic_candidate.device.protocol_variant,
             image_pipeline=classic_candidate.device.image_pipeline,
             runtime_variant=classic_candidate.device.runtime_variant,
             runtime_density_profile=classic_candidate.device.runtime_density_profile,

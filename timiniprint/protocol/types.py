@@ -9,6 +9,9 @@ from ..raster import PixelFormat
 class ImageEncoding(str, Enum):
     LEGACY_RAW = "legacy_raw"
     LEGACY_RLE = "legacy_rle"
+    LUCK_NORMAL_RAW = "luck_normal_raw"
+    LUCK_NORMAL_COMPRESSED = "luck_normal_compressed"
+    LUCK_NORMAL_GRAY = "luck_normal_gray"
     V5G_DOT = "v5g_dot"
     V5G_GRAY = "v5g_gray"
     V5X_DOT = "v5x_dot"
@@ -16,6 +19,27 @@ class ImageEncoding(str, Enum):
     V5C_A4 = "v5c_a4"
     V5C_A5 = "v5c_a5"
     DCK_DEFAULT = "dck_default"
+
+
+class PaperMode(str, Enum):
+    PLAIN = "plain"
+    TAG = "tag"
+    BLACK_TAG = "black_tag"
+    FOLDER = "folder"
+    TATTOO = "tattoo"
+    CIRCLE_TAG = "circle_tag"
+
+    @property
+    def label(self) -> str:
+        labels = {
+            PaperMode.PLAIN: "Plain roll",
+            PaperMode.TAG: "Tag",
+            PaperMode.BLACK_TAG: "Black tag",
+            PaperMode.FOLDER: "Folder",
+            PaperMode.TATTOO: "Tattoo",
+            PaperMode.CIRCLE_TAG: "Circle tag",
+        }
+        return labels[self]
 
 
 @dataclass(frozen=True)

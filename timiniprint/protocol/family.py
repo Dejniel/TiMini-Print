@@ -6,6 +6,7 @@ from enum import Enum
 
 class ProtocolCommandSet(str, Enum):
     LEGACY = "legacy"
+    LUCK_NORMAL = "luck_normal"
     V5G = "v5g"
     V5X = "v5x"
     V5C = "v5c"
@@ -20,7 +21,7 @@ class ProtocolTransportStyle(str, Enum):
 
 @dataclass(frozen=True)
 class ProtocolSpec:
-    packet_prefix: bytes
+    packet_prefix: bytes | None
     command_set: ProtocolCommandSet
     transport_style: ProtocolTransportStyle
 
@@ -28,6 +29,8 @@ class ProtocolSpec:
 class ProtocolFamily(str, Enum):
     LEGACY = "legacy"
     LEGACY_PREFIXED = "legacy_prefixed"
+    LUCK_NORMAL = "luck_normal"
+    LUCK_NORMAL_A4 = "luck_normal_a4"
     V5G = "v5g"
     V5X = "v5x"
     V5C = "v5c"
@@ -48,8 +51,18 @@ class ProtocolFamily(str, Enum):
         return get_protocol_definition(self).spec
 
     @property
-    def packet_prefix(self) -> bytes:
+    def packet_prefix(self) -> bytes | None:
         return self.spec.packet_prefix
+
+    @property
+    def uses_prefixed_packets(self) -> bool:
+        return self.packet_prefix is not None
+
+    def require_packet_prefix(self) -> bytes:
+        prefix = self.packet_prefix
+        if prefix is None:
+            raise ValueError(f"{self.value} does not use prefixed command packets")
+        return prefix
 
     @property
     def command_set(self) -> ProtocolCommandSet:

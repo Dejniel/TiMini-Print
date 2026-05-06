@@ -22,6 +22,7 @@ If you want package boundaries and internal placement after that, read [architec
 It carries the resolved:
 - profile
 - protocol family
+- optional protocol variant
 - image pipeline
 - runtime metadata
 - optional transport target

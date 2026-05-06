@@ -6,10 +6,11 @@ from typing import Callable, Mapping
 from ...raster import PixelFormat, RasterSet
 from ..family import ProtocolFamily
 from ..packet import prefixed_packet_length
-from ..types import ImageEncoding, ImagePipelineConfig
+from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 
-ManualMotionBuilder = Callable[[int, ProtocolFamily], bytes]
+ManualMotionBuilder = Callable[[int, ProtocolFamily, str | None], bytes]
 FamilyJobBuilder = Callable[["PrintJobRequest"], bytes]
+PaperModeResolver = Callable[[str | None], tuple[PaperMode, ...]]
 
 
 @dataclass(frozen=True)
@@ -49,6 +50,9 @@ class ProtocolBehavior:
     image_encoding_support: Mapping[ImageEncoding, tuple[PixelFormat, ...]] = field(
         default_factory=dict
     )
+    supported_protocol_variants: tuple[str, ...] = ()
+    supported_paper_modes: tuple[PaperMode, ...] = ()
+    supported_paper_modes_resolver: PaperModeResolver | None = None
     advance_paper_builder: ManualMotionBuilder | None = None
     retract_paper_builder: ManualMotionBuilder | None = None
     job_builder: FamilyJobBuilder | None = None
@@ -56,6 +60,12 @@ class ProtocolBehavior:
 
 @dataclass(frozen=True)
 class PrintJobRequest:
+    """Resolved raster job passed into one concrete protocol family.
+
+    `page_index` and `page_count` let recipe code apply first-page or
+    last-page marker steps without pulling pagination logic into transport.
+    """
+
     raster_set: RasterSet
     image_pipeline: ImagePipelineConfig
     is_text: bool
@@ -64,11 +74,15 @@ class PrintJobRequest:
     blackening: int
     lsb_first: bool
     protocol_family: ProtocolFamily
+    protocol_variant: str | None
     feed_padding: int
     dev_dpi: int
     can_print_label: bool = False
     density: int | None = None
     post_print_feed_count: int = 2
+    paper_mode: PaperMode | None = None
+    page_index: int = 1
+    page_count: int = 1
 
     def require_raster(self, pixel_format: PixelFormat) -> "RasterBuffer":
         return self.raster_set.require(pixel_format)
@@ -84,6 +98,14 @@ class PrintJobRequest:
     @property
     def height(self) -> int:
         return self.default_raster.height
+
+    @property
+    def is_first_page(self) -> bool:
+        return self.page_index <= 1
+
+    @property
+    def is_last_page(self) -> bool:
+        return self.page_index >= self.page_count
 
 
 @dataclass(frozen=True)

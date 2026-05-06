@@ -1,0 +1,333 @@
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from enum import IntEnum
+from typing import Mapping
+
+from ...raster import PixelFormat, RasterBuffer
+from ..compression import compress_zlib_wbits_10
+from ..encoding import pack_line
+from ..family import ProtocolFamily
+from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
+from .base import PrintJobRequest
+
+
+class LuckNormalPaperMode(IntEnum):
+    """Paper-mode values for the Luck normal-family transport."""
+
+    PLAIN = 16
+    TAG = 32
+    CIRCLE_TAG = 33
+    FOLDER = 48
+    TATTOO = 64
+    BLACK_TAG = 80
+
+
+@dataclass(frozen=True)
+class LuckNormalModeRecipe:
+    """One media-specific print recipe for the Luck normal-family stack.
+
+    `paper_type_stage` controls when `setPaperType(...)` is emitted relative to
+    enable and wakeup. `adjust_*_scope` limits marker commands to `never`,
+    `always`, `first_page`, or `last_page`.
+    """
+
+    paper_mode: LuckNormalPaperMode | None = None
+    paper_type_stage: str = "after_wakeup"
+    finish_action: str = "line_feed"
+    adjust_before: int | None = None
+    adjust_before_scope: str = "never"
+    adjust_after: int | None = None
+    adjust_after_scope: str = "never"
+
+
+@dataclass(frozen=True)
+class LuckNormalCommandDialect:
+    """Byte-level command dialect for the Luck normal-family transport."""
+
+    enable_command: bytes
+    finalize_command: bytes
+    wakeup_command: bytes = bytes(12)
+    position_command: bytes = bytes([0x1D, 0x0C])
+
+    def set_paper_type(self, paper_class: int, paper_mode: int) -> bytes:
+        return bytes([0x1F, 0x80, paper_class & 0xFF, paper_mode & 0xFF])
+
+    def set_density(self, density: int) -> bytes:
+        return bytes([0x10, 0xFF, 0x10, 0x00, density & 0xFF])
+
+    def line_feed(self, dots: int) -> bytes:
+        return bytes([0x1B, 0x4A, dots & 0xFF])
+
+    def reverse_feed(self, dots: int) -> bytes:
+        return bytes([0x1F, 0x11, 0x11, dots & 0xFF])
+
+    def adjust_position_auto(self, marker: int) -> bytes:
+        return bytes([0x1F, 0x11, marker & 0xFF])
+
+
+LUCK_NORMAL_DIALECT = LuckNormalCommandDialect(
+    enable_command=bytes([0x10, 0xFF, 0xF1, 0x03]),
+    finalize_command=bytes([0x10, 0xFF, 0xF1, 0x45]),
+)
+
+LUCK_NORMAL_MODE2_DIALECT = LuckNormalCommandDialect(
+    # QIRUI-branded L1 variants switch the printer into enable mode 2.
+    enable_command=bytes([0x10, 0xFF, 0xF1, 0x02]),
+    finalize_command=bytes([0x10, 0xFF, 0xF1, 0x45]),
+)
+
+
+class LuckNormalBitmapEncoder:
+    """Encode raster data into the Luck normal-family bitmap payloads."""
+
+    def encode(self, request: PrintJobRequest) -> bytes:
+        encoding = request.image_pipeline.encoding
+        if encoding == ImageEncoding.LUCK_NORMAL_RAW:
+            return self._encode_raw(request.require_raster(PixelFormat.BW1))
+        if encoding == ImageEncoding.LUCK_NORMAL_GRAY:
+            return self._encode_gray(request.default_raster)
+        if encoding == ImageEncoding.LUCK_NORMAL_COMPRESSED:
+            return self._encode_compressed(request.require_raster(PixelFormat.BW1))
+        raise ValueError(f"Unsupported Luck normal image encoding: {encoding.value}")
+
+    def _encode_raw(self, raster: RasterBuffer) -> bytes:
+        width_bytes = (raster.width + 7) // 8
+        header = bytes(
+            [
+                0x1D,
+                0x76,
+                0x30,
+                0x00,
+                width_bytes & 0xFF,
+                (width_bytes >> 8) & 0xFF,
+                raster.height & 0xFF,
+                (raster.height >> 8) & 0xFF,
+            ]
+        )
+        return header + self._pack_bw1_rows(raster)
+
+    def _encode_compressed(self, raster: RasterBuffer) -> bytes:
+        width_bytes = (raster.width + 7) // 8
+        raw_bitmap = self._pack_bw1_rows(raster)
+        compressed_bitmap = compress_zlib_wbits_10(raw_bitmap)
+        header = bytes(
+            [
+                0x1F,
+                0x10,
+                (width_bytes >> 8) & 0xFF,
+                width_bytes & 0xFF,
+                (raster.height >> 8) & 0xFF,
+                raster.height & 0xFF,
+            ]
+        ) + len(compressed_bitmap).to_bytes(4, "big")
+        return header + compressed_bitmap
+
+    def _pack_bw1_rows(self, raster: RasterBuffer) -> bytes:
+        body = bytearray()
+        pixels = list(raster.pixels)
+        for row in range(raster.height):
+            line = pixels[row * raster.width : (row + 1) * raster.width]
+            body += pack_line(list(line), lsb_first=False)
+        return bytes(body)
+
+    def _encode_gray(self, raster: RasterBuffer) -> bytes:
+        gray_level = 16
+        width_bytes = (raster.width + 7) // 8
+        header = bytes(
+            [
+                0x1D,
+                0x47,
+                0x59,
+                gray_level,
+                width_bytes & 0xFF,
+                (width_bytes >> 8) & 0xFF,
+                raster.height & 0xFF,
+                (raster.height >> 8) & 0xFF,
+            ]
+        )
+        return header + self._pack_gray_rows(raster)
+
+    def _pack_gray_rows(self, raster: RasterBuffer) -> bytes:
+        levels = self._gray_levels(raster)
+        packed = bytearray()
+        for row in range(raster.height):
+            row_start = row * raster.width
+            for column in range(0, raster.width, 2):
+                high = levels[row_start + column]
+                low = levels[row_start + column + 1] if column + 1 < raster.width else 0
+                packed.append(((high & 0x0F) << 4) | (low & 0x0F))
+        return bytes(packed)
+
+    def _gray_levels(self, raster: RasterBuffer) -> list[int]:
+        pixels = list(raster.pixels)
+        if raster.pixel_format == PixelFormat.GRAY4:
+            return [max(0, min(15, int(value))) for value in pixels]
+        if raster.pixel_format == PixelFormat.GRAY8:
+            return [15 - min(15, (int(value) + 15) // 16) for value in pixels]
+        raise ValueError("Luck normal gray jobs require GRAY4 or GRAY8 raster data")
+
+
+@dataclass(frozen=True)
+class LuckNormalFamilyRecipe:
+    """Object-oriented recipe for one Luck normal-family protocol branch."""
+
+    protocol_family: ProtocolFamily
+    default_image_pipeline: ImagePipelineConfig
+    image_encoding_support: Mapping[ImageEncoding, tuple[PixelFormat, ...]]
+    default_paper_mode: PaperMode = PaperMode.PLAIN
+    mode_recipes: Mapping[PaperMode, LuckNormalModeRecipe] = field(default_factory=dict)
+    end_line_dots_200dpi: int = 80
+    end_line_dots_300dpi: int = 120
+    dialect: LuckNormalCommandDialect = LUCK_NORMAL_DIALECT
+    bitmap_encoder: LuckNormalBitmapEncoder = field(default_factory=LuckNormalBitmapEncoder)
+    variants: Mapping[str, "LuckNormalVariantRecipe"] = field(default_factory=dict)
+
+    def build_job(self, request: PrintJobRequest) -> bytes:
+        recipe = self.recipe_for_mode(request.paper_mode, request.protocol_variant)
+        dialect = self.dialect_for_variant(request.protocol_variant)
+        commands = bytearray()
+        if request.density is not None:
+            commands += dialect.set_density(request.density)
+        if recipe.paper_mode is not None and recipe.paper_type_stage == "before_enable":
+            commands += dialect.set_paper_type(1, int(recipe.paper_mode))
+        commands += dialect.enable_command
+        commands += dialect.wakeup_command
+        if recipe.paper_mode is not None and recipe.paper_type_stage == "after_wakeup":
+            commands += dialect.set_paper_type(1, int(recipe.paper_mode))
+        elif recipe.paper_mode is not None and recipe.paper_type_stage != "before_enable":
+            raise ValueError(
+                f"Unsupported Luck normal paper type stage: {recipe.paper_type_stage}"
+            )
+        if self._should_run_scope(recipe.adjust_before_scope, request) and recipe.adjust_before is not None:
+            commands += dialect.adjust_position_auto(recipe.adjust_before)
+        commands += self.bitmap_encoder.encode(request)
+        if recipe.finish_action == "position":
+            commands += dialect.position_command
+        elif recipe.finish_action == "line_feed":
+            commands += dialect.line_feed(self.end_line_dots_for_request(request))
+        else:
+            raise ValueError(f"Unsupported Luck normal finish action: {recipe.finish_action}")
+        if self._should_run_scope(recipe.adjust_after_scope, request) and recipe.adjust_after is not None:
+            commands += dialect.adjust_position_auto(recipe.adjust_after)
+        commands += dialect.finalize_command
+        return bytes(commands)
+
+    def build_advance_paper(
+        self,
+        dpi: int,
+        _protocol_family: ProtocolFamily,
+        protocol_variant: str | None = None,
+    ) -> bytes:
+        return self.dialect_for_variant(protocol_variant).line_feed(
+            self.end_line_dots_for_dpi(dpi, protocol_variant)
+        )
+
+    def build_retract_paper(
+        self,
+        dpi: int,
+        _protocol_family: ProtocolFamily,
+        protocol_variant: str | None = None,
+    ) -> bytes:
+        return self.dialect_for_variant(protocol_variant).reverse_feed(
+            self.end_line_dots_for_dpi(dpi, protocol_variant)
+        )
+
+    def dialect_for_variant(self, protocol_variant: str | None) -> LuckNormalCommandDialect:
+        variant = self._variant(protocol_variant)
+        if variant is not None and variant.dialect is not None:
+            return variant.dialect
+        return self.dialect
+
+    def end_line_dots_for_request(self, request: PrintJobRequest) -> int:
+        return self.end_line_dots_for_dpi(request.dev_dpi, request.protocol_variant)
+
+    def end_line_dots_for_dpi(self, dpi: int, protocol_variant: str | None = None) -> int:
+        variant = self._variant(protocol_variant)
+        if int(dpi) == 300:
+            if variant is not None and variant.end_line_dots_300dpi is not None:
+                return variant.end_line_dots_300dpi
+            return self.end_line_dots_300dpi
+        if variant is not None and variant.end_line_dots_200dpi is not None:
+            return variant.end_line_dots_200dpi
+        return self.end_line_dots_200dpi
+
+    def supported_paper_modes(self, protocol_variant: str | None = None) -> tuple[PaperMode, ...]:
+        return tuple(self.mode_recipes_for_variant(protocol_variant))
+
+    def supported_variants(self) -> tuple[str, ...]:
+        return tuple(self.variants)
+
+    def recipe_for_mode(
+        self,
+        paper_mode: PaperMode | None,
+        protocol_variant: str | None = None,
+    ) -> LuckNormalModeRecipe:
+        recipes = self.mode_recipes_for_variant(protocol_variant)
+        default_paper_mode = self.default_paper_mode_for_variant(protocol_variant)
+        mode = paper_mode or default_paper_mode
+        try:
+            return recipes[mode]
+        except KeyError as exc:
+            raise ValueError(
+                f"{self.protocol_family.value} does not support paper mode {mode.value}"
+            ) from exc
+
+    def mode_recipes_for_variant(
+        self,
+        protocol_variant: str | None,
+    ) -> Mapping[PaperMode, LuckNormalModeRecipe]:
+        variant = self._variant(protocol_variant)
+        if variant is not None and variant.mode_recipes is not None:
+            return variant.mode_recipes
+        return self.mode_recipes
+
+    def default_paper_mode_for_variant(self, protocol_variant: str | None) -> PaperMode:
+        variant = self._variant(protocol_variant)
+        if variant is not None and variant.default_paper_mode is not None:
+            return variant.default_paper_mode
+        return self.default_paper_mode
+
+    def _variant(self, protocol_variant: str | None) -> "LuckNormalVariantRecipe | None":
+        if protocol_variant in (None, ""):
+            return None
+        try:
+            return self.variants[protocol_variant]
+        except KeyError as exc:
+            raise ValueError(
+                f"{self.protocol_family.value} does not support protocol variant {protocol_variant!r}"
+            ) from exc
+
+    @staticmethod
+    def _should_run_scope(scope: str, request: PrintJobRequest) -> bool:
+        if scope == "never":
+            return False
+        if scope == "always":
+            return True
+        if scope == "first_page":
+            return request.is_first_page
+        if scope == "last_page":
+            return request.is_last_page
+        raise ValueError(f"Unsupported Luck normal adjust scope: {scope}")
+
+
+@dataclass(frozen=True)
+class LuckNormalVariantRecipe:
+    """Protocol-level overrides for one named Luck normal variant.
+
+    A variant can replace the command dialect, media recipes, default paper
+    mode, or line-feed defaults without changing the parent protocol family.
+    """
+
+    dialect: LuckNormalCommandDialect | None = None
+    mode_recipes: Mapping[PaperMode, LuckNormalModeRecipe] | None = None
+    default_paper_mode: PaperMode | None = None
+    end_line_dots_200dpi: int | None = None
+    end_line_dots_300dpi: int | None = None
+
+
+LUCK_NORMAL_IMAGE_SUPPORT: Mapping[ImageEncoding, tuple[PixelFormat, ...]] = {
+    ImageEncoding.LUCK_NORMAL_RAW: (PixelFormat.BW1,),
+    ImageEncoding.LUCK_NORMAL_COMPRESSED: (PixelFormat.BW1,),
+    ImageEncoding.LUCK_NORMAL_GRAY: (PixelFormat.GRAY4, PixelFormat.GRAY8),
+}

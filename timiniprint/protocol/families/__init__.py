@@ -12,6 +12,8 @@ from .base import (
 )
 from .dck import BEHAVIOR as DCK_BEHAVIOR
 from .legacy import BEHAVIOR as LEGACY_BEHAVIOR
+from .luck_normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
+from .luck_normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
 from .v5g import BEHAVIOR as V5G_BEHAVIOR
 from .v5c import BEHAVIOR as V5C_BEHAVIOR
 from .v5x import BEHAVIOR as V5X_BEHAVIOR
@@ -32,6 +34,22 @@ _DEFINITIONS = {
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=LEGACY_BEHAVIOR,
+    ),
+    ProtocolFamily.LUCK_NORMAL: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.LUCK_NORMAL,
+            transport_style=ProtocolTransportStyle.STANDARD,
+        ),
+        behavior=LUCK_NORMAL_BEHAVIOR,
+    ),
+    ProtocolFamily.LUCK_NORMAL_A4: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.LUCK_NORMAL,
+            transport_style=ProtocolTransportStyle.STANDARD,
+        ),
+        behavior=LUCK_NORMAL_A4_BEHAVIOR,
     ),
     ProtocolFamily.V5G: ProtocolDefinition(
         spec=ProtocolSpec(

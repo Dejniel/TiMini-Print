@@ -1,6 +1,6 @@
 from .family import ProtocolFamily
 from .job import PrinterProtocol, ProtocolJob
-from .types import ImageEncoding, ImagePipelineConfig
+from .types import ImageEncoding, ImagePipelineConfig, PaperMode
 
 __all__ = [
     "ProtocolFamily",
@@ -8,4 +8,5 @@ __all__ = [
     "PrinterProtocol",
     "ImageEncoding",
     "ImagePipelineConfig",
+    "PaperMode",
 ]

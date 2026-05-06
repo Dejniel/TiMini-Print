@@ -395,12 +395,16 @@ class _BleakTransportSession:
 
     def extract_prefixed_opcode(self, payload: bytes) -> Optional[int]:
         prefix = self._protocol_family.packet_prefix
+        if prefix is None:
+            return None
         if len(payload) < len(prefix) + 1 or payload[: len(prefix)] != prefix:
             return None
         return payload[len(prefix)]
 
     def extract_prefixed_payload(self, packet: bytes) -> Optional[bytes]:
         prefix = self._protocol_family.packet_prefix
+        if prefix is None:
+            return None
         if len(packet) < len(prefix) + 6 or packet[: len(prefix)] != prefix:
             return None
         payload_length = packet[len(prefix) + 2] | (packet[len(prefix) + 3] << 8)

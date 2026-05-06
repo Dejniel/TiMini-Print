@@ -13,7 +13,7 @@ from tests.helpers import install_crc8_stub, reset_registry_cache
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
-from timiniprint.protocol.types import ImageEncoding
+from timiniprint.protocol.types import ImageEncoding, PaperMode
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 from timiniprint.rendering.converters.base import Page
 
@@ -65,7 +65,11 @@ class PrintingJobTests(unittest.TestCase):
         img = Image.new("1", (8, 1), 1)
         pages = [Page(img, dither=False, is_text=False), Page(img, dither=True, is_text=True)]
         loader = _FakeLoader(pages)
-        builder = self.job_mod.PrintJobBuilder(self.device, page_loader=loader)
+        builder = self.job_mod.PrintJobBuilder(
+            self.device,
+            settings=self.job_mod.PrintSettings(paper_mode=PaperMode.TAG),
+            page_loader=loader,
+        )
         raster_set = RasterSet(
             rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 8, width=8, pixel_format=PixelFormat.BW1)}
         )
@@ -74,9 +78,14 @@ class PrintingJobTests(unittest.TestCase):
             path.write_text("x", encoding="utf-8")
             with patch("timiniprint.printing.builder.image_to_raster_set", return_value=raster_set), patch(
                 "timiniprint.protocol.job._build_job_from_raster_set", side_effect=[b"A", b"B"]
-            ):
+            ) as build_job_mock:
                 out = builder.build_from_file(str(path))
         self.assertEqual(out.payload, b"AB")
+        self.assertEqual(build_job_mock.call_args_list[0].kwargs["paper_mode"], PaperMode.TAG)
+        self.assertEqual(build_job_mock.call_args_list[0].kwargs["page_index"], 1)
+        self.assertEqual(build_job_mock.call_args_list[0].kwargs["page_count"], 2)
+        self.assertEqual(build_job_mock.call_args_list[1].kwargs["page_index"], 2)
+        self.assertEqual(build_job_mock.call_args_list[1].kwargs["page_count"], 2)
 
     def test_build_from_file_can_rotate_pages_clockwise_for_any_file_type(self) -> None:
         img = Image.new("1", (8, 16), 1)
@@ -110,8 +119,14 @@ class PrintingJobTests(unittest.TestCase):
         p_img = Page(Image.new("1", (8, 1), 1), dither=True, is_text=False)
         self.assertTrue(builder._select_text_mode(p_text))
         self.assertFalse(builder._select_text_mode(p_img))
-        self.assertGreater(builder._select_energy(True), 0)
-        self.assertGreater(builder._select_energy(False), 0)
+        self.assertGreater(
+            builder.device.profile.select_energy(is_text=True, blackening=builder.settings.blackening),
+            0,
+        )
+        self.assertGreater(
+            builder.device.profile.select_energy(is_text=False, blackening=builder.settings.blackening),
+            0,
+        )
 
     def test_v5g_runtime_controller_uses_donor_density_profile(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
@@ -133,8 +148,18 @@ class PrintingJobTests(unittest.TestCase):
         self.assertEqual(snapshot["density_profile"]["profile_key"], "mx06")
         self.assertEqual(snapshot["density_levels"]["image"]["middle"], 180)
         self.assertEqual(snapshot["density_levels"]["text"]["middle"], 130)
-        self.assertIsNone(builder._select_density(False))
-        self.assertIsNone(builder._select_density(True))
+        self.assertIsNone(
+            builder.device.profile.select_density(
+                is_text=False,
+                blackening=builder.settings.blackening,
+            )
+        )
+        self.assertIsNone(
+            builder.device.profile.select_density(
+                is_text=True,
+                blackening=builder.settings.blackening,
+            )
+        )
 
     def test_v5g_runtime_controller_can_use_xopoppy_density_profile(self) -> None:
         resolved = self.catalog.detect_device("XOPOPPY-ABCD", "AA:BB:CC:DD:EE:58")

@@ -187,6 +187,39 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.address, resolved.address)
         self.assertEqual(rebuilt.transport_badge, resolved.transport_badge)
 
+    def test_device_config_roundtrip_preserves_protocol_variant(self) -> None:
+        resolved = self.catalog.detect_device("QIRUI_Q2_1234")
+
+        self.assertIsNotNone(resolved)
+        self.assertEqual(resolved.protocol_variant, "qirui_q2")
+        config = self.catalog.serialize_device_config(resolved)
+        rebuilt = self.catalog.device_from_config(config)
+
+        self.assertEqual(rebuilt.profile_key, resolved.profile_key)
+        self.assertEqual(rebuilt.protocol_family, resolved.protocol_family)
+        self.assertEqual(rebuilt.protocol_variant, resolved.protocol_variant)
+        self.assertEqual(rebuilt.image_pipeline, resolved.image_pipeline)
+
+    def test_device_from_config_rejects_unknown_protocol_variant(self) -> None:
+        base = self.catalog.device_from_profile("luck_a40")
+        config = self.catalog.serialize_device_config(base)
+        config["protocol_variant"] = "not_a_variant"
+
+        with self.assertRaisesRegex(
+            RuntimeError,
+            "luck_normal_a4 does not support protocol variant 'not_a_variant'",
+        ):
+            self.catalog.device_from_config(config)
+
+    def test_luck_a49h_uses_compressed_a4_pipeline(self) -> None:
+        resolved = self.catalog.detect_device("APA49H_1234")
+
+        self.assertIsNotNone(resolved)
+        self.assertEqual(resolved.profile_key, "luck_a49h")
+        self.assertEqual(resolved.protocol_family, ProtocolFamily.LUCK_NORMAL_A4)
+        self.assertEqual(resolved.profile.dev_dpi, 300)
+        self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_COMPRESSED)
+
     def test_exact_name_rules_cover_x6_without_shadowing_x6h(self) -> None:
         x6 = self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:58")
         x6_mac59 = self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:59")
@@ -272,6 +305,111 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(ai01)
         self.assertEqual(ai01.profile_key, "ai01")
         self.assertEqual(ai01.protocol_family, ProtocolFamily.V5X)
+
+    def test_luck_normal_rules_resolve_the_source_backed_models(self) -> None:
+        expected = {
+            "PPA2_1234": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
+            "A2": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
+            "A2_EY48D": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
+            "A2_LYiN48D_ITSR": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
+            "PPA2H_1234": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
+            "A2H": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
+            "A2_LYiN48DH": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
+            "A40_1234": ("luck_a40", ProtocolFamily.LUCK_NORMAL_A4, None, 1728),
+            "A40": ("luck_a40", ProtocolFamily.LUCK_NORMAL_A4, None, 1728),
+            "APA40_1234": ("luck_lujiang_a4", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "APA41_1234": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "APA42_1234": ("luck_lujiang_a4", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "APA43_1234": ("luck_lujiang_a4", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "APA49_1234": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "A49": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "APA49H_1234": ("luck_a49h", ProtocolFamily.LUCK_NORMAL_A4, "a49h", 2496),
+            "ITP05": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "ITP05H": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "DYA46": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "DP_ITP05_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "ITP06": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "DYA49": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "DP_ITP06_1234": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "APA46Y": ("luck_a4_compressed_tattoo_96", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "APA46Y_1234": ("luck_a4_compressed_tattoo_96", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "TPA46": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "TPA46_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "TPA46Pro": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "TPA46Pro_1234": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "DP_A4_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "DP-A4_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "DP_8038_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "APL86": ("luck_apl86", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 1728),
+            "APL86_1234": ("luck_apl86", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 1728),
+            "L86": ("luck_apl86", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 1728),
+            "APL86H": ("luck_apl86h", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 2496),
+            "APL86H_1234": ("luck_apl86h", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 2496),
+            "APL86HL": ("luck_apl86h", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 2496),
+            "U8": ("luck_u8", ProtocolFamily.LUCK_NORMAL_A4, "u8", 1728),
+            "U8_1234": ("luck_u8", ProtocolFamily.LUCK_NORMAL_A4, "u8", 1728),
+            "D80": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "DP_D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "DP-D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "E80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "CASA-01_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "PeriPage_A40": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "DYD80": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "DYD80H": ("luck_d80h", ProtocolFamily.LUCK_NORMAL_A4, "d80h", 2496),
+            "DP_D80H_1234": ("luck_d80h", ProtocolFamily.LUCK_NORMAL_A4, "d80h", 2496),
+            "A80H-HD": ("luck_a80h_way1", ProtocolFamily.LUCK_NORMAL_A4, "a80h_way1", 2496),
+            "DP_A80H_1234": ("luck_a80h_way1", ProtocolFamily.LUCK_NORMAL_A4, "a80h_way1", 2496),
+            "QIRUI_Q1_1234": ("luck_qirui_q1", ProtocolFamily.LUCK_NORMAL, "qirui_q1", 384),
+            "QIRUI_Q2_1234": ("luck_qirui_q2", ProtocolFamily.LUCK_NORMAL, "qirui_q2", 576),
+            "LuckP_A41_1234": ("luck_a41_luckp", ProtocolFamily.LUCK_NORMAL_A4, "luckp_a41", 1728),
+            "LuckP_A42_1234": ("luck_a42_luckp", ProtocolFamily.LUCK_NORMAL_A4, "luckp_a42", 1728),
+        }
+
+        for name, (profile_key, family, protocol_variant, width) in expected.items():
+            with self.subTest(name=name):
+                resolved = self.catalog.detect_device(name)
+                self.assertIsNotNone(resolved)
+                self.assertEqual(resolved.profile_key, profile_key)
+                self.assertEqual(resolved.protocol_family, family)
+                self.assertEqual(resolved.protocol_variant, protocol_variant)
+                self.assertEqual(resolved.profile.width, width)
+                if profile_key in {
+                    "luck_lujiang_a4",
+                    "luck_lujiang_a4_dense",
+                    "luck_a49h",
+                    "luck_a4_compressed_tattoo",
+                    "luck_a4_compressed_tattoo_96",
+                    "luck_a4_compressed_tattoo_96_dense",
+                    "luck_u8",
+                    "luck_apl86",
+                    "luck_apl86h",
+                    "luck_d80",
+                    "luck_d80h",
+                    "luck_a80h_way1",
+                }:
+                    self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_COMPRESSED)
+                else:
+                    self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_RAW)
+
+    def test_luck_normal_rules_do_not_claim_variants_we_did_not_implement(self) -> None:
+        for name in (
+            "PPA2L_1234",
+            "PPA2LH_1234",
+            "A49H",
+            "DP_ITP05N_1234",
+            "ITP05N",
+            "DP_ITP06N_1234",
+            "ITP06N",
+            "D80H",
+            "PCPS_D80_1234",
+            "DP_A80_1234",
+            "DP_A80S_1234",
+            "DP_A80W_1234",
+            "PD_A4",
+            "GD-88_1234",
+        ):
+            with self.subTest(name=name):
+                self.assertIsNone(self.catalog.detect_device(name))
 
     def test_specific_experimental_and_bucket_rules_are_not_shadowed(self) -> None:
         expected = {

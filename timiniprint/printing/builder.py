@@ -45,7 +45,8 @@ class PrintJobBuilder:
         ).formats[:1]
         gamma_handle, gamma_value = self._resolve_gray_preprocessing()
         payload_parts: list[bytes] = []
-        for page in pages:
+        page_count = len(pages)
+        for page_index, page in enumerate(pages, start=1):
             is_text = self._select_text_mode(page)
             raster_set = image_to_raster_set(
                 page.image,
@@ -60,9 +61,12 @@ class PrintJobBuilder:
                     is_text=is_text,
                     blackening=self.settings.blackening,
                     feed_padding=self.settings.feed_padding,
+                    paper_mode=self.settings.paper_mode,
                     lsb_first=self._lsb_first(),
                     image_encoding_override=self.settings.image_encoding_override,
                     pixel_format_override=self.settings.pixel_format_override,
+                    page_index=page_index,
+                    page_count=page_count,
                 ).payload
             )
         return ProtocolJob(
@@ -91,18 +95,6 @@ class PrintJobBuilder:
         if self.settings.text_mode is not None:
             return self.settings.text_mode
         return page.is_text
-
-    def _select_energy(self, is_text: bool) -> int:
-        return self.device.profile.select_energy(
-            is_text=is_text,
-            blackening=self.settings.blackening,
-        )
-
-    def _select_density(self, is_text: bool) -> int | None:
-        return self.device.profile.select_density(
-            is_text=is_text,
-            blackening=self.settings.blackening,
-        )
 
     @staticmethod
     def _mm_to_px(mm: int, dpi: int) -> int:

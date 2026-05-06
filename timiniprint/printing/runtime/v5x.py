@@ -446,7 +446,7 @@ class V5XRuntimeController(RuntimeController):
         raw = session.extract_prefixed_payload(payload)
         if raw:
             return raw[0]
-        prefix = ProtocolFamily.V5X.packet_prefix
+        prefix = ProtocolFamily.V5X.require_packet_prefix()
         if len(payload) < len(prefix) + 2 or payload[: len(prefix)] != prefix:
             return None
         return payload[len(prefix) + 1]

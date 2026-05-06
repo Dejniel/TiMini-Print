@@ -2637,5 +2637,316 @@
     "protocol_family": "legacy",
     "testing": true,
     "testing_note": "Experimental V10G-family alias mapped to the existing M08F profile."
+  },
+  {
+    "rule_key": "rule_luck_a2",
+    "prefixes": [
+      "PPA2_"
+    ],
+    "exact_names": [
+      "PPA2",
+      "A2",
+      "A2_EY48D",
+      "A2_LYiN48D_ITSR"
+    ],
+    "profile_key": "luck_a2",
+    "protocol_family": "luck_normal"
+  },
+  {
+    "rule_key": "rule_luck_a2h",
+    "prefixes": [
+      "PPA2H_"
+    ],
+    "exact_names": [
+      "PPA2H",
+      "A2H",
+      "A2_LYiN48DH"
+    ],
+    "profile_key": "luck_a2h",
+    "protocol_family": "luck_normal"
+  },
+  {
+    "rule_key": "rule_luck_a40",
+    "prefixes": [
+      "A40_"
+    ],
+    "exact_names": [
+      "A40"
+    ],
+    "profile_key": "luck_a40",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apa40",
+    "prefixes": [
+      "APA40_"
+    ],
+    "exact_names": [
+      "APA40"
+    ],
+    "profile_key": "luck_lujiang_a4",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apa41",
+    "prefixes": [
+      "APA41_"
+    ],
+    "exact_names": [
+      "APA41"
+    ],
+    "profile_key": "luck_lujiang_a4_dense",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apa42",
+    "prefixes": [
+      "APA42_"
+    ],
+    "exact_names": [
+      "APA42"
+    ],
+    "profile_key": "luck_lujiang_a4",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apa43",
+    "prefixes": [
+      "APA43_"
+    ],
+    "exact_names": [
+      "APA43"
+    ],
+    "profile_key": "luck_lujiang_a4",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apa49",
+    "prefixes": [
+      "APA49_"
+    ],
+    "exact_names": [
+      "APA49",
+      "A49"
+    ],
+    "profile_key": "luck_lujiang_a4_dense",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_a49h",
+    "prefixes": [
+      "APA49H_"
+    ],
+    "exact_names": [
+      "APA49H"
+    ],
+    "profile_key": "luck_a49h",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_itp05",
+    "prefixes": [
+      "DP_ITP05_",
+      "ITP05_"
+    ],
+    "exact_names": [
+      "ITP05",
+      "ITP05H",
+      "DYA46"
+    ],
+    "profile_key": "luck_a4_compressed_tattoo",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_itp06",
+    "prefixes": [
+      "DP_ITP06_",
+      "ITP06_"
+    ],
+    "exact_names": [
+      "ITP06",
+      "DYA49"
+    ],
+    "profile_key": "luck_a4_compressed_tattoo_96_dense",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apa46y",
+    "prefixes": [
+      "APA46Y_"
+    ],
+    "exact_names": [
+      "APA46Y"
+    ],
+    "profile_key": "luck_a4_compressed_tattoo_96",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_tpa46",
+    "prefixes": [
+      "TPA46_"
+    ],
+    "exact_names": [
+      "TPA46"
+    ],
+    "profile_key": "luck_a4_compressed_tattoo",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_tpa46pro",
+    "prefixes": [
+      "TPA46Pro_"
+    ],
+    "exact_names": [
+      "TPA46Pro"
+    ],
+    "profile_key": "luck_a4_compressed_tattoo_96_dense",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_dp_a4",
+    "prefixes": [
+      "DP_A4_",
+      "DP-A4_"
+    ],
+    "exact_names": [
+      "DP_A4",
+      "DP-A4"
+    ],
+    "profile_key": "luck_a4_compressed_tattoo",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_dp_8038",
+    "prefixes": [
+      "DP_8038_"
+    ],
+    "exact_names": [
+      "DP_8038"
+    ],
+    "profile_key": "luck_a4_compressed_tattoo",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apl86",
+    "prefixes": [
+      "APL86_"
+    ],
+    "exact_names": [
+      "APL86",
+      "L86",
+      "L86_Printer"
+    ],
+    "profile_key": "luck_apl86",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_apl86h",
+    "prefixes": [
+      "APL86H_"
+    ],
+    "exact_names": [
+      "APL86H",
+      "APL86HL",
+      "L86H_Printer"
+    ],
+    "profile_key": "luck_apl86h",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_u8",
+    "prefixes": [
+      "U8_"
+    ],
+    "exact_names": [
+      "U8"
+    ],
+    "profile_key": "luck_u8",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_d80",
+    "prefixes": [
+      "DP_D80_",
+      "DP-D80_",
+      "D80-",
+      "D80_",
+      "E80_",
+      "CASA-01_"
+    ],
+    "exact_names": [
+      "D80",
+      "PeriPage_A40",
+      "DYD80"
+    ],
+    "profile_key": "luck_d80",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_d80h",
+    "prefixes": [
+      "DP_D80H_"
+    ],
+    "exact_names": [
+      "DYD80H"
+    ],
+    "profile_key": "luck_d80h",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luck_a80h_way1",
+    "prefixes": [
+      "DP_A80H_"
+    ],
+    "exact_names": [
+      "A80H-HD"
+    ],
+    "profile_key": "luck_a80h_way1",
+    "protocol_family": "luck_normal_a4",
+    "protocol_variant": "a80h_way1"
+  },
+  {
+    "rule_key": "rule_luck_qirui_q1",
+    "prefixes": [
+      "QIRUI_Q1_"
+    ],
+    "exact_names": [
+      "QIRUI_Q1"
+    ],
+    "profile_key": "luck_qirui_q1",
+    "protocol_family": "luck_normal"
+  },
+  {
+    "rule_key": "rule_luck_qirui_q2",
+    "prefixes": [
+      "QIRUI_Q2_"
+    ],
+    "exact_names": [
+      "QIRUI_Q2"
+    ],
+    "profile_key": "luck_qirui_q2",
+    "protocol_family": "luck_normal"
+  },
+  {
+    "rule_key": "rule_luckp_a41",
+    "prefixes": [
+      "LuckP_A41_"
+    ],
+    "exact_names": [
+      "LuckP_A41"
+    ],
+    "profile_key": "luck_a41_luckp",
+    "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_luckp_a42",
+    "prefixes": [
+      "LuckP_A42_"
+    ],
+    "exact_names": [
+      "LuckP_A42"
+    ],
+    "profile_key": "luck_a42_luckp",
+    "protocol_family": "luck_normal_a4"
   }
 ]

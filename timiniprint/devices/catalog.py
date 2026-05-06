@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
-from ..protocol.families import get_protocol_definition
+from ..protocol.families import get_protocol_behavior, get_protocol_definition
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImageEncoding, ImagePipelineConfig
 from ..raster import PixelFormat
@@ -117,6 +117,11 @@ class PrinterCatalog:
             label_value=str(entry["label_value"]),
             back_paper_num=int(entry["back_paper_num"]),
             default_protocol_family=ProtocolFamily.from_value(entry["default_protocol_family"]),
+            default_protocol_variant=(
+                None
+                if entry.get("default_protocol_variant") in (None, "")
+                else str(entry["default_protocol_variant"])
+            ),
             default_image_pipeline=_parse_image_pipeline(entry["default_image_pipeline"]),
             stream=StreamProfile(
                 chunk_size=int(stream_payload["chunk_size"]),
@@ -157,6 +162,11 @@ class PrinterCatalog:
             exact_names=tuple(DetectionNormalizer.normalize_name(str(value)) for value in exact_names_value),
             profile_key=str(entry["profile_key"]),
             protocol_family=ProtocolFamily.from_value(entry["protocol_family"]),
+            protocol_variant=(
+                None
+                if entry.get("protocol_variant") in (None, "")
+                else str(entry["protocol_variant"])
+            ),
             mac_suffixes=tuple(str(value).upper() for value in entry.get("mac_suffixes", [])),
             image_pipeline=None
             if image_pipeline_value is None
@@ -206,6 +216,7 @@ class PrinterCatalog:
             display_name=device_name,
             profile=profile,
             protocol_family=rule.protocol_family,
+            protocol_variant=rule.protocol_variant,
             image_pipeline=self._select_image_pipeline(profile, rule),
             runtime_variant=rule.runtime_variant,
             runtime_density_profile_key=rule.runtime_density_profile_key,
@@ -228,6 +239,7 @@ class PrinterCatalog:
             display_name=display_name or profile.profile_key,
             profile=profile,
             protocol_family=profile.default_protocol_family,
+            protocol_variant=profile.default_protocol_variant,
             image_pipeline=profile.default_image_pipeline,
             runtime_variant=None,
             runtime_density_profile_key=None,
@@ -244,6 +256,7 @@ class PrinterCatalog:
             "display_name": device.display_name,
             "profile_key": device.profile.profile_key,
             "protocol_family": device.protocol_family.value,
+            "protocol_variant": device.protocol_variant,
             "image_pipeline": {
                 "formats": [pixel_format.value for pixel_format in device.image_pipeline.formats],
                 "encoding": device.image_pipeline.encoding.value,
@@ -285,6 +298,11 @@ class PrinterCatalog:
             display_name=display_name or str(config.get("display_name") or profile.profile_key),
             profile=profile,
             protocol_family=ProtocolFamily.from_value(str(config["protocol_family"])),
+            protocol_variant=(
+                profile.default_protocol_variant
+                if config.get("protocol_variant") in (None, "")
+                else str(config["protocol_variant"])
+            ),
             image_pipeline=_parse_image_pipeline(image_pipeline_entry),
             runtime_variant=(
                 None
@@ -329,6 +347,7 @@ class PrinterCatalog:
         display_name: str,
         profile: PrinterProfile,
         protocol_family: ProtocolFamily,
+        protocol_variant: str | None,
         image_pipeline: ImagePipelineConfig,
         runtime_variant: str | None,
         runtime_density_profile_key: str | None,
@@ -342,10 +361,15 @@ class PrinterCatalog:
             if runtime_density_profile_key is None
             else self.require_profile(runtime_density_profile_key)
         )
+        resolved_protocol_variant = (
+            profile.default_protocol_variant if protocol_variant is None else protocol_variant
+        )
+        self._validate_protocol_variant(protocol_family, resolved_protocol_variant)
         return PrinterDevice(
             display_name=display_name,
             profile=profile,
             protocol_family=protocol_family,
+            protocol_variant=resolved_protocol_variant,
             image_pipeline=image_pipeline,
             runtime_variant=runtime_variant,
             runtime_density_profile=runtime_density_profile,
@@ -354,6 +378,19 @@ class PrinterCatalog:
             testing=testing,
             testing_note=testing_note,
         )
+
+    @staticmethod
+    def _validate_protocol_variant(
+        protocol_family: ProtocolFamily,
+        protocol_variant: str | None,
+    ) -> None:
+        if protocol_variant in (None, ""):
+            return
+        supported_variants = get_protocol_behavior(protocol_family).supported_protocol_variants
+        if protocol_variant not in supported_variants:
+            raise RuntimeError(
+                f"{protocol_family.value} does not support protocol variant {protocol_variant!r}"
+            )
 
     @staticmethod
     def _select_image_pipeline(

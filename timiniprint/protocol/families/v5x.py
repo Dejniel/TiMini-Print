@@ -93,11 +93,19 @@ def _gray_payload(raster) -> bytes:
     raise ValueError("V5X gray jobs require GRAY4 or GRAY8 raster data")
 
 
-def advance_paper_cmd(_dpi: int, protocol_family: ProtocolFamily) -> bytes:
+def advance_paper_cmd(
+    _dpi: int,
+    protocol_family: ProtocolFamily,
+    _protocol_variant: str | None = None,
+) -> bytes:
     return make_packet(0xA3, _MANUAL_MOTION_PAYLOAD, protocol_family)
 
 
-def retract_paper_cmd(_dpi: int, protocol_family: ProtocolFamily) -> bytes:
+def retract_paper_cmd(
+    _dpi: int,
+    protocol_family: ProtocolFamily,
+    _protocol_variant: str | None = None,
+) -> bytes:
     return make_packet(0xA4, _MANUAL_MOTION_PAYLOAD, protocol_family)
 
 
@@ -126,7 +134,7 @@ def _start_print_payload(height: int, request: PrintJobRequest) -> bytes:
 def _gray_start_packet(height: int, protocol_family: ProtocolFamily) -> bytes:
     family = ProtocolFamily.from_value(protocol_family)
     height_bytes = height.to_bytes(2, "little")
-    header = family.packet_prefix + bytes([0xA9, 0x00, 0x02, 0x00])
+    header = family.require_packet_prefix() + bytes([0xA9, 0x00, 0x02, 0x00])
     return header + height_bytes + bytes([crc8_value(height_bytes), 0xFF])
 
 

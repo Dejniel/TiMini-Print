@@ -83,6 +83,7 @@ class PrinterDevice:
     display_name: str
     profile: "PrinterProfile"
     protocol_family: ProtocolFamily
+    protocol_variant: str | None
     image_pipeline: ImagePipelineConfig
     runtime_variant: str | None = None
     runtime_density_profile: "PrinterProfile | None" = None

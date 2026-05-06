@@ -25,6 +25,7 @@ It describes printer capabilities and tuning.
 A `PrinterProfile` is not enough to print by itself.
 It does not say:
 - which protocol family is active right now
+- which protocol variant is active right now
 - which image pipeline is active right now
 - which transport target is active right now
 
@@ -34,6 +35,7 @@ It combines:
 - display name
 - profile
 - protocol family
+- optional protocol variant
 - image pipeline
 - runtime metadata
 - optional transport target

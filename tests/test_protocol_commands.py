@@ -31,12 +31,16 @@ class ProtocolCommandsTests(unittest.TestCase):
     def test_protocol_specs_expose_command_set_and_transport_style(self) -> None:
         self.assertEqual(ProtocolFamily.LEGACY.command_set, ProtocolCommandSet.LEGACY)
         self.assertEqual(ProtocolFamily.LEGACY_PREFIXED.command_set, ProtocolCommandSet.LEGACY)
+        self.assertEqual(ProtocolFamily.LUCK_NORMAL.command_set, ProtocolCommandSet.LUCK_NORMAL)
+        self.assertEqual(ProtocolFamily.LUCK_NORMAL_A4.command_set, ProtocolCommandSet.LUCK_NORMAL)
         self.assertEqual(ProtocolFamily.V5X.command_set, ProtocolCommandSet.V5X)
         self.assertEqual(ProtocolFamily.V5C.command_set, ProtocolCommandSet.V5C)
         self.assertEqual(ProtocolFamily.DCK.command_set, ProtocolCommandSet.DCK)
 
         self.assertEqual(ProtocolFamily.LEGACY.transport_style, ProtocolTransportStyle.STANDARD)
         self.assertEqual(ProtocolFamily.LEGACY_PREFIXED.transport_style, ProtocolTransportStyle.STANDARD)
+        self.assertEqual(ProtocolFamily.LUCK_NORMAL.transport_style, ProtocolTransportStyle.STANDARD)
+        self.assertEqual(ProtocolFamily.LUCK_NORMAL_A4.transport_style, ProtocolTransportStyle.STANDARD)
         self.assertEqual(ProtocolFamily.V5X.transport_style, ProtocolTransportStyle.SPLIT_BULK)
         self.assertEqual(ProtocolFamily.V5C.transport_style, ProtocolTransportStyle.FLOW_CONTROLLED)
         self.assertEqual(ProtocolFamily.DCK.transport_style, ProtocolTransportStyle.STANDARD)
@@ -45,9 +49,17 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertEqual(ProtocolFamily.from_value(None), ProtocolFamily.LEGACY)
         self.assertEqual(ProtocolFamily.from_value("legacy"), ProtocolFamily.LEGACY)
         self.assertEqual(ProtocolFamily.from_value("legacy_prefixed"), ProtocolFamily.LEGACY_PREFIXED)
+        self.assertEqual(ProtocolFamily.from_value("luck_normal"), ProtocolFamily.LUCK_NORMAL)
+        self.assertEqual(ProtocolFamily.from_value("luck_normal_a4"), ProtocolFamily.LUCK_NORMAL_A4)
         self.assertEqual(ProtocolFamily.from_value("v5x"), ProtocolFamily.V5X)
         self.assertEqual(ProtocolFamily.from_value("v5c"), ProtocolFamily.V5C)
         self.assertEqual(ProtocolFamily.from_value("dck"), ProtocolFamily.DCK)
+
+    def test_luck_normal_families_do_not_expose_prefixed_packet_layout(self) -> None:
+        self.assertFalse(ProtocolFamily.LUCK_NORMAL.uses_prefixed_packets)
+        self.assertFalse(ProtocolFamily.LUCK_NORMAL_A4.uses_prefixed_packets)
+        with self.assertRaisesRegex(ValueError, "does not use prefixed command packets"):
+            self.commands.make_packet(0xA2, b"\x01", ProtocolFamily.LUCK_NORMAL)
 
     def test_blackening_cmd_clamps_range(self) -> None:
         low = self.commands.blackening_cmd(0, ProtocolFamily.LEGACY)
@@ -80,6 +92,30 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertIn(bytes([0x05, 0x00]), feed)
         self.assertTrue(retract.startswith(bytes([0x22, 0x21, 0xA4, 0x00, 0x02, 0x00])))
         self.assertIn(bytes([0x05, 0x00]), retract)
+
+    def test_luck_normal_manual_motion_uses_plain_line_feed_commands(self) -> None:
+        feed = self.commands.advance_paper_cmd(203, ProtocolFamily.LUCK_NORMAL)
+        retract = self.commands.retract_paper_cmd(203, ProtocolFamily.LUCK_NORMAL)
+        a4_feed = self.commands.advance_paper_cmd(203, ProtocolFamily.LUCK_NORMAL_A4)
+
+        self.assertEqual(feed, bytes([0x1B, 0x4A, 0x50]))
+        self.assertEqual(retract, bytes([0x1F, 0x11, 0x11, 0x50]))
+        self.assertEqual(a4_feed, bytes([0x1B, 0x4A, 0x90]))
+
+    def test_luck_normal_manual_motion_accepts_variant_overrides(self) -> None:
+        qirui_q2_feed = self.commands.advance_paper_cmd(
+            300,
+            ProtocolFamily.LUCK_NORMAL,
+            "qirui_q2",
+        )
+        qirui_q2_retract = self.commands.retract_paper_cmd(
+            300,
+            ProtocolFamily.LUCK_NORMAL,
+            "qirui_q2",
+        )
+
+        self.assertEqual(qirui_q2_feed, bytes([0x1B, 0x4A, 0x82]))
+        self.assertEqual(qirui_q2_retract, bytes([0x1F, 0x11, 0x11, 0x82]))
 
 
 if __name__ == "__main__":

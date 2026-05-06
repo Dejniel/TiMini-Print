@@ -86,6 +86,7 @@ class PrinterProfile:
     label_value: str
     back_paper_num: int
     default_protocol_family: ProtocolFamily
+    default_protocol_variant: str | None
     default_image_pipeline: ImagePipelineConfig
     stream: StreamProfile
     speed: SpeedProfile
@@ -118,6 +119,7 @@ class DetectionRule:
     exact_names: tuple[str, ...]
     profile_key: str
     protocol_family: ProtocolFamily
+    protocol_variant: str | None = None
     mac_suffixes: tuple[str, ...] = ()
     image_pipeline: ImagePipelineConfig | None = None
     runtime_variant: str | None = None

@@ -17,8 +17,9 @@ def crc8_value(data: bytes) -> int:
 def make_packet(cmd: int, payload: bytes, protocol_family: ProtocolFamily | str) -> bytes:
     """Wrap a payload in the printer command packet format."""
     family = ProtocolFamily.from_value(protocol_family)
+    prefix = family.require_packet_prefix()
     length = len(payload)
-    header = family.packet_prefix + bytes(
+    header = prefix + bytes(
         [cmd & 0xFF, 0x00, length & 0xFF, (length >> 8) & 0xFF]
     )
     checksum = crc8_value(payload)
@@ -32,6 +33,8 @@ def prefixed_packet_length(
 ) -> Optional[int]:
     family = ProtocolFamily.from_value(protocol_family)
     prefix = family.packet_prefix
+    if prefix is None:
+        return None
     if offset < 0 or offset + len(prefix) + 4 > len(data):
         return None
     if data[offset : offset + len(prefix)] != prefix:
