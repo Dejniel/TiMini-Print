@@ -959,14 +959,6 @@
       "original_app_name": "Luck sheet-label"
     },
     {
-      "id": "todo-luck-custom",
-      "status": "todo",
-      "primary_names": [
-        "Custom sheet-label workflows"
-      ],
-      "original_app_name": "Luck custom"
-    },
-    {
       "id": "todo-luck-unfinished-branches",
       "status": "todo",
       "primary_names": [

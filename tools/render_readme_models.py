@@ -161,6 +161,17 @@ def _renders_inline(entry: InventoryEntry) -> bool:
     return entry.render_mode == "flat"
 
 
+def _renders_as_single_name(entry: InventoryEntry) -> bool:
+    primary_public_names = _dedupe_names(entry.primary_names)
+    if len(primary_public_names) != 1:
+        return False
+    if _entry_clone_names(entry):
+        return False
+    if entry.display_label is None:
+        return True
+    return entry.display_label == primary_public_names[0]
+
+
 def _entry_label(entry: InventoryEntry, *, include_original_app_name: bool) -> str:
     if entry.display_label:
         label = entry.display_label
@@ -179,6 +190,14 @@ def render_supported_models_block(entries: list[InventoryEntry]) -> str:
             for name in entry.primary_names:
                 main_names.append(_render_primary_name(name, original_app_name=entry.original_app_name))
             continue
+        if _renders_as_single_name(entry):
+            main_names.append(
+                _render_primary_name(
+                    entry.primary_names[0],
+                    original_app_name=entry.original_app_name,
+                )
+            )
+            continue
         if entry.display_label or _entry_clone_names(entry):
             continue
         for name in entry.primary_names:
@@ -188,7 +207,13 @@ def render_supported_models_block(entries: list[InventoryEntry]) -> str:
 
     lines = [", ".join(main_names)]
     bullet_entries = [
-        entry for entry in supported if not _renders_inline(entry) and (entry.display_label or _entry_clone_names(entry))
+        entry
+        for entry in supported
+        if (
+            not _renders_inline(entry)
+            and not _renders_as_single_name(entry)
+            and (entry.display_label or _entry_clone_names(entry))
+        )
     ]
     bullet_entries.sort(key=lambda entry: _display_name_sort_key(_entry_label(entry, include_original_app_name=False)))
     for entry in bullet_entries:
@@ -204,8 +229,12 @@ def render_supported_models_block(entries: list[InventoryEntry]) -> str:
 def render_todo_models_block(entries: list[InventoryEntry]) -> str:
     todo = [entry for entry in entries if entry.status == "todo"]
     todo.sort(key=lambda entry: _display_name_sort_key(_entry_label(entry, include_original_app_name=False)))
+    main_names: list[str] = []
     lines = []
     for entry in todo:
+        if _renders_as_single_name(entry):
+            main_names.append(_entry_label(entry, include_original_app_name=False))
+            continue
         line = f"- {_entry_label(entry, include_original_app_name=False)}"
         clone_names = _entry_clone_names(entry)
         if clone_names:
@@ -213,6 +242,9 @@ def render_todo_models_block(entries: list[InventoryEntry]) -> str:
         if entry.notes:
             line += f" — {entry.notes}"
         lines.append(line)
+    main_names = _dedupe_names(main_names)
+    if main_names:
+        return "\n".join([", ".join(main_names)] + lines)
     return "\n".join(lines)
 
 
