@@ -175,8 +175,6 @@ class PrinterCatalog:
             runtime_density_profile_key=None
             if entry.get("runtime_density_profile_key") is None
             else str(entry["runtime_density_profile_key"]),
-            testing=bool(entry.get("testing", False)),
-            testing_note=None if entry.get("testing_note") is None else str(entry.get("testing_note")),
         )
 
     @property
@@ -221,8 +219,6 @@ class PrinterCatalog:
             runtime_variant=rule.runtime_variant,
             runtime_density_profile_key=rule.runtime_density_profile_key,
             detection_rule_key=rule.rule_key,
-            testing=rule.testing,
-            testing_note=rule.testing_note,
             transport_target=transport_target,
         )
 
@@ -244,8 +240,6 @@ class PrinterCatalog:
             runtime_variant=None,
             runtime_density_profile_key=None,
             detection_rule_key=f"manual:{profile.profile_key}",
-            testing=False,
-            testing_note=None,
             transport_target=transport_target,
         )
 
@@ -267,8 +261,6 @@ class PrinterCatalog:
                 if device.runtime_density_profile is None
                 else device.runtime_density_profile.profile_key
             ),
-            "testing": device.testing,
-            "testing_note": device.testing_note,
             "transport_target": self._serialize_transport_target(device.transport_target),
         }
 
@@ -315,12 +307,6 @@ class PrinterCatalog:
                 else str(config["runtime_density_profile_key"])
             ),
             detection_rule_key=f"config:{profile.profile_key}",
-            testing=bool(config.get("testing", False)),
-            testing_note=(
-                None
-                if config.get("testing_note") in (None, "")
-                else str(config["testing_note"])
-            ),
             transport_target=resolved_transport_target,
         )
 
@@ -352,8 +338,6 @@ class PrinterCatalog:
         runtime_variant: str | None,
         runtime_density_profile_key: str | None,
         detection_rule_key: str,
-        testing: bool,
-        testing_note: Optional[str],
         transport_target: TransportTarget | None,
     ) -> PrinterDevice:
         runtime_density_profile = (
@@ -375,8 +359,6 @@ class PrinterCatalog:
             runtime_density_profile=runtime_density_profile,
             transport_target=transport_target,
             detection_rule_key=detection_rule_key,
-            testing=testing,
-            testing_note=testing_note,
         )
 
     @staticmethod

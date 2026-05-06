@@ -248,8 +248,6 @@ class BluetoothDiscovery:
             runtime_density_profile=classic_candidate.device.runtime_density_profile,
             transport_target=target,
             detection_rule_key=classic_candidate.device.detection_rule_key,
-            testing=classic_candidate.device.testing,
-            testing_note=classic_candidate.device.testing_note,
         )
 
     @staticmethod

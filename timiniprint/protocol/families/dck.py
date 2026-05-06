@@ -10,6 +10,7 @@ def build_job(_request: PrintJobRequest) -> bytes:
 
 
 BEHAVIOR = ProtocolBehavior(
+    implemented=False,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.DCK_DEFAULT,

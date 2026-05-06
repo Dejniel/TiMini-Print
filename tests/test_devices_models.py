@@ -411,11 +411,8 @@ class DevicesModelsTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertIsNone(self.catalog.detect_device(name))
 
-    def test_specific_experimental_and_bucket_rules_are_not_shadowed(self) -> None:
+    def test_specific_proxy_and_bucket_rules_are_not_shadowed(self) -> None:
         expected = {
-            ("YINTIBAO-V5PRO", None): ("p100s", ProtocolFamily.LEGACY),
-            ("LP220S", None): ("lp100s", ProtocolFamily.LEGACY_PREFIXED),
-            ("MP300S", None): ("p3s", ProtocolFamily.LEGACY),
             ("BQ95B", "AA:BB:CC:DD:EE:00"): ("v5g_small_203", ProtocolFamily.V5G),
             ("BQ95B", "AA:BB:CC:DD:EE:59"): ("v5g_small_203", ProtocolFamily.V5X),
             ("BQ95C", "AA:BB:CC:DD:EE:00"): ("v5g_small_203", ProtocolFamily.V5G),
@@ -469,7 +466,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(shared.energy.image.middle, 10000)
         self.assertEqual(shared.energy.text.high, 20000)
 
-    def test_experimental_rules_resolve_to_profiles_not_alias_donors(self) -> None:
+    def test_proxy_rules_resolve_to_profiles_not_alias_donors(self) -> None:
         jk01 = self.catalog.detect_device("JK01-ABCD")
         c21 = self.catalog.detect_device("C21-ABCD")
         mxwa4 = self.catalog.detect_device("MXW-A4-ABCD")
@@ -478,22 +475,18 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(jk01)
         self.assertEqual(jk01.profile_key, "v5x")
         self.assertEqual(jk01.protocol_family, ProtocolFamily.V5X)
-        self.assertTrue(jk01.testing)
 
         self.assertIsNotNone(c21)
         self.assertEqual(c21.profile_key, "d1")
         self.assertEqual(c21.protocol_family, ProtocolFamily.DCK)
-        self.assertTrue(c21.testing)
 
         self.assertIsNotNone(mxwa4)
         self.assertEqual(mxwa4.profile_key, "m08f")
         self.assertEqual(mxwa4.protocol_family, ProtocolFamily.LEGACY)
-        self.assertTrue(mxwa4.testing)
 
         self.assertIsNotNone(ytb01)
         self.assertEqual(ytb01.profile_key, "ytb01")
         self.assertEqual(ytb01.protocol_family, ProtocolFamily.V5C)
-        self.assertFalse(ytb01.testing)
 
     def test_derived_names_map_to_final_profiles(self) -> None:
         expected = {
@@ -503,7 +496,6 @@ class DevicesModelsTests(unittest.TestCase):
             "T02E-ABCD": "t02",
             "MXTP-100-ABCD": "mx06",
             "MXPC-100-ABCD": "v5g_small_203",
-            "LP100-ABCD": "lp100",
             "LY10-ABCD": "ly10",
             "PD01-ABCD": "v5g_small_203",
             "AZ-P2108X-ABCD": "v5g_small_203",
@@ -542,6 +534,20 @@ class DevicesModelsTests(unittest.TestCase):
                 resolved = self.catalog.detect_device(name, "AA:BB:CC:DD:EE:58")
                 self.assertIsNotNone(resolved)
                 self.assertEqual(resolved.profile_key, profile_key)
+
+    def test_old_ibleem_proxy_buckets_no_longer_resolve(self) -> None:
+        for name in (
+            "P100-ABCD",
+            "P100S-ABCD",
+            "LP100-ABCD",
+            "LP220S",
+            "YINTIBAO-V5PRO",
+            "MP300S",
+            "P4-ABCD",
+            "DL_X7Pro-ABCD",
+        ):
+            with self.subTest(name=name):
+                self.assertIsNone(self.catalog.detect_device(name))
 
 
 if __name__ == "__main__":

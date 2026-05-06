@@ -124,8 +124,6 @@ class DetectionRule:
     image_pipeline: ImagePipelineConfig | None = None
     runtime_variant: str | None = None
     runtime_density_profile_key: str | None = None
-    testing: bool = False
-    testing_note: Optional[str] = None
     _folded_prefixes: tuple[str, ...] = field(init=False, repr=False)
     _folded_exact_names: tuple[str, ...] = field(init=False, repr=False)
 

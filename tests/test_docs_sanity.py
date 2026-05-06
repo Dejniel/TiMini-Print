@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from tools.render_readme_models import assert_readme_is_current
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -35,6 +36,9 @@ class DocsSanityTests(unittest.TestCase):
         ]
         for pattern in forbidden:
             self.assertNotIn(pattern, text)
+
+    def test_readme_model_sections_are_generated_from_inventory(self) -> None:
+        assert_readme_is_current()
 
 
 if __name__ == "__main__":

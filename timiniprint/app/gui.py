@@ -302,11 +302,10 @@ class TiMiniPrintGUI(tk.Tk):
     def _device_label(self, device) -> str:
         name = device.display_name or ""
         transport = f" {device.transport_badge}"
-        experimental = device.experimental_badge
         status = " [unpaired]" if device.paired is False else ""
         if name:
-            return f"{name}{experimental} ({device.address}){transport}{status}"
-        return f"{device.address}{experimental}{transport}{status}"
+            return f"{name} ({device.address}){transport}{status}"
+        return f"{device.address}{transport}{status}"
 
     def _queue_status(self, key: str, **ctx) -> None:
         self.reporter.status(key, **ctx)

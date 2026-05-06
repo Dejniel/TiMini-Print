@@ -51,8 +51,6 @@ class GuiPaperModeChoiceTests(unittest.TestCase):
             runtime_density_profile=base.runtime_density_profile,
             transport_target=base.transport_target,
             detection_rule_key=base.detection_rule_key,
-            testing=base.testing,
-            testing_note=base.testing_note,
         )
 
         labels = [label for label, _mode in TiMiniPrintGUI._paper_mode_choices_for_device(device)]

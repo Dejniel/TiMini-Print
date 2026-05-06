@@ -616,14 +616,6 @@
     "protocol_family": "legacy"
   },
   {
-    "rule_key": "profile_dl_x7pro",
-    "prefixes": [
-      "DL_X7Pro-"
-    ],
-    "profile_key": "p3s",
-    "protocol_family": "legacy"
-  },
-  {
     "rule_key": "profile_jxm800",
     "prefixes": [
       "GG-D2100-"
@@ -768,26 +760,6 @@
     "protocol_family": "legacy"
   },
   {
-    "rule_key": "profile_lp100s",
-    "prefixes": [
-      "LP100S-"
-    ],
-    "profile_key": "lp100s",
-    "protocol_family": "legacy_prefixed",
-    "testing": true,
-    "testing_note": "Experimental high-dpi family proxy based on the LP100 family."
-  },
-  {
-    "rule_key": "profile_mp100s",
-    "prefixes": [
-      "MP100S-"
-    ],
-    "profile_key": "mp100s",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental high-dpi 2-inch family proxy for the label-capable MP100S variant."
-  },
-  {
     "rule_key": "profile_rs9000",
     "prefixes": [
       "RS9000-"
@@ -908,32 +880,12 @@
     "protocol_family": "legacy"
   },
   {
-    "rule_key": "profile_mp100",
-    "prefixes": [
-      "MP100-"
-    ],
-    "profile_key": "mp100",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental 2-inch family proxy for the label-capable MP100 variant."
-  },
-  {
     "rule_key": "profile_mpa81",
     "prefixes": [
       "MPA81-"
     ],
     "profile_key": "mpa81",
     "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "profile_p100s",
-    "prefixes": [
-      "P100S-"
-    ],
-    "profile_key": "p100s",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental high-dpi 2-inch family proxy. Width and dpi are known, but exact P100S runtime parameters are not fully confirmed."
   },
   {
     "rule_key": "profile_pr893",
@@ -1364,14 +1316,6 @@
     "protocol_family": "legacy"
   },
   {
-    "rule_key": "profile_lp100",
-    "prefixes": [
-      "LP100-"
-    ],
-    "profile_key": "lp100",
-    "protocol_family": "legacy_prefixed"
-  },
-  {
     "rule_key": "profile_ly10",
     "prefixes": [
       "LY10-"
@@ -1476,16 +1420,6 @@
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
     "runtime_density_profile_key": "mx11"
-  },
-  {
-    "rule_key": "profile_p100",
-    "prefixes": [
-      "P100-"
-    ],
-    "profile_key": "p100",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental 2-inch family proxy. Width and dpi are known, but exact P100 runtime parameters are not fully confirmed."
   },
   {
     "rule_key": "profile_p5ai",
@@ -1816,16 +1750,6 @@
     "protocol_family": "legacy"
   },
   {
-    "rule_key": "profile_p3s",
-    "prefixes": [
-      "P3S-"
-    ],
-    "profile_key": "p3s",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental high-dpi wide-format family proxy. TiMini Print uses a fixed 1280 px profile here as a best-effort fallback."
-  },
-  {
     "rule_key": "profile_p7h",
     "prefixes": [
       "P7H-"
@@ -1855,9 +1779,7 @@
       "V5X-"
     ],
     "profile_key": "v5x",
-    "protocol_family": "v5x",
-    "testing": true,
-    "testing_note": "Experimental V5X family profile. Width and protocol family are known; remaining runtime values follow current 2-inch defaults."
+    "protocol_family": "v5x"
   },
   {
     "rule_key": "profile_x16",
@@ -1978,24 +1900,6 @@
       "P2-"
     ],
     "profile_key": "d1",
-    "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "profile_p3",
-    "prefixes": [
-      "P3-"
-    ],
-    "profile_key": "p3",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental wide-format family proxy. TiMini Print uses a fixed 832 px profile here as a best-effort fallback."
-  },
-  {
-    "rule_key": "profile_p4",
-    "prefixes": [
-      "P4-"
-    ],
-    "profile_key": "p4",
     "protocol_family": "legacy"
   },
   {
@@ -2524,72 +2428,6 @@
     "protocol_family": "legacy"
   },
   {
-    "rule_key": "alias_yintibao_v5pro",
-    "prefixes": [
-      "YINTIBAO-V5PRO",
-      "MP200S",
-      "MP220S"
-    ],
-    "profile_key": "p100s",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental high-dpi 2-inch family aliases mapped to the P100S testing profile."
-  },
-  {
-    "rule_key": "alias_yintibao_v5",
-    "prefixes": [
-      "YINTIBAO-V5",
-      "MP200",
-      "MP220",
-      "AEQ918N4"
-    ],
-    "profile_key": "p100",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental 2-inch family aliases mapped to the P100 testing profile."
-  },
-  {
-    "rule_key": "alias_lp220s",
-    "prefixes": [
-      "LP220S"
-    ],
-    "profile_key": "lp100s",
-    "protocol_family": "legacy_prefixed",
-    "testing": true,
-    "testing_note": "Experimental high-dpi label-family aliases mapped to the LP100S testing profile."
-  },
-  {
-    "rule_key": "alias_lp220",
-    "prefixes": [
-      "LP220",
-      "LY100_BLE"
-    ],
-    "profile_key": "lp100",
-    "protocol_family": "legacy_prefixed",
-    "testing": true,
-    "testing_note": "Experimental label-family aliases mapped to the LP100 profile."
-  },
-  {
-    "rule_key": "alias_mp300s",
-    "prefixes": [
-      "MP300S"
-    ],
-    "profile_key": "p3s",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental high-dpi wide-format family aliases mapped to the P3S testing profile."
-  },
-  {
-    "rule_key": "alias_mp300",
-    "prefixes": [
-      "MP300"
-    ],
-    "profile_key": "p3",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental wide-format family aliases mapped to the P3 testing profile."
-  },
-  {
     "rule_key": "alias_mxw01",
     "prefixes": [
       "MXW01",
@@ -2611,9 +2449,7 @@
       "X2"
     ],
     "profile_key": "v5x",
-    "protocol_family": "v5x",
-    "testing": true,
-    "testing_note": "Experimental V5X-family aliases mapped to the local V5X family profile."
+    "protocol_family": "v5x"
   },
   {
     "rule_key": "alias_c21",
@@ -2624,9 +2460,7 @@
       "NEWSMY"
     ],
     "profile_key": "d1",
-    "protocol_family": "dck",
-    "testing": true,
-    "testing_note": "Experimental DCK-family aliases mapped to the existing D1 profile."
+    "protocol_family": "dck"
   },
   {
     "rule_key": "alias_mxw_a4",
@@ -2634,9 +2468,7 @@
       "MXW-A4"
     ],
     "profile_key": "m08f",
-    "protocol_family": "legacy",
-    "testing": true,
-    "testing_note": "Experimental V10G-family alias mapped to the existing M08F profile."
+    "protocol_family": "legacy"
   },
   {
     "rule_key": "rule_luck_a2",

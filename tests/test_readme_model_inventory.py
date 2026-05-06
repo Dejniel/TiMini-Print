@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+import re
+import unittest
+
+from tools.render_readme_models import (
+    load_inventory_entries,
+    render_supported_models_block,
+    render_todo_models_block,
+    validate_inventory,
+)
+
+
+class ReadmeModelInventoryTests(unittest.TestCase):
+    def test_inventory_validates_against_runtime_catalog(self) -> None:
+        entries = load_inventory_entries()
+
+        self.assertEqual(validate_inventory(entries), [])
+
+    def test_supported_and_todo_blocks_render_non_empty_content(self) -> None:
+        entries = load_inventory_entries()
+
+        supported = render_supported_models_block(entries)
+        todo = render_todo_models_block(entries)
+
+        self.assertIn("CTP750BY (Shipping Printer)", supported)
+        self.assertIn("- MXW-A4", todo)
+        self.assertIn("- JXPRINTER and clones: PRINTER", todo)
+        self.assertIn("- BAYPAGE and clones: YINTIBAO-V8S", todo)
+        self.assertIn("- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4", todo)
+        self.assertIn("- P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO", todo)
+        self.assertIn("- P3 and clones: MP300", todo)
+        self.assertIn("- P3S and clones: MP300S", todo)
+        self.assertIn("- P4", todo)
+        self.assertNotIn("(iBleem", todo)
+        self.assertNotIn("(Luck ", todo)
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100S(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])MP100(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])MP100S(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])LP100(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])LP100S(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])", supported))
+
+    def test_rendered_readme_names_do_not_keep_trailing_detection_suffixes(self) -> None:
+        entries = load_inventory_entries()
+
+        rendered = "\n".join(
+            [
+                render_supported_models_block(entries),
+                render_todo_models_block(entries),
+            ]
+        )
+
+        self.assertIsNone(re.search(r"\b[^\s,()]+[_-](?=[,\n])", rendered))
+
+
+if __name__ == "__main__":
+    unittest.main()

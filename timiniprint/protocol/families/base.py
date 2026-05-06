@@ -40,6 +40,7 @@ class BleTransportProfile:
 
 @dataclass(frozen=True)
 class ProtocolBehavior:
+    implemented: bool = True
     transport: BleTransportProfile = field(default_factory=BleTransportProfile)
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(

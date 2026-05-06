@@ -97,13 +97,12 @@ def scan_devices(reporter: reporting.Reporter) -> int:
         for device in result.devices:
             name = device.display_name or ""
             transport_badge = f" {device.transport_badge}" if device.transport_badge else ""
-            experimental = device.experimental_badge
             status = " [unpaired]" if device.paired is False else ""
             profile = f" [profile: {device.profile_key}]"
             if name:
-                print(f"{name}{experimental}{profile} ({device.address}){transport_badge}{status}")
+                print(f"{name}{profile} ({device.address}){transport_badge}{status}")
             else:
-                print(f"{device.address}{experimental}{profile}{transport_badge}{status}")
+                print(f"{device.address}{profile}{transport_badge}{status}")
 
     try:
         asyncio.run(run())

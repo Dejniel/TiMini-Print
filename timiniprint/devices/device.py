@@ -89,8 +89,6 @@ class PrinterDevice:
     runtime_density_profile: "PrinterProfile | None" = None
     transport_target: TransportTarget | None = None
     detection_rule_key: str = ""
-    testing: bool = False
-    testing_note: Optional[str] = None
 
     @property
     def name(self) -> str:
@@ -99,10 +97,6 @@ class PrinterDevice:
     @property
     def profile_key(self) -> str:
         return self.profile.profile_key
-
-    @property
-    def experimental_badge(self) -> str:
-        return " [experimental]" if self.testing else ""
 
     @property
     def address(self) -> str:
