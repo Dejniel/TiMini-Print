@@ -29,11 +29,47 @@ class BluetoothScanResult:
     failures: List[ScanFailure]
 
 
+@dataclass(frozen=True)
+class _ResolvedBluetoothTarget:
+    """One raw Bluetooth target resolved without catalog model matching."""
+
+    display_name: str
+    transport_target: BluetoothTarget
+
+
 class BluetoothDiscovery:
     """Discover reachable Bluetooth printers and resolve them into devices."""
 
     def __init__(self, catalog: PrinterCatalog) -> None:
         self._catalog = catalog
+
+    async def _scan_endpoints(
+        self,
+        *,
+        timeout: float = 5.0,
+        include_classic: bool = True,
+        include_ble: bool = True,
+    ) -> tuple[List[DeviceInfo], List[ScanFailure]]:
+        devices, failures = await SppBackend.scan_with_failures(
+            timeout=timeout,
+            include_classic=include_classic,
+            include_ble=include_ble,
+        )
+        if include_classic and include_ble:
+            resolved_targets = self._transport_targets_from_scan(devices)
+            needs_retry = any(
+                item.transport_target.classic_endpoint is not None
+                and item.transport_target.ble_endpoint is None
+                for item in resolved_targets
+            )
+            if needs_retry:
+                ble_devices, _failures = await SppBackend.scan_with_failures(
+                    timeout=timeout,
+                    include_classic=False,
+                    include_ble=True,
+                )
+                devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
+        return devices, failures
 
     def _filter_supported_endpoints(self, devices: Iterable[DeviceInfo]) -> List[DeviceInfo]:
         filtered = []
@@ -50,26 +86,11 @@ class BluetoothDiscovery:
         include_ble: bool = True,
     ) -> BluetoothScanResult:
         """Scan Bluetooth and return logical devices plus transport scan failures."""
-        devices, failures = await SppBackend.scan_with_failures(
+        devices, failures = await self._scan_endpoints(
             timeout=timeout,
             include_classic=include_classic,
             include_ble=include_ble,
         )
-        if include_classic and include_ble:
-            resolved = self.devices_from_scan(devices)
-            needs_retry = any(
-                isinstance(item.transport_target, BluetoothTarget)
-                and item.transport_target.classic_endpoint is not None
-                and item.transport_target.ble_endpoint is None
-                for item in resolved
-            )
-            if needs_retry:
-                ble_devices, _failures = await SppBackend.scan_with_failures(
-                    timeout=timeout,
-                    include_classic=False,
-                    include_ble=True,
-                )
-                devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
         return BluetoothScanResult(
             devices=self.devices_from_scan(devices),
             failures=failures,
@@ -109,6 +130,34 @@ class BluetoothDiscovery:
                 resolved.append(self._single_candidate(item))
         return self._sort_devices(resolved)
 
+    def _transport_targets_from_scan(
+        self,
+        devices: Iterable[DeviceInfo],
+    ) -> List[_ResolvedBluetoothTarget]:
+        """Resolve raw scan endpoints into logical Bluetooth transport targets."""
+        grouped: Dict[str, Dict[DeviceTransport, List[DeviceInfo]]] = {}
+        for endpoint in devices:
+            normalized_name = DetectionNormalizer.fold_name(endpoint.name or "")
+            key = normalized_name or endpoint.address.lower()
+            bucket = grouped.setdefault(
+                key,
+                {DeviceTransport.CLASSIC: [], DeviceTransport.BLE: []},
+            )
+            bucket[endpoint.transport].append(endpoint)
+
+        resolved: List[_ResolvedBluetoothTarget] = []
+        for key in sorted(grouped.keys()):
+            classic_items = grouped[key].get(DeviceTransport.CLASSIC, [])
+            ble_items = grouped[key].get(DeviceTransport.BLE, [])
+            if len(classic_items) == 1 and len(ble_items) == 1:
+                resolved.append(self._merge_transport_targets(classic_items[0], ble_items[0]))
+                continue
+            for item in classic_items:
+                resolved.append(self._single_transport_target(item))
+            for item in ble_items:
+                resolved.append(self._single_transport_target(item))
+        return self._sort_transport_targets(resolved)
+
     async def resolve_device(
         self,
         name_or_address: Optional[str],
@@ -145,6 +194,38 @@ class BluetoothDiscovery:
         else:
             device = devices[0]
         return device
+
+    async def resolve_transport_target(
+        self,
+        name_or_address: Optional[str],
+        transport: Optional[DeviceTransport] = None,
+    ) -> _ResolvedBluetoothTarget:
+        """Scan Bluetooth and pick one raw target by name, address, or default."""
+        if transport == DeviceTransport.CLASSIC:
+            devices, _failures = await self._scan_endpoints(
+                include_classic=True,
+                include_ble=False,
+            )
+        elif transport == DeviceTransport.BLE:
+            devices, _failures = await self._scan_endpoints(
+                include_classic=False,
+                include_ble=True,
+            )
+        else:
+            devices, _failures = await self._scan_endpoints(
+                include_classic=True,
+                include_ble=True,
+            )
+        targets = self._transport_targets_from_scan(devices)
+        if not targets:
+            raise RuntimeError("No Bluetooth devices found")
+        if name_or_address:
+            target = self._select_transport_target(targets, name_or_address)
+            if target is None:
+                raise RuntimeError(f"No device matches '{name_or_address}'")
+        else:
+            target = targets[0]
+        return target
 
     def _build_endpoint_candidates(self, devices: Iterable[DeviceInfo]) -> List[_ResolvedEndpoint]:
         candidates: List[_ResolvedEndpoint] = []
@@ -191,27 +272,9 @@ class BluetoothDiscovery:
         return BluetoothEndpointTransport.CLASSIC
 
     def _single_candidate(self, candidate: _ResolvedEndpoint) -> PrinterDevice:
-        endpoint = BluetoothEndpoint(
-            name=candidate.endpoint.name or "",
-            address=candidate.endpoint.address,
-            paired=candidate.endpoint.paired,
-            transport=self._to_transport(candidate.endpoint),
+        return candidate.device.with_transport_target(
+            self._single_transport_target(candidate.endpoint).transport_target
         )
-        if endpoint.transport is BluetoothEndpointTransport.CLASSIC:
-            target = BluetoothTarget(
-                classic_endpoint=endpoint,
-                ble_endpoint=None,
-                display_address=endpoint.address,
-                transport_badge="[classic]",
-            )
-        else:
-            target = BluetoothTarget(
-                classic_endpoint=None,
-                ble_endpoint=endpoint,
-                display_address=endpoint.address,
-                transport_badge="[ble]",
-            )
-        return candidate.device.with_transport_target(target)
 
     def _merge_candidates(
         self,
@@ -250,6 +313,63 @@ class BluetoothDiscovery:
             detection_rule_key=classic_candidate.device.detection_rule_key,
         )
 
+    def _single_transport_target(self, endpoint: DeviceInfo) -> _ResolvedBluetoothTarget:
+        bluetooth_endpoint = BluetoothEndpoint(
+            name=endpoint.name or "",
+            address=endpoint.address,
+            paired=endpoint.paired,
+            transport=self._to_transport(endpoint),
+        )
+        if bluetooth_endpoint.transport is BluetoothEndpointTransport.CLASSIC:
+            target = BluetoothTarget(
+                classic_endpoint=bluetooth_endpoint,
+                ble_endpoint=None,
+                display_address=bluetooth_endpoint.address,
+                transport_badge="[classic]",
+            )
+        else:
+            target = BluetoothTarget(
+                classic_endpoint=None,
+                ble_endpoint=bluetooth_endpoint,
+                display_address=bluetooth_endpoint.address,
+                transport_badge="[ble]",
+            )
+        return _ResolvedBluetoothTarget(
+            display_name=endpoint.name or endpoint.address,
+            transport_target=target,
+        )
+
+    def _merge_transport_targets(
+        self,
+        classic_endpoint: DeviceInfo,
+        ble_endpoint: DeviceInfo,
+    ) -> _ResolvedBluetoothTarget:
+        target = BluetoothTarget(
+            classic_endpoint=BluetoothEndpoint(
+                name=classic_endpoint.name or "",
+                address=classic_endpoint.address,
+                paired=classic_endpoint.paired,
+                transport=BluetoothEndpointTransport.CLASSIC,
+            ),
+            ble_endpoint=BluetoothEndpoint(
+                name=ble_endpoint.name or "",
+                address=ble_endpoint.address,
+                paired=ble_endpoint.paired,
+                transport=BluetoothEndpointTransport.BLE,
+            ),
+            display_address=classic_endpoint.address,
+            transport_badge="[classic+ble]",
+        )
+        return _ResolvedBluetoothTarget(
+            display_name=self._choose_name(
+                classic_endpoint.name or "",
+                ble_endpoint.name or "",
+            )
+            or classic_endpoint.address
+            or ble_endpoint.address,
+            transport_target=target,
+        )
+
     @staticmethod
     def _looks_like_address(value: str) -> bool:
         trimmed = value.strip()
@@ -258,6 +378,18 @@ class BluetoothDiscovery:
     @staticmethod
     def _sort_devices(devices: Iterable[PrinterDevice]) -> List[PrinterDevice]:
         return sorted(list(devices), key=lambda item: (item.display_name or "", item.address))
+
+    @staticmethod
+    def _sort_transport_targets(
+        targets: Iterable[_ResolvedBluetoothTarget],
+    ) -> List[_ResolvedBluetoothTarget]:
+        return sorted(
+            list(targets),
+            key=lambda item: (
+                item.display_name or "",
+                item.transport_target.display_address,
+            ),
+        )
 
     def _select_device(
         self,
@@ -286,5 +418,30 @@ class BluetoothDiscovery:
                 return device
         return None
 
+    def _select_transport_target(
+        self,
+        targets: Iterable[_ResolvedBluetoothTarget],
+        name_or_address: str,
+    ) -> Optional[_ResolvedBluetoothTarget]:
+        if self._looks_like_address(name_or_address):
+            target_address = name_or_address.lower()
+            for item in targets:
+                target = item.transport_target
+                if target.display_address.lower() == target_address:
+                    return item
+                if target.classic_endpoint and target.classic_endpoint.address.lower() == target_address:
+                    return item
+                if target.ble_endpoint and target.ble_endpoint.address.lower() == target_address:
+                    return item
+            return None
+        target_name = name_or_address.lower()
+        for item in targets:
+            if (item.display_name or "").strip().lower() == target_name:
+                return item
+        for item in targets:
+            if target_name in (item.display_name or "").strip().lower():
+                return item
+        return None
 
-__all__ = ["BluetoothDiscovery"]
+
+__all__ = ["BluetoothDiscovery", "BluetoothScanResult"]

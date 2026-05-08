@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import tempfile
 import sys
 import types
@@ -12,6 +13,8 @@ from tests.helpers import install_crc8_stub
 install_crc8_stub()
 
 from timiniprint.app import cli
+from timiniprint.devices import BluetoothTarget, PrinterCatalog
+from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 
 
 class AppCliFlowsTests(unittest.TestCase):
@@ -28,6 +31,7 @@ class AppCliFlowsTests(unittest.TestCase):
             bluetooth=None,
             device_config=None,
             export_device_config=None,
+            export_profile_config=None,
             force_text_mode=False,
             force_image_mode=False,
             darkness=None,
@@ -145,6 +149,63 @@ class AppCliFlowsTests(unittest.TestCase):
 
             self.assertEqual(code, 0)
             catalog.serialize_device_config.assert_called_once_with(device)
+
+    def test_export_profile_config_writes_requested_profile(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_path = f"{tmpdir}/device.json"
+            args = self._args(export_profile_config=("luck_a2", out_path))
+
+            code = cli.export_profile_config(args, cli._build_cli_reporter(verbose=False))
+
+            self.assertEqual(code, 0)
+            exported = cli._load_device_config(out_path)
+            self.assertEqual(exported["profile_key"], "luck_a2")
+            self.assertEqual(exported["protocol_family"], "luck_normal")
+
+    def test_main_rejects_export_profile_config_combined_with_printing(self) -> None:
+        args = self._args(export_profile_config=("luck_a2", "printer.json"), path="x.txt")
+        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ):
+            self.assertEqual(
+                cli.main(["--export-profile-config", "luck_a2", "printer.json", "x.txt"]),
+                2,
+            )
+
+    def test_main_rejects_export_profile_config_combined_with_bluetooth(self) -> None:
+        args = self._args(export_profile_config=("luck_a2", "printer.json"), bluetooth="X6H")
+        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ):
+            self.assertEqual(
+                cli.main(["--export-profile-config", "luck_a2", "printer.json", "--bluetooth", "X6H"]),
+                2,
+            )
+
+    def test_device_config_with_bluetooth_uses_raw_target_resolution(self) -> None:
+        catalog = PrinterCatalog.load()
+        config = catalog.serialize_device_config(catalog.device_from_profile("x6h"))
+        endpoint = DeviceInfo(
+            name="PPA2L_3F19",
+            address="AA:BB:CC:DD:EE:01",
+            transport=DeviceTransport.CLASSIC,
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = f"{tmpdir}/device.json"
+            cli._write_device_config(config_path, config)
+            args = self._args(device_config=config_path, bluetooth="PPA2L_3F19")
+
+            with patch(
+                "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures",
+                AsyncMock(side_effect=[([endpoint], []), ([], [])]),
+            ):
+                device = asyncio.run(cli._resolve_bluetooth_device(args, catalog))
+
+        self.assertEqual(device.profile_key, "x6h")
+        self.assertEqual(device.display_name, "PPA2L_3F19")
+        self.assertIsInstance(device.transport_target, BluetoothTarget)
+        self.assertEqual(device.address, "AA:BB:CC:DD:EE:01")
 
 
 if __name__ == "__main__":

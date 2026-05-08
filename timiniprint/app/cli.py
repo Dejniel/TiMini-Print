@@ -36,6 +36,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         metavar="PATH",
         help="Resolve the current printer device config, write it as JSON, and exit",
     )
+    parser.add_argument(
+        "--export-profile-config",
+        nargs=2,
+        metavar=("KEY", "PATH"),
+        help="Write a fresh device config JSON for a known printer profile key and exit",
+    )
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-profiles", action="store_true", help="List known printer profiles and exit")
     parser.add_argument("--text", metavar="TEXT", help="Print raw text instead of a file path")
@@ -193,7 +199,7 @@ async def _resolve_bluetooth_device(
     if config is None:
         return await discovery.resolve_device(args.bluetooth)
     if args.bluetooth:
-        detected = await discovery.resolve_device(args.bluetooth)
+        detected = await discovery.resolve_transport_target(args.bluetooth)
         return catalog.device_from_config(
             config,
             transport_target=detected.transport_target,
@@ -215,7 +221,7 @@ def _resolve_serial_device(
     if not args.device_config:
         raise RuntimeError(
             "Serial printing requires --device-config "
-            "(export one first with --export-device-config)"
+            "(export one first with --export-device-config or --export-profile-config)"
         )
     return catalog.device_from_config(
         _load_device_config(args.device_config),
@@ -249,6 +255,29 @@ def export_device_config(
         )
 
     asyncio.run(run())
+    return 0
+
+
+def export_profile_config(
+    args: argparse.Namespace,
+    reporter: reporting.Reporter,
+) -> int:
+    catalog = PrinterCatalog.load()
+    profile_key, out_path = args.export_profile_config
+    device = catalog.device_from_profile(profile_key)
+    _write_device_config(
+        out_path,
+        catalog.serialize_device_config(device),
+    )
+    reporter.debug(
+        short="Config",
+        detail=(
+            "Exported profile config: "
+            f"path={out_path} "
+            f"profile={device.profile_key} "
+            f"family={device.protocol_family.value}"
+        ),
+    )
     return 0
 
 
@@ -458,6 +487,29 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return list_profiles()
     if args.scan:
         return scan_devices(reporter)
+    if args.export_profile_config:
+        if (
+            args.path
+            or args.text is not None
+            or args.feed
+            or args.retract
+            or args.bluetooth
+            or args.serial
+            or args.device_config
+            or args.export_device_config
+        ):
+            reporter.error(
+                detail=(
+                    "Provide only --export-profile-config KEY PATH when exporting a profile config. "
+                    "Do not combine it with printing, transport, or other config flags. Use --help for usage."
+                )
+            )
+            return 2
+        try:
+            return export_profile_config(args, reporter)
+        except Exception as exc:
+            reporter.error(detail=str(exc), exc=exc)
+            return 2
     if args.export_device_config:
         if args.path or args.text is not None or args.feed or args.retract:
             reporter.error(

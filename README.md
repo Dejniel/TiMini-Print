@@ -73,6 +73,13 @@ python3 timiniprint_gui.py
   ./TiMini-Print-Command-Line-Linux-x86_64 --serial /dev/rfcomm0 --device-config printer.json /path/to/file.pdf
   ```
 
+- Force a specific model for an unsupported or random Bluetooth name:
+  ```bash
+  ./TiMini-Print-Command-Line-Linux-x86_64 --list-profiles
+  ./TiMini-Print-Command-Line-Linux-x86_64 --export-profile-config luck_a2 printer.json
+  ./TiMini-Print-Command-Line-Linux-x86_64 --bluetooth "PPA2L_3F19" --device-config printer.json /path/to/file.pdf
+  ```
+
 - Print raw text without creating a file:
   ```bash
   ./TiMini-Print-Command-Line-Linux-x86_64 --text "Hello from CLI"
@@ -91,7 +98,8 @@ python3 timiniprint_gui.py
 ## Notes
 - If `--bluetooth` is omitted, the first supported printer found is used
 - For `--serial`, you must pass `--device-config`
-- `--export-device-config` writes the full resolved runtime config as JSON and `--device-config` loads that JSON back and forces the saved protocol/profile/runtime values
+- `--export-profile-config KEY PATH` writes a fresh `device-config` JSON from a known profile key, while `--export-device-config` writes the full resolved runtime config as JSON; `--device-config` loads either form back and forces the saved protocol/profile/runtime values
+- Manual `--device-config` overrides are for advanced testing only; if you force the wrong profile or protocol family, printing may still fail
 
 # Notes
 - On first Classic connection on Windows/macOS, the system may request pairing confirmation

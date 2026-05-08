@@ -67,6 +67,23 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(result.devices[0].transport_badge, "[classic+ble]")
         self.assertEqual(result.devices[0].profile_key, "x6h")
 
+    def test_resolve_transport_target_allows_unsupported_name(self) -> None:
+        classic = DeviceInfo(
+            name="PPA2L_3F19",
+            address="AA:BB:CC:DD:EE:01",
+            transport=DeviceTransport.CLASSIC,
+        )
+
+        with patch(
+            "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures",
+            AsyncMock(side_effect=[([classic], []), ([], [])]),
+        ):
+            resolved = _run(self.discovery.resolve_transport_target("PPA2L_3F19"))
+
+        self.assertEqual(resolved.display_name, "PPA2L_3F19")
+        self.assertEqual(resolved.transport_target.display_address, "AA:BB:CC:DD:EE:01")
+        self.assertEqual(resolved.transport_target.transport_badge, "[classic]")
+
     def test_device_config_roundtrip_preserves_detected_bluetooth_metadata(self) -> None:
         auto = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(auto)
