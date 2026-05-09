@@ -10,7 +10,7 @@ from ..protocol.families import (
     protocol_requires_speed,
 )
 from ..protocol.family import ProtocolFamily
-from ..protocol.types import ImageEncoding, ImagePipelineConfig
+from ..protocol.types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..raster import PixelFormat
 from .device import (
     BluetoothEndpoint,
@@ -64,6 +64,7 @@ class PrinterCatalog:
         self._profile_by_key = {profile.profile_key: profile for profile in self._profiles}
         self._rule_by_key = {rule.rule_key: rule for rule in self._rules}
         self._validate_speed_requirements()
+        self._validate_default_paper_modes()
 
     @classmethod
     def load(
@@ -128,6 +129,11 @@ class PrinterCatalog:
                 if entry.get("default_protocol_variant") in (None, "")
                 else str(entry["default_protocol_variant"])
             ),
+            default_paper_mode=(
+                None
+                if entry.get("default_paper_mode") in (None, "")
+                else PaperMode(str(entry["default_paper_mode"]))
+            ),
             default_image_pipeline=_parse_image_pipeline(entry["default_image_pipeline"]),
             stream=StreamProfile(
                 chunk_size=int(stream_payload["chunk_size"]),
@@ -184,6 +190,24 @@ class PrinterCatalog:
         raise ValueError(
             f"{context} requires speed tuning, but profile {profile.profile_key} does not define it"
         )
+
+    def _validate_default_paper_modes(self) -> None:
+        for profile in self._profiles:
+            if profile.default_paper_mode is None:
+                continue
+            behavior = get_protocol_behavior(profile.default_protocol_family)
+            if behavior.supported_paper_modes_resolver is not None:
+                supported_modes = behavior.supported_paper_modes_resolver(
+                    profile.default_protocol_variant
+                )
+            else:
+                supported_modes = behavior.supported_paper_modes
+            if profile.default_paper_mode not in supported_modes:
+                raise ValueError(
+                    f"profile {profile.profile_key} default_paper_mode "
+                    f"{profile.default_paper_mode.value} is not supported by "
+                    f"{profile.default_protocol_family.value}"
+                )
 
     @staticmethod
     def _parse_rule(entry: Mapping[str, object]) -> DetectionRule:

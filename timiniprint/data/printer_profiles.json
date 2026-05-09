@@ -260,6 +260,7 @@
     "back_paper_num": 0,
     "default_protocol_family": "luck_normal",
     "default_protocol_variant": "lujiang_normal",
+    "default_paper_mode": "tag",
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -316,6 +317,7 @@
     "back_paper_num": 0,
     "default_protocol_family": "luck_normal",
     "default_protocol_variant": "lujiang_normal_h",
+    "default_paper_mode": "tag",
     "default_image_pipeline": {
       "formats": [
         "bw1",

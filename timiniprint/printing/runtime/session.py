@@ -10,8 +10,8 @@ if TYPE_CHECKING:
     from ...devices import PrinterDevice
 
 
-class _RuntimeProbeSession:
-    """Private probe-time session adapter built on top of a live connection."""
+class RuntimeConnectionSession:
+    """Runtime-controller session adapter built on top of a live connection."""
 
     def __init__(self, device: PrinterDevice, connection, *, reporter: reporting.Reporter) -> None:
         self._device = device
@@ -72,10 +72,16 @@ class _RuntimeProbeSession:
         self._reporter.warning(short=short, detail=detail)
 
     def can_send_control_packet(self) -> bool:
+        can_send_control_packet = getattr(self._connection, "can_send_control_packet", None)
+        if callable(can_send_control_packet):
+            return bool(can_send_control_packet())
         send_control_packet = getattr(self._connection, "send_control_packet", None)
         return callable(send_control_packet)
 
     def can_query_control_packet(self) -> bool:
+        can_query_control_packet = getattr(self._connection, "can_query_control_packet", None)
+        if callable(can_query_control_packet):
+            return bool(can_query_control_packet())
         query_control_packet = getattr(self._connection, "query_control_packet", None)
         return callable(query_control_packet)
 
@@ -90,3 +96,9 @@ class _RuntimeProbeSession:
         if not callable(query_control_packet):
             return None
         return await query_control_packet(packet, timeout=timeout)
+
+    async def send_standard_payload(self, data: bytes) -> None:
+        send_standard_payload = getattr(self._connection, "send_standard_payload", None)
+        if not callable(send_standard_payload):
+            raise RuntimeError("Connection does not support runtime standard payload sends")
+        await send_standard_payload(data)

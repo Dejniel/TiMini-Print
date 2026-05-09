@@ -188,6 +188,16 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         self.assertEqual(sock.sent, [b"\x10\xff\x20\xf0"])
         self.assertEqual(reply, b"PPA2L_GY")
 
+    def test_can_query_control_packet_distinguishes_classic_and_ble(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        backend._sock = _Socket()
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        self.assertTrue(backend.can_query_control_packet())
+
+        backend._transport = DeviceTransport.BLE
+        self.assertFalse(backend.can_query_control_packet())
+
 
 if __name__ == "__main__":
     unittest.main()

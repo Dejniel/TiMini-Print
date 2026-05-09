@@ -17,6 +17,7 @@ from ..devices import PrinterCatalog
 from ..printing.builder import PrintJobBuilder
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
+from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
 from ..protocol import PaperMode, PrinterProtocol
 from ..rendering.converters.text import TextConverter
@@ -476,6 +477,15 @@ class TiMiniPrintGUI(tk.Tk):
             return ()
         return tuple((mode.label, mode) for mode in PrinterProtocol(device).supported_paper_modes())
 
+    @staticmethod
+    def _default_paper_mode_label_for_device(device) -> str | None:
+        if device is None or device.profile.default_paper_mode is None:
+            return None
+        supported_modes = {mode for _label, mode in TiMiniPrintGUI._paper_mode_choices_for_device(device)}
+        if device.profile.default_paper_mode not in supported_modes:
+            return None
+        return device.profile.default_paper_mode.label
+
     def _selected_paper_mode(self) -> PaperMode | None:
         return self._paper_mode_choice_map.get(self.paper_mode_var.get())
 
@@ -487,7 +497,9 @@ class TiMiniPrintGUI(tk.Tk):
         self.paper_mode_combo["values"] = labels
         if labels:
             if self.paper_mode_var.get() not in self._paper_mode_choice_map:
-                self.paper_mode_var.set(labels[0])
+                self.paper_mode_var.set(
+                    self._default_paper_mode_label_for_device(device) or labels[0]
+                )
             self.paper_mode_label.grid()
             self.paper_mode_combo.grid()
         else:
@@ -545,7 +557,12 @@ class TiMiniPrintGUI(tk.Tk):
         async def run() -> None:
             self._queue_status(reporting.STATUS_PRINTING)
             job = builder.build_from_file(path)
-            await self.connection.send(job)
+            await send_prepared_job(
+                connected_device,
+                self.connection,
+                job,
+                reporter=self.reporter,
+            )
 
         self._queue_status(reporting.STATUS_PRINTING)
         self.ble_loop.submit(run(), callback=done)

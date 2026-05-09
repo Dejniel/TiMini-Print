@@ -31,6 +31,12 @@ class SerialConnection:
         _ = runtime_controller, timeout
         return None
 
+    def can_send_control_packet(self) -> bool:
+        return False
+
+    def can_query_control_packet(self) -> bool:
+        return False
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         _ = packet, timeout
         return False
@@ -42,11 +48,15 @@ class SerialConnection:
     async def send(self, job: ProtocolJob) -> None:
         """Send a protocol job over serial in blocking chunks via an executor."""
         _ = job.runtime_controller
+        await self.send_standard_payload(job.payload)
+
+    async def send_standard_payload(self, data: bytes) -> None:
+        """Send raw protocol payload over serial in blocking chunks via an executor."""
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(
             None,
             self._write_blocking,
-            job.payload,
+            data,
             self._device.profile.stream.chunk_size,
             self._device.profile.stream.delay_ms,
         )

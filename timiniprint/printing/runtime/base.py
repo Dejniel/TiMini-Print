@@ -42,6 +42,8 @@ class RuntimeSessionApi(Protocol):
 
     async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None: ...
 
+    async def send_standard_payload(self, data: bytes) -> None: ...
+
 
 class RuntimeController:
     def adopt_previous(self, previous: "RuntimeController | None") -> None:
@@ -70,6 +72,16 @@ class RuntimeController:
 
     def prepare_standard_payload(self, session: RuntimeSessionApi, data: bytes) -> bytes:
         return data
+
+    async def send_standard_job_payload(
+        self,
+        session: RuntimeSessionApi,
+        data: bytes,
+        *,
+        timeout: float,
+    ) -> bool:
+        _ = session, data, timeout
+        return False
 
     def on_standard_send_started(self, session: RuntimeSessionApi) -> None:
         return None

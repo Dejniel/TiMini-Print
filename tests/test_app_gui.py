@@ -64,6 +64,12 @@ class GuiPaperModeChoiceTests(unittest.TestCase):
         labels = [label for label, _mode in TiMiniPrintGUI._paper_mode_choices_for_device(device)]
         self.assertEqual(labels, ["Plain roll", "Tag"])
 
+    def test_default_paper_mode_label_uses_profile_default(self) -> None:
+        catalog = PrinterCatalog.load()
+        device = catalog.device_from_profile("luck_ppa2l")
+
+        self.assertEqual(TiMiniPrintGUI._default_paper_mode_label_for_device(device), "Tag")
+
 
 if __name__ == "__main__":
     unittest.main()

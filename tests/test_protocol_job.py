@@ -6,6 +6,8 @@ import zlib
 from unittest.mock import patch
 
 from tests.helpers import install_crc8_stub
+from timiniprint.devices import PrinterCatalog
+from timiniprint.protocol import PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families.v5x import V5X_FINALIZE_PACKET, V5X_GET_SERIAL_PACKET
 
@@ -245,6 +247,27 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x1B, 0x4A, 0x90])
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
+
+    def test_ppa2l_profile_default_builds_tag_paper_mode(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
+        raster_set = self._raster_set(self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0]))
+
+        job = PrinterProtocol(device).build_job(raster_set, is_text=False)
+
+        self.assertIn(bytes([0x1F, 0x80, 0x01, 0x20]), job.payload)
+        self.assertIn(bytes([0x10, 0xFF, 0xF1, 0x45]), job.payload)
+
+    def test_ppa2l_plain_override_omits_tag_paper_mode(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
+        raster_set = self._raster_set(self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0]))
+
+        job = PrinterProtocol(device).build_job(
+            raster_set,
+            is_text=False,
+            paper_mode=self.types.PaperMode.PLAIN,
+        )
+
+        self.assertNotIn(bytes([0x1F, 0x80, 0x01, 0x20]), job.payload)
 
     def test_build_luck_normal_gray_job_uses_gray_bitmap_header(self) -> None:
         raster_set = self._raster_set(

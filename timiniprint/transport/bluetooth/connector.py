@@ -32,6 +32,12 @@ class BleakBluetoothConnection:
     async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
         await self._backend.attach_runtime_controller(runtime_controller, timeout=timeout)
 
+    def can_send_control_packet(self) -> bool:
+        return self._backend.can_send_control_packet()
+
+    def can_query_control_packet(self) -> bool:
+        return self._backend.can_query_control_packet()
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         return await self._backend.send_control_packet(packet, timeout=timeout)
 
@@ -40,11 +46,18 @@ class BleakBluetoothConnection:
 
     async def send(self, job: ProtocolJob) -> None:
         """Send a protocol job using the device's stream tuning and runtime state."""
+        await self._send_payload(job.payload, runtime_controller=job.runtime_controller)
+
+    async def send_standard_payload(self, data: bytes) -> None:
+        """Send raw protocol payload using the device's stream tuning."""
+        await self._send_payload(data, runtime_controller=None)
+
+    async def _send_payload(self, data: bytes, *, runtime_controller=None) -> None:
         await self._backend.write(
-            job.payload,
+            data,
             self._device.profile.stream.chunk_size,
             self._device.profile.stream.delay_ms,
-            runtime_controller=job.runtime_controller,
+            runtime_controller=runtime_controller,
         )
 
     async def disconnect(self) -> None:

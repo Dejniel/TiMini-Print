@@ -6,7 +6,7 @@ from tests.helpers import reset_registry_cache
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import DetectionRule
 from timiniprint.protocol.family import ProtocolFamily
-from timiniprint.protocol.types import ImageEncoding
+from timiniprint.protocol.types import ImageEncoding, PaperMode
 from timiniprint.raster import PixelFormat
 
 
@@ -81,6 +81,22 @@ class DevicesModelsTests(unittest.TestCase):
         profile = PrinterCatalog._parse_profile(payload)
 
         self.assertIsNone(profile.speed)
+
+    def test_parse_profile_accepts_default_paper_mode(self) -> None:
+        payload = _with_optional_speed(_profile_payload(), None)
+        payload["default_protocol_family"] = "luck_normal"
+        payload["default_paper_mode"] = "tag"
+
+        profile = PrinterCatalog._parse_profile(payload)
+
+        self.assertEqual(profile.default_paper_mode, PaperMode.TAG)
+
+    def test_ppa2l_profiles_default_to_tag_mode(self) -> None:
+        ppa2l = self.catalog.require_profile("luck_ppa2l")
+        ppa2lh = self.catalog.require_profile("luck_ppa2lh")
+
+        self.assertEqual(ppa2l.default_paper_mode, PaperMode.TAG)
+        self.assertEqual(ppa2lh.default_paper_mode, PaperMode.TAG)
 
     def test_catalog_rejects_missing_speed_for_speed_family(self) -> None:
         profile = PrinterCatalog._parse_profile(_with_optional_speed(_profile_payload(), None))

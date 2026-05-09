@@ -75,6 +75,12 @@ class SppBackend:
             timeout,
         )
 
+    def can_send_control_packet(self) -> bool:
+        return self._can_send_control_packet_blocking()
+
+    def can_query_control_packet(self) -> bool:
+        return self._can_query_control_packet_blocking()
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
@@ -306,6 +312,26 @@ class SppBackend:
         attach_runtime_controller = getattr(self._sock, "attach_runtime_controller", None)
         if callable(attach_runtime_controller):
             attach_runtime_controller(runtime_controller, timeout=timeout)
+
+    def _can_send_control_packet_blocking(self) -> bool:
+        if not self._sock or not self._connected:
+            return False
+        if self._transport == DeviceTransport.BLE:
+            can_send_control_packet = getattr(self._sock, "can_send_control_packet", None)
+            if callable(can_send_control_packet):
+                return bool(can_send_control_packet())
+            return callable(getattr(self._sock, "send_control_packet", None))
+        return True
+
+    def _can_query_control_packet_blocking(self) -> bool:
+        if not self._sock or not self._connected:
+            return False
+        if self._transport == DeviceTransport.BLE:
+            can_query_control_packet = getattr(self._sock, "can_query_control_packet", None)
+            if callable(can_query_control_packet):
+                return bool(can_query_control_packet())
+            return False
+        return True
 
     def _send_control_packet_blocking(self, packet: bytes, timeout: float) -> bool:
         if not self._sock or not self._connected:

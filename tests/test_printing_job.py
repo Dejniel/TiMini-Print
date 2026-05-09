@@ -87,6 +87,7 @@ class PrintingJobTests(unittest.TestCase):
             ) as build_job_mock:
                 out = builder.build_from_file(str(path))
         self.assertEqual(out.payload, b"AB")
+        self.assertEqual(out.payload_segments, (b"A", b"B"))
         self.assertEqual(build_job_mock.call_args_list[0].kwargs["paper_mode"], PaperMode.TAG)
         self.assertEqual(build_job_mock.call_args_list[0].kwargs["page_index"], 1)
         self.assertEqual(build_job_mock.call_args_list[0].kwargs["page_count"], 2)

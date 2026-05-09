@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from ..protocol.family import ProtocolFamily
-from ..protocol.types import ImageEncoding, ImagePipelineConfig
+from ..protocol.types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..raster import PixelFormat
 
 
@@ -87,6 +87,7 @@ class PrinterProfile:
     back_paper_num: int
     default_protocol_family: ProtocolFamily
     default_protocol_variant: str | None
+    default_paper_mode: PaperMode | None
     default_image_pipeline: ImagePipelineConfig
     stream: StreamProfile
     speed: SpeedProfile | None

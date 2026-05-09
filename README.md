@@ -100,6 +100,7 @@ python3 timiniprint_gui.py
 - For `--serial`, you must pass `--device-config`
 - `--export-profile-config KEY PATH` writes a fresh `device-config` JSON from a known profile key, while `--export-device-config` writes the full resolved runtime config as JSON; `--device-config` loads either form back and forces the saved protocol/profile/runtime values
 - Manual `--device-config` overrides are for advanced testing only; if you force the wrong profile or protocol family, printing may still fail
+- `--paper-mode tag` or `--paper-mode plain` overrides the profile's default media mode when the selected protocol supports it
 
 # Notes
 - On first Classic connection on Windows/macOS, the system may request pairing confirmation

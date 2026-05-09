@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from ... import reporting
 from .base import PreparedRuntimeContext
 from .factory import runtime_controller_for_device
-from .session import _RuntimeProbeSession
+from .session import RuntimeConnectionSession
 
 if TYPE_CHECKING:
     from ...devices import PrinterDevice
@@ -24,7 +24,7 @@ async def prepare_connection_runtime(
     controller = runtime_controller_for_device(device)
     if controller is None:
         return PreparedRuntimeContext()
-    session = _RuntimeProbeSession(device, connection, reporter=reporter)
+    session = RuntimeConnectionSession(device, connection, reporter=reporter)
     await session.attach_runtime_controller(controller, timeout=timeout)
     await controller.probe_capabilities(session, timeout=timeout)
     return PreparedRuntimeContext(

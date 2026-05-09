@@ -42,6 +42,7 @@ class AppCliFlowsTests(unittest.TestCase):
             trim_top_bottom_margins=True,
             pdf_pages=None,
             pdf_page_gap=None,
+            paper_mode=None,
         )
         base.update(kwargs)
         return argparse.Namespace(**base)
@@ -93,6 +94,10 @@ class AppCliFlowsTests(unittest.TestCase):
             job = cli.build_print_job(device, path=None, text_input="hello")
         self.assertTrue(job.payload.startswith(b"OK:"))
 
+    def test_resolve_paper_mode_returns_enum(self) -> None:
+        self.assertIsNone(cli._resolve_paper_mode(self._args()))
+        self.assertEqual(cli._resolve_paper_mode(self._args(paper_mode="tag")).value, "tag")
+
     def test_print_and_motion_flows_use_connectors(self) -> None:
         args = self._args(path="x.txt", bluetooth="X6H")
         device = MagicMock()
@@ -116,19 +121,22 @@ class AppCliFlowsTests(unittest.TestCase):
             "timiniprint.app.cli.BleakBluetoothConnector"
         ) as connector_cls, patch(
             "timiniprint.app.cli.create_print_job_builder", return_value=builder
-        ):
+        ), patch("timiniprint.app.cli.send_prepared_job", new=AsyncMock()) as send_job:
             connector_cls.return_value.connect = AsyncMock(return_value=connection)
 
             code = cli.print_bluetooth(args, cli._build_cli_reporter(verbose=False))
             self.assertEqual(code, 0)
             connector_cls.return_value.connect.assert_awaited_once_with(device)
-            connection.send.assert_awaited_once_with(job)
+            send_job.assert_awaited_once()
+            self.assertIs(send_job.await_args.args[0], device)
+            self.assertIs(send_job.await_args.args[1], connection)
+            self.assertIs(send_job.await_args.args[2], job)
             connection.disconnect.assert_awaited_once()
 
             motion = self._args(feed=True, bluetooth="X6H")
             code = cli.paper_motion_bluetooth(motion, "feed", cli._build_cli_reporter(verbose=False))
             self.assertEqual(code, 0)
-            self.assertGreaterEqual(connection.send.await_count, 2)
+            connection.send.assert_awaited_once()
 
     def test_export_device_config_uses_resolved_device(self) -> None:
         device = MagicMock()

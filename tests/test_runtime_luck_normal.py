@@ -6,7 +6,10 @@ import unittest
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.runtime.prepare import prepare_connection_runtime
 from timiniprint.printing.runtime.luck_normal import (
+    LUCK_DENSITY_PREFIX,
     LUCK_MODEL_QUERY_PACKET,
+    LUCK_PAPER_TYPE_PREFIX,
+    LUCK_STATUS_QUERY_PACKET,
     LuckNormalRuntimeController,
 )
 
@@ -18,12 +21,15 @@ class _Session:
         can_send: bool = True,
         can_query: bool = True,
         reply: bytes | None = None,
+        replies: list[bytes | None] | None = None,
     ) -> None:
         self.notify_started = False
         self._can_send = can_send
         self._can_query = can_query
         self._reply = reply
+        self._replies = list(replies) if replies is not None else None
         self.query_packets: list[bytes] = []
+        self.standard_payloads: list[bytes] = []
         self.warnings: list[tuple[str, str]] = []
 
     def make_packet(self, opcode: int, payload: bytes) -> bytes:
@@ -62,7 +68,14 @@ class _Session:
         if not self._can_query:
             return None
         self.query_packets.append(bytes(packet))
+        if self._replies is not None:
+            if not self._replies:
+                return None
+            return self._replies.pop(0)
         return self._reply
+
+    async def send_standard_payload(self, data: bytes) -> None:
+        self.standard_payloads.append(bytes(data))
 
 
 class _ConnectionReporter:
@@ -151,6 +164,61 @@ class LuckNormalRuntimeControllerTests(unittest.TestCase):
         self.assertEqual(connection.queries, [LUCK_MODEL_QUERY_PACKET])
         self.assertEqual(len(connection.attached), 1)
         self.assertEqual(reporter.warnings, [])
+
+    def test_send_standard_job_payload_interleaves_luck_queries(self) -> None:
+        controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
+        session = _Session(replies=[b"OK", b"\x00", b"OK"])
+        density_packet = LUCK_DENSITY_PREFIX + bytes([1])
+        before_paper = bytes([0x10, 0xFF, 0xF1, 0x03]) + bytes(12)
+        paper_packet = LUCK_PAPER_TYPE_PREFIX + bytes([0x20])
+        after_paper = bytes([0x1D, 0x76, 0x30, 0x00, 0x01])
+        payload = density_packet + before_paper + paper_packet + after_paper
+
+        handled = asyncio.run(
+            controller.send_standard_job_payload(session, payload, timeout=0.1)
+        )
+
+        self.assertTrue(handled)
+        self.assertEqual(
+            session.query_packets,
+            [density_packet, LUCK_STATUS_QUERY_PACKET, paper_packet],
+        )
+        self.assertEqual(session.standard_payloads, [before_paper, after_paper])
+        self.assertEqual(session.warnings, [])
+
+    def test_send_standard_job_payload_does_not_parse_paper_type_inside_bitmap(self) -> None:
+        controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
+        session = _Session(replies=[b"OK", b"\x00"])
+        density_packet = LUCK_DENSITY_PREFIX + bytes([1])
+        before_bitmap = bytes([0x10, 0xFF, 0xF1, 0x03]) + bytes(12)
+        bitmap_with_paper_type_bytes = (
+            bytes([0x1D, 0x76, 0x30, 0x00, 0x01, 0x00, 0x01, 0x00])
+            + LUCK_PAPER_TYPE_PREFIX
+            + bytes([0x20])
+        )
+        payload = density_packet + before_bitmap + bitmap_with_paper_type_bytes
+
+        handled = asyncio.run(
+            controller.send_standard_job_payload(session, payload, timeout=0.1)
+        )
+
+        self.assertTrue(handled)
+        self.assertEqual(session.query_packets, [density_packet, LUCK_STATUS_QUERY_PACKET])
+        self.assertEqual(session.standard_payloads, [before_bitmap + bitmap_with_paper_type_bytes])
+        self.assertEqual(session.warnings, [])
+
+    def test_send_standard_job_payload_falls_back_without_query_transport(self) -> None:
+        controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
+        session = _Session(can_query=False)
+
+        handled = asyncio.run(
+            controller.send_standard_job_payload(session, b"payload", timeout=0.1)
+        )
+
+        self.assertFalse(handled)
+        self.assertEqual(session.standard_payloads, [])
+        self.assertEqual(len(session.warnings), 1)
+        self.assertIn("stream-only mode", session.warnings[0][1])
 
 
 if __name__ == "__main__":

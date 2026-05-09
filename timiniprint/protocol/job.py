@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from ..printing.runtime.base import RuntimePrintCapabilities
@@ -19,12 +18,28 @@ if TYPE_CHECKING:
     from ..printing.runtime.base import RuntimeController
 
 
-@dataclass(frozen=True)
 class ProtocolJob:
     """Printable protocol payload plus optional session runtime controller."""
 
-    payload: bytes
-    runtime_controller: RuntimeController | None = None
+    _payload: bytes | None
+    runtime_controller: RuntimeController | None
+    payload_segments: tuple[bytes, ...]
+
+    def __init__(
+        self,
+        payload: bytes | None = None,
+        runtime_controller: RuntimeController | None = None,
+        payload_segments: tuple[bytes, ...] = (),
+    ) -> None:
+        self._payload = payload
+        self.runtime_controller = runtime_controller
+        self.payload_segments = payload_segments or (() if payload is None else (payload,))
+
+    @property
+    def payload(self) -> bytes:
+        if self._payload is None:
+            self._payload = b"".join(self.payload_segments)
+        return self._payload
 
 
 class PrinterProtocol:
@@ -63,6 +78,9 @@ class PrinterProtocol:
             pixel_format_override=pixel_format_override,
             runtime_capabilities=runtime_capabilities,
         )
+        resolved_paper_mode = (
+            paper_mode if paper_mode is not None else self.device.profile.default_paper_mode
+        )
         payload = _build_job_from_raster_set(
             raster_set=raster_set,
             is_text=is_text,
@@ -84,7 +102,7 @@ class PrinterProtocol:
             can_print_label=self.device.profile.can_print_label,
             post_print_feed_count=self.device.profile.post_print_feed_count,
             image_pipeline=resolved_pipeline,
-            paper_mode=paper_mode,
+            paper_mode=resolved_paper_mode,
             page_index=page_index,
             page_count=page_count,
             runtime_capabilities=runtime_capabilities,

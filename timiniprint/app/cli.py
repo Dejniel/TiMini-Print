@@ -14,8 +14,9 @@ from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarg
 from ..printing.builder import PrintJobBuilder
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
+from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
-from ..protocol import PrinterProtocol, ProtocolJob
+from ..protocol import PaperMode, PrinterProtocol, ProtocolJob
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 from ..transport.bluetooth.types import DeviceTransport
 from ..transport.serial import SerialConnector
@@ -56,6 +57,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--no-trim-side-margins", action="store_false", dest="trim_side_margins", help="Disable auto-trimming white side margins for images and PDFs")
     parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins", help="Disable auto-trimming white top/bottom margins for images and PDFs")
     parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
+    parser.add_argument(
+        "--paper-mode",
+        choices=[mode.value for mode in PaperMode],
+        help="Override media mode for protocol families that support it",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug logs (CLI only)")
     parser.set_defaults(trim_side_margins=True)
     parser.set_defaults(trim_top_bottom_margins=True)
@@ -132,6 +138,7 @@ def create_print_job_builder(
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
     pdf_page_gap_mm: int = 5,
+    paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> PrintJobBuilder:
     settings = PrintSettings(
@@ -143,6 +150,7 @@ def create_print_job_builder(
         trim_top_bottom_margins=trim_top_bottom_margins,
         pdf_pages=pdf_pages,
         pdf_page_gap_mm=pdf_page_gap_mm,
+        paper_mode=paper_mode,
     )
     if blackening is not None:
         settings.blackening = blackening
@@ -162,6 +170,7 @@ def build_print_job(
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
     pdf_page_gap_mm: int = 5,
+    paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> ProtocolJob:
     builder = create_print_job_builder(
@@ -175,6 +184,7 @@ def build_print_job(
         trim_top_bottom_margins,
         pdf_pages,
         pdf_page_gap_mm,
+        paper_mode,
         runtime_context,
     )
     if text_input is None:
@@ -337,6 +347,12 @@ def _resolve_pdf_page_gap(args: argparse.Namespace) -> int:
     return args.pdf_page_gap
 
 
+def _resolve_paper_mode(args: argparse.Namespace) -> PaperMode | None:
+    if not args.paper_mode:
+        return None
+    return PaperMode(args.paper_mode)
+
+
 def _resolve_trim_side_margins(args: argparse.Namespace) -> bool:
     return bool(args.trim_side_margins)
 
@@ -388,9 +404,10 @@ def print_bluetooth(
                 trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
                 pdf_pages=_resolve_pdf_pages(args),
                 pdf_page_gap_mm=_resolve_pdf_page_gap(args),
+                paper_mode=_resolve_paper_mode(args),
                 runtime_context=runtime_context,
             )
-            await connection.send(job)
+            await send_prepared_job(device, connection, job, reporter=reporter)
         finally:
             try:
                 await connection.disconnect()
@@ -422,9 +439,10 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
                 trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
                 pdf_pages=_resolve_pdf_pages(args),
                 pdf_page_gap_mm=_resolve_pdf_page_gap(args),
+                paper_mode=_resolve_paper_mode(args),
                 runtime_context=runtime_context,
             )
-            await connection.send(job)
+            await send_prepared_job(device, connection, job, reporter=reporter)
         finally:
             await connection.disconnect()
 

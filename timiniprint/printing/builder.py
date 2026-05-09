@@ -80,11 +80,11 @@ class PrintJobBuilder:
                 ).payload
             )
         return ProtocolJob(
-            payload=b"".join(payload_parts),
             runtime_controller=(
                 self.runtime_context.runtime_controller
                 or self.protocol.create_runtime_controller()
             ),
+            payload_segments=tuple(payload_parts),
         )
 
     def _resolve_gray_preprocessing(self) -> tuple[bool, Optional[float]]:

@@ -218,6 +218,16 @@ class _BleakSocket:
             self._transport.send_control_packet(packet, timeout=timeout)
         )
 
+    def can_send_control_packet(self) -> bool:
+        if not self._connected or not self._client:
+            return False
+        return self._transport.can_send_control_packet()
+
+    def can_query_control_packet(self) -> bool:
+        if not self._connected or not self._client:
+            return False
+        return self._transport.can_query_control_packet()
+
     def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
         if not self._connected or not self._client:
             return None
