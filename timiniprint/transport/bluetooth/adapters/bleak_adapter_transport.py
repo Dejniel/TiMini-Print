@@ -245,11 +245,13 @@ class _BleakTransportSession:
             )
             chunk_size = min(mtu_payload, self._transport_profile.standard_chunk_cap)
             delay_seconds = self._transport_profile.standard_write_delay_ms / 1000.0
+            chunk_count = (len(data) + chunk_size - 1) // chunk_size if chunk_size else 0
             self.report_debug(
                 f"write mode response={response} strategy={self.bindings.write_selection_strategy} "
                 f"char={self.bindings.write_char_uuid} payload={len(data)} "
-                f"mtu_payload={mtu_payload} chunk={chunk_size} "
-                f"delay_ms={self._transport_profile.standard_write_delay_ms}"
+                f"mtu_payload={mtu_payload} chunk={chunk_size} chunks={chunk_count} "
+                f"delay_ms={self._transport_profile.standard_write_delay_ms} "
+                f"head={data[:16].hex()} tail={data[-16:].hex()}"
             )
             await self._write_chunks(
                 client,
