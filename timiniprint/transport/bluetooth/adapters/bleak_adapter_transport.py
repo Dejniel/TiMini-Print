@@ -238,17 +238,26 @@ class _BleakTransportSession:
                 self.bindings.write_selection_strategy,
                 self.bindings.write_response_preference,
             )
+            mtu_payload = self._effective_mtu_payload(
+                self.bindings.write_char,
+                mtu_size,
+                response=response,
+            )
+            chunk_size = min(mtu_payload, self._transport_profile.standard_chunk_cap)
+            delay_seconds = self._transport_profile.standard_write_delay_ms / 1000.0
             self.report_debug(
                 f"write mode response={response} strategy={self.bindings.write_selection_strategy} "
-                f"char={self.bindings.write_char_uuid}"
+                f"char={self.bindings.write_char_uuid} payload={len(data)} "
+                f"mtu_payload={mtu_payload} chunk={chunk_size} "
+                f"delay_ms={self._transport_profile.standard_write_delay_ms}"
             )
             await self._write_chunks(
                 client,
                 self.bindings.write_char,
                 data,
                 response=response,
-                chunk_size=min(mtu_size, self._transport_profile.standard_chunk_cap),
-                delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
+                chunk_size=chunk_size,
+                delay_seconds=delay_seconds,
                 timeout=timeout,
                 wait_for_flow=self._transport_profile.wait_for_flow_on_standard_write,
             )
@@ -500,6 +509,22 @@ class _BleakTransportSession:
             strategy,
             response_preference,
         )
+
+    @staticmethod
+    def _effective_mtu_payload(characteristic: Any, fallback: int, *, response: bool) -> int:
+        if response:
+            return fallback
+        try:
+            max_without_response = getattr(
+                characteristic,
+                "max_write_without_response_size",
+                None,
+            )
+        except Exception:
+            return fallback
+        if isinstance(max_without_response, int) and max_without_response > 0:
+            return min(max_without_response, 512)
+        return fallback
 
     def report_debug(self, message: str) -> None:
         self._reporter.debug(short="BLE", detail=message)

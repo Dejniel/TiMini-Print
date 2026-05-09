@@ -17,6 +17,10 @@ _START_LATTICE = bytes.fromhex("AA551738445F5F5F44382C")
 _FINISH_LATTICE = bytes.fromhex("AA55170000000000000017")
 # Gray jobs are sent in 20-row compressed bands.
 _GRAY_BAND_ROWS = 20
+# 384-dot V5G row packets are 56 bytes. Eight rows per BLE write keeps the
+# transport out of the old 20-byte fallback path without changing payloads.
+_BLE_STANDARD_CHUNK_CAP = 56 * 8
+_BLE_STANDARD_WRITE_DELAY_MS = 30
 V5G_CONNECT_QUERY_PACKET = bytes.fromhex("5178A30001000000FF")
 
 
@@ -119,6 +123,8 @@ def build_job(request: PrintJobRequest) -> bytes:
 TRANSPORT = BleTransportProfile(
     connect_packets=(V5G_CONNECT_QUERY_PACKET,),
     prefer_generic_notify=True,
+    standard_chunk_cap=_BLE_STANDARD_CHUNK_CAP,
+    standard_write_delay_ms=_BLE_STANDARD_WRITE_DELAY_MS,
 )
 
 

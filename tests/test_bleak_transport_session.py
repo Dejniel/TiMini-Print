@@ -307,6 +307,33 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertEqual([len(call[1]) for call in client.calls], [7, 7, 6])
 
+    def test_v5g_transport_uses_multi_row_ble_pacing(self) -> None:
+        transport = get_protocol_behavior(ProtocolFamily.V5G).transport
+
+        self.assertEqual(transport.standard_chunk_cap, 56 * 8)
+        self.assertEqual(transport.standard_write_delay_ms, 30)
+
+    def test_v5g_standard_send_uses_negotiated_mtu_over_twenty_byte_fallback(self) -> None:
+        session, client = self._make_session(ProtocolFamily.V5G)
+        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        cmd.max_write_without_response_size = 244
+        session.bindings.write_char = cmd
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = cmd.uuid
+
+        async def run() -> None:
+            await session.send(
+                client,
+                b"X" * 500,
+                mtu_size=20,
+                timeout=0.2,
+            )
+
+        asyncio.run(run())
+
+        self.assertEqual([len(call[1]) for call in client.calls], [244, 244, 12])
+
     def test_v5g_notifications_update_session_state(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5G)
 
