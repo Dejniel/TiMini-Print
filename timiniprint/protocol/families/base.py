@@ -45,6 +45,7 @@ class BleTransportProfile:
 @dataclass(frozen=True)
 class ProtocolBehavior:
     implemented: bool = True
+    requires_speed: bool = False
     transport: BleTransportProfile = field(default_factory=BleTransportProfile)
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(
@@ -74,7 +75,7 @@ class PrintJobRequest:
     raster_set: RasterSet
     image_pipeline: ImagePipelineConfig
     is_text: bool
-    speed: int
+    speed: int | None
     energy: int
     blackening: int
     lsb_first: bool

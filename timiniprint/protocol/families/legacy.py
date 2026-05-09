@@ -6,6 +6,7 @@ from .base import ProtocolBehavior
 
 
 BEHAVIOR = ProtocolBehavior(
+    requires_speed=True,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.LEGACY_RAW,

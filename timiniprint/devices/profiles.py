@@ -89,7 +89,7 @@ class PrinterProfile:
     default_protocol_variant: str | None
     default_image_pipeline: ImagePipelineConfig
     stream: StreamProfile
-    speed: SpeedProfile
+    speed: SpeedProfile | None
     energy: ModeLevelProfile
     post_print_feed_count: int = 2
     density: ModeLevelProfile | None = None
@@ -100,7 +100,9 @@ class PrinterProfile:
     def width(self) -> int:
         return self.print_size
 
-    def select_speed(self, *, is_text: bool) -> int:
+    def select_speed(self, *, is_text: bool) -> int | None:
+        if self.speed is None:
+            return None
         return self.speed.select(is_text=is_text)
 
     def select_energy(self, *, is_text: bool, blackening: int) -> int:

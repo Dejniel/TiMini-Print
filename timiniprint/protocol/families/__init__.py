@@ -98,6 +98,10 @@ def get_protocol_behavior(protocol_family: ProtocolFamily | str | None) -> Proto
     return get_protocol_definition(protocol_family).behavior
 
 
+def protocol_requires_speed(protocol_family: ProtocolFamily | str | None) -> bool:
+    return get_protocol_behavior(protocol_family).requires_speed
+
+
 __all__ = [
     "BleTransportProfile",
     "FlowControlProfile",
@@ -107,5 +111,6 @@ __all__ = [
     "SplitWritePlan",
     "get_protocol_behavior",
     "get_protocol_definition",
+    "protocol_requires_speed",
     "split_prefixed_bulk_stream",
 ]

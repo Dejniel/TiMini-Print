@@ -75,7 +75,7 @@ def _validate_request(request: PrintJobRequest) -> None:
 def _build_request(
     raster_set: RasterSet,
     is_text: bool,
-    speed: int,
+    speed: int | None,
     energy: int,
     density: int | None,
     blackening: int,
@@ -117,11 +117,17 @@ def _build_request(
     return request
 
 
+def _require_speed(request: PrintJobRequest) -> int:
+    if request.speed is None:
+        raise ValueError(f"{request.protocol_family.value} requires speed tuning")
+    return request.speed
+
+
 def _build_print_payload(
     pixels: list[int],
     width: int,
     is_text: bool,
-    speed: int,
+    speed: int | None,
     energy: int,
     lsb_first: bool,
     protocol_family: ProtocolFamily | str,
@@ -148,7 +154,7 @@ def _build_print_payload(
 def _build_print_payload_from_raster(
     raster: RasterBuffer,
     is_text: bool,
-    speed: int,
+    speed: int | None,
     energy: int,
     lsb_first: bool,
     protocol_family: ProtocolFamily | str,
@@ -174,7 +180,7 @@ def _build_print_payload_from_raster(
 def _build_print_payload_from_raster_set(
     raster_set: RasterSet,
     is_text: bool,
-    speed: int,
+    speed: int | None,
     energy: int,
     lsb_first: bool,
     protocol_family: ProtocolFamily | str,
@@ -214,11 +220,11 @@ def _build_print_payload_from_raster_set(
     payload = bytearray()
     payload += energy_cmd(energy, request.protocol_family)
     payload += print_mode_cmd(is_text, request.protocol_family)
-    payload += feed_paper_cmd(speed, request.protocol_family)
+    payload += feed_paper_cmd(_require_speed(request), request.protocol_family)
     payload += build_line_packets(
         list(raster.pixels),
         raster.width,
-        speed,
+        _require_speed(request),
         request.image_pipeline.encoding,
         lsb_first,
         request.protocol_family,
@@ -231,7 +237,7 @@ def _build_job(
     pixels: list[int],
     width: int,
     is_text: bool,
-    speed: int,
+    speed: int | None,
     energy: int,
     density: int | None,
     blackening: int,
@@ -274,7 +280,7 @@ def _build_job(
 def _build_job_from_raster(
     raster: RasterBuffer,
     is_text: bool,
-    speed: int,
+    speed: int | None,
     energy: int,
     density: int | None,
     blackening: int,
@@ -316,7 +322,7 @@ def _build_job_from_raster(
 def _build_job_from_raster_set(
     raster_set: RasterSet,
     is_text: bool,
-    speed: int,
+    speed: int | None,
     energy: int,
     density: int | None,
     blackening: int,

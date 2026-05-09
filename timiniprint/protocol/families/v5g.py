@@ -93,6 +93,8 @@ def _gray_frames(request: PrintJobRequest) -> bytes:
 
 
 def build_job(request: PrintJobRequest) -> bytes:
+    if request.speed is None:
+        raise ValueError("v5g requires speed tuning")
     job = bytearray()
     job += _quality_packet(request.blackening, request.protocol_family)
     job += _lattice_packet(True, request.protocol_family)
@@ -121,6 +123,7 @@ TRANSPORT = BleTransportProfile(
 
 
 BEHAVIOR = ProtocolBehavior(
+    requires_speed=True,
     transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),

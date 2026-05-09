@@ -31,14 +31,14 @@
       },
       "energy": {
         "image": {
-          "low": 5000,
-          "middle": 5000,
-          "high": 5000
+          "low": 1400,
+          "middle": 1400,
+          "high": 1400
         },
         "text": {
-          "low": 8000,
-          "middle": 8000,
-          "high": 8000
+          "low": 1400,
+          "middle": 1400,
+          "high": 1400
         }
       }
     },
@@ -163,10 +163,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 10,
-        "text": 10
-      },
       "energy": {
         "image": {
           "low": 5000,
@@ -222,10 +218,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 10,
-        "text": 10
-      },
       "energy": {
         "image": {
           "low": 5000,
@@ -282,10 +274,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 10,
-        "text": 10
-      },
       "energy": {
         "image": {
           "low": 5000,
@@ -342,10 +330,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 10,
-        "text": 10
-      },
       "energy": {
         "image": {
           "low": 5000,
@@ -446,10 +430,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -506,10 +486,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -566,10 +542,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -626,10 +598,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -686,10 +654,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -746,10 +710,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -806,10 +766,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -866,10 +822,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -926,10 +878,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -986,10 +934,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -1046,10 +990,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -1106,10 +1046,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -1166,10 +1102,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -1226,10 +1158,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 10,
-        "text": 10
-      },
       "energy": {
         "image": {
           "low": 5000,
@@ -1286,10 +1214,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 10,
-        "text": 10
-      },
       "energy": {
         "image": {
           "low": 5000,
@@ -1346,10 +1270,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -1406,10 +1326,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 20,
-        "text": 20
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -1601,10 +1517,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 45,
-        "text": 25
-      },
       "energy": {
         "image": {
           "low": 0,
@@ -1801,14 +1713,14 @@
       },
       "energy": {
         "image": {
-          "low": 5000,
-          "middle": 5000,
-          "high": 5000
+          "low": 1400,
+          "middle": 1400,
+          "high": 1400
         },
         "text": {
-          "low": 8000,
-          "middle": 8000,
-          "high": 8000
+          "low": 1400,
+          "middle": 1400,
+          "high": 1400
         }
       }
     },
@@ -2066,8 +1978,8 @@
     "post_print_feed_count": 2,
     "tuning": {
       "speed": {
-        "image": 36,
-        "text": 36
+        "image": 35,
+        "text": 25
       },
       "energy": {
         "image": {
@@ -2881,14 +2793,14 @@
       },
       "energy": {
         "image": {
-          "low": 5000,
-          "middle": 5000,
-          "high": 5000
+          "low": 1400,
+          "middle": 1400,
+          "high": 1400
         },
         "text": {
-          "low": 8000,
-          "middle": 8000,
-          "high": 8000
+          "low": 1400,
+          "middle": 1400,
+          "high": 1400
         }
       }
     },
@@ -4364,9 +4276,9 @@
       },
       "energy": {
         "image": {
-          "low": 20000,
-          "middle": 20000,
-          "high": 20000
+          "low": 12000,
+          "middle": 12000,
+          "high": 12000
         },
         "text": {
           "low": 33000,
@@ -4871,10 +4783,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 25
-      },
       "energy": {
         "image": {
           "low": 9000,
@@ -5515,10 +5423,6 @@
     },
     "post_print_feed_count": 2,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 25
-      },
       "energy": {
         "image": {
           "low": 12000,

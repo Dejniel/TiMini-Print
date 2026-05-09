@@ -139,6 +139,23 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertGreaterEqual(data.count(bytes([0xA1])), 2)
         self.assertIn(bytes([0xA3]), data)
 
+    def test_build_legacy_job_requires_speed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "requires speed tuning"):
+            self.builders._build_job(
+                pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+                width=8,
+                is_text=False,
+                speed=None,
+                energy=5000,
+                density=None,
+                blackening=3,
+                lsb_first=True,
+                protocol_family=ProtocolFamily.LEGACY,
+                feed_padding=12,
+                dev_dpi=203,
+                image_pipeline=self.legacy_raw,
+            )
+
     def test_build_from_raster_validates(self) -> None:
         raster = self.raster.RasterBuffer(pixels=[1, 0, 1], width=2)
         with self.assertRaisesRegex(ValueError, "multiple of width"):
@@ -162,6 +179,30 @@ class ProtocolJobTests(unittest.TestCase):
             width=8,
             is_text=False,
             speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LUCK_NORMAL,
+            feed_padding=12,
+            dev_dpi=203,
+            image_pipeline=self.luck_normal_raw,
+        )
+        self.assertEqual(
+            data,
+            bytes([0x10, 0xFF, 0xF1, 0x03])
+            + bytes(12)
+            + bytes([0x1D, 0x76, 0x30, 0x00, 0x01, 0x00, 0x01, 0x00, 0xAA])
+            + bytes([0x1B, 0x4A, 0x50])
+            + bytes([0x10, 0xFF, 0xF1, 0x45]),
+        )
+
+    def test_build_luck_normal_job_allows_missing_speed(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=None,
             energy=5000,
             density=None,
             blackening=3,

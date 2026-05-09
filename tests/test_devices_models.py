@@ -10,7 +10,9 @@ from timiniprint.protocol.types import ImageEncoding
 from timiniprint.raster import PixelFormat
 
 
-def _profile_payload(profile_key: str = "demo") -> dict:
+def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) -> dict:
+    if speed is None:
+        speed = {"image": 10, "text": 8}
     return {
         "profile_key": profile_key,
         "size": 1,
@@ -35,13 +37,23 @@ def _profile_payload(profile_key: str = "demo") -> dict:
         },
         "post_print_feed_count": 2,
         "tuning": {
-            "speed": {"image": 10, "text": 8},
+            "speed": speed,
             "energy": {
                 "image": {"low": 5000, "middle": 5000, "high": 5000},
                 "text": {"low": 8000, "middle": 8000, "high": 8000},
             },
         },
     }
+
+
+def _with_optional_speed(payload: dict, speed: dict | None) -> dict:
+    payload = dict(payload)
+    payload["tuning"] = dict(payload["tuning"])
+    if speed is None:
+        payload["tuning"].pop("speed", None)
+    else:
+        payload["tuning"]["speed"] = speed
+    return payload
 
 
 class DevicesModelsTests(unittest.TestCase):
@@ -61,6 +73,35 @@ class DevicesModelsTests(unittest.TestCase):
         payload["stream"]["chunk_size"] = 0
         with self.assertRaisesRegex(ValueError, "stream.chunk_size"):
             PrinterCatalog._parse_profile(payload)
+
+    def test_parse_profile_allows_missing_speed_for_non_speed_family(self) -> None:
+        payload = _with_optional_speed(_profile_payload(), None)
+        payload["default_protocol_family"] = "luck_normal"
+
+        profile = PrinterCatalog._parse_profile(payload)
+
+        self.assertIsNone(profile.speed)
+
+    def test_catalog_rejects_missing_speed_for_speed_family(self) -> None:
+        profile = PrinterCatalog._parse_profile(_with_optional_speed(_profile_payload(), None))
+
+        with self.assertRaisesRegex(ValueError, "requires speed tuning"):
+            PrinterCatalog([profile], [])
+
+    def test_catalog_rejects_missing_speed_for_speed_rule_override(self) -> None:
+        payload = _with_optional_speed(_profile_payload(), None)
+        payload["default_protocol_family"] = "luck_normal"
+        profile = PrinterCatalog._parse_profile(payload)
+        rule = DetectionRule(
+            rule_key="demo",
+            prefixes=("DEMO",),
+            exact_names=(),
+            profile_key=profile.profile_key,
+            protocol_family=ProtocolFamily.LEGACY,
+        )
+
+        with self.assertRaisesRegex(ValueError, "requires speed tuning"):
+            PrinterCatalog([profile], [rule])
 
     def test_first_match_wins_for_mac_suffix_rules(self) -> None:
         shared_profile = PrinterCatalog._parse_profile(_profile_payload("shared"))

@@ -4,7 +4,11 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
-from ..protocol.families import get_protocol_behavior, get_protocol_definition
+from ..protocol.families import (
+    get_protocol_behavior,
+    get_protocol_definition,
+    protocol_requires_speed,
+)
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImageEncoding, ImagePipelineConfig
 from ..raster import PixelFormat
@@ -59,6 +63,7 @@ class PrinterCatalog:
         self._rules = list(rules)
         self._profile_by_key = {profile.profile_key: profile for profile in self._profiles}
         self._rule_by_key = {rule.rule_key: rule for rule in self._rules}
+        self._validate_speed_requirements()
 
     @classmethod
     def load(
@@ -102,6 +107,7 @@ class PrinterCatalog:
     def _parse_profile(cls, entry: Mapping[str, object]) -> PrinterProfile:
         stream_payload = entry["stream"]
         tuning_payload = entry["tuning"]
+        speed_payload = tuning_payload.get("speed")
         density_payload = tuning_payload.get("density")
         profile = PrinterProfile(
             profile_key=str(entry["profile_key"]),
@@ -127,9 +133,13 @@ class PrinterCatalog:
                 chunk_size=int(stream_payload["chunk_size"]),
                 delay_ms=int(stream_payload["delay_ms"]),
             ),
-            speed=SpeedProfile(
-                image=int(tuning_payload["speed"]["image"]),
-                text=int(tuning_payload["speed"]["text"]),
+            speed=(
+                None
+                if speed_payload is None
+                else SpeedProfile(
+                    image=int(speed_payload["image"]),
+                    text=int(speed_payload["text"]),
+                )
             ),
             energy=cls._parse_mode_profile(tuning_payload["energy"]),
             density=None if density_payload is None else cls._parse_mode_profile(density_payload),
@@ -142,6 +152,38 @@ class PrinterCatalog:
         if profile.stream.delay_ms < 0:
             raise ValueError(f"Profile {profile.profile_key} has invalid stream.delay_ms")
         return profile
+
+    def _validate_speed_requirements(self) -> None:
+        for profile in self._profiles:
+            self._validate_profile_speed_for_family(
+                profile=profile,
+                protocol_family=profile.default_protocol_family,
+                context=f"profile {profile.profile_key} default family",
+            )
+        for rule in self._rules:
+            profile = self._profile_by_key.get(rule.profile_key)
+            if profile is None:
+                continue
+            self._validate_profile_speed_for_family(
+                profile=profile,
+                protocol_family=rule.protocol_family,
+                context=f"rule {rule.rule_key}",
+            )
+
+    @staticmethod
+    def _validate_profile_speed_for_family(
+        *,
+        profile: PrinterProfile,
+        protocol_family: ProtocolFamily,
+        context: str,
+    ) -> None:
+        if profile.speed is not None:
+            return
+        if not protocol_requires_speed(protocol_family):
+            return
+        raise ValueError(
+            f"{context} requires speed tuning, but profile {profile.profile_key} does not define it"
+        )
 
     @staticmethod
     def _parse_rule(entry: Mapping[str, object]) -> DetectionRule:
@@ -349,6 +391,11 @@ class PrinterCatalog:
             profile.default_protocol_variant if protocol_variant is None else protocol_variant
         )
         self._validate_protocol_variant(protocol_family, resolved_protocol_variant)
+        self._validate_profile_speed_for_family(
+            profile=profile,
+            protocol_family=protocol_family,
+            context=f"device {display_name}",
+        )
         return PrinterDevice(
             display_name=display_name,
             profile=profile,
