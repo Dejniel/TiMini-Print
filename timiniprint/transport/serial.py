@@ -3,21 +3,41 @@ from __future__ import annotations
 import asyncio
 import time
 
+from .. import reporting
 from ..devices import PrinterDevice, SerialTarget
 from ..protocol import ProtocolJob
-
-SERIAL_BAUD_RATE = 115200
 
 
 class SerialConnection:
     """Serial connection that writes jobs using the device's stream tuning."""
 
-    def __init__(self, device: PrinterDevice) -> None:
+    def __init__(
+        self,
+        device: PrinterDevice,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+    ) -> None:
         target = device.transport_target
         if not isinstance(target, SerialTarget):
             raise RuntimeError("SerialConnector requires a PrinterDevice with SerialTarget")
         self._device = device
         self._target = target
+        self._reporter = reporter
+
+    @property
+    def reporter(self) -> reporting.Reporter:
+        return self._reporter
+
+    async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
+        _ = runtime_controller, timeout
+        return None
+
+    async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
+        _ = packet, timeout
+        return False
+
+    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+        _ = packet, timeout
+        return None
 
     async def send(self, job: ProtocolJob) -> None:
         """Send a protocol job over serial in blocking chunks via an executor."""
@@ -58,6 +78,9 @@ class SerialConnection:
 class SerialConnector:
     """Create serial connections for devices with ``SerialTarget``."""
 
+    def __init__(self, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
+        self._reporter = reporter
+
     async def connect(self, device: PrinterDevice) -> SerialConnection:
         """Return a serial connection bound to the given device."""
-        return SerialConnection(device)
+        return SerialConnection(device, reporter=self._reporter)

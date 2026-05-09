@@ -315,6 +315,10 @@ class DevicesModelsTests(unittest.TestCase):
             "PPA2H_1234": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
             "A2H": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
             "A2_LYiN48DH": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
+            "PPA2L_1234": ("luck_ppa2l", ProtocolFamily.LUCK_NORMAL, "lujiang_normal", 384),
+            "PPA2L": ("luck_ppa2l", ProtocolFamily.LUCK_NORMAL, "lujiang_normal", 384),
+            "PPA2LH_1234": ("luck_ppa2lh", ProtocolFamily.LUCK_NORMAL, "lujiang_normal_h", 576),
+            "PPA2LH": ("luck_ppa2lh", ProtocolFamily.LUCK_NORMAL, "lujiang_normal_h", 576),
             "A40_1234": ("luck_a40", ProtocolFamily.LUCK_NORMAL_A4, None, 1728),
             "A40": ("luck_a40", ProtocolFamily.LUCK_NORMAL_A4, None, 1728),
             "APA40_1234": ("luck_lujiang_a4", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
@@ -393,8 +397,6 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_luck_normal_rules_do_not_claim_variants_we_did_not_implement(self) -> None:
         for name in (
-            "PPA2L_1234",
-            "PPA2LH_1234",
             "A49H",
             "DP_ITP05N_1234",
             "ITP05N",

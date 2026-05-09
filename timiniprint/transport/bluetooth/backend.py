@@ -66,6 +66,33 @@ class SppBackend:
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._disconnect_blocking)
 
+    async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(
+            None,
+            self._attach_runtime_controller_blocking,
+            runtime_controller,
+            timeout,
+        )
+
+    async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._send_control_packet_blocking,
+            packet,
+            timeout,
+        )
+
+    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._query_control_packet_blocking,
+            packet,
+            timeout,
+        )
+
     async def write(
         self,
         data: bytes,
@@ -273,6 +300,35 @@ class SppBackend:
             self._channel = None
             self._transport = None
 
+    def _attach_runtime_controller_blocking(self, runtime_controller, timeout: float) -> None:
+        if runtime_controller is None or not self._sock or not self._connected:
+            return
+        attach_runtime_controller = getattr(self._sock, "attach_runtime_controller", None)
+        if callable(attach_runtime_controller):
+            attach_runtime_controller(runtime_controller, timeout=timeout)
+
+    def _send_control_packet_blocking(self, packet: bytes, timeout: float) -> bool:
+        if not self._sock or not self._connected:
+            return False
+        if self._transport == DeviceTransport.BLE:
+            send_control_packet = getattr(self._sock, "send_control_packet", None)
+            if callable(send_control_packet):
+                return bool(send_control_packet(packet, timeout=timeout))
+            return False
+        with self._lock:
+            return _send_control_packet(self._sock, packet, timeout=timeout)
+
+    def _query_control_packet_blocking(self, packet: bytes, timeout: float) -> bytes | None:
+        if not self._sock or not self._connected:
+            return None
+        if self._transport == DeviceTransport.BLE:
+            query_control_packet = getattr(self._sock, "query_control_packet", None)
+            if callable(query_control_packet):
+                return query_control_packet(packet, timeout=timeout)
+            return None
+        with self._lock:
+            return _query_control_packet(self._sock, packet, timeout=timeout)
+
     def _write_blocking(self, data: bytes, chunk_size: int, delay_ms: int, runtime_controller=None) -> None:
         if not self._sock or not self._connected:
             raise RuntimeError("Not connected to a Bluetooth device")
@@ -384,6 +440,58 @@ def _send_all(sock: SocketLike, data: bytes, runtime_controller=None) -> None:
         if not sent:
             raise RuntimeError("Bluetooth send failed")
         offset += sent
+
+
+def _recv_all_with_timeout(sock: SocketLike, *, timeout: float) -> bytes | None:
+    recv = getattr(sock, "recv", None)
+    if not callable(recv):
+        return None
+    settimeout = getattr(sock, "settimeout", None)
+    gettimeout = getattr(sock, "gettimeout", None)
+    previous_timeout = None
+    if callable(gettimeout):
+        try:
+            previous_timeout = gettimeout()
+        except Exception:
+            previous_timeout = None
+    deadline = time.monotonic() + max(0.0, timeout)
+    chunks: list[bytes] = []
+    try:
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            if callable(settimeout):
+                settimeout(remaining)
+            try:
+                chunk = recv(4096)
+            except Exception as exc:
+                if _is_timeout_error(exc):
+                    break
+                raise
+            if not chunk:
+                break
+            chunks.append(bytes(chunk))
+    finally:
+        if callable(settimeout):
+            try:
+                settimeout(previous_timeout)
+            except Exception:
+                pass
+    if not chunks:
+        return None
+    return b"".join(chunks)
+
+
+def _send_control_packet(sock: SocketLike, packet: bytes, *, timeout: float) -> bool:
+    _ = timeout
+    _send_all(sock, packet)
+    return True
+
+
+def _query_control_packet(sock: SocketLike, packet: bytes, *, timeout: float) -> bytes | None:
+    _send_all(sock, packet)
+    return _recv_all_with_timeout(sock, timeout=timeout)
 
 
 def _is_timeout_error(exc: Exception) -> bool:

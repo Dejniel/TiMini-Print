@@ -2498,6 +2498,30 @@
     "protocol_family": "luck_normal"
   },
   {
+    "rule_key": "rule_luck_ppa2l",
+    "prefixes": [
+      "PPA2L_"
+    ],
+    "exact_names": [
+      "PPA2L"
+    ],
+    "profile_key": "luck_ppa2l",
+    "protocol_family": "luck_normal",
+    "protocol_variant": "lujiang_normal"
+  },
+  {
+    "rule_key": "rule_luck_ppa2lh",
+    "prefixes": [
+      "PPA2LH_"
+    ],
+    "exact_names": [
+      "PPA2LH"
+    ],
+    "profile_key": "luck_ppa2lh",
+    "protocol_family": "luck_normal",
+    "protocol_variant": "lujiang_normal_h"
+  },
+  {
     "rule_key": "rule_luck_a40",
     "prefixes": [
       "A40_"

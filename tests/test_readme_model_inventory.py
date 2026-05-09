@@ -25,6 +25,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
 
         self.assertIn("CTP750BY (Shipping Printer)", supported)
         self.assertRegex(supported, r"(?<![A-Z0-9_-])APA46Y(?![A-Z0-9_-])")
+        self.assertIn("- PPA2L / PPA2LH", supported)
         self.assertIn("- JXPRINTER and clones: PRINTER", todo)
         self.assertIn("- BAYPAGE and clones: YINTIBAO-V8S", todo)
         self.assertIn("- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4", todo)
@@ -50,6 +51,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"^- PPA2L / PPA2LH(?:\s|$)", todo, re.M))
 
     def test_rendered_readme_names_do_not_keep_trailing_detection_suffixes(self) -> None:
         entries = load_inventory_entries()

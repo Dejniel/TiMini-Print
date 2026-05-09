@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from ... import reporting
 from ...devices import BluetoothTarget, PrinterDevice
 from ...devices.device import BluetoothEndpointTransport
@@ -17,6 +15,7 @@ class BleakBluetoothConnection:
         self,
         backend: SppBackend,
         device: PrinterDevice,
+        reporter: reporting.Reporter,
     ) -> None:
         target = device.transport_target
         if not isinstance(target, BluetoothTarget):
@@ -24,6 +23,20 @@ class BleakBluetoothConnection:
         self._backend = backend
         self._device = device
         self._target = target
+        self._reporter = reporter
+
+    @property
+    def reporter(self) -> reporting.Reporter:
+        return self._reporter
+
+    async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
+        await self._backend.attach_runtime_controller(runtime_controller, timeout=timeout)
+
+    async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
+        return await self._backend.send_control_packet(packet, timeout=timeout)
+
+    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+        return await self._backend.query_control_packet(packet, timeout=timeout)
 
     async def send(self, job: ProtocolJob) -> None:
         """Send a protocol job using the device's stream tuning and runtime state."""
@@ -59,7 +72,7 @@ class BleakBluetoothConnector:
             attempts,
             pairing_hint=target.paired is False,
         )
-        return BleakBluetoothConnection(backend, device)
+        return BleakBluetoothConnection(backend, device, self._reporter)
 
     @staticmethod
     def _to_device_info(endpoint, device: PrinterDevice) -> DeviceInfo:

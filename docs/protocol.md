@@ -63,7 +63,9 @@ This is the best first contact with the API.
 
 ```python
 from timiniprint.devices import PrinterCatalog
-from timiniprint.printing import PrintJobBuilder, PrintSettings
+from timiniprint.printing.builder import PrintJobBuilder
+from timiniprint.printing.runtime.prepare import prepare_connection_runtime
+from timiniprint.printing.settings import PrintSettings
 from timiniprint.transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 
 catalog = PrinterCatalog.load()
@@ -75,18 +77,18 @@ if not devices:
     raise RuntimeError("No supported printers found")
 device = devices[0]
 
-# Build a printable job from a file.
-job = PrintJobBuilder(
-    device,
-    settings=PrintSettings(
-        blackening=3,
-        rotate_90_clockwise=False,
-    ),
-).build_from_file("example.png")
-
-# Open a connection and send the job.
+# Open a connection, prepare any live runtime capabilities, then build and send.
 connection = await BleakBluetoothConnector().connect(device)
 try:
+    runtime_context = await prepare_connection_runtime(device, connection)
+    job = PrintJobBuilder(
+        device,
+        settings=PrintSettings(
+            blackening=3,
+            rotate_90_clockwise=False,
+        ),
+        runtime_context=runtime_context,
+    ).build_from_file("example.png")
     await connection.send(job)
 finally:
     await connection.disconnect()
@@ -131,7 +133,8 @@ Use this when Bluetooth discovery is not involved and you already know what prin
 
 ```python
 from timiniprint.devices import PrinterCatalog, SerialTarget
-from timiniprint.printing import PrintJobBuilder
+from timiniprint.printing.builder import PrintJobBuilder
+from timiniprint.printing.runtime.prepare import prepare_connection_runtime
 from timiniprint.transport.serial import SerialConnector
 
 catalog = PrinterCatalog.load()
@@ -142,10 +145,10 @@ device = catalog.device_from_profile(
     transport_target=SerialTarget("/dev/rfcomm0"),
 )
 
-job = PrintJobBuilder(device).build_from_file("example.pdf")
-
 connection = await SerialConnector().connect(device)
 try:
+    runtime_context = await prepare_connection_runtime(device, connection)
+    job = PrintJobBuilder(device, runtime_context=runtime_context).build_from_file("example.pdf")
     await connection.send(job)
 finally:
     await connection.disconnect()
@@ -165,17 +168,41 @@ A custom connector is expected to do three things:
 - send a `ProtocolJob`
 - disconnect cleanly
 
+If you want full support for query-driven families, your connection should also satisfy the optional
+`RuntimeProbeConnection` contract from `timiniprint.transport.base` and expose:
+- `attach_runtime_controller(runtime_controller, *, timeout=...)`
+- `send_control_packet(packet, *, timeout=...)`
+- `query_control_packet(packet, *, timeout=...)`
+
+If your transport cannot support these operations, you can omit them. Runtime-sensitive
+families will then fall back to degraded behavior when possible.
+
 A minimal sketch looks like this:
 
 ```python
 from timiniprint.devices import PrinterCatalog
-from timiniprint.printing import PrintJobBuilder
+from timiniprint.printing.builder import PrintJobBuilder
+from timiniprint.printing.runtime.prepare import prepare_connection_runtime
 
 
 class MyConnection:
     def __init__(self, raw_link, device):
         self._raw_link = raw_link
         self._device = device
+
+    async def attach_runtime_controller(self, runtime_controller, *, timeout=1.0):
+        # Optional: bridge runtime session setup into your transport if needed.
+        _ = runtime_controller, timeout
+
+    async def send_control_packet(self, packet, *, timeout=1.0):
+        # Optional: return False if your transport cannot send standalone control packets.
+        _ = packet, timeout
+        return False
+
+    async def query_control_packet(self, packet, *, timeout=1.0):
+        # Optional: return None if your transport cannot do request/response queries.
+        _ = packet, timeout
+        return None
 
     async def send(self, job):
         # Use the stream tuning resolved for this device.
@@ -207,10 +234,11 @@ class MyConnector:
 
 catalog = PrinterCatalog.load()
 device = catalog.device_from_profile("x6h")
-job = PrintJobBuilder(device).build_from_file("example.png")
 
 connection = await MyConnector().connect(device)
 try:
+    runtime_context = await prepare_connection_runtime(device, connection)
+    job = PrintJobBuilder(device, runtime_context=runtime_context).build_from_file("example.png")
     await connection.send(job)
 finally:
     await connection.disconnect()
@@ -218,6 +246,8 @@ finally:
 
 This is the main reason protocol and transport stay separate in the architecture.
 The repo should make it easy to reuse protocol logic without forcing one Bluetooth stack.
+If you want probe warnings to go somewhere visible, pass your own reporter into
+`prepare_connection_runtime(..., reporter=...)`.
 
 ## Detecting by name is not the same as Bluetooth discovery
 

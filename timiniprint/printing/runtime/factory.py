@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from ...devices import PrinterDevice
+from typing import TYPE_CHECKING
+
 from ...protocol.family import ProtocolFamily
 from .base import RuntimeController
+from .luck_normal import LuckNormalRuntimeController
 from .v5c import V5CRuntimeController
 from .v5g import V5GRuntimeController
 from .v5x import V5XRuntimeController
+
+if TYPE_CHECKING:
+    from ...devices import PrinterDevice
 
 
 def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | None:
@@ -23,6 +28,11 @@ def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | 
         return V5XRuntimeController()
     if device.protocol_family is ProtocolFamily.V5C:
         return V5CRuntimeController()
+    if (
+        device.protocol_family is ProtocolFamily.LUCK_NORMAL
+        and device.protocol_variant in {"lujiang_normal", "lujiang_normal_h"}
+    ):
+        return LuckNormalRuntimeController(protocol_variant=device.protocol_variant)
     return None
 
 

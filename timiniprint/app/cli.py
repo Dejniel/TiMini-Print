@@ -11,7 +11,10 @@ from typing import Optional, Sequence
 
 from .. import reporting
 from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarget
-from ..printing import PrintJobBuilder, PrintSettings
+from ..printing.builder import PrintJobBuilder
+from ..printing.runtime.base import PreparedRuntimeContext
+from ..printing.runtime.prepare import prepare_connection_runtime
+from ..printing.settings import PrintSettings
 from ..protocol import PrinterProtocol, ProtocolJob
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 from ..transport.bluetooth.types import DeviceTransport
@@ -129,6 +132,7 @@ def create_print_job_builder(
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
     pdf_page_gap_mm: int = 5,
+    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> PrintJobBuilder:
     settings = PrintSettings(
         text_mode=text_mode,
@@ -142,7 +146,7 @@ def create_print_job_builder(
     )
     if blackening is not None:
         settings.blackening = blackening
-    return PrintJobBuilder(device, settings=settings)
+    return PrintJobBuilder(device, settings=settings, runtime_context=runtime_context)
 
 
 def build_print_job(
@@ -158,6 +162,7 @@ def build_print_job(
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
     pdf_page_gap_mm: int = 5,
+    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> ProtocolJob:
     builder = create_print_job_builder(
         device,
@@ -170,6 +175,7 @@ def build_print_job(
         trim_top_bottom_margins,
         pdf_pages,
         pdf_page_gap_mm,
+        runtime_context,
     )
     if text_input is None:
         if not path:
@@ -366,22 +372,24 @@ def print_bluetooth(
                 f"use_spp={device.profile.use_spp}"
             ),
         )
-        job = build_print_job(
-            device,
-            args.path,
-            text_mode=_resolve_text_mode(args),
-            blackening=_resolve_blackening(args),
-            text_input=_resolve_text_input(args),
-            text_font=_resolve_text_font(args),
-            text_columns=_resolve_text_columns(args),
-            text_wrap=_resolve_text_wrap(args),
-            trim_side_margins=_resolve_trim_side_margins(args),
-            trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
-            pdf_pages=_resolve_pdf_pages(args),
-            pdf_page_gap_mm=_resolve_pdf_page_gap(args),
-        )
         connection = await BleakBluetoothConnector(reporter=reporter).connect(device)
         try:
+            runtime_context = await prepare_connection_runtime(device, connection, reporter=reporter)
+            job = build_print_job(
+                device,
+                args.path,
+                text_mode=_resolve_text_mode(args),
+                blackening=_resolve_blackening(args),
+                text_input=_resolve_text_input(args),
+                text_font=_resolve_text_font(args),
+                text_columns=_resolve_text_columns(args),
+                text_wrap=_resolve_text_wrap(args),
+                trim_side_margins=_resolve_trim_side_margins(args),
+                trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
+                pdf_pages=_resolve_pdf_pages(args),
+                pdf_page_gap_mm=_resolve_pdf_page_gap(args),
+                runtime_context=runtime_context,
+            )
             await connection.send(job)
         finally:
             try:
@@ -393,27 +401,29 @@ def print_bluetooth(
     return 0
 
 
-def print_serial(args: argparse.Namespace) -> int:
+def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
     catalog = PrinterCatalog.load()
     device = _resolve_serial_device(args, catalog)
-    job = build_print_job(
-        device,
-        args.path,
-        text_mode=_resolve_text_mode(args),
-        blackening=_resolve_blackening(args),
-        text_input=_resolve_text_input(args),
-        text_font=_resolve_text_font(args),
-        text_columns=_resolve_text_columns(args),
-        text_wrap=_resolve_text_wrap(args),
-        trim_side_margins=_resolve_trim_side_margins(args),
-        trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
-        pdf_pages=_resolve_pdf_pages(args),
-        pdf_page_gap_mm=_resolve_pdf_page_gap(args),
-    )
 
     async def run() -> None:
-        connection = await SerialConnector().connect(device)
+        connection = await SerialConnector(reporter=reporter).connect(device)
         try:
+            runtime_context = await prepare_connection_runtime(device, connection, reporter=reporter)
+            job = build_print_job(
+                device,
+                args.path,
+                text_mode=_resolve_text_mode(args),
+                blackening=_resolve_blackening(args),
+                text_input=_resolve_text_input(args),
+                text_font=_resolve_text_font(args),
+                text_columns=_resolve_text_columns(args),
+                text_wrap=_resolve_text_wrap(args),
+                trim_side_margins=_resolve_trim_side_margins(args),
+                trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
+                pdf_pages=_resolve_pdf_pages(args),
+                pdf_page_gap_mm=_resolve_pdf_page_gap(args),
+                runtime_context=runtime_context,
+            )
             await connection.send(job)
         finally:
             await connection.disconnect()
@@ -456,13 +466,13 @@ def paper_motion_bluetooth(
     return 0
 
 
-def paper_motion_serial(args: argparse.Namespace, action: str) -> int:
+def paper_motion_serial(args: argparse.Namespace, action: str, reporter: reporting.Reporter) -> int:
     catalog = PrinterCatalog.load()
     device = _resolve_serial_device(args, catalog)
     job = build_paper_motion_job(device, action)
 
     async def run() -> None:
-        connection = await SerialConnector().connect(device)
+        connection = await SerialConnector(reporter=reporter).connect(device)
         try:
             await connection.send(job)
         finally:
@@ -539,10 +549,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         if action:
             if args.serial:
-                return paper_motion_serial(args, action)
+                return paper_motion_serial(args, action, reporter)
             return paper_motion_bluetooth(args, action, reporter)
         if args.serial:
-            return print_serial(args)
+            return print_serial(args, reporter)
         return print_bluetooth(args, reporter)
     except Exception as exc:
         reporter.error(detail=str(exc), exc=exc)

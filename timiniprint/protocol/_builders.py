@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ..raster import PixelFormat, RasterBuffer, RasterSet
+from ..printing.runtime.base import RuntimePrintCapabilities
 from .commands import (
     blackening_cmd,
     dev_state_cmd,
@@ -89,6 +90,7 @@ def _build_request(
     paper_mode: PaperMode | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> PrintJobRequest:
     family = ProtocolFamily.from_value(protocol_family)
     request = PrintJobRequest(
@@ -109,6 +111,7 @@ def _build_request(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        runtime_capabilities=runtime_capabilities,
     )
     _validate_request(request)
     return request
@@ -181,6 +184,7 @@ def _build_print_payload_from_raster_set(
     paper_mode: PaperMode | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     request = _build_request(
         raster_set=raster_set,
@@ -200,6 +204,7 @@ def _build_print_payload_from_raster_set(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        runtime_capabilities=runtime_capabilities,
     )
     family_payload = _build_family_job(request)
     if family_payload is not None:
@@ -241,6 +246,7 @@ def _build_job(
     protocol_variant: str | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     raster = RasterBuffer(pixels=pixels, width=width, pixel_format=PixelFormat.BW1)
     return _build_job_from_raster(
@@ -261,6 +267,7 @@ def _build_job(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        runtime_capabilities=runtime_capabilities,
     )
 
 
@@ -282,6 +289,7 @@ def _build_job_from_raster(
     protocol_variant: str | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     return _build_job_from_raster_set(
         raster_set=RasterSet.from_single(raster),
@@ -301,6 +309,7 @@ def _build_job_from_raster(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        runtime_capabilities=runtime_capabilities,
     )
 
 
@@ -322,6 +331,7 @@ def _build_job_from_raster_set(
     protocol_variant: str | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     request = _build_request(
         raster_set=raster_set,
@@ -341,6 +351,7 @@ def _build_job_from_raster_set(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        runtime_capabilities=runtime_capabilities,
     )
     family_job = _build_family_job(request)
     if family_job is not None:
@@ -358,6 +369,7 @@ def _build_job_from_raster_set(
         protocol_variant=request.protocol_variant,
         can_print_label=can_print_label,
         image_pipeline=request.image_pipeline,
+        runtime_capabilities=runtime_capabilities,
     )
     job += feed_paper_cmd(feed_padding, request.protocol_family)
     for _ in range(max(0, request.post_print_feed_count)):

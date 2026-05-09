@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import tempfile
+import types
 import unittest
 from dataclasses import replace
 from pathlib import Path
@@ -33,7 +34,12 @@ class PrintingJobTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         install_crc8_stub()
-        cls.job_mod = importlib.import_module("timiniprint.printing")
+        builder_mod = importlib.import_module("timiniprint.printing.builder")
+        settings_mod = importlib.import_module("timiniprint.printing.settings")
+        cls.job_mod = types.SimpleNamespace(
+            PrintJobBuilder=builder_mod.PrintJobBuilder,
+            PrintSettings=settings_mod.PrintSettings,
+        )
 
     def setUp(self) -> None:
         reset_registry_cache()

@@ -215,6 +215,19 @@
       ]
     },
     {
+      "id": "luck-ppa2l-family",
+      "status": "supported",
+      "display_label": "PPA2L / PPA2LH",
+      "primary_names": [
+        "PPA2L",
+        "PPA2LH"
+      ],
+      "clone_names": [
+        "PPA2L_",
+        "PPA2LH_"
+      ]
+    },
+    {
       "id": "luck-a40",
       "status": "supported",
       "display_label": "A40",
@@ -962,8 +975,6 @@
       "id": "todo-luck-unfinished-branches",
       "status": "todo",
       "primary_names": [
-        "PPA2L",
-        "PPA2LH",
         "ITP05N",
         "ITP06N",
         "PCPS_D80",

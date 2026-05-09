@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, TYPE_CHECKING
 
-from ..devices import PrinterDevice
-from ..protocol import ProtocolJob
+from ..protocol.job import ProtocolJob
+
+if TYPE_CHECKING:
+    from ..devices import PrinterDevice
+    from ..printing.runtime.base import RuntimeController
 
 
 class PrinterConnection(Protocol):
@@ -12,6 +15,21 @@ class PrinterConnection(Protocol):
     async def send(self, job: ProtocolJob) -> None: ...
 
     async def disconnect(self) -> None: ...
+
+
+class RuntimeProbeConnection(PrinterConnection, Protocol):
+    """Optional connection extension used by ``prepare_connection_runtime``."""
+
+    async def attach_runtime_controller(
+        self,
+        runtime_controller: RuntimeController,
+        *,
+        timeout: float = 1.0,
+    ) -> None: ...
+
+    async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool: ...
+
+    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None: ...
 
 
 class PrinterConnector(Protocol):

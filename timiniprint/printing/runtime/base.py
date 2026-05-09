@@ -1,6 +1,24 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Optional, Protocol
+
+
+@dataclass(frozen=True)
+class RuntimePrintCapabilities:
+    """Session-derived print capabilities that affect payload construction."""
+
+    supports_gray: bool | None = None
+    gray_level_override: int | None = None
+
+
+@dataclass(frozen=True)
+class PreparedRuntimeContext:
+    """Prepared live-session state reused by later protocol job builds."""
+
+    runtime_controller: "RuntimeController | None" = None
+    capabilities: RuntimePrintCapabilities | None = None
+
 
 class RuntimeSessionApi(Protocol):
     notify_started: bool
@@ -18,8 +36,11 @@ class RuntimeSessionApi(Protocol):
     def report_warning(self, *, short: str, detail: str) -> None: ...
 
     def can_send_control_packet(self) -> bool: ...
+    def can_query_control_packet(self) -> bool: ...
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool: ...
+
+    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None: ...
 
 
 class RuntimeController:
@@ -39,6 +60,12 @@ class RuntimeController:
         return None
 
     async def stop(self, session: RuntimeSessionApi) -> None:
+        return None
+
+    async def probe_capabilities(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+        return None
+
+    def runtime_capabilities(self) -> RuntimePrintCapabilities | None:
         return None
 
     def prepare_standard_payload(self, session: RuntimeSessionApi, data: bytes) -> bytes:

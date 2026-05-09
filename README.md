@@ -135,6 +135,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 - M832 and clones: M836
 - MX10 and clones: AZ-P2108X, MXW009, KP-IM606, GV-MA211
 - MXTP-100 and clones: CYLO BT PRINTER, EWTTO ET-Z0499
+- PPA2L / PPA2LH
 - PR02 and clones: XW008
 - PR20 and clones: XW001
 - PR30 and clones: XW002
@@ -157,6 +158,7 @@ DL_X7Pro, JX400R, JX400R06P, MXW-A4, P4
 - D12 and clones: D11s, C2, C3, C16
 - D400 and clones: Y810BT, QR380A, TB41, QR_386A, ITPP941, P80S, ITPP130B
 - D82 and clones: D82S, D83, A10, FICHERO_6181
+- ITP05N and clones: ITP06N, PCPS_D80, DP_A80, DP_A80S, DP_A80W, PD_A4, GD-88
 - JXPRINTER and clones: PRINTER
 - LP100 and clones: LP220, LY100_BLE
 - LP100S and clones: LP220S
@@ -164,6 +166,5 @@ DL_X7Pro, JX400R, JX400R06P, MXW-A4, P4
 - P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO
 - P3 and clones: MP300
 - P3S and clones: MP300S
-- PPA2L and clones: PPA2LH, ITP05N, ITP06N, PCPS_D80, DP_A80, DP_A80S, DP_A80W, PD_A4, GD-88
 - YINTIBAO and clones: PAPERGO
 <!-- END todo-models -->

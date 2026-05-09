@@ -236,6 +236,45 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
 
+    def test_build_luck_normal_h_gray_job_uses_runtime_gray_level_override(self) -> None:
+        from timiniprint.printing.runtime.base import RuntimePrintCapabilities
+
+        raster_set = self._raster_set(
+            self._bw_raster([1, 1], width=2),
+            self.raster.RasterBuffer(
+                pixels=[15, 15],
+                width=2,
+                pixel_format=self.raster.PixelFormat.GRAY4,
+            ),
+        )
+        data = self.builders._build_job_from_raster_set(
+            raster_set=raster_set,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LUCK_NORMAL,
+            protocol_variant="lujiang_normal_h",
+            feed_padding=12,
+            dev_dpi=300,
+            image_pipeline=self.luck_normal_gray,
+            runtime_capabilities=RuntimePrintCapabilities(
+                supports_gray=True,
+                gray_level_override=12,
+            ),
+        )
+        self.assertEqual(
+            data,
+            bytes([0x10, 0xFF, 0xF1, 0x03])
+            + bytes(12)
+            + bytes([0x1D, 0x47, 0x59, 0x0C, 0x01, 0x00, 0x01, 0x00, 0xBB])
+            + bytes([0x1B, 0x4A, 0x3C])
+            + bytes([0x1B, 0xBB, 0xBB])
+            + bytes([0x10, 0xFF, 0xF1, 0x45]),
+        )
+
     def test_build_luck_normal_tag_job_sets_tag_mode_and_positions(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
@@ -259,6 +298,75 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x1F, 0x80, 0x01, 0x20])
             + bytes([0x1D, 0x76, 0x30, 0x00, 0x01, 0x00, 0x01, 0x00, 0xAA])
             + bytes([0x1D, 0x0C])
+            + bytes([0x10, 0xFF, 0xF1, 0x45]),
+        )
+
+    def test_build_lujiang_normal_plain_job_marks_last_page_only(self) -> None:
+        first_page = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LUCK_NORMAL,
+            protocol_variant="lujiang_normal",
+            feed_padding=12,
+            dev_dpi=200,
+            image_pipeline=self.luck_normal_raw,
+            page_index=1,
+            page_count=2,
+        )
+        last_page = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LUCK_NORMAL,
+            protocol_variant="lujiang_normal",
+            feed_padding=12,
+            dev_dpi=200,
+            image_pipeline=self.luck_normal_raw,
+            page_index=2,
+            page_count=2,
+        )
+        self.assertNotIn(bytes([0x1B, 0xBB, 0xBB]), first_page)
+        self.assertIn(bytes([0x1B, 0xBB, 0xBB]), last_page)
+        self.assertTrue(last_page.endswith(bytes([0x1B, 0xBB, 0xBB, 0x10, 0xFF, 0xF1, 0x45])))
+
+    def test_build_lujiang_normal_tag_job_positions_and_marks_last_page(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LUCK_NORMAL,
+            protocol_variant="lujiang_normal",
+            feed_padding=12,
+            dev_dpi=200,
+            image_pipeline=self.luck_normal_raw,
+            paper_mode=self.types.PaperMode.TAG,
+            page_index=1,
+            page_count=1,
+        )
+        self.assertEqual(
+            data,
+            bytes([0x10, 0xFF, 0xF1, 0x03])
+            + bytes(12)
+            + bytes([0x1F, 0x80, 0x01, 0x20])
+            + bytes([0x1D, 0x76, 0x30, 0x00, 0x01, 0x00, 0x01, 0x00, 0xAA])
+            + bytes([0x1D, 0x0C])
+            + bytes([0x1B, 0xBB, 0xBB])
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
 
@@ -642,6 +750,22 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertNotIn(self.types.PaperMode.TATTOO, d80_modes)
         self.assertIn(self.types.PaperMode.TATTOO, d80h_modes)
 
+    def test_luck_normal_supported_paper_modes_can_vary_by_variant(self) -> None:
+        families = importlib.import_module("timiniprint.protocol.families.luck_normal")
+
+        default_modes = families.BEHAVIOR.supported_paper_modes
+        lujiang_modes = families.BEHAVIOR.supported_paper_modes_resolver("lujiang_normal")
+
+        self.assertEqual(
+            default_modes,
+            (self.types.PaperMode.PLAIN, self.types.PaperMode.TAG),
+        )
+        self.assertEqual(
+            lujiang_modes,
+            (self.types.PaperMode.PLAIN, self.types.PaperMode.TAG),
+        )
+        self.assertNotIn(self.types.PaperMode.TATTOO, lujiang_modes)
+
     def test_build_lujiang_a4_tattoo_job_uses_tattoo_paper_type_and_short_feed(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
@@ -668,6 +792,22 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x1B, 0x4A, 0x60])
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
+
+    def test_printer_protocol_can_downgrade_luck_gray_pipeline_after_runtime_probe(self) -> None:
+        from timiniprint.devices import PrinterCatalog
+        from timiniprint.printing.runtime.base import RuntimePrintCapabilities
+        from timiniprint.protocol import PrinterProtocol
+
+        device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
+        protocol = PrinterProtocol(device)
+
+        resolved = protocol.resolve_image_pipeline(
+            image_pipeline=self.luck_normal_gray,
+            runtime_capabilities=RuntimePrintCapabilities(supports_gray=False),
+        )
+
+        self.assertEqual(resolved.encoding, self.types.ImageEncoding.LUCK_NORMAL_RAW)
+        self.assertEqual(resolved.default_format, self.raster.PixelFormat.BW1)
 
     def test_build_a49h_plain_job_uses_custom_300dpi_end_line_dot(self) -> None:
         data = self.builders._build_job(

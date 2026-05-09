@@ -254,6 +254,126 @@
     "a4xii": false
   },
   {
+    "profile_key": "luck_ppa2l",
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "can_change_mtu": true,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "default_protocol_family": "luck_normal",
+    "default_protocol_variant": "lujiang_normal",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1",
+        "gray4",
+        "gray8"
+      ],
+      "encoding": "luck_normal_raw"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "tuning": {
+      "speed": {
+        "image": 10,
+        "text": 10
+      },
+      "energy": {
+        "image": {
+          "low": 5000,
+          "middle": 5000,
+          "high": 5000
+        },
+        "text": {
+          "low": 8000,
+          "middle": 8000,
+          "high": 8000
+        }
+      },
+      "density": {
+        "image": {
+          "low": 0,
+          "middle": 1,
+          "high": 2
+        },
+        "text": {
+          "low": 0,
+          "middle": 1,
+          "high": 2
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
+    "profile_key": "luck_ppa2lh",
+    "size": 2,
+    "paper_size": 576,
+    "print_size": 576,
+    "one_length": 8,
+    "dev_dpi": 300,
+    "can_change_mtu": true,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "default_protocol_family": "luck_normal",
+    "default_protocol_variant": "lujiang_normal_h",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1",
+        "gray4",
+        "gray8"
+      ],
+      "encoding": "luck_normal_raw"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "tuning": {
+      "speed": {
+        "image": 10,
+        "text": 10
+      },
+      "energy": {
+        "image": {
+          "low": 5000,
+          "middle": 5000,
+          "high": 5000
+        },
+        "text": {
+          "low": 8000,
+          "middle": 8000,
+          "high": 8000
+        }
+      },
+      "density": {
+        "image": {
+          "low": 0,
+          "middle": 1,
+          "high": 2
+        },
+        "text": {
+          "low": 0,
+          "middle": 1,
+          "high": 2
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
     "profile_key": "a33",
     "size": 2,
     "paper_size": 384,

@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-from ..devices import PrinterDevice
-from ..protocol import ImageEncoding, PrinterProtocol, ProtocolFamily, ProtocolJob
+from ..printing.runtime.base import PreparedRuntimeContext
+from ..protocol.family import ProtocolFamily
+from ..protocol.job import PrinterProtocol, ProtocolJob
+from ..protocol.types import ImageEncoding
 from ..rendering.converters import Page, PageLoader
 from ..rendering.renderer import apply_page_transforms, image_to_raster_set
 from .settings import PrintSettings
+
+if TYPE_CHECKING:
+    from ..devices import PrinterDevice
 
 
 class PrintJobBuilder:
@@ -18,9 +23,11 @@ class PrintJobBuilder:
         device: PrinterDevice,
         settings: Optional[PrintSettings] = None,
         page_loader: Optional[PageLoader] = None,
+        runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     ) -> None:
         self.device = device
         self.settings = settings or PrintSettings()
+        self.runtime_context = runtime_context
         pdf_page_gap_px = self._mm_to_px(self.settings.pdf_page_gap_mm, self.device.profile.dev_dpi)
         self.page_loader = page_loader or PageLoader(
             text_font=self.settings.text_font,
@@ -42,6 +49,7 @@ class PrintJobBuilder:
         required_formats = self.protocol.resolve_image_pipeline(
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
+            runtime_capabilities=self.runtime_context.capabilities,
         ).formats[:1]
         gamma_handle, gamma_value = self._resolve_gray_preprocessing()
         payload_parts: list[bytes] = []
@@ -67,17 +75,23 @@ class PrintJobBuilder:
                     pixel_format_override=self.settings.pixel_format_override,
                     page_index=page_index,
                     page_count=page_count,
+                    runtime_capabilities=self.runtime_context.capabilities,
+                    runtime_controller=self.runtime_context.runtime_controller,
                 ).payload
             )
         return ProtocolJob(
             payload=b"".join(payload_parts),
-            runtime_controller=self.protocol.create_runtime_controller(),
+            runtime_controller=(
+                self.runtime_context.runtime_controller
+                or self.protocol.create_runtime_controller()
+            ),
         )
 
     def _resolve_gray_preprocessing(self) -> tuple[bool, Optional[float]]:
         pipeline = self.protocol.resolve_image_pipeline(
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
+            runtime_capabilities=self.runtime_context.capabilities,
         )
         if self.device.protocol_family == ProtocolFamily.V5C and pipeline.encoding == ImageEncoding.V5C_A5:
             return self.settings.v5c_gamma_handle, self.settings.v5c_gamma_value

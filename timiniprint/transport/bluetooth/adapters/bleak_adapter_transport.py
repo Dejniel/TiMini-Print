@@ -103,10 +103,38 @@ class _BleakTransportSession:
             self.report_debug("configured notify characteristic not found")
 
     def debug_snapshot(self) -> dict[str, Any]:
+        if self._runtime_controller is None:
+            return {}
         return self._runtime_controller.debug_snapshot()
 
     def debug_update(self, **changes: Any) -> None:
+        if self._runtime_controller is None:
+            if changes:
+                unknown = ", ".join(sorted(changes.keys()))
+                raise KeyError(f"Runtime controller does not support debug_update fields: {unknown}")
+            return
         self._runtime_controller.debug_update(**changes)
+
+    async def attach_runtime_controller(
+        self,
+        runtime_controller: RuntimeController | None,
+        *,
+        mtu_size: int,
+        timeout: float,
+    ):
+        if runtime_controller is None:
+            return None
+        if runtime_controller is not self._runtime_controller:
+            had_previous = self._runtime_controller is not None
+            runtime_controller.adopt_previous(self._runtime_controller)
+            self._runtime_controller = runtime_controller
+            if not had_previous:
+                await self._runtime_controller.initialize_connection(
+                    self,
+                    mtu_size=mtu_size,
+                    timeout=timeout,
+                )
+                await self._runtime_controller.after_initialize(self, timeout=timeout)
 
     async def start_notify_if_available(self, client: Any, callback) -> None:
         if not self.bindings.notify_char or not self.bindings.notify_char_uuid:
@@ -181,8 +209,9 @@ class _BleakTransportSession:
     ) -> None:
         self._client = client
         if runtime_controller is not None:
-            runtime_controller.adopt_previous(self._runtime_controller)
-            self._runtime_controller = runtime_controller
+            if runtime_controller is not self._runtime_controller:
+                runtime_controller.adopt_previous(self._runtime_controller)
+                self._runtime_controller = runtime_controller
         if not self.bindings.write_char:
             raise RuntimeError("No write characteristic available")
 
@@ -481,6 +510,9 @@ class _BleakTransportSession:
     def can_send_control_packet(self) -> bool:
         return bool(self._client and self.bindings.write_char)
 
+    def can_query_control_packet(self) -> bool:
+        return False
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         if not self.can_send_control_packet():
             return False
@@ -499,3 +531,7 @@ class _BleakTransportSession:
             timeout=timeout,
         )
         return True
+
+    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+        _ = packet, timeout
+        return None

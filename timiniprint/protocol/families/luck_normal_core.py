@@ -39,6 +39,7 @@ class LuckNormalModeRecipe:
     adjust_before_scope: str = "never"
     adjust_after: int | None = None
     adjust_after_scope: str = "never"
+    mark_last_scope: str = "never"
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,9 @@ class LuckNormalCommandDialect:
     def adjust_position_auto(self, marker: int) -> bytes:
         return bytes([0x1F, 0x11, marker & 0xFF])
 
+    def mark_last(self) -> bytes:
+        return bytes([0x1B, 0xBB, 0xBB])
+
 
 LUCK_NORMAL_DIALECT = LuckNormalCommandDialect(
     enable_command=bytes([0x10, 0xFF, 0xF1, 0x03]),
@@ -86,7 +90,10 @@ class LuckNormalBitmapEncoder:
         if encoding == ImageEncoding.LUCK_NORMAL_RAW:
             return self._encode_raw(request.require_raster(PixelFormat.BW1))
         if encoding == ImageEncoding.LUCK_NORMAL_GRAY:
-            return self._encode_gray(request.default_raster)
+            return self._encode_gray(
+                request.default_raster,
+                self._gray_level_for_request(request),
+            )
         if encoding == ImageEncoding.LUCK_NORMAL_COMPRESSED:
             return self._encode_compressed(request.require_raster(PixelFormat.BW1))
         raise ValueError(f"Unsupported Luck normal image encoding: {encoding.value}")
@@ -131,8 +138,7 @@ class LuckNormalBitmapEncoder:
             body += pack_line(list(line), lsb_first=False)
         return bytes(body)
 
-    def _encode_gray(self, raster: RasterBuffer) -> bytes:
-        gray_level = 16
+    def _encode_gray(self, raster: RasterBuffer, gray_level: int) -> bytes:
         width_bytes = (raster.width + 7) // 8
         header = bytes(
             [
@@ -146,10 +152,10 @@ class LuckNormalBitmapEncoder:
                 (raster.height >> 8) & 0xFF,
             ]
         )
-        return header + self._pack_gray_rows(raster)
+        return header + self._pack_gray_rows(raster, gray_level)
 
-    def _pack_gray_rows(self, raster: RasterBuffer) -> bytes:
-        levels = self._gray_levels(raster)
+    def _pack_gray_rows(self, raster: RasterBuffer, gray_level: int) -> bytes:
+        levels = self._gray_levels(raster, gray_level)
         packed = bytearray()
         for row in range(raster.height):
             row_start = row * raster.width
@@ -159,13 +165,26 @@ class LuckNormalBitmapEncoder:
                 packed.append(((high & 0x0F) << 4) | (low & 0x0F))
         return bytes(packed)
 
-    def _gray_levels(self, raster: RasterBuffer) -> list[int]:
+    def _gray_levels(self, raster: RasterBuffer, gray_level: int) -> list[int]:
+        max_level = max(0, gray_level - 1)
         pixels = list(raster.pixels)
         if raster.pixel_format == PixelFormat.GRAY4:
-            return [max(0, min(15, int(value))) for value in pixels]
+            if max_level == 15:
+                return [max(0, min(15, int(value))) for value in pixels]
+            return [max(0, min(max_level, (int(value) * max_level) // 15)) for value in pixels]
         if raster.pixel_format == PixelFormat.GRAY8:
-            return [15 - min(15, (int(value) + 15) // 16) for value in pixels]
+            return [
+                max_level - min(max_level, (int(value) * gray_level) // 256)
+                for value in pixels
+            ]
         raise ValueError("Luck normal gray jobs require GRAY4 or GRAY8 raster data")
+
+    @staticmethod
+    def _gray_level_for_request(request: PrintJobRequest) -> int:
+        runtime_capabilities = request.runtime_capabilities
+        if runtime_capabilities is None or runtime_capabilities.gray_level_override is None:
+            return 16
+        return runtime_capabilities.gray_level_override
 
 
 @dataclass(frozen=True)
@@ -210,6 +229,8 @@ class LuckNormalFamilyRecipe:
             raise ValueError(f"Unsupported Luck normal finish action: {recipe.finish_action}")
         if self._should_run_scope(recipe.adjust_after_scope, request) and recipe.adjust_after is not None:
             commands += dialect.adjust_position_auto(recipe.adjust_after)
+        if self._should_run_scope(recipe.mark_last_scope, request):
+            commands += dialect.mark_last()
         commands += dialect.finalize_command
         return bytes(commands)
 

@@ -34,6 +34,24 @@ class _Socket:
         self.sent.append(bytes(data))
 
 
+class _QuerySocket(_Socket):
+    def __init__(self, replies):
+        super().__init__(fail=False)
+        self._replies = [bytes(reply) for reply in replies]
+        self._timeout = None
+
+    def gettimeout(self):
+        return self._timeout
+
+    def settimeout(self, timeout):
+        self._timeout = timeout
+
+    def recv(self, _size):
+        if self._replies:
+            return self._replies.pop(0)
+        raise TimeoutError()
+
+
 class _Adapter:
     def __init__(self, channels, fail=False, pair_error=None):
         self._channels = channels
@@ -157,6 +175,18 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         self.assertEqual(sock.sent, [b"ab", b"cd", b"ef"])
         self.assertGreaterEqual(sleep_mock.call_count, 1)
+
+    def test_query_control_packet_blocking_reads_classic_reply(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        sock = _QuerySocket([b"PPA2L_GY"])
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+
+        reply = backend._query_control_packet_blocking(b"\x10\xff\x20\xf0", 0.1)
+
+        self.assertEqual(sock.sent, [b"\x10\xff\x20\xf0"])
+        self.assertEqual(reply, b"PPA2L_GY")
 
 
 if __name__ == "__main__":

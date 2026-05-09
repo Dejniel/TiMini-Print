@@ -1,5 +1,3 @@
-from .builder import PrintJobBuilder
-from .settings import PrintSettings
-from ..protocol import PaperMode
+"""Printing package."""
 
-__all__ = ["PrintJobBuilder", "PrintSettings", "PaperMode"]
+__all__: list[str] = []

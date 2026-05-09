@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from ..printing.runtime.base import RuntimePrintCapabilities
 from ..raster import PixelFormat, RasterSet
 from ._builders import _build_job_from_raster_set
 from .commands import (
@@ -52,12 +53,15 @@ class PrinterProtocol:
         pixel_format_override: PixelFormat | None = None,
         page_index: int = 1,
         page_count: int = 1,
+        runtime_capabilities: RuntimePrintCapabilities | None = None,
+        runtime_controller: RuntimeController | None = None,
     ) -> ProtocolJob:
         """Build a printable job from raster input for this device."""
         resolved_pipeline = self.resolve_image_pipeline(
             image_pipeline=image_pipeline,
             image_encoding_override=image_encoding_override,
             pixel_format_override=pixel_format_override,
+            runtime_capabilities=runtime_capabilities,
         )
         payload = _build_job_from_raster_set(
             raster_set=raster_set,
@@ -83,10 +87,11 @@ class PrinterProtocol:
             paper_mode=paper_mode,
             page_index=page_index,
             page_count=page_count,
+            runtime_capabilities=runtime_capabilities,
         )
         return ProtocolJob(
             payload=payload,
-            runtime_controller=self.create_runtime_controller(),
+            runtime_controller=runtime_controller or self.create_runtime_controller(),
         )
 
     def build_paper_motion(self, action: str) -> ProtocolJob:
@@ -113,6 +118,7 @@ class PrinterProtocol:
         image_pipeline: ImagePipelineConfig | None = None,
         image_encoding_override: ImageEncoding | None = None,
         pixel_format_override: PixelFormat | None = None,
+        runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> ImagePipelineConfig:
         """Resolve the effective image pipeline for this job request."""
         behavior = get_protocol_behavior(self.device.protocol_family)
@@ -159,7 +165,7 @@ class PrinterProtocol:
                     ),
                     encoding=pipeline.encoding,
                 )
-        return pipeline
+        return self._apply_runtime_capabilities(pipeline, runtime_capabilities)
 
     def supported_paper_modes(self) -> tuple[PaperMode, ...]:
         """Return user-selectable paper modes supported by this device recipe."""
@@ -167,3 +173,22 @@ class PrinterProtocol:
         if behavior.supported_paper_modes_resolver is not None:
             return behavior.supported_paper_modes_resolver(self.device.protocol_variant)
         return behavior.supported_paper_modes
+
+    @staticmethod
+    def _apply_runtime_capabilities(
+        pipeline: ImagePipelineConfig,
+        runtime_capabilities: RuntimePrintCapabilities | None,
+    ) -> ImagePipelineConfig:
+        if runtime_capabilities is None:
+            return pipeline
+        if (
+            pipeline.encoding == ImageEncoding.LUCK_NORMAL_GRAY
+            and runtime_capabilities.supports_gray is False
+        ):
+            return ImagePipelineConfig(
+                formats=(PixelFormat.BW1,) + tuple(
+                    value for value in pipeline.formats if value is not PixelFormat.BW1
+                ),
+                encoding=ImageEncoding.LUCK_NORMAL_RAW,
+            )
+        return pipeline

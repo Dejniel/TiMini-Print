@@ -14,6 +14,10 @@ from tkinter import filedialog, ttk
 from .diagnostics import emit_startup_warnings
 from .. import reporting
 from ..devices import PrinterCatalog
+from ..printing.builder import PrintJobBuilder
+from ..printing.runtime.base import PreparedRuntimeContext
+from ..printing.runtime.prepare import prepare_connection_runtime
+from ..printing.settings import PrintSettings
 from ..protocol import PaperMode, PrinterProtocol
 from ..rendering.converters.text import TextConverter
 from ..transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery
@@ -71,6 +75,7 @@ class TiMiniPrintGUI(tk.Tk):
         )
         self.connector = BleakBluetoothConnector(reporter=self.reporter)
         self.connection = None
+        self.runtime_context = PreparedRuntimeContext()
 
         self.devices = []
         self.device_map = {}
@@ -345,14 +350,30 @@ class TiMiniPrintGUI(tk.Tk):
 
         def done(fut):
             try:
-                self.connection = fut.result()
+                self.connection, self.runtime_context = fut.result()
                 self._queue_status(reporting.STATUS_CONNECT_DONE)
                 self.queue.put(("connected", device))
             except Exception as exc:
                 self._queue_error(reporting.ERROR_CONNECT_FAILED, detail=str(exc), exc=exc)
                 self.queue.put(("connecting", False))
 
-        self.ble_loop.submit(self.connector.connect(device), callback=done)
+        async def run():
+            connection = await self.connector.connect(device)
+            try:
+                runtime_context = await prepare_connection_runtime(
+                    device,
+                    connection,
+                    reporter=self.reporter,
+                )
+            except Exception:
+                try:
+                    await connection.disconnect()
+                except Exception:
+                    pass
+                raise
+            return connection, runtime_context
+
+        self.ble_loop.submit(run(), callback=done)
 
     def toggle_connection(self) -> None:
         if self._connecting:
@@ -370,6 +391,7 @@ class TiMiniPrintGUI(tk.Tk):
             try:
                 fut.result()
                 self.connection = None
+                self.runtime_context = PreparedRuntimeContext()
                 self._queue_status(reporting.STATUS_DISCONNECT_DONE)
                 self.queue.put(("disconnected", None))
             except Exception as exc:
@@ -475,8 +497,6 @@ class TiMiniPrintGUI(tk.Tk):
         self._refresh_min_height()
 
     def print_file(self) -> None:
-        from ..printing import PrintJobBuilder, PrintSettings
-
         label = self.device_var.get()
         device = self.device_map.get(label)
         if not device:
@@ -509,7 +529,11 @@ class TiMiniPrintGUI(tk.Tk):
             pdf_pages=pdf_pages,
             pdf_page_gap_mm=pdf_page_gap_mm,
         )
-        builder = PrintJobBuilder(connected_device, settings=settings)
+        builder = PrintJobBuilder(
+            connected_device,
+            settings=settings,
+            runtime_context=self.runtime_context,
+        )
 
         def done(fut):
             try:

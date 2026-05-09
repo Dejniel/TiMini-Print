@@ -196,6 +196,37 @@ class _BleakSocket:
         """Compatibility alias matching socket-style APIs."""
         self.send_payload(data)
 
+    def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0):
+        if not self._connected or not self._client:
+            raise RuntimeError("Not connected to BLE device")
+        if not self._loop:
+            raise RuntimeError("Event loop not initialized")
+        self._loop.run_until_complete(
+            self._transport.attach_runtime_controller(
+                runtime_controller,
+                mtu_size=self._mtu_size,
+                timeout=timeout,
+            )
+        )
+
+    def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
+        if not self._connected or not self._client:
+            return False
+        if not self._loop:
+            raise RuntimeError("Event loop not initialized")
+        return self._loop.run_until_complete(
+            self._transport.send_control_packet(packet, timeout=timeout)
+        )
+
+    def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+        if not self._connected or not self._client:
+            return None
+        if not self._loop:
+            raise RuntimeError("Event loop not initialized")
+        return self._loop.run_until_complete(
+            self._transport.query_control_packet(packet, timeout=timeout)
+        )
+
     async def _send_async(self, data: bytes, runtime_controller=None) -> None:
         """Delegate payload routing and chunking to the transport session."""
         await self._transport.send(
