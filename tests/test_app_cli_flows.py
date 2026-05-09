@@ -8,7 +8,7 @@ import types
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from tests.helpers import install_crc8_stub
+from tests.helpers import build_capture_reporter, install_crc8_stub
 
 install_crc8_stub()
 
@@ -214,6 +214,30 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertEqual(device.display_name, "PPA2L_3F19")
         self.assertIsInstance(device.transport_target, BluetoothTarget)
         self.assertEqual(device.address, "AA:BB:CC:DD:EE:01")
+
+    def test_debug_resolved_device_includes_runtime_details(self) -> None:
+        reporter, sink = build_capture_reporter()
+        device = MagicMock()
+        device.display_name = "MX10"
+        device.address = "AA:BB:CC:DD:EE:59"
+        device.transport_badge = "[ble]"
+        device.profile_key = "v5g_small_203"
+        device.protocol_family.value = "v5g"
+        device.protocol_variant = None
+        device.runtime_variant = "mx10"
+        device.runtime_density_profile.profile_key = "mx06"
+        device.detection_rule_key = "rule_mx10_v5g"
+        device.profile.use_spp = False
+
+        cli._debug_resolved_device(reporter, device, action="print")
+
+        detail = sink.messages[-1].detail
+        self.assertIn("name=MX10", detail)
+        self.assertIn("profile=v5g_small_203", detail)
+        self.assertIn("protocol=v5g", detail)
+        self.assertIn("runtime=mx10", detail)
+        self.assertIn("runtime_density_profile=mx06", detail)
+        self.assertIn("detection_rule=rule_mx10_v5g", detail)
 
 
 if __name__ == "__main__":

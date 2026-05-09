@@ -245,6 +245,35 @@ def _resolve_serial_device(
     )
 
 
+def _field_value(value) -> object:
+    return value.value if hasattr(value, "value") else value
+
+
+def _debug_resolved_device(
+    reporter: reporting.Reporter,
+    device: PrinterDevice,
+    *,
+    action: str,
+) -> None:
+    runtime_density_profile = device.runtime_density_profile
+    reporter.debug(
+        short="Device",
+        detail=(
+            f"Resolved device for {action}: "
+            f"name={device.display_name or '<unknown>'} "
+            f"address={device.address or '<unknown>'} "
+            f"transport={device.transport_badge or '<unknown>'} "
+            f"profile={device.profile_key} "
+            f"protocol={_field_value(device.protocol_family)} "
+            f"variant={device.protocol_variant or '<none>'} "
+            f"runtime={device.runtime_variant or '<none>'} "
+            f"runtime_density_profile={getattr(runtime_density_profile, 'profile_key', None) or '<none>'} "
+            f"detection_rule={device.detection_rule_key or '<none>'} "
+            f"use_spp={device.profile.use_spp}"
+        ),
+    )
+
+
 def export_device_config(
     args: argparse.Namespace,
     reporter: reporting.Reporter,
@@ -377,17 +406,7 @@ def print_bluetooth(
 
     async def run() -> None:
         device = await _resolve_bluetooth_device(args, catalog)
-        reporter.debug(
-            short="Bluetooth",
-            detail=(
-                "Resolved device for print: "
-                f"name={device.display_name or '<unknown>'} "
-                f"address={device.address} "
-                f"transport_badge={device.transport_badge} "
-                f"profile={device.profile_key} "
-                f"use_spp={device.profile.use_spp}"
-            ),
-        )
+        _debug_resolved_device(reporter, device, action="print")
         connection = await BleakBluetoothConnector(reporter=reporter).connect(device)
         try:
             runtime_context = await prepare_connection_runtime(device, connection, reporter=reporter)
@@ -459,17 +478,7 @@ def paper_motion_bluetooth(
 
     async def run() -> None:
         device = await _resolve_bluetooth_device(args, catalog)
-        reporter.debug(
-            short="Bluetooth",
-            detail=(
-                f"Resolved device for {action}: "
-                f"name={device.display_name or '<unknown>'} "
-                f"address={device.address} "
-                f"transport_badge={device.transport_badge} "
-                f"profile={device.profile_key} "
-                f"use_spp={device.profile.use_spp}"
-            ),
-        )
+        _debug_resolved_device(reporter, device, action=action)
         job = build_paper_motion_job(device, action)
         connection = await BleakBluetoothConnector(reporter=reporter).connect(device)
         try:
