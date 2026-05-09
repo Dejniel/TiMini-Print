@@ -105,6 +105,10 @@ def _public_readme_name(name: str) -> str:
     return name[:-1] if name.endswith(("-", "_")) else name
 
 
+def _alias_merge_key(name: str) -> str:
+    return _public_readme_name(name).replace("-", "_")
+
+
 def _dedupe_names(names: tuple[str, ...] | list[str]) -> list[str]:
     ordered: list[str] = []
     seen: set[str] = set()
@@ -125,14 +129,15 @@ def _render_primary_name(name: str, *, original_app_name: str | None) -> str:
 
 
 def _display_clone_names(entry: InventoryEntry) -> list[str]:
-    primary_names = set(_dedupe_names(entry.primary_names))
+    primary_names = {_alias_merge_key(name) for name in entry.primary_names}
     clone_names = []
     seen = set(primary_names)
     for name in entry.clone_names:
         public_name = _public_readme_name(name)
-        if public_name in seen:
+        merge_key = _alias_merge_key(name)
+        if merge_key in seen:
             continue
-        seen.add(public_name)
+        seen.add(merge_key)
         clone_names.append(public_name)
     return clone_names
 
@@ -140,9 +145,18 @@ def _display_clone_names(entry: InventoryEntry) -> list[str]:
 def _primary_group_clone_names(entry: InventoryEntry) -> list[str]:
     if len(entry.primary_names) <= 1:
         return []
-    if entry.display_label and "/" in entry.display_label:
+    if _renders_inline(entry):
         return []
-    return _dedupe_names(entry.primary_names[1:])
+    clone_names: list[str] = []
+    seen = {_alias_merge_key(entry.primary_names[0])}
+    for name in entry.primary_names[1:]:
+        public_name = _public_readme_name(name)
+        merge_key = _alias_merge_key(name)
+        if merge_key in seen:
+            continue
+        seen.add(merge_key)
+        clone_names.append(public_name)
+    return clone_names
 
 
 def _entry_clone_names(entry: InventoryEntry) -> list[str]:
@@ -150,9 +164,10 @@ def _entry_clone_names(entry: InventoryEntry) -> list[str]:
     seen: set[str] = set()
     for name in _primary_group_clone_names(entry) + _display_clone_names(entry):
         public_name = _public_readme_name(name)
-        if public_name in seen:
+        merge_key = _alias_merge_key(name)
+        if merge_key in seen:
             continue
-        seen.add(public_name)
+        seen.add(merge_key)
         clone_names.append(public_name)
     return clone_names
 
@@ -163,7 +178,8 @@ def _renders_inline(entry: InventoryEntry) -> bool:
 
 def _renders_as_single_name(entry: InventoryEntry) -> bool:
     primary_public_names = _dedupe_names(entry.primary_names)
-    if len(primary_public_names) != 1:
+    primary_alias_keys = {_alias_merge_key(name) for name in entry.primary_names}
+    if len(primary_alias_keys) != 1:
         return False
     if _entry_clone_names(entry):
         return False

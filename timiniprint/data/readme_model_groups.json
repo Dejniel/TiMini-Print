@@ -217,7 +217,7 @@
     {
       "id": "luck-ppa2l-family",
       "status": "supported",
-      "display_label": "PPA2L / PPA2LH",
+      "render_mode": "flat",
       "primary_names": [
         "PPA2L",
         "PPA2LH"
@@ -253,7 +253,7 @@
     {
       "id": "luck-apa40-family",
       "status": "supported",
-      "display_label": "APA40 / APA42 / APA43",
+      "render_mode": "flat",
       "primary_names": [
         "APA40",
         "APA42",
@@ -367,7 +367,6 @@
     {
       "id": "luck-dp-a4",
       "status": "supported",
-      "display_label": "DP_A4 / DP-A4",
       "primary_names": [
         "DP_A4",
         "DP-A4"
