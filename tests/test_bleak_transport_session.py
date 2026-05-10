@@ -766,7 +766,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         )
 
     def test_v5x_notifications_update_session_state(self) -> None:
-        session, _ = self._make_session(ProtocolFamily.V5X)
+        session, _, sink = self._make_session_with_sink(ProtocolFamily.V5X)
 
         session.handle_notification(
             make_packet(0xA7, bytes.fromhex("112233445566"), ProtocolFamily.V5X)
@@ -794,6 +794,15 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(_v5x_state(session).error_group, 0x00)
         self.assertEqual(_v5x_state(session).error_code, 0x00)
         self.assertEqual(_v5x_state(session).compatibility.mode, "auth")
+        debug_details = [
+            message.detail or message.short
+            for message in sink.messages
+            if message.level == "debug"
+        ]
+        self.assertIn(
+            "V5X firmware: version=FW1.0.22, print_head_type=gaoya",
+            debug_details,
+        )
 
     def test_v5x_framed_a9_status_uses_payload_byte_not_crc(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)

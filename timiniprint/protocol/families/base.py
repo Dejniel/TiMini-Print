@@ -7,13 +7,14 @@ from typing import Callable, Mapping
 from ...raster import PixelFormat, RasterSet
 from ..family import ProtocolFamily
 from ..packet import prefixed_packet_length
+from ..steps import ProtocolStep
 from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 
 if TYPE_CHECKING:
     from ...printing.runtime.base import RuntimePrintCapabilities
 
 ManualMotionBuilder = Callable[[int, ProtocolFamily, str | None], bytes]
-FamilyJobBuilder = Callable[["PrintJobRequest"], bytes]
+FamilyJobBuilder = Callable[["PrintJobRequest"], bytes | tuple[ProtocolStep, ...]]
 PaperModeResolver = Callable[[str | None], tuple[PaperMode, ...]]
 
 

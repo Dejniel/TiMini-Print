@@ -85,6 +85,10 @@ class RuntimeConnectionSession:
         query_control_packet = getattr(self._connection, "query_control_packet", None)
         return callable(query_control_packet)
 
+    def can_send_standard_payload(self) -> bool:
+        send_standard_payload = getattr(self._connection, "send_standard_payload", None)
+        return callable(send_standard_payload)
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         send_control_packet = getattr(self._connection, "send_control_packet", None)
         if not callable(send_control_packet):

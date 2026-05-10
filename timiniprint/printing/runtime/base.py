@@ -73,16 +73,6 @@ class RuntimeController:
     def prepare_standard_payload(self, session: RuntimeSessionApi, data: bytes) -> bytes:
         return data
 
-    async def send_standard_job_payload(
-        self,
-        session: RuntimeSessionApi,
-        data: bytes,
-        *,
-        timeout: float,
-    ) -> bool:
-        _ = session, data, timeout
-        return False
-
     def on_standard_send_started(self, session: RuntimeSessionApi) -> None:
         return None
 
@@ -92,6 +82,9 @@ class RuntimeController:
     def track_outgoing_query_status(self, session: RuntimeSessionApi, data: bytes) -> None:
         return None
 
+    # TODO: These split/ACK hooks are the older BLE runtime path for V5X/V5G/V5C
+    # notification/flow-control behavior. Do not add new protocol sequencing here;
+    # new families should expose named ProtocolJob.steps instead.
     def build_split_context(self, session: RuntimeSessionApi, split: Any) -> Any:
         return None
 

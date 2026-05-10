@@ -53,7 +53,12 @@ It builds jobs; it does not connect or send.
 A unit of work that transport can send.
 It contains:
 - `payload`
+- optional `steps`
 - `runtime_controller`
+
+`payload` is the stream-only representation.
+`steps` is the named protocol operation plan for families that need request/response control flow during a print job.
+The transport still sees only generic sends and queries; it does not learn family-specific command meaning.
 
 ### Connectors
 Connectors handle real I/O.
@@ -173,6 +178,7 @@ There are two kinds of logic in the codebase:
 
 Examples:
 - packet formats belong in `timiniprint.protocol.families.*`
+- named print-job operation plans belong in `ProtocolJob.steps`
 - temperature/status-driven session behavior belongs in `timiniprint.printing.runtime.*`
 
 This split matters because some printer families need session state during transport, but packet construction still needs to stay reusable outside the built-in app flow.

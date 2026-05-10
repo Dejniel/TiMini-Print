@@ -6,10 +6,8 @@ import unittest
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.runtime.prepare import prepare_connection_runtime
 from timiniprint.printing.runtime.luck_normal import (
-    LUCK_DENSITY_PREFIX,
     LUCK_MODEL_QUERY_PACKET,
-    LUCK_PAPER_TYPE_PREFIX,
-    LUCK_STATUS_QUERY_PACKET,
+    LUCK_VERSION_QUERY_PACKET,
     LuckNormalRuntimeController,
 )
 
@@ -30,6 +28,7 @@ class _Session:
         self._replies = list(replies) if replies is not None else None
         self.query_packets: list[bytes] = []
         self.standard_payloads: list[bytes] = []
+        self.debug_messages: list[str] = []
         self.warnings: list[tuple[str, str]] = []
 
     def make_packet(self, opcode: int, payload: bytes) -> bytes:
@@ -48,7 +47,7 @@ class _Session:
         return None
 
     def report_debug(self, message: str) -> None:
-        _ = message
+        self.debug_messages.append(message)
 
     def report_warning(self, *, short: str, detail: str) -> None:
         self.warnings.append((short, detail))
@@ -90,8 +89,8 @@ class _ConnectionReporter:
 
 
 class _ProbeConnection:
-    def __init__(self, reply: bytes | None) -> None:
-        self.reply = reply
+    def __init__(self, replies: list[bytes | None]) -> None:
+        self.replies = list(replies)
         self.attached = []
         self.queries: list[bytes] = []
 
@@ -106,13 +105,15 @@ class _ProbeConnection:
     async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
         _ = timeout
         self.queries.append(bytes(packet))
-        return self.reply
+        if not self.replies:
+            return None
+        return self.replies.pop(0)
 
 
 class LuckNormalRuntimeControllerTests(unittest.TestCase):
     def test_probe_enables_gray_for_gy_suffix(self) -> None:
         controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
-        session = _Session(reply="PPA2L_GY".encode("gb2312"))
+        session = _Session(replies=["PPA2L_GY".encode("gb2312"), b"1.26"])
 
         asyncio.run(controller.probe_capabilities(session, timeout=0.1))
 
@@ -120,19 +121,28 @@ class LuckNormalRuntimeControllerTests(unittest.TestCase):
         self.assertIsNotNone(caps)
         self.assertTrue(caps.supports_gray)
         self.assertIsNone(caps.gray_level_override)
-        self.assertEqual(session.query_packets, [LUCK_MODEL_QUERY_PACKET])
+        self.assertEqual(
+            session.query_packets,
+            [LUCK_MODEL_QUERY_PACKET, LUCK_VERSION_QUERY_PACKET],
+        )
         self.assertEqual(controller.debug_snapshot()["probed_model"], "PPA2L_GY")
+        self.assertEqual(controller.debug_snapshot()["firmware_version"], "1.26")
+        self.assertTrue(
+            any("Luck query firmware" in message for message in session.debug_messages)
+        )
+        self.assertIn("Luck firmware: version=1.26", session.debug_messages)
         self.assertEqual(session.warnings, [])
 
     def test_probe_disables_gray_without_warning_for_non_gy_reply(self) -> None:
         controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
-        session = _Session(reply="PPA2L".encode("gb2312"))
+        session = _Session(replies=["PPA2L".encode("gb2312"), None])
 
         asyncio.run(controller.probe_capabilities(session, timeout=0.1))
 
         caps = controller.runtime_capabilities()
         self.assertIsNotNone(caps)
         self.assertFalse(caps.supports_gray)
+        self.assertIsNone(controller.debug_snapshot()["firmware_version"])
         self.assertEqual(session.warnings, [])
 
     def test_probe_warns_and_degrades_when_query_is_unavailable(self) -> None:
@@ -151,7 +161,7 @@ class LuckNormalRuntimeControllerTests(unittest.TestCase):
 
     def test_prepare_connection_runtime_uses_public_probe_contract(self) -> None:
         device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
-        connection = _ProbeConnection(reply="PPA2L_GY".encode("gb2312"))
+        connection = _ProbeConnection(["PPA2L_GY".encode("gb2312"), b"1.26"])
         reporter = _ConnectionReporter()
 
         runtime_context = asyncio.run(
@@ -161,64 +171,12 @@ class LuckNormalRuntimeControllerTests(unittest.TestCase):
         self.assertIsNotNone(runtime_context.runtime_controller)
         self.assertIsNotNone(runtime_context.capabilities)
         self.assertTrue(runtime_context.capabilities.supports_gray)
-        self.assertEqual(connection.queries, [LUCK_MODEL_QUERY_PACKET])
+        self.assertEqual(
+            connection.queries,
+            [LUCK_MODEL_QUERY_PACKET, LUCK_VERSION_QUERY_PACKET],
+        )
         self.assertEqual(len(connection.attached), 1)
         self.assertEqual(reporter.warnings, [])
-
-    def test_send_standard_job_payload_interleaves_luck_queries(self) -> None:
-        controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
-        session = _Session(replies=[b"OK", b"\x00", b"OK"])
-        density_packet = LUCK_DENSITY_PREFIX + bytes([1])
-        before_paper = bytes([0x10, 0xFF, 0xF1, 0x03]) + bytes(12)
-        paper_packet = LUCK_PAPER_TYPE_PREFIX + bytes([0x20])
-        after_paper = bytes([0x1D, 0x76, 0x30, 0x00, 0x01])
-        payload = density_packet + before_paper + paper_packet + after_paper
-
-        handled = asyncio.run(
-            controller.send_standard_job_payload(session, payload, timeout=0.1)
-        )
-
-        self.assertTrue(handled)
-        self.assertEqual(
-            session.query_packets,
-            [density_packet, LUCK_STATUS_QUERY_PACKET, paper_packet],
-        )
-        self.assertEqual(session.standard_payloads, [before_paper, after_paper])
-        self.assertEqual(session.warnings, [])
-
-    def test_send_standard_job_payload_does_not_parse_paper_type_inside_bitmap(self) -> None:
-        controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
-        session = _Session(replies=[b"OK", b"\x00"])
-        density_packet = LUCK_DENSITY_PREFIX + bytes([1])
-        before_bitmap = bytes([0x10, 0xFF, 0xF1, 0x03]) + bytes(12)
-        bitmap_with_paper_type_bytes = (
-            bytes([0x1D, 0x76, 0x30, 0x00, 0x01, 0x00, 0x01, 0x00])
-            + LUCK_PAPER_TYPE_PREFIX
-            + bytes([0x20])
-        )
-        payload = density_packet + before_bitmap + bitmap_with_paper_type_bytes
-
-        handled = asyncio.run(
-            controller.send_standard_job_payload(session, payload, timeout=0.1)
-        )
-
-        self.assertTrue(handled)
-        self.assertEqual(session.query_packets, [density_packet, LUCK_STATUS_QUERY_PACKET])
-        self.assertEqual(session.standard_payloads, [before_bitmap + bitmap_with_paper_type_bytes])
-        self.assertEqual(session.warnings, [])
-
-    def test_send_standard_job_payload_falls_back_without_query_transport(self) -> None:
-        controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
-        session = _Session(can_query=False)
-
-        handled = asyncio.run(
-            controller.send_standard_job_payload(session, b"payload", timeout=0.1)
-        )
-
-        self.assertFalse(handled)
-        self.assertEqual(session.standard_payloads, [])
-        self.assertEqual(len(session.warnings), 1)
-        self.assertIn("stream-only mode", session.warnings[0][1])
 
 
 if __name__ == "__main__":

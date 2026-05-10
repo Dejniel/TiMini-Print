@@ -4,13 +4,14 @@ from typing import TYPE_CHECKING
 
 from ..printing.runtime.base import RuntimePrintCapabilities
 from ..raster import PixelFormat, RasterSet
-from ._builders import _build_job_from_raster_set
+from ._builders import _build_job_model_from_raster_set
 from .commands import (
     advance_paper_cmd,
     retract_paper_cmd,
 )
 from .families import get_protocol_behavior
 from .family import ProtocolFamily
+from .steps import ProtocolStep
 from .types import ImageEncoding, ImagePipelineConfig, PaperMode
 
 if TYPE_CHECKING:
@@ -24,16 +25,24 @@ class ProtocolJob:
     _payload: bytes | None
     runtime_controller: RuntimeController | None
     payload_segments: tuple[bytes, ...]
+    steps: tuple[ProtocolStep, ...]
 
     def __init__(
         self,
         payload: bytes | None = None,
         runtime_controller: RuntimeController | None = None,
         payload_segments: tuple[bytes, ...] = (),
+        steps: tuple[ProtocolStep, ...] = (),
     ) -> None:
         self._payload = payload
         self.runtime_controller = runtime_controller
-        self.payload_segments = payload_segments or (() if payload is None else (payload,))
+        self.steps = tuple(steps)
+        if payload_segments:
+            self.payload_segments = tuple(bytes(segment) for segment in payload_segments)
+        elif payload is not None:
+            self.payload_segments = (payload,)
+        else:
+            self.payload_segments = tuple(step.data for step in self.steps if step.include_in_payload)
 
     @property
     def payload(self) -> bytes:
@@ -81,7 +90,7 @@ class PrinterProtocol:
         resolved_paper_mode = (
             paper_mode if paper_mode is not None else self.device.profile.default_paper_mode
         )
-        payload = _build_job_from_raster_set(
+        payload, steps = _build_job_model_from_raster_set(
             raster_set=raster_set,
             is_text=is_text,
             speed=self.device.profile.select_speed(is_text=is_text),
@@ -110,6 +119,7 @@ class PrinterProtocol:
         return ProtocolJob(
             payload=payload,
             runtime_controller=runtime_controller or self.create_runtime_controller(),
+            steps=steps,
         )
 
     def build_paper_motion(self, action: str) -> ProtocolJob:

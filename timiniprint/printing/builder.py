@@ -53,6 +53,7 @@ class PrintJobBuilder:
         ).formats[:1]
         gamma_handle, gamma_value = self._resolve_gray_preprocessing()
         payload_parts: list[bytes] = []
+        steps = []
         page_count = len(pages)
         for page_index, page in enumerate(pages, start=1):
             is_text = self._select_text_mode(page)
@@ -63,28 +64,29 @@ class PrintJobBuilder:
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
             )
-            payload_parts.append(
-                self.protocol.build_job(
-                    raster_set,
-                    is_text=is_text,
-                    blackening=self.settings.blackening,
-                    feed_padding=self.settings.feed_padding,
-                    paper_mode=self.settings.paper_mode,
-                    lsb_first=self._lsb_first(),
-                    image_encoding_override=self.settings.image_encoding_override,
-                    pixel_format_override=self.settings.pixel_format_override,
-                    page_index=page_index,
-                    page_count=page_count,
-                    runtime_capabilities=self.runtime_context.capabilities,
-                    runtime_controller=self.runtime_context.runtime_controller,
-                ).payload
+            page_job = self.protocol.build_job(
+                raster_set,
+                is_text=is_text,
+                blackening=self.settings.blackening,
+                feed_padding=self.settings.feed_padding,
+                paper_mode=self.settings.paper_mode,
+                lsb_first=self._lsb_first(),
+                image_encoding_override=self.settings.image_encoding_override,
+                pixel_format_override=self.settings.pixel_format_override,
+                page_index=page_index,
+                page_count=page_count,
+                runtime_capabilities=self.runtime_context.capabilities,
+                runtime_controller=self.runtime_context.runtime_controller,
             )
+            payload_parts.append(page_job.payload)
+            steps.extend(page_job.steps)
         return ProtocolJob(
             runtime_controller=(
                 self.runtime_context.runtime_controller
                 or self.protocol.create_runtime_controller()
             ),
             payload_segments=tuple(payload_parts),
+            steps=tuple(steps),
         )
 
     def _resolve_gray_preprocessing(self) -> tuple[bool, Optional[float]]:

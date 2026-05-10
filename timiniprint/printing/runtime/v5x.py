@@ -538,3 +538,6 @@ class V5XRuntimeController(RuntimeController):
             self._state.print_head_type = "diya"
         else:
             self._state.print_head_type = "weishibie"
+        session.report_debug(
+            f"V5X firmware: version={firmware}, print_head_type={self._state.print_head_type}"
+        )

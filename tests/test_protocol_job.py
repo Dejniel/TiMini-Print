@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from tests.helpers import install_crc8_stub
 from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol import PrinterProtocol
+from timiniprint.protocol import PrinterProtocol, ProtocolReplyExpectation, ProtocolStepOperation
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families.v5x import V5X_FINALIZE_PACKET, V5X_GET_SERIAL_PACKET
 
@@ -256,6 +256,15 @@ class ProtocolJobTests(unittest.TestCase):
 
         self.assertIn(bytes([0x1F, 0x80, 0x01, 0x20]), job.payload)
         self.assertIn(bytes([0x10, 0xFF, 0xF1, 0x45]), job.payload)
+        self.assertEqual([step.label for step in job.steps[:5]], ["density", "status", "enable", "wakeup", "paper type"])
+        self.assertEqual(job.steps[0].operation, ProtocolStepOperation.QUERY)
+        self.assertEqual(job.steps[0].expect, ProtocolReplyExpectation.OK)
+        self.assertEqual(job.steps[1].operation, ProtocolStepOperation.QUERY)
+        self.assertFalse(job.steps[1].include_in_payload)
+        self.assertEqual(job.steps[-1].label, "finalize")
+        self.assertEqual(job.steps[-1].operation, ProtocolStepOperation.QUERY)
+        self.assertEqual(job.steps[-1].expect, ProtocolReplyExpectation.OK_OR_AA)
+        self.assertNotIn(bytes([0x10, 0xFF, 0x40]), job.payload)
 
     def test_ppa2l_plain_override_omits_tag_paper_mode(self) -> None:
         device = PrinterCatalog.load().device_from_profile("luck_ppa2l")

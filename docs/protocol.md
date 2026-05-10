@@ -47,6 +47,7 @@ Use it only when you already have raster data and want to build a printable job 
 A `ProtocolJob` is what transport sends.
 It contains:
 - `payload: bytes`
+- optional `steps`, a named send/query plan for protocols that need replies during a print job
 - `runtime_controller`, for families that need session behavior during transport
 
 ### Connectors

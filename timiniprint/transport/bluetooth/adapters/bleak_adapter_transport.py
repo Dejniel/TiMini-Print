@@ -283,6 +283,9 @@ class _BleakTransportSession:
             self._protocol_family,
             self._transport_profile.split_tail_packets,
         )
+        # TODO: Legacy BLE split runtime hooks for V5X/V5G/V5C live here because
+        # they depend on notifications and BLE bulk/write characteristics. New
+        # protocol send/query sequencing should be modeled as ProtocolJob.steps.
         split_context = None
         if self._runtime_controller is not None:
             split_context = self._runtime_controller.build_split_context(self, split)

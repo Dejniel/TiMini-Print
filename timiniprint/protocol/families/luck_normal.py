@@ -50,10 +50,12 @@ RECIPE = LuckNormalFamilyRecipe(
     variants={
         "lujiang_normal": LuckNormalVariantRecipe(
             mode_recipes=LUJIANG_NORMAL_MODE_RECIPES,
+            query_interleaved=True,
         ),
         "lujiang_normal_h": LuckNormalVariantRecipe(
             mode_recipes=LUJIANG_NORMAL_MODE_RECIPES,
             end_line_dots_300dpi=60,
+            query_interleaved=True,
         ),
         "qirui_q1": LuckNormalVariantRecipe(
             dialect=LUCK_NORMAL_MODE2_DIALECT,

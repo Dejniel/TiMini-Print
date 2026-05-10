@@ -13,14 +13,25 @@ from .commands import (
 from .encoding import build_line_packets
 from .families import PrintJobRequest, get_protocol_behavior
 from .family import ProtocolFamily
+from .steps import ProtocolStep
 from .types import ImagePipelineConfig, PaperMode
 
 
-def _build_family_job(request: PrintJobRequest) -> bytes | None:
+FamilyJob = bytes | tuple[ProtocolStep, ...]
+
+
+def _build_family_job(request: PrintJobRequest) -> FamilyJob | None:
     behavior = get_protocol_behavior(request.protocol_family)
     if behavior.job_builder is None:
         return None
     return behavior.job_builder(request)
+
+
+def _family_job_payload_and_steps(family_job: FamilyJob) -> tuple[bytes, tuple[ProtocolStep, ...]]:
+    if isinstance(family_job, bytes):
+        return family_job, ()
+    steps = tuple(family_job)
+    return b"".join(step.data for step in steps if step.include_in_payload), steps
 
 
 def _resolve_image_pipeline(
@@ -214,7 +225,8 @@ def _build_print_payload_from_raster_set(
     )
     family_payload = _build_family_job(request)
     if family_payload is not None:
-        return family_payload
+        payload, _steps = _family_job_payload_and_steps(family_payload)
+        return payload
 
     raster = request.require_raster(PixelFormat.BW1)
     payload = bytearray()
@@ -339,6 +351,49 @@ def _build_job_from_raster_set(
     page_count: int = 1,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
+    payload, _steps = _build_job_model_from_raster_set(
+        raster_set=raster_set,
+        is_text=is_text,
+        speed=speed,
+        energy=energy,
+        density=density,
+        blackening=blackening,
+        lsb_first=lsb_first,
+        protocol_family=protocol_family,
+        feed_padding=feed_padding,
+        dev_dpi=dev_dpi,
+        can_print_label=can_print_label,
+        post_print_feed_count=post_print_feed_count,
+        image_pipeline=image_pipeline,
+        paper_mode=paper_mode,
+        protocol_variant=protocol_variant,
+        page_index=page_index,
+        page_count=page_count,
+        runtime_capabilities=runtime_capabilities,
+    )
+    return payload
+
+
+def _build_job_model_from_raster_set(
+    raster_set: RasterSet,
+    is_text: bool,
+    speed: int | None,
+    energy: int,
+    density: int | None,
+    blackening: int,
+    lsb_first: bool,
+    protocol_family: ProtocolFamily | str,
+    feed_padding: int,
+    dev_dpi: int,
+    can_print_label: bool = False,
+    post_print_feed_count: int = 2,
+    image_pipeline: ImagePipelineConfig | None = None,
+    paper_mode: PaperMode | None = None,
+    protocol_variant: str | None = None,
+    page_index: int = 1,
+    page_count: int = 1,
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
+) -> tuple[bytes, tuple[ProtocolStep, ...]]:
     request = _build_request(
         raster_set=raster_set,
         is_text=is_text,
@@ -361,7 +416,7 @@ def _build_job_from_raster_set(
     )
     family_job = _build_family_job(request)
     if family_job is not None:
-        return family_job
+        return _family_job_payload_and_steps(family_job)
 
     job = bytearray()
     job += blackening_cmd(blackening, request.protocol_family)
@@ -382,4 +437,4 @@ def _build_job_from_raster_set(
         job += paper_cmd(dev_dpi, request.protocol_family)
     job += feed_paper_cmd(feed_padding, request.protocol_family)
     job += dev_state_cmd(request.protocol_family)
-    return bytes(job)
+    return bytes(job), ()
