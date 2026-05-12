@@ -90,8 +90,12 @@ class RuntimeController:
         return None
 
     # TODO: These split/ACK hooks are the older BLE runtime path for V5X/V5G/V5C
-    # notification/flow-control behavior. Do not add new protocol sequencing here;
-    # new families should expose named ProtocolJob.steps instead.
+    # notification/flow-control behavior. Do not add new protocol sequencing here.
+    # Future cleanup should model both SPP replies and BLE notifications as
+    # explicit "send, then wait until condition" runtime steps. Keep the two
+    # transports separate underneath: SPP uses reply-matched control queries,
+    # BLE uses notification/event-matched waits. New request/response families
+    # should expose named ProtocolJob.steps instead of adding more hooks here.
     def build_split_context(self, session: RuntimeSessionApi, split: Any) -> Any:
         return None
 
