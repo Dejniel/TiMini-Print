@@ -387,14 +387,45 @@ class SppBackend:
                 _send_all(self._sock, data, runtime_controller=runtime_controller)
                 return
         delay = max(0.0, delay_ms / 1000.0)
+        total_bytes = len(data)
+        chunk_count = (total_bytes + chunk_size - 1) // chunk_size if chunk_size else 0
+        progress_points = _classic_progress_points(chunk_count)
+        started = time.monotonic()
+        self._reporter.debug(
+            short="Bluetooth",
+            detail=(
+                f"Classic payload send: bytes={total_bytes} chunk={chunk_size} "
+                f"chunks={chunk_count} delay_ms={delay_ms} "
+                f"head={data[:16].hex()} tail={data[-16:].hex()}"
+            ),
+        )
         offset = 0
+        chunk_index = 0
         while offset < len(data):
             chunk = data[offset : offset + chunk_size]
             with self._lock:
                 _send_all(self._sock, chunk)
             offset += len(chunk)
+            chunk_index += 1
+            if chunk_index in progress_points:
+                elapsed_ms = int((time.monotonic() - started) * 1000)
+                self._reporter.debug(
+                    short="Bluetooth",
+                    detail=(
+                        f"Classic payload progress: chunk={chunk_index}/{chunk_count} "
+                        f"bytes={offset}/{total_bytes} elapsed_ms={elapsed_ms}"
+                    ),
+                )
             if delay:
                 time.sleep(delay)
+        elapsed_ms = int((time.monotonic() - started) * 1000)
+        self._reporter.debug(
+            short="Bluetooth",
+            detail=(
+                f"Classic payload sent: bytes={total_bytes} chunks={chunk_count} "
+                f"elapsed_ms={elapsed_ms}"
+            ),
+        )
 
 
 def _scan_blocking(
@@ -461,6 +492,15 @@ def _unique_attempts(attempts: List[DeviceInfo]) -> List[DeviceInfo]:
         seen.add(key)
         unique.append(device)
     return unique
+
+
+def _classic_progress_points(chunk_count: int) -> set[int]:
+    if chunk_count < 16:
+        return set()
+    return {
+        max(1, (chunk_count * step + 3) // 4)
+        for step in (1, 2, 3)
+    }
 
 
 def _safe_close(sock: Optional[SocketLike]) -> None:

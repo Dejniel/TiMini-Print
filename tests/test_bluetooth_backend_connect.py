@@ -52,6 +52,14 @@ class _QuerySocket(_Socket):
         raise TimeoutError()
 
 
+class _Reporter:
+    def __init__(self):
+        self.debugs = []
+
+    def debug(self, *, short=None, detail=None, **_kwargs):
+        self.debugs.append((short, detail))
+
+
 class _Adapter:
     def __init__(self, channels, fail=False, pair_error=None):
         self._channels = channels
@@ -175,6 +183,24 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         self.assertEqual(sock.sent, [b"ab", b"cd", b"ef"])
         self.assertGreaterEqual(sleep_mock.call_count, 1)
+
+    def test_write_blocking_classic_reports_chunk_progress_for_large_payload(self) -> None:
+        reporter = _Reporter()
+        backend = SppBackend(reporter=reporter)
+        sock = _Socket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+
+        with patch("timiniprint.transport.bluetooth.backend.time.sleep"):
+            backend._write_blocking(b"x" * 40, chunk_size=2, delay_ms=5)
+
+        details = [detail for _short, detail in reporter.debugs]
+        self.assertTrue(any("Classic payload send: bytes=40 chunk=2 chunks=20 delay_ms=5" in item for item in details))
+        self.assertTrue(any("Classic payload progress: chunk=5/20 bytes=10/40" in item for item in details))
+        self.assertTrue(any("Classic payload progress: chunk=10/20 bytes=20/40" in item for item in details))
+        self.assertTrue(any("Classic payload progress: chunk=15/20 bytes=30/40" in item for item in details))
+        self.assertTrue(any("Classic payload sent: bytes=40 chunks=20" in item for item in details))
 
     def test_query_control_packet_blocking_reads_classic_reply(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
