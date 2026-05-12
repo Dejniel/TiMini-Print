@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from ... import reporting
@@ -95,11 +96,23 @@ class RuntimeConnectionSession:
             return False
         return await send_control_packet(packet, timeout=timeout)
 
-    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+    async def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
         query_control_packet = getattr(self._connection, "query_control_packet", None)
         if not callable(query_control_packet):
             return None
-        return await query_control_packet(packet, timeout=timeout)
+        if reply_complete is None:
+            return await query_control_packet(packet, timeout=timeout)
+        return await query_control_packet(
+            packet,
+            timeout=timeout,
+            reply_complete=reply_complete,
+        )
 
     async def send_standard_payload(self, data: bytes) -> None:
         send_standard_payload = getattr(self._connection, "send_standard_payload", None)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import threading
 import time
+from collections.abc import Callable
 from typing import List, Optional, Tuple
 
 from .adapters import _get_ble_adapter, _get_classic_adapter
@@ -90,13 +91,20 @@ class SppBackend:
             timeout,
         )
 
-    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+    async def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
             self._query_control_packet_blocking,
             packet,
             timeout,
+            reply_complete,
         )
 
     async def write(
@@ -344,16 +352,32 @@ class SppBackend:
         with self._lock:
             return _send_control_packet(self._sock, packet, timeout=timeout)
 
-    def _query_control_packet_blocking(self, packet: bytes, timeout: float) -> bytes | None:
+    def _query_control_packet_blocking(
+        self,
+        packet: bytes,
+        timeout: float,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
         if not self._sock or not self._connected:
             return None
         if self._transport == DeviceTransport.BLE:
             query_control_packet = getattr(self._sock, "query_control_packet", None)
             if callable(query_control_packet):
-                return query_control_packet(packet, timeout=timeout)
+                if reply_complete is None:
+                    return query_control_packet(packet, timeout=timeout)
+                return query_control_packet(
+                    packet,
+                    timeout=timeout,
+                    reply_complete=reply_complete,
+                )
             return None
         with self._lock:
-            return _query_control_packet(self._sock, packet, timeout=timeout)
+            return _query_control_packet(
+                self._sock,
+                packet,
+                timeout=timeout,
+                reply_complete=reply_complete,
+            )
 
     def _write_blocking(self, data: bytes, chunk_size: int, delay_ms: int, runtime_controller=None) -> None:
         if not self._sock or not self._connected:
@@ -468,7 +492,12 @@ def _send_all(sock: SocketLike, data: bytes, runtime_controller=None) -> None:
         offset += sent
 
 
-def _recv_all_with_timeout(sock: SocketLike, *, timeout: float) -> bytes | None:
+def _recv_until_match_or_timeout(
+    sock: SocketLike,
+    *,
+    timeout: float,
+    reply_complete: Callable[[bytes], bool] | None = None,
+) -> bytes | None:
     recv = getattr(sock, "recv", None)
     if not callable(recv):
         return None
@@ -481,7 +510,7 @@ def _recv_all_with_timeout(sock: SocketLike, *, timeout: float) -> bytes | None:
         except Exception:
             previous_timeout = None
     deadline = time.monotonic() + max(0.0, timeout)
-    chunks: list[bytes] = []
+    chunks = bytearray()
     try:
         while True:
             remaining = deadline - time.monotonic()
@@ -497,7 +526,9 @@ def _recv_all_with_timeout(sock: SocketLike, *, timeout: float) -> bytes | None:
                 raise
             if not chunk:
                 break
-            chunks.append(bytes(chunk))
+            chunks.extend(chunk)
+            if reply_complete is not None and reply_complete(bytes(chunks)):
+                break
     finally:
         if callable(settimeout):
             try:
@@ -506,7 +537,7 @@ def _recv_all_with_timeout(sock: SocketLike, *, timeout: float) -> bytes | None:
                 pass
     if not chunks:
         return None
-    return b"".join(chunks)
+    return bytes(chunks)
 
 
 def _send_control_packet(sock: SocketLike, packet: bytes, *, timeout: float) -> bool:
@@ -515,9 +546,15 @@ def _send_control_packet(sock: SocketLike, packet: bytes, *, timeout: float) -> 
     return True
 
 
-def _query_control_packet(sock: SocketLike, packet: bytes, *, timeout: float) -> bytes | None:
+def _query_control_packet(
+    sock: SocketLike,
+    packet: bytes,
+    *,
+    timeout: float,
+    reply_complete: Callable[[bytes], bool] | None = None,
+) -> bytes | None:
     _send_all(sock, packet)
-    return _recv_all_with_timeout(sock, timeout=timeout)
+    return _recv_until_match_or_timeout(sock, timeout=timeout, reply_complete=reply_complete)
 
 
 def _is_timeout_error(exc: Exception) -> bool:

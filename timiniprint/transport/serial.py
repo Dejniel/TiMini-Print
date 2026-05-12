@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Callable
 
 from .. import reporting
 from ..devices import PrinterDevice, SerialTarget
@@ -41,8 +42,14 @@ class SerialConnection:
         _ = packet, timeout
         return False
 
-    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
-        _ = packet, timeout
+    async def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
+        _ = packet, timeout, reply_complete
         return None
 
     async def send(self, job: ProtocolJob) -> None:

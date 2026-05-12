@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Protocol, TYPE_CHECKING
 
 from ..protocol.job import ProtocolJob
@@ -33,7 +34,13 @@ class RuntimeProbeConnection(PrinterConnection, Protocol):
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool: ...
 
-    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None: ...
+    async def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None: ...
 
     async def send_standard_payload(self, data: bytes) -> None: ...
 

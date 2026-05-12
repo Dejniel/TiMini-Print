@@ -188,6 +188,37 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         self.assertEqual(sock.sent, [b"\x10\xff\x20\xf0"])
         self.assertEqual(reply, b"PPA2L_GY")
 
+    def test_query_control_packet_blocking_stops_when_reply_matches(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        sock = _QuerySocket([b"O", b"K", b"extra"])
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+
+        reply = backend._query_control_packet_blocking(
+            b"\x10\xff\x10\x00\x01",
+            0.1,
+            lambda data: data == b"OK",
+        )
+
+        self.assertEqual(reply, b"OK")
+        self.assertEqual(sock._replies, [b"extra"])
+
+    def test_query_control_packet_blocking_returns_unmatched_reply_at_timeout(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        sock = _QuerySocket([b"B", b"A", b"D"])
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+
+        reply = backend._query_control_packet_blocking(
+            b"\x10\xff\x10\x00\x01",
+            0.1,
+            lambda data: data == b"OK",
+        )
+
+        self.assertEqual(reply, b"BAD")
+
     def test_can_query_control_packet_distinguishes_classic_and_ble(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
         backend._sock = _Socket()

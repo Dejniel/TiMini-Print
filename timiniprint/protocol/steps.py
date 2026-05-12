@@ -65,9 +65,13 @@ def reply_matches_expectation(expect: ProtocolReplyExpectation, reply: bytes | N
     if expectation is ProtocolReplyExpectation.STATUS_ZERO:
         return bool(reply and reply[0] == 0)
     if expectation is ProtocolReplyExpectation.OK_OR_AA:
-        return _reply_is_ok(reply) or bool(reply and reply[0] == 0xAA)
+        return _reply_is_ok(reply) or _reply_is_aa(reply)
     raise ValueError(f"Unsupported protocol reply expectation: {expectation.value}")
 
 
 def _reply_is_ok(reply: bytes | None) -> bool:
     return bool(reply and reply.replace(b"\x00", b"").startswith(b"OK"))
+
+
+def _reply_is_aa(reply: bytes | None) -> bool:
+    return bool(reply and reply.lstrip(b"\x00").startswith(b"\xAA"))

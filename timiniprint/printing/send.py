@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .. import reporting
-from ..protocol import ProtocolJob, ProtocolStep, ProtocolStepOperation
+from ..protocol import ProtocolJob, ProtocolReplyExpectation, ProtocolStep, ProtocolStepOperation
 from ..protocol.steps import reply_matches_expectation
 from .runtime.session import RuntimeConnectionSession
 
@@ -61,8 +61,12 @@ async def _send_protocol_steps(
             await session.send_standard_payload(step.data)
             continue
 
-        query_timeout = timeout if step.timeout_sec is None else min(timeout, step.timeout_sec)
-        reply = await session.query_control_packet(step.data, timeout=query_timeout)
+        query_timeout = step.timeout_sec if step.timeout_sec is not None else timeout
+        reply = await session.query_control_packet(
+            step.data,
+            timeout=query_timeout,
+            reply_complete=_reply_complete_for(step),
+        )
         session.report_debug(
             f"Protocol query {step.label}: tx={_hex_preview(step.data)} rx={_hex_preview(reply)}"
         )
@@ -75,6 +79,12 @@ async def _send_protocol_steps(
                 ),
             )
     return True
+
+
+def _reply_complete_for(step: ProtocolStep):
+    if step.expect is ProtocolReplyExpectation.NONE:
+        return None
+    return lambda reply: reply_matches_expectation(step.expect, reply)
 
 
 def _packet_summary(data: bytes) -> str:

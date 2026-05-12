@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
 
@@ -562,6 +563,12 @@ class _BleakTransportSession:
         )
         return True
 
-    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
-        _ = packet, timeout
+    async def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
+        _ = packet, timeout, reply_complete
         return None

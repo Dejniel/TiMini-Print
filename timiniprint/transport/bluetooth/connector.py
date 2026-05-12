@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from ... import reporting
 from ...devices import BluetoothTarget, PrinterDevice
 from ...devices.device import BluetoothEndpointTransport
@@ -41,8 +43,18 @@ class BleakBluetoothConnection:
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         return await self._backend.send_control_packet(packet, timeout=timeout)
 
-    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
-        return await self._backend.query_control_packet(packet, timeout=timeout)
+    async def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
+        return await self._backend.query_control_packet(
+            packet,
+            timeout=timeout,
+            reply_complete=reply_complete,
+        )
 
     async def send(self, job: ProtocolJob) -> None:
         """Send a protocol job using the device's stream tuning and runtime state."""

@@ -12,7 +12,7 @@ from ..steps import ProtocolReplyExpectation, ProtocolStep
 from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 from .base import PrintJobRequest
 
-LUCK_PRINT_QUERY_TIMEOUT_SEC = 0.25
+LUCK_PRINT_QUERY_TIMEOUT_SEC = 3.0
 
 
 class LuckNormalPaperMode(IntEnum):

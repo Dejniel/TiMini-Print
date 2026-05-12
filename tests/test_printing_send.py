@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import unittest
 
 from timiniprint.printing.send import send_prepared_job
@@ -28,17 +29,30 @@ class _Connection:
         self.can_query = can_query
         self.replies = list(replies or [])
         self.query_packets: list[bytes] = []
+        self.query_timeouts: list[float] = []
+        self.query_matchers: list[bool] = []
+        self.query_match_results: list[bool] = []
         self.standard_payloads: list[bytes] = []
         self.sent_jobs: list[ProtocolJob] = []
 
     def can_query_control_packet(self) -> bool:
         return self.can_query
 
-    async def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
-        _ = timeout
+    async def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
         self.query_packets.append(bytes(packet))
+        self.query_timeouts.append(timeout)
+        self.query_matchers.append(reply_complete is not None)
         if self.replies:
-            return self.replies.pop(0)
+            reply = self.replies.pop(0)
+            if reply is not None and reply_complete is not None:
+                self.query_match_results.append(reply_complete(reply))
+            return reply
         return None
 
     async def send(self, job: ProtocolJob) -> None:
@@ -81,7 +95,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(job.payload, b"AB")
 
     async def test_send_prepared_job_executes_protocol_steps(self) -> None:
-        connection = _Connection(replies=[b"OK", b"\x00", b"\xAA"])
+        connection = _Connection(replies=[b"\x00OK", b"\x00", b"\x00\xAA"])
         reporter = _Reporter()
         steps = (
             ProtocolStep.query("density", b"D", expect=ProtocolReplyExpectation.OK, timeout_sec=0.25),
@@ -97,9 +111,12 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         )
         job = ProtocolJob(steps=steps)
 
-        await send_prepared_job(object(), connection, job, reporter=reporter)
+        await send_prepared_job(object(), connection, job, timeout=0.1, reporter=reporter)
 
         self.assertEqual(connection.query_packets, [b"D", b"S", b"F"])
+        self.assertEqual(connection.query_timeouts, [0.25, 0.25, 0.25])
+        self.assertEqual(connection.query_matchers, [True, True, True])
+        self.assertEqual(connection.query_match_results, [True, True, True])
         self.assertEqual(connection.standard_payloads, [b"B"])
         self.assertEqual(connection.sent_jobs, [])
         self.assertTrue(any("Protocol query finalize" in detail for _short, detail in reporter.debugs))

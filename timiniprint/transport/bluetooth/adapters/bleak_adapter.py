@@ -6,6 +6,7 @@ binding plus family-aware write routing to `_BleakTransportSession`.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from typing import Any, Dict, List, Optional, Tuple
 
 from .base import _BleBluetoothAdapter
@@ -228,13 +229,23 @@ class _BleakSocket:
             return False
         return self._transport.can_query_control_packet()
 
-    def query_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bytes | None:
+    def query_control_packet(
+        self,
+        packet: bytes,
+        *,
+        timeout: float = 1.0,
+        reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None:
         if not self._connected or not self._client:
             return None
         if not self._loop:
             raise RuntimeError("Event loop not initialized")
         return self._loop.run_until_complete(
-            self._transport.query_control_packet(packet, timeout=timeout)
+            self._transport.query_control_packet(
+                packet,
+                timeout=timeout,
+                reply_complete=reply_complete,
+            )
         )
 
     async def _send_async(self, data: bytes, runtime_controller=None) -> None:
