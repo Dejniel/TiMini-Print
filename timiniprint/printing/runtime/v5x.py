@@ -167,7 +167,17 @@ class V5XRuntimeController(RuntimeController):
     async def before_split_command(self, session, packet: bytes, split_context: _V5XJobContext, *, timeout: float, density_updated: bool) -> None:
         opcode = session.extract_prefixed_opcode(packet)
         if opcode in (0xA2, 0xA9):
-            await self._wait_for_start_ready(timeout)
+            # On some V5X firmwares (observed: MXW01 v1.9.3.1.2) the 0xAA
+            # notification is an end-of-print status rather than a between-
+            # commands "start ready" signal. Treat the wait as advisory: if
+            # the notification doesn't arrive in time, log and proceed —
+            # downstream failures will still surface via 0xA9 status.
+            try:
+                await self._wait_for_start_ready(timeout)
+            except TimeoutError:
+                session.report_debug(
+                    f"V5X start ready (0xAA) not received before 0x{opcode:02x}; continuing"
+                )
 
     def arm_command_ack(self, session, packet: bytes) -> tuple[int, asyncio.Event] | None:
         opcode = session.extract_prefixed_opcode(packet)
