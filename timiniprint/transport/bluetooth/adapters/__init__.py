@@ -5,7 +5,9 @@ from typing import Optional
 from ..constants import IS_LINUX, IS_MACOS, IS_WINDOWS
 from .base import _BleBluetoothAdapter, _ClassicBluetoothAdapter
 from .bleak_adapter import _BleakBleAdapter
+from .adapter_fallback import _FallbackAdapter
 from .linux_adapter import _LinuxClassicAdapter
+from .linux_att import _LinuxAttAdapter
 from .macos_adapter import _MacClassicAdapter
 from .windows_adapter import _WindowsClassicAdapter
 
@@ -30,7 +32,12 @@ def _get_classic_adapter() -> Optional[_ClassicBluetoothAdapter]:
 def _get_ble_adapter() -> Optional[_BleBluetoothAdapter]:
     global _BLE_ADAPTER
     if _BLE_ADAPTER is None:
-        if IS_WINDOWS or IS_LINUX or IS_MACOS:
+        if IS_LINUX:
+            _BLE_ADAPTER = _FallbackAdapter(
+                primary=_LinuxAttAdapter(),
+                fallback=_BleakBleAdapter(),
+            )
+        elif IS_WINDOWS or IS_MACOS:
             _BLE_ADAPTER = _BleakBleAdapter()
         else:
             _BLE_ADAPTER = None
