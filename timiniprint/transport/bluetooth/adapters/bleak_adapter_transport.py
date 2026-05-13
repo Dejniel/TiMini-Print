@@ -2,9 +2,33 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
+
+
+def _resolve_bulk_delay_ms(profile_value: int) -> int:
+    """Allow the bulk-write delay to be overridden via the environment.
+
+    The V5X family's profile defaults to ``bulk_write_delay_ms=10`` (≈18 KB/s
+    sustained), which works fine for clones whose firmware emits the
+    flow-control pause patterns the profile lists. Some V5X variants
+    (observed: MXW01 v1.9.3.1.2) never send those patterns and silently
+    drop bytes past their ~6 KB internal buffer, truncating long jobs.
+    ``TIMINI_BLE_BULK_DELAY_MS`` lets each host tune the delay to its
+    printer's actual render rate without changing the upstream profile.
+    """
+    raw = os.environ.get("TIMINI_BLE_BULK_DELAY_MS")
+    if raw is None:
+        return profile_value
+    try:
+        override = int(raw)
+    except ValueError:
+        return profile_value
+    if override < 0:
+        return profile_value
+    return override
 
 from .... import reporting
 from ....printing.runtime.base import RuntimeController
@@ -349,13 +373,16 @@ class _BleakTransportSession:
                 "preferred_uuid",
                 False,
             )
+            bulk_delay_ms = _resolve_bulk_delay_ms(
+                self._transport_profile.bulk_write_delay_ms
+            )
             await self._write_chunks(
                 client,
                 self.bindings.bulk_write_char,
                 split.bulk_payload,
                 response=bulk_response,
                 chunk_size=min(mtu_size, self._transport_profile.bulk_chunk_cap),
-                delay_seconds=self._transport_profile.bulk_write_delay_ms / 1000.0,
+                delay_seconds=bulk_delay_ms / 1000.0,
                 timeout=timeout,
                 wait_for_flow=self._transport_profile.flow_control is not None,
             )

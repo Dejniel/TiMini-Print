@@ -31,6 +31,7 @@ import select
 import socket
 import struct
 import threading
+import time
 from typing import Any, Awaitable, Callable, Dict, Iterable, List, Optional
 
 from ..constants import IS_LINUX
@@ -77,10 +78,20 @@ _DEFAULT_CLIENT_RX_MTU = 512
 
 # How long to wait between "we wrote the last byte" and tearing down the
 # L2CAP socket. Most LE thermal printers buffer the print job and render
-# from that buffer; if we close while the buffer still has data, BlueZ
-# tears the link down and the printer aborts. 2 s is enough for small
-# jobs to fully drain through the firmware on the MXW01 we tested.
-_DISCONNECT_GRACE_SECONDS = 2.0
+# from that buffer; closing while the buffer still has data tears the
+# link down and the printer aborts mid-row.
+#
+# We use a quiescence model rather than a fixed sleep: keep the socket
+# open as long as the printer is talking to us (sending notifications),
+# and close once it has been silent for `_DISCONNECT_IDLE_SECONDS`.
+# `_DISCONNECT_MAX_GRACE_SECONDS` is a hard upper bound for the case
+# where the firmware never emits a final notification.
+#
+# Both can be overridden per-host via env vars:
+#   TIMINI_BLE_DISCONNECT_IDLE_S    (default 1.5)
+#   TIMINI_BLE_DISCONNECT_MAX_S     (default 30)
+_DISCONNECT_IDLE_SECONDS = 1.5
+_DISCONNECT_MAX_GRACE_SECONDS = 30.0
 
 _PROP_BITS = {
     0x02: "read",
@@ -251,6 +262,17 @@ class _LinuxLeServiceCollection:
 # --- Low-level L2CAP/ATT plumbing -------------------------------------------
 
 
+def _resolve_env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except ValueError:
+        return default
+    return value if value >= 0 else default
+
+
 class _L2capAttLink:
     """Blocking L2CAP/ATT socket with a synchronous request/response API and
     a background reader thread dispatching Handle Value Notifications to a
@@ -271,6 +293,10 @@ class _L2capAttLink:
         self._pending_response_buf: Dict[int, bytes] = {}
         self._notify_handlers: Dict[int, Callable[[int, bytes], None]] = {}
         self._connected = False
+        # Updated by the reader thread every time the peer sends us bytes.
+        # disconnect() uses this to wait for quiescence before closing so the
+        # printer can finish rendering a job buffered on its side.
+        self._last_peer_activity_monotonic = 0.0
         self._libc = ctypes.CDLL(ctypes.util.find_library("c"), use_errno=True)
         self._libc.bind.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
         self._libc.bind.restype = ctypes.c_int
@@ -298,6 +324,7 @@ class _L2capAttLink:
             raise
         self._sock = sock
         self._connected = True
+        self._last_peer_activity_monotonic = time.monotonic()
         self._stop.clear()
         self._reader = threading.Thread(
             target=self._reader_loop, name="l2cap-att-reader", daemon=True
@@ -322,6 +349,23 @@ class _L2capAttLink:
 
     def is_connected(self) -> bool:
         return self._connected and self._sock is not None
+
+    def wait_for_quiescence(self, idle_seconds: float, max_seconds: float) -> None:
+        """Block until the peer has been silent for `idle_seconds`, capped
+        by `max_seconds` total. Used by disconnect() so the printer can
+        finish rendering a buffered job before we close the link."""
+        if max_seconds <= 0:
+            return
+        deadline = time.monotonic() + max_seconds
+        while self._connected:
+            now = time.monotonic()
+            if now >= deadline:
+                return
+            quiet_for = now - self._last_peer_activity_monotonic
+            remaining_idle = idle_seconds - quiet_for
+            if remaining_idle <= 0:
+                return
+            time.sleep(min(remaining_idle, deadline - now, 0.2))
 
     # ----- notifications -----
 
@@ -383,6 +427,7 @@ class _L2capAttLink:
                 break
             if not data:
                 break
+            self._last_peer_activity_monotonic = time.monotonic()
             self._dispatch(data)
 
     def _dispatch(self, data: bytes) -> None:
@@ -476,14 +521,19 @@ class LinuxLeL2capClient:
         await loop.run_in_executor(None, self._sync_connect)
 
     async def disconnect(self) -> None:
-        # Give the printer time to drain its internal buffer and finish
-        # rendering before we tear down the link — closing while data is
-        # still in-flight aborts the print on V5X-family firmwares.
-        try:
-            await asyncio.sleep(_DISCONNECT_GRACE_SECONDS)
-        except asyncio.CancelledError:
-            pass
+        # Wait for the printer to finish rendering whatever it has buffered
+        # before tearing down the link. Closing while the printer is still
+        # rendering aborts the print mid-row on V5X-family firmwares.
+        # Heuristic: keep the link open as long as notifications keep
+        # arriving (the printer is doing work). Close once it has been
+        # silent for `idle_seconds`, with a hard cap at `max_seconds`.
+        idle = _resolve_env_float("TIMINI_BLE_DISCONNECT_IDLE_S", _DISCONNECT_IDLE_SECONDS)
+        cap = _resolve_env_float("TIMINI_BLE_DISCONNECT_MAX_S", _DISCONNECT_MAX_GRACE_SECONDS)
         loop = asyncio.get_event_loop()
+        try:
+            await loop.run_in_executor(None, self._link.wait_for_quiescence, idle, cap)
+        except Exception:
+            pass
         await loop.run_in_executor(None, self._link.close)
 
     async def write_gatt_char(self, char, data: bytes, response: bool = False) -> None:
