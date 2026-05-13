@@ -75,6 +75,13 @@ _ATT_ERROR_ATTRIBUTE_NOT_FOUND = 0x0A
 
 _DEFAULT_CLIENT_RX_MTU = 512
 
+# How long to wait between "we wrote the last byte" and tearing down the
+# L2CAP socket. Most LE thermal printers buffer the print job and render
+# from that buffer; if we close while the buffer still has data, BlueZ
+# tears the link down and the printer aborts. 2 s is enough for small
+# jobs to fully drain through the firmware on the MXW01 we tested.
+_DISCONNECT_GRACE_SECONDS = 2.0
+
 _PROP_BITS = {
     0x02: "read",
     0x04: "write-without-response",
@@ -469,6 +476,13 @@ class LinuxLeL2capClient:
         await loop.run_in_executor(None, self._sync_connect)
 
     async def disconnect(self) -> None:
+        # Give the printer time to drain its internal buffer and finish
+        # rendering before we tear down the link — closing while data is
+        # still in-flight aborts the print on V5X-family firmwares.
+        try:
+            await asyncio.sleep(_DISCONNECT_GRACE_SECONDS)
+        except asyncio.CancelledError:
+            pass
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self._link.close)
 
