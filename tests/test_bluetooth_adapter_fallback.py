@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import asyncio
+import threading
 import unittest
 
 from tests.helpers import build_capture_reporter
 from timiniprint.transport.bluetooth.adapters.adapter_fallback import _FallbackAdapter, _FallbackSocket
 from timiniprint.transport.bluetooth.adapters.linux_att import (
     _LinuxAttAdapter,
+    _LinuxAttSocket,
     _decode_uuid,
     _properties_from_mask,
 )
@@ -121,6 +124,41 @@ class BluetoothAdapterFallbackTests(unittest.TestCase):
     def test_att_uuid_and_property_decoding(self) -> None:
         self.assertEqual(_decode_uuid(bytes.fromhex("30ae")), "0000ae30-0000-1000-8000-00805f9b34fb")
         self.assertEqual(_properties_from_mask(0x1C), ("write-without-response", "write", "notify"))
+
+    def test_direct_att_notifications_are_dispatched_on_socket_loop(self) -> None:
+        socket = _LinuxAttSocket()
+        callback_thread_id = None
+        caller_thread_id = None
+
+        async def run() -> None:
+            nonlocal callback_thread_id, caller_thread_id
+            loop = asyncio.get_running_loop()
+            socket._loop = loop
+            received = asyncio.Event()
+
+            def handle_notification(payload: bytes) -> None:
+                nonlocal callback_thread_id
+                callback_thread_id = threading.get_ident()
+                self.assertEqual(payload, b"abc")
+                received.set()
+
+            socket._transport.handle_notification = handle_notification
+
+            def emit_from_rx_thread() -> None:
+                nonlocal caller_thread_id
+                caller_thread_id = threading.get_ident()
+                socket._handle_notification(1, b"abc")
+
+            thread = threading.Thread(target=emit_from_rx_thread)
+            thread.start()
+            await asyncio.wait_for(received.wait(), timeout=0.5)
+            thread.join(timeout=0.5)
+
+        asyncio.run(run())
+
+        self.assertIsNotNone(caller_thread_id)
+        self.assertIsNotNone(callback_thread_id)
+        self.assertNotEqual(caller_thread_id, callback_thread_id)
 
 
 if __name__ == "__main__":

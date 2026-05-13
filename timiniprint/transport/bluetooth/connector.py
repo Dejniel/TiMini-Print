@@ -40,6 +40,9 @@ class BleakBluetoothConnection:
     def can_query_control_packet(self) -> bool:
         return self._backend.can_query_control_packet()
 
+    def can_wait_for_notification(self) -> bool:
+        return self._backend.can_wait_for_notification()
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         return await self._backend.send_control_packet(packet, timeout=timeout)
 
@@ -54,6 +57,21 @@ class BleakBluetoothConnection:
             packet,
             timeout=timeout,
             reply_complete=reply_complete,
+        )
+
+    async def wait_for_notification(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        return await self._backend.wait_for_notification(
+            label,
+            match,
+            timeout=timeout,
+            required=required,
         )
 
     async def send(self, job: ProtocolJob) -> None:

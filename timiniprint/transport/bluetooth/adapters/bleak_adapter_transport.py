@@ -28,6 +28,13 @@ class _BleakBindings:
     notify_char_uuid: str = ""
 
 
+@dataclass
+class _NotificationWaiter:
+    label: str
+    match: Callable[[bytes], bool]
+    future: asyncio.Future
+
+
 class _BleakTransportSession:
     """Encapsulates endpoint binding and delegates family runtime to controllers."""
 
@@ -44,9 +51,26 @@ class _BleakTransportSession:
         self._reporter = reporter
         self.bindings = _BleakBindings()
         self.notify_started = False
-        self.flow_can_write = True
+        self._flow_can_write = True
+        self._flow_resume_event: asyncio.Event | None = None
+        self._flow_resume_event_loop: asyncio.AbstractEventLoop | None = None
         self._client: Any = None
         self._runtime_controller = _runtime_controller_for_family(protocol_family)
+        self._notification_waiters: list[_NotificationWaiter] = []
+
+    @property
+    def flow_can_write(self) -> bool:
+        return self._flow_can_write
+
+    @flow_can_write.setter
+    def flow_can_write(self, value: bool) -> None:
+        self._flow_can_write = bool(value)
+        if self._flow_resume_event is None:
+            return
+        if self._flow_can_write:
+            self._flow_resume_event.set()
+        else:
+            self._flow_resume_event.clear()
 
     def apply_write_selection(self, selection: _WriteSelection) -> None:
         self.bindings.write_char = selection.char
@@ -152,6 +176,7 @@ class _BleakTransportSession:
     async def stop_notify_if_started(self, client: Any) -> None:
         if self._runtime_controller is not None:
             await self._runtime_controller.stop(self)
+        self._cancel_notification_waiters()
         if not self.notify_started or not self.bindings.notify_char_uuid:
             return
         stop_notify = getattr(client, "stop_notify", None)
@@ -392,13 +417,18 @@ class _BleakTransportSession:
                 await asyncio.sleep(delay_seconds)
 
     async def _wait_for_flow(self, timeout: float) -> None:
-        deadline = asyncio.get_running_loop().time() + timeout
-        while not self.flow_can_write:
-            if asyncio.get_running_loop().time() > deadline:
-                raise TimeoutError("Timed out waiting for BLE flow-control resume")
-            await asyncio.sleep(0.01)
+        if self.flow_can_write:
+            return
+        try:
+            await asyncio.wait_for(
+                self._flow_resume_event_for_current_loop().wait(),
+                timeout=max(0.0, timeout),
+            )
+        except TimeoutError:
+            raise TimeoutError("Timed out waiting for BLE flow-control resume") from None
 
     def handle_notification(self, payload: bytes) -> None:
+        self._match_notification_waiters(payload)
         flow_control = self._transport_profile.flow_control
         if flow_control is not None:
             if payload in flow_control.pause_packets:
@@ -544,6 +574,39 @@ class _BleakTransportSession:
     def can_query_control_packet(self) -> bool:
         return False
 
+    def can_wait_for_notification(self) -> bool:
+        return self.notify_started
+
+    async def wait_for_notification(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        if not self.can_wait_for_notification():
+            if required:
+                raise RuntimeError(f"BLE notification wait unavailable: {label}")
+            self.report_debug(f"optional notification wait unavailable: {label}")
+            return None
+        loop = asyncio.get_running_loop()
+        waiter = _NotificationWaiter(
+            label=label,
+            match=match,
+            future=loop.create_future(),
+        )
+        self._notification_waiters.append(waiter)
+        try:
+            return await asyncio.wait_for(waiter.future, timeout=max(0.0, timeout))
+        except TimeoutError:
+            if required:
+                raise TimeoutError(f"Timed out waiting for BLE notification: {label}") from None
+            self.report_debug(f"optional notification wait timed out: {label}")
+            return None
+        finally:
+            self._remove_notification_waiter(waiter)
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         if not self.can_send_control_packet():
             return False
@@ -572,3 +635,43 @@ class _BleakTransportSession:
     ) -> bytes | None:
         _ = packet, timeout, reply_complete
         return None
+
+    def _match_notification_waiters(self, payload: bytes) -> None:
+        for waiter in tuple(self._notification_waiters):
+            if waiter.future.done():
+                self._remove_notification_waiter(waiter)
+                continue
+            try:
+                matched = waiter.match(payload)
+            except Exception as exc:
+                waiter.future.set_exception(exc)
+                self._remove_notification_waiter(waiter)
+                continue
+            if matched:
+                waiter.future.set_result(payload)
+                self._remove_notification_waiter(waiter)
+                self.report_debug(
+                    f"notification matched {waiter.label}: {payload.hex()}"
+                )
+
+    def _remove_notification_waiter(self, waiter: _NotificationWaiter) -> None:
+        try:
+            self._notification_waiters.remove(waiter)
+        except ValueError:
+            pass
+
+    def _cancel_notification_waiters(self) -> None:
+        waiters = tuple(self._notification_waiters)
+        self._notification_waiters.clear()
+        for waiter in waiters:
+            if not waiter.future.done():
+                waiter.future.cancel()
+
+    def _flow_resume_event_for_current_loop(self) -> asyncio.Event:
+        loop = asyncio.get_running_loop()
+        if self._flow_resume_event is None or self._flow_resume_event_loop is not loop:
+            self._flow_resume_event = asyncio.Event()
+            self._flow_resume_event_loop = loop
+            if self.flow_can_write:
+                self._flow_resume_event.set()
+        return self._flow_resume_event

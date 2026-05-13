@@ -86,6 +86,12 @@ class RuntimeConnectionSession:
         query_control_packet = getattr(self._connection, "query_control_packet", None)
         return callable(query_control_packet)
 
+    def can_wait_for_notification(self) -> bool:
+        can_wait_for_notification = getattr(self._connection, "can_wait_for_notification", None)
+        if callable(can_wait_for_notification):
+            return bool(can_wait_for_notification())
+        return False
+
     def can_send_standard_payload(self) -> bool:
         send_standard_payload = getattr(self._connection, "send_standard_payload", None)
         return callable(send_standard_payload)
@@ -112,6 +118,26 @@ class RuntimeConnectionSession:
             packet,
             timeout=timeout,
             reply_complete=reply_complete,
+        )
+
+    async def wait_for_notification(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        wait_for_notification = getattr(self._connection, "wait_for_notification", None)
+        if not callable(wait_for_notification):
+            if required:
+                raise RuntimeError("Connection does not support BLE notification waits")
+            return None
+        return await wait_for_notification(
+            label,
+            match,
+            timeout=timeout,
+            required=required,
         )
 
     async def send_standard_payload(self, data: bytes) -> None:

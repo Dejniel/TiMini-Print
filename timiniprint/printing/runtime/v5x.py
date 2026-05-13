@@ -45,9 +45,11 @@ class _V5XSessionState:
     mxw_sign_requested: bool = False
     pending_get_serial: asyncio.Task | None = None
     pending_status_poll: asyncio.Task | None = None
-    command_ack_events: dict[int, asyncio.Event] = field(default_factory=dict)
-    start_ready_event: asyncio.Event | None = None
-    connect_info_event: asyncio.Event | None = None
+    pending_command_acks: set[int] = field(default_factory=set)
+    seen_command_acks: set[int] = field(default_factory=set)
+    await_start_ready: bool = False
+    start_ready_seen: bool = False
+    await_connect_info: bool = False
     compatibility: _V5XCompatibilityState = field(default_factory=_V5XCompatibilityState)
 
 
@@ -66,15 +68,19 @@ class V5XRuntimeController(RuntimeController):
             return
         pending_get_serial = self._state.pending_get_serial
         pending_status_poll = self._state.pending_status_poll
-        command_ack_events = self._state.command_ack_events
-        start_ready_event = self._state.start_ready_event
-        connect_info_event = self._state.connect_info_event
+        pending_command_acks = self._state.pending_command_acks
+        seen_command_acks = self._state.seen_command_acks
+        await_start_ready = self._state.await_start_ready
+        start_ready_seen = self._state.start_ready_seen
+        await_connect_info = self._state.await_connect_info
         self._state = previous._state
         self._state.pending_get_serial = pending_get_serial
         self._state.pending_status_poll = pending_status_poll
-        self._state.command_ack_events = command_ack_events
-        self._state.start_ready_event = start_ready_event
-        self._state.connect_info_event = connect_info_event
+        self._state.pending_command_acks = pending_command_acks
+        self._state.seen_command_acks = seen_command_acks
+        self._state.await_start_ready = await_start_ready
+        self._state.start_ready_seen = start_ready_seen
+        self._state.await_connect_info = await_connect_info
 
     def debug_snapshot(self) -> dict[str, object]:
         compatibility = self._state.compatibility
@@ -97,9 +103,11 @@ class V5XRuntimeController(RuntimeController):
             "status_poll_ack_seen": self._state.status_poll_ack_seen,
             "last_ab_status": self._state.last_ab_status,
             "mxw_sign_requested": self._state.mxw_sign_requested,
-            "pending_command_ack_opcodes": sorted(self._state.command_ack_events.keys()),
-            "has_start_ready_event": self._state.start_ready_event is not None,
-            "has_connect_info_event": self._state.connect_info_event is not None,
+            "pending_command_ack_opcodes": sorted(self._state.pending_command_acks),
+            "seen_command_ack_opcodes": sorted(self._state.seen_command_acks),
+            "await_start_ready": self._state.await_start_ready,
+            "start_ready_seen": self._state.start_ready_seen,
+            "await_connect_info": self._state.await_connect_info,
             "compatibility": {
                 "mode": compatibility.mode,
                 "checked": compatibility.checked,
@@ -116,10 +124,10 @@ class V5XRuntimeController(RuntimeController):
             setattr(self._state, key, value)
 
     async def initialize_connection(self, session, *, mtu_size: int, timeout: float) -> None:
-        self._state.connect_info_event = asyncio.Event()
+        self._state.await_connect_info = session.can_wait_for_notification()
 
     async def after_initialize(self, session, *, timeout: float) -> None:
-        if session.notify_started:
+        if session.can_wait_for_notification():
             await self._wait_for_connect_info(session, min(timeout, 0.4))
 
     async def stop(self, session) -> None:
@@ -167,30 +175,28 @@ class V5XRuntimeController(RuntimeController):
     async def before_split_command(self, session, packet: bytes, split_context: _V5XJobContext, *, timeout: float, density_updated: bool) -> None:
         opcode = session.extract_prefixed_opcode(packet)
         if opcode in (0xA2, 0xA9):
-            await self._wait_for_start_ready(timeout)
+            await self._wait_for_start_ready(session, timeout)
 
-    def arm_command_ack(self, session, packet: bytes) -> tuple[int, asyncio.Event] | None:
+    def arm_command_ack(self, session, packet: bytes) -> int | None:
         opcode = session.extract_prefixed_opcode(packet)
         if opcode not in (0xA7, 0xA9):
             return None
         if opcode == 0xA7:
-            self._state.start_ready_event = asyncio.Event()
-        event = asyncio.Event()
-        self._state.command_ack_events[opcode] = event
-        return opcode, event
+            self._state.await_start_ready = True
+            self._state.start_ready_seen = False
+        self._state.pending_command_acks.add(opcode)
+        self._state.seen_command_acks.discard(opcode)
+        return opcode
 
     async def after_split_command(self, session, packet: bytes, split_context: _V5XJobContext, *, timeout: float, density_updated: bool, ack_token) -> None:
         opcode = session.extract_prefixed_opcode(packet)
         if ack_token is not None:
-            ack_opcode, event = ack_token
+            ack_opcode = ack_token
             try:
-                await asyncio.wait_for(event.wait(), timeout=timeout)
+                await self._wait_for_command_ack(session, ack_opcode, timeout)
                 self._validate_command_ack(ack_opcode)
             finally:
-                if self._state.command_ack_events.get(ack_opcode) is event:
-                    self._state.command_ack_events.pop(ack_opcode, None)
-                    if ack_opcode == 0xA7 and self._state.start_ready_event is not None and not self._state.start_ready_event.is_set():
-                        self._state.start_ready_event = None
+                self._clear_command_ack_state(ack_opcode)
         if opcode == 0xA9:
             delay_ms = self._compute_start_delay_ms(split_context, density_updated=density_updated)
             if delay_ms > 0:
@@ -199,16 +205,13 @@ class V5XRuntimeController(RuntimeController):
     def clear_command_ack(self, session, ack_token) -> None:
         if ack_token is None:
             return
-        opcode, _event = ack_token
-        self._state.command_ack_events.pop(opcode, None)
-        if opcode == 0xA7 and self._state.start_ready_event is not None and not self._state.start_ready_event.is_set():
-            self._state.start_ready_event = None
+        self._clear_command_ack_state(ack_token)
 
     def handle_notification(self, session, payload: bytes) -> None:
         opcode = session.extract_prefixed_opcode(payload)
         if opcode == 0xA7:
             self._update_info_from_a7(session, payload)
-            self._release_command_ack(session, 0xA7)
+            self._mark_command_ack(session, 0xA7)
         elif opcode == 0xA1:
             self._update_status(session, payload)
         elif opcode == 0xA3:
@@ -216,18 +219,18 @@ class V5XRuntimeController(RuntimeController):
         elif opcode == 0xA6:
             self._schedule_get_serial(session)
         elif opcode == 0xAA:
-            self._release_start_ready(session)
+            self._mark_start_ready(session)
         elif opcode == 0xA9:
             status = self._extract_status_byte(session, payload)
             self._state.last_a9_status = status
-            self._release_command_ack(session, 0xA9)
+            self._mark_command_ack(session, 0xA9)
         elif opcode == 0xAB:
             self._update_ab_status(session, payload)
         elif opcode == 0xB0:
             self._update_head_type_from_b0(session, payload)
         elif opcode == 0xB1:
             self._update_info_from_b1(session, payload)
-            self._release_connect_info(session)
+            self._mark_connect_info(session)
         elif opcode == 0xB2:
             self._schedule_status_poll(session)
         elif opcode == 0xB3:
@@ -265,44 +268,66 @@ class V5XRuntimeController(RuntimeController):
                 detail=f"mode={mode}. Continuing without blocking the print session.",
             )
 
-    async def _wait_for_start_ready(self, timeout: float) -> None:
-        if self._state.start_ready_event is None:
+    async def _wait_for_command_ack(self, session, opcode: int, timeout: float) -> None:
+        if opcode in self._state.seen_command_acks:
             return
-        event = self._state.start_ready_event
+        await session.wait_for_notification(
+            f"V5X command ack 0x{opcode:02x}",
+            lambda payload: session.extract_prefixed_opcode(payload) == opcode,
+            timeout=timeout,
+            required=True,
+        )
+
+    async def _wait_for_start_ready(self, session, timeout: float) -> None:
+        if not self._state.await_start_ready:
+            return
         try:
-            await asyncio.wait_for(event.wait(), timeout=timeout)
+            if not self._state.start_ready_seen:
+                await session.wait_for_notification(
+                    "V5X start ready 0xaa",
+                    lambda payload: session.extract_prefixed_opcode(payload) == 0xAA,
+                    timeout=timeout,
+                    required=True,
+                )
         finally:
-            if self._state.start_ready_event is event:
-                self._state.start_ready_event = None
+            self._state.await_start_ready = False
+            self._state.start_ready_seen = False
 
     async def _wait_for_connect_info(self, session, timeout: float) -> None:
-        if self._state.connect_info_event is None:
+        if not self._state.await_connect_info or self._state.connect_info_received:
             return
-        event = self._state.connect_info_event
-        try:
-            await asyncio.wait_for(event.wait(), timeout=timeout)
-        except TimeoutError:
+        await session.wait_for_notification(
+            "V5X connect info 0xb1",
+            lambda payload: session.extract_prefixed_opcode(payload) == 0xB1,
+            timeout=timeout,
+            required=False,
+        )
+        if not self._state.connect_info_received:
             session.report_debug("V5X connect info was not received during the initial settle window")
-        finally:
-            if self._state.connect_info_event is event:
-                self._state.connect_info_event = None
+        self._state.await_connect_info = False
 
-    def _release_command_ack(self, session, opcode: int) -> None:
-        event = self._state.command_ack_events.pop(opcode, None)
-        if event is not None and not event.is_set():
-            event.set()
-            session.report_debug(f"command ack: 0x{opcode:02x}")
-
-    def _release_start_ready(self, session) -> None:
-        if self._state.start_ready_event is None or self._state.start_ready_event.is_set():
+    def _mark_command_ack(self, session, opcode: int) -> None:
+        if opcode not in self._state.pending_command_acks:
             return
-        self._state.start_ready_event.set()
+        self._state.seen_command_acks.add(opcode)
+        session.report_debug(f"command ack: 0x{opcode:02x}")
+
+    def _clear_command_ack_state(self, opcode: int) -> None:
+        self._state.pending_command_acks.discard(opcode)
+        self._state.seen_command_acks.discard(opcode)
+        if opcode == 0xA7 and not self._state.start_ready_seen:
+            self._state.await_start_ready = False
+
+    def _mark_start_ready(self, session) -> None:
+        if not self._state.await_start_ready:
+            return
+        self._state.start_ready_seen = True
         session.report_debug("start ready: 0xaa")
 
-    def _release_connect_info(self, session) -> None:
-        if self._state.connect_info_event is None or self._state.connect_info_event.is_set():
+    def _mark_connect_info(self, session) -> None:
+        if not self._state.await_connect_info:
             return
-        self._state.connect_info_event.set()
+        self._state.await_connect_info = False
         session.report_debug("connect info ready: 0xb1")
 
     def _schedule_status_poll(self, session) -> None:
@@ -322,7 +347,7 @@ class V5XRuntimeController(RuntimeController):
             return
         if not session.can_send_control_packet():
             return
-        if 0xA7 in self._state.command_ack_events or self._state.start_ready_event is not None:
+        if 0xA7 in self._state.pending_command_acks or self._state.await_start_ready:
             return
         try:
             loop = asyncio.get_running_loop()

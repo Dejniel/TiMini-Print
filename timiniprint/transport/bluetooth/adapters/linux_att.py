@@ -228,6 +228,11 @@ class _LinuxAttSocket:
             return False
         return self._transport.can_query_control_packet()
 
+    def can_wait_for_notification(self) -> bool:
+        if not self._connected or self._client is None:
+            return False
+        return self._transport.can_wait_for_notification()
+
     def query_control_packet(self, packet: bytes, *, timeout: float = 1.0, reply_complete=None) -> bytes | None:
         if not self._connected or self._client is None:
             return None
@@ -236,6 +241,27 @@ class _LinuxAttSocket:
                 packet,
                 timeout=timeout,
                 reply_complete=reply_complete,
+            )
+        )
+
+    def wait_for_notification(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        if not self._connected or self._client is None:
+            if required:
+                raise RuntimeError("Not connected to BLE device")
+            return None
+        return self._run(
+            self._transport.wait_for_notification(
+                label,
+                match,
+                timeout=timeout,
+                required=required,
             )
         )
 
@@ -265,7 +291,19 @@ class _LinuxAttSocket:
         )
 
     def _handle_notification(self, _sender: Any, data: Any) -> None:
-        self._transport.handle_notification(bytes(data))
+        payload = bytes(data)
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            self._transport.handle_notification(payload)
+            return
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        if running_loop is loop:
+            self._transport.handle_notification(payload)
+            return
+        loop.call_soon_threadsafe(self._transport.handle_notification, payload)
 
     def _run(self, coro):
         if self._loop is None:

@@ -111,6 +111,10 @@ def _make_v5g_controller(
     )
 
 
+def _enable_notification_waits(session: _BleakTransportSession) -> None:
+    session.notify_started = True
+
+
 class BleakTransportSessionTests(unittest.TestCase):
     def _make_session(self, family: ProtocolFamily) -> tuple[_BleakTransportSession, _Client]:
         reporter, _ = build_capture_reporter()
@@ -184,6 +188,106 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(client.stop_notify_calls, [notify.uuid])
         self.assertFalse(session.notify_started)
 
+    def test_notification_wait_matches_expected_payload(self) -> None:
+        session, _ = self._make_session(ProtocolFamily.V5G)
+        _enable_notification_waits(session)
+        expected = make_packet(0xD3, bytes([60]), ProtocolFamily.V5G)
+
+        async def run() -> None:
+            task = asyncio.create_task(
+                session.wait_for_notification(
+                    "temperature",
+                    lambda payload: payload == expected,
+                    timeout=0.2,
+                )
+            )
+            await asyncio.sleep(0)
+            session.handle_notification(expected)
+            self.assertEqual(await task, expected)
+
+        asyncio.run(run())
+
+    def test_notification_wait_keeps_unmatched_payload_for_runtime_state(self) -> None:
+        session, _ = self._make_session(ProtocolFamily.V5G)
+        _enable_notification_waits(session)
+
+        async def run() -> None:
+            task = asyncio.create_task(
+                session.wait_for_notification(
+                    "temperature",
+                    lambda payload: session.extract_prefixed_opcode(payload) == 0xD3,
+                    timeout=0.2,
+                )
+            )
+            await asyncio.sleep(0)
+            session.handle_notification(make_packet(0xA3, bytes([0x08]), ProtocolFamily.V5G))
+            self.assertFalse(task.done())
+            self.assertTrue(_v5g_state(session).didian_status)
+            temperature = make_packet(0xD3, bytes([60]), ProtocolFamily.V5G)
+            session.handle_notification(temperature)
+            self.assertEqual(await task, temperature)
+
+        asyncio.run(run())
+
+    def test_required_notification_wait_timeout_raises(self) -> None:
+        session, _ = self._make_session(ProtocolFamily.V5G)
+        _enable_notification_waits(session)
+
+        async def run() -> None:
+            with self.assertRaisesRegex(TimeoutError, "temperature"):
+                await session.wait_for_notification(
+                    "temperature",
+                    lambda _payload: False,
+                    timeout=0.01,
+                )
+
+        asyncio.run(run())
+
+    def test_optional_notification_wait_timeout_returns_none(self) -> None:
+        session, _ = self._make_session(ProtocolFamily.V5G)
+        _enable_notification_waits(session)
+
+        async def run() -> None:
+            reply = await session.wait_for_notification(
+                "optional temperature",
+                lambda _payload: False,
+                timeout=0.01,
+                required=False,
+            )
+            self.assertIsNone(reply)
+
+        asyncio.run(run())
+
+    def test_multiple_notification_waiters_do_not_consume_each_other(self) -> None:
+        session, _ = self._make_session(ProtocolFamily.V5X)
+        _enable_notification_waits(session)
+
+        async def run() -> None:
+            wait_a7 = asyncio.create_task(
+                session.wait_for_notification(
+                    "a7",
+                    lambda payload: session.extract_prefixed_opcode(payload) == 0xA7,
+                    timeout=0.2,
+                )
+            )
+            wait_aa = asyncio.create_task(
+                session.wait_for_notification(
+                    "aa",
+                    lambda payload: session.extract_prefixed_opcode(payload) == 0xAA,
+                    timeout=0.2,
+                )
+            )
+            await asyncio.sleep(0)
+            session.handle_notification(V5X_NOTIFY_GET_SERIAL_ACK)
+            await asyncio.sleep(0)
+            self.assertTrue(wait_a7.done())
+            self.assertFalse(wait_aa.done())
+            session.handle_notification(V5X_NOTIFY_START_READY)
+            self.assertEqual(await wait_a7, V5X_NOTIFY_GET_SERIAL_ACK)
+            self.assertEqual(await wait_aa, V5X_NOTIFY_START_READY)
+
+        asyncio.run(run())
+
     def test_initialize_connection_sends_family_init_packets(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
@@ -202,6 +306,36 @@ class BleakTransportSessionTests(unittest.TestCase):
         asyncio.run(run())
 
         self.assertEqual(client.calls, [(cmd.uuid, V5X_CONNECT_INIT_PACKET, False)])
+
+    def test_v5x_missing_optional_connect_info_does_not_fail(self) -> None:
+        reporter, _ = build_capture_reporter()
+        resolver = _BleWriteEndpointResolver(reporter=reporter)
+        transport = replace(
+            get_protocol_behavior(ProtocolFamily.V5X).transport,
+            connect_delay_ms=0,
+            standard_write_delay_ms=0,
+        )
+        session = _BleakTransportSession(ProtocolFamily.V5X, transport, resolver, reporter)
+        client = _Client([])
+        _enable_notification_waits(session)
+        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session.bindings.write_char = cmd
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = cmd.uuid
+
+        async def run() -> None:
+            await session.initialize_connection(
+                client,
+                mtu_size=180,
+                timeout=0.01,
+            )
+
+        asyncio.run(run())
+
+        self.assertEqual(client.calls, [(cmd.uuid, V5X_CONNECT_INIT_PACKET, False)])
+        self.assertFalse(_v5x_state(session).connect_info_received)
+        self.assertFalse(_v5x_state(session).await_connect_info)
 
     def test_initialize_connection_waits_for_family_settle_delay(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
@@ -643,6 +777,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
     def test_send_split_routes_commands_bulk_and_trailing_packets(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
+        _enable_notification_waits(session)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         session.bindings.write_char = cmd
@@ -725,6 +860,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
     def test_v5x_skips_redundant_density_command_on_same_connection(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
+        _enable_notification_waits(session)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         session.bindings.write_char = cmd
@@ -1079,6 +1215,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
     def test_v5x_timeout_clears_pending_handshake_state(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
+        _enable_notification_waits(session)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         session.bindings.write_char = cmd
@@ -1102,10 +1239,11 @@ class BleakTransportSessionTests(unittest.TestCase):
         asyncio.run(run())
 
         self.assertEqual(_v5x_state(session).pending_command_ack_opcodes, [])
-        self.assertFalse(_v5x_state(session).has_start_ready_event)
+        self.assertFalse(_v5x_state(session).await_start_ready)
 
     def test_v5x_nonzero_a9_status_fails_immediately(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
+        _enable_notification_waits(session)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         session.bindings.write_char = cmd
@@ -1171,6 +1309,29 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertEqual(client.calls, [(write_char.uuid, b"ABC", False)])
         self.assertTrue(session.flow_can_write)
+
+    def test_flow_controlled_standard_send_times_out_without_resume(self) -> None:
+        session, client = self._make_session(ProtocolFamily.V5C)
+        write_char = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session.bindings.write_char = write_char
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = write_char.uuid
+        session.flow_can_write = False
+
+        async def run() -> None:
+            with self.assertRaisesRegex(TimeoutError, "flow-control resume"):
+                await session.send(
+                    client,
+                    b"ABC",
+                    mtu_size=180,
+                    timeout=0.01,
+                )
+
+        asyncio.run(run())
+
+        self.assertEqual(client.calls, [])
+        self.assertFalse(session.flow_can_write)
 
     def test_v5c_standard_send_arms_query_status_when_query_packet_is_present(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5C)

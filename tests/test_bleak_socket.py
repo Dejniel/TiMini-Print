@@ -94,6 +94,7 @@ class BleakSocketTests(unittest.TestCase):
         bindings = s._transport.bindings
         s._client = client
         s._connected = True
+        s._transport.notify_started = True
         bindings.write_char = cmd
         bindings.bulk_write_char = bulk
         bindings.write_selection_strategy = "preferred_uuid"

@@ -82,6 +82,9 @@ class SppBackend:
     def can_query_control_packet(self) -> bool:
         return self._can_query_control_packet_blocking()
 
+    def can_wait_for_notification(self) -> bool:
+        return self._can_wait_for_notification_blocking()
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
@@ -105,6 +108,24 @@ class SppBackend:
             packet,
             timeout,
             reply_complete,
+        )
+
+    async def wait_for_notification(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._wait_for_notification_blocking,
+            label,
+            match,
+            timeout,
+            required,
         )
 
     async def write(
@@ -341,6 +362,14 @@ class SppBackend:
             return False
         return True
 
+    def _can_wait_for_notification_blocking(self) -> bool:
+        if not self._sock or not self._connected or self._transport != DeviceTransport.BLE:
+            return False
+        can_wait_for_notification = getattr(self._sock, "can_wait_for_notification", None)
+        if callable(can_wait_for_notification):
+            return bool(can_wait_for_notification())
+        return False
+
     def _send_control_packet_blocking(self, packet: bytes, timeout: float) -> bool:
         if not self._sock or not self._connected:
             return False
@@ -378,6 +407,29 @@ class SppBackend:
                 timeout=timeout,
                 reply_complete=reply_complete,
             )
+
+    def _wait_for_notification_blocking(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        timeout: float,
+        required: bool,
+    ) -> bytes | None:
+        if not self._sock or not self._connected or self._transport != DeviceTransport.BLE:
+            if required:
+                raise RuntimeError("BLE notification wait unavailable")
+            return None
+        wait_for_notification = getattr(self._sock, "wait_for_notification", None)
+        if not callable(wait_for_notification):
+            if required:
+                raise RuntimeError("BLE notification wait unavailable")
+            return None
+        return wait_for_notification(
+            label,
+            match,
+            timeout=timeout,
+            required=required,
+        )
 
     def _write_blocking(self, data: bytes, chunk_size: int, delay_ms: int, runtime_controller=None) -> None:
         if not self._sock or not self._connected:
