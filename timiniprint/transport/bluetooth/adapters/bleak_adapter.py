@@ -319,10 +319,6 @@ class _BleakSocket:
     def _handle_notification(self, _sender: Any, data: Any) -> None:
         self._transport.handle_notification(bytes(data))
 
-    @classmethod
-    def _find_notify_characteristic(cls, services):
-        return _BleakTransportSession.find_notify_characteristic(services)
-
 
 class _BleakBleAdapter(_BleBluetoothAdapter):
     """Bluetooth Low Energy adapter using bleak for GATT writes."""

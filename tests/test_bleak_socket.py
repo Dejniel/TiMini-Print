@@ -159,21 +159,6 @@ class BleakSocketTests(unittest.TestCase):
         asyncio.run(run())
         self.assertEqual(client.calls, [(cmd.uuid, V5X_STATUS_POLL_PACKET, False)])
 
-    def test_find_notify_characteristic_prefers_generic_notifier(self) -> None:
-        services = [
-            _Svc(
-                "00001800-0000-1000-8000-00805f9b34fb",
-                [_Char("00002a00-0000-1000-8000-00805f9b34fb", ["read"])],
-            ),
-            _Svc(
-                "12345678-0000-1000-8000-00805f9b34fb",
-                [_Char("12345679-0000-1000-8000-00805f9b34fb", ["notify"])],
-            ),
-        ]
-        found = _BleakSocket._find_notify_characteristic(services)
-        self.assertIsNotNone(found)
-        self.assertEqual(found.uuid, "12345679-0000-1000-8000-00805f9b34fb")
-
     def test_v5c_notify_updates_flow_state(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5C)
         self.assertTrue(s._flow_can_write)

@@ -149,6 +149,25 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertIs(session.bindings.bulk_write_char, preferred)
         self.assertIs(session.bindings.notify_char, notify)
 
+    def test_configure_endpoints_prefers_generic_notifier_for_v5g(self) -> None:
+        session, _ = self._make_session(ProtocolFamily.V5G)
+        notifier = _Char("12345679-0000-1000-8000-00805f9b34fb", ["notify"])
+        services = [
+            _Svc(
+                "00001800-0000-1000-8000-00805f9b34fb",
+                [_Char("00002a00-0000-1000-8000-00805f9b34fb", ["read"])],
+            ),
+            _Svc("12345678-0000-1000-8000-00805f9b34fb", [notifier]),
+        ]
+
+        session.configure_endpoints(services)
+
+        self.assertIs(session.bindings.notify_char, notifier)
+        self.assertEqual(
+            session.bindings.notify_char_uuid,
+            "12345679-0000-1000-8000-00805f9b34fb",
+        )
+
     def test_start_and_stop_notify_use_bound_notify_characteristic(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
         notify = _Char("0000ae02-0000-1000-8000-00805f9b34fb", ["notify"])

@@ -91,7 +91,7 @@ class _BleakTransportSession:
                 preferred_service_uuid=transport.preferred_service_uuid,
             )
         elif transport.prefer_generic_notify or transport.flow_control is not None:
-            self.bindings.notify_char = self._find_notify_characteristic(services)
+            self.bindings.notify_char = self.find_notify_characteristic(services)
 
         self.bindings.notify_char_uuid = _BleWriteEndpointResolver._normalize_uuid(
             getattr(self.bindings.notify_char, "uuid", "")
