@@ -1337,14 +1337,21 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         data = V5X_GET_SERIAL_PACKET + (b"\xAA\x55" * 8) + V5X_FINALIZE_PACKET
 
+        # Command-ACK waits are advisory on V5X. When the printer does not
+        # reply within the timeout (e.g. paginated multi-segment jobs where
+        # the next-segment 0xA7 reply is preemptively consumed by a
+        # between-segments idle re-identification, or firmwares that
+        # simply do not reply per-command), the runtime logs and continues
+        # rather than aborting the send. The legacy behaviour raised
+        # TimeoutError; the new behaviour completes the send and still
+        # clears the per-job handshake state.
         async def run() -> None:
-            with self.assertRaises(TimeoutError):
-                await session.send(
-                    client,
-                    data,
-                    mtu_size=180,
-                    timeout=0.01,
-                )
+            await session.send(
+                client,
+                data,
+                mtu_size=180,
+                timeout=0.01,
+            )
 
         asyncio.run(run())
 

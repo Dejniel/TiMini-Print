@@ -175,7 +175,12 @@ class V5XRuntimeController(RuntimeController):
     async def before_split_command(self, session, packet: bytes, split_context: _V5XJobContext, *, timeout: float, density_updated: bool) -> None:
         opcode = session.extract_prefixed_opcode(packet)
         if opcode in (0xA2, 0xA9):
-            await self._wait_for_start_ready(session, timeout)
+            try:
+                await self._wait_for_start_ready(session, timeout)
+            except TimeoutError:
+                session.report_debug(
+                    f"V5X start ready (0xAA) not received before 0x{opcode:02x}; continuing"
+                )
 
     def arm_command_ack(self, session, packet: bytes) -> int | None:
         opcode = session.extract_prefixed_opcode(packet)
@@ -193,8 +198,13 @@ class V5XRuntimeController(RuntimeController):
         if ack_token is not None:
             ack_opcode = ack_token
             try:
-                await self._wait_for_command_ack(session, ack_opcode, timeout)
-                self._validate_command_ack(ack_opcode)
+                try:
+                    await self._wait_for_command_ack(session, ack_opcode, timeout)
+                    self._validate_command_ack(ack_opcode)
+                except TimeoutError:
+                    session.report_debug(
+                        f"V5X command ack 0x{ack_opcode:02x} not received within {timeout}s; continuing"
+                    )
             finally:
                 self._clear_command_ack_state(ack_opcode)
         if opcode == 0xA9:
