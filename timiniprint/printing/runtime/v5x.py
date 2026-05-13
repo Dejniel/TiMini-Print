@@ -194,8 +194,22 @@ class V5XRuntimeController(RuntimeController):
         if ack_token is not None:
             ack_opcode, event = ack_token
             try:
-                await asyncio.wait_for(event.wait(), timeout=timeout)
-                self._validate_command_ack(ack_opcode)
+                try:
+                    await asyncio.wait_for(event.wait(), timeout=timeout)
+                    self._validate_command_ack(ack_opcode)
+                except TimeoutError:
+                    # The ACK is optimistic. Some V5X firmwares answer an
+                    # 0xA7 (get serial) reflexively when they receive an
+                    # 0xA6 (idle/re-identify) and don't send a second reply
+                    # for the next 0xA7 we send — which means the ACK we
+                    # wait for here never arrives. The same applies
+                    # between paginated sub-jobs (see also
+                    # `_wait_for_start_ready`). Log and continue: a real
+                    # failure will surface via the next write or via the
+                    # 0xA9 status byte.
+                    session.report_debug(
+                        f"V5X command ack 0x{ack_opcode:02x} not received within {timeout}s; continuing"
+                    )
             finally:
                 if self._state.command_ack_events.get(ack_opcode) is event:
                     self._state.command_ack_events.pop(ack_opcode, None)

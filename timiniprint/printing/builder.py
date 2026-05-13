@@ -1,15 +1,44 @@
 from __future__ import annotations
 
 import os
-from typing import Optional, TYPE_CHECKING
+from typing import Iterable, Optional, TYPE_CHECKING
 
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
+from ..protocol.steps import ProtocolStep, ProtocolStepOperation
 from ..protocol.types import ImageEncoding
+from ..raster import PixelFormat, RasterBuffer, RasterSet
 from ..rendering.converters import Page, PageLoader
 from ..rendering.renderer import apply_page_transforms, image_to_raster_set
 from .settings import PrintSettings
+
+
+_MAX_JOB_ROWS_ENV = "TIMINI_PRINT_MAX_JOB_ROWS"
+
+
+def _resolve_max_job_rows() -> int:
+    """Return the env-configured per-job row ceiling, or 0 if unset.
+
+    Some printer firmwares (notably MXW01 v1.9.3.1.2 in the V5X family)
+    silently truncate jobs taller than a few hundred rows of 384-px-wide
+    raster. Setting ``TIMINI_PRINT_MAX_JOB_ROWS=200`` (or similar) makes
+    the builder split tall pages into multiple back-to-back V5X sessions,
+    each below the firmware ceiling, sent as separate ``ProtocolStep``s
+    so the runtime can pace them and the printer never receives more
+    rows in one session than it can render.
+
+    Returns 0 (= no splitting) when the env var is unset, empty,
+    non-numeric, or non-positive.
+    """
+    raw = os.environ.get(_MAX_JOB_ROWS_ENV)
+    if not raw:
+        return 0
+    try:
+        value = int(raw)
+    except ValueError:
+        return 0
+    return value if value > 0 else 0
 
 if TYPE_CHECKING:
     from ..devices import PrinterDevice
@@ -52,8 +81,9 @@ class PrintJobBuilder:
             runtime_capabilities=self.runtime_context.capabilities,
         ).formats[:1]
         gamma_handle, gamma_value = self._resolve_gray_preprocessing()
+        max_job_rows = _resolve_max_job_rows()
         payload_parts: list[bytes] = []
-        steps = []
+        steps: list[ProtocolStep] = []
         page_count = len(pages)
         for page_index, page in enumerate(pages, start=1):
             is_text = self._select_text_mode(page)
@@ -64,22 +94,39 @@ class PrintJobBuilder:
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
             )
-            page_job = self.protocol.build_job(
-                raster_set,
-                is_text=is_text,
-                blackening=self.settings.blackening,
-                feed_padding=self.settings.feed_padding,
-                paper_mode=self.settings.paper_mode,
-                lsb_first=self._lsb_first(),
-                image_encoding_override=self.settings.image_encoding_override,
-                pixel_format_override=self.settings.pixel_format_override,
-                page_index=page_index,
-                page_count=page_count,
-                runtime_capabilities=self.runtime_context.capabilities,
-                runtime_controller=self.runtime_context.runtime_controller,
-            )
-            payload_parts.append(page_job.payload)
-            steps.extend(page_job.steps)
+            for segment_index, segment_set in enumerate(
+                self._split_raster_for_max_rows(raster_set, max_job_rows)
+            ):
+                page_job = self.protocol.build_job(
+                    segment_set,
+                    is_text=is_text,
+                    blackening=self.settings.blackening,
+                    feed_padding=self.settings.feed_padding,
+                    paper_mode=self.settings.paper_mode,
+                    lsb_first=self._lsb_first(),
+                    image_encoding_override=self.settings.image_encoding_override,
+                    pixel_format_override=self.settings.pixel_format_override,
+                    page_index=page_index,
+                    page_count=page_count,
+                    runtime_capabilities=self.runtime_context.capabilities,
+                    runtime_controller=self.runtime_context.runtime_controller,
+                )
+                payload_parts.append(page_job.payload)
+                if page_job.steps:
+                    steps.extend(page_job.steps)
+                elif max_job_rows > 0 and segment_index >= 0:
+                    # When pagination is in effect we want each sub-job to be
+                    # sent as a discrete protocol step so the runtime can pace
+                    # them across the same connection without bleeding the
+                    # session boundary into the wrong characteristic.
+                    steps.append(
+                        ProtocolStep(
+                            label=f"page{page_index}-seg{segment_index + 1}",
+                            data=page_job.payload,
+                            operation=ProtocolStepOperation.SEND,
+                            include_in_payload=False,
+                        )
+                    )
         return ProtocolJob(
             runtime_controller=(
                 self.runtime_context.runtime_controller
@@ -88,6 +135,30 @@ class PrintJobBuilder:
             payload_segments=tuple(payload_parts),
             steps=tuple(steps),
         )
+
+    def _split_raster_for_max_rows(
+        self, raster_set: RasterSet, max_job_rows: int
+    ) -> Iterable[RasterSet]:
+        """Yield raster_set or a sequence of sub-sets each at most max_job_rows tall.
+
+        If max_job_rows is 0 (the default) or the raster fits, the original
+        raster_set is yielded unchanged.
+        """
+        if max_job_rows <= 0:
+            yield raster_set
+            return
+        height = raster_set.height
+        if height <= max_job_rows:
+            yield raster_set
+            return
+        for start_row in range(0, height, max_job_rows):
+            row_count = min(max_job_rows, height - start_row)
+            yield RasterSet(
+                rasters={
+                    pixel_format: raster.slice_rows(start_row, row_count)
+                    for pixel_format, raster in raster_set.rasters.items()
+                }
+            )
 
     def _resolve_gray_preprocessing(self) -> tuple[bool, Optional[float]]:
         pipeline = self.protocol.resolve_image_pipeline(
