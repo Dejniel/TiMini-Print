@@ -3214,51 +3214,6 @@
     "a4xii": false
   },
   {
-    "profile_key": "m08f",
-    "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
-    "one_length": 8,
-    "dev_dpi": 203,
-    "can_change_mtu": true,
-    "has_id": true,
-    "use_spp": true,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "legacy",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1"
-      ],
-      "encoding": "legacy_rle"
-    },
-    "stream": {
-      "chunk_size": 512,
-      "delay_ms": 4
-    },
-    "post_print_feed_count": 2,
-    "tuning": {
-      "speed": {
-        "image": 40,
-        "text": 30
-      },
-      "energy": {
-        "image": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 15000
-        },
-        "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 15000
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
     "profile_key": "m2",
     "size": 2,
     "paper_size": 384,
@@ -3298,51 +3253,6 @@
           "low": 8000,
           "middle": 8000,
           "high": 8000
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "m832",
-    "size": 8,
-    "paper_size": 2243,
-    "print_size": 2551,
-    "one_length": 12,
-    "dev_dpi": 300,
-    "can_change_mtu": true,
-    "has_id": true,
-    "use_spp": true,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "legacy",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1"
-      ],
-      "encoding": "legacy_rle"
-    },
-    "stream": {
-      "chunk_size": 512,
-      "delay_ms": 2
-    },
-    "post_print_feed_count": 2,
-    "tuning": {
-      "speed": {
-        "image": 40,
-        "text": 30
-      },
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 10000
-        },
-        "text": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 10000
         }
       }
     },
@@ -4427,51 +4337,6 @@
     "a4xii": false
   },
   {
-    "profile_key": "q302",
-    "size": 8,
-    "paper_size": 2361,
-    "print_size": 2551,
-    "one_length": 12,
-    "dev_dpi": 300,
-    "can_change_mtu": true,
-    "has_id": true,
-    "use_spp": true,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "legacy",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1"
-      ],
-      "encoding": "legacy_rle"
-    },
-    "stream": {
-      "chunk_size": 512,
-      "delay_ms": 2
-    },
-    "post_print_feed_count": 2,
-    "tuning": {
-      "speed": {
-        "image": 40,
-        "text": 30
-      },
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 10000
-        },
-        "text": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 10000
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
     "profile_key": "s01",
     "size": 2,
     "paper_size": 384,
@@ -4646,51 +4511,6 @@
           "low": 8000,
           "middle": 8000,
           "high": 8000
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "t02",
-    "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
-    "one_length": 8,
-    "dev_dpi": 203,
-    "can_change_mtu": true,
-    "has_id": true,
-    "use_spp": true,
-    "can_print_label": true,
-    "label_value": "1",
-    "back_paper_num": 40,
-    "default_protocol_family": "legacy",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1"
-      ],
-      "encoding": "legacy_rle"
-    },
-    "stream": {
-      "chunk_size": 180,
-      "delay_ms": 4
-    },
-    "post_print_feed_count": 2,
-    "tuning": {
-      "speed": {
-        "image": 10,
-        "text": 10
-      },
-      "energy": {
-        "image": {
-          "low": 9500,
-          "middle": 9500,
-          "high": 9500
-        },
-        "text": {
-          "low": 9500,
-          "middle": 9500,
-          "high": 9500
         }
       }
     },
