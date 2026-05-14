@@ -1340,22 +1340,6 @@
     "protocol_family": "legacy_prefixed"
   },
   {
-    "rule_key": "profile_m08f",
-    "prefixes": [
-      "M08F-"
-    ],
-    "profile_key": "m08f",
-    "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "profile_m832",
-    "prefixes": [
-      "M832-"
-    ],
-    "profile_key": "m832",
-    "protocol_family": "legacy"
-  },
-  {
     "rule_key": "profile_mx02",
     "prefixes": [
       "MX02-"
@@ -1560,14 +1544,6 @@
     "protocol_family": "legacy"
   },
   {
-    "rule_key": "profile_q302",
-    "prefixes": [
-      "Q302-"
-    ],
-    "profile_key": "q302",
-    "protocol_family": "legacy"
-  },
-  {
     "rule_key": "profile_qdid",
     "prefixes": [
       "QDID-"
@@ -1613,14 +1589,6 @@
       "SC05-"
     ],
     "profile_key": "x6h",
-    "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "profile_tp81",
-    "prefixes": [
-      "TP81-"
-    ],
-    "profile_key": "m08f",
     "protocol_family": "legacy"
   },
   {
@@ -1771,14 +1739,6 @@
       "S01-"
     ],
     "profile_key": "s01",
-    "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "profile_t02",
-    "prefixes": [
-      "T02-"
-    ],
-    "profile_key": "t02",
     "protocol_family": "legacy"
   },
   {
@@ -2406,44 +2366,6 @@
     "protocol_family": "v5g"
   },
   {
-    "rule_key": "alias_tp84",
-    "prefixes": [
-      "TP84",
-      "TP85",
-      "TP86",
-      "TP87",
-      "TP88"
-    ],
-    "profile_key": "m08f",
-    "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "alias_m836",
-    "prefixes": [
-      "M836"
-    ],
-    "profile_key": "m832",
-    "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "alias_q580",
-    "prefixes": [
-      "Q580"
-    ],
-    "profile_key": "q302",
-    "protocol_family": "legacy"
-  },
-  {
-    "rule_key": "alias_t02e",
-    "prefixes": [
-      "T02E",
-      "Q02E",
-      "C02E"
-    ],
-    "profile_key": "t02",
-    "protocol_family": "legacy"
-  },
-  {
     "rule_key": "alias_mxw01",
     "prefixes": [
       "MXW01",
@@ -2477,14 +2399,6 @@
     ],
     "profile_key": "d1",
     "protocol_family": "dck"
-  },
-  {
-    "rule_key": "alias_mxw_a4",
-    "prefixes": [
-      "MXW-A4"
-    ],
-    "profile_key": "m08f",
-    "protocol_family": "legacy"
   },
   {
     "rule_key": "rule_luck_a2",

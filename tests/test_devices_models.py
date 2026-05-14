@@ -542,7 +542,6 @@ class DevicesModelsTests(unittest.TestCase):
     def test_proxy_rules_resolve_to_profiles_not_alias_donors(self) -> None:
         jk01 = self.catalog.detect_device("JK01-ABCD")
         c21 = self.catalog.detect_device("C21-ABCD")
-        mxwa4 = self.catalog.detect_device("MXW-A4-ABCD")
         ytb01 = self.catalog.detect_device("YTB01-ABCD")
 
         self.assertIsNotNone(jk01)
@@ -553,20 +552,12 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(c21.profile_key, "d1")
         self.assertEqual(c21.protocol_family, ProtocolFamily.DCK)
 
-        self.assertIsNotNone(mxwa4)
-        self.assertEqual(mxwa4.profile_key, "m08f")
-        self.assertEqual(mxwa4.protocol_family, ProtocolFamily.LEGACY)
-
         self.assertIsNotNone(ytb01)
         self.assertEqual(ytb01.profile_key, "ytb01")
         self.assertEqual(ytb01.protocol_family, ProtocolFamily.V5C)
 
     def test_derived_names_map_to_final_profiles(self) -> None:
         expected = {
-            "TP84-ABCD": "m08f",
-            "M836-ABCD": "m832",
-            "Q580-ABCD": "q302",
-            "T02E-ABCD": "t02",
             "MXTP-100-ABCD": "mx06",
             "MXPC-100-ABCD": "v5g_small_203",
             "LY10-ABCD": "ly10",
@@ -616,6 +607,18 @@ class DevicesModelsTests(unittest.TestCase):
             "LP220S",
             "YINTIBAO-V5PRO",
             "MP300S",
+            "M08F-ABCD",
+            "TP81-ABCD",
+            "TP84-ABCD",
+            "M832-ABCD",
+            "M836-ABCD",
+            "Q302-ABCD",
+            "Q580-ABCD",
+            "T02-ABCD",
+            "T02E-ABCD",
+            "Q02E",
+            "C02E",
+            "MXW-A4-ABCD",
         ):
             with self.subTest(name=name):
                 self.assertIsNone(self.catalog.detect_device(name))

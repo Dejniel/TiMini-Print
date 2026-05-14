@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 import unittest
 
+from timiniprint.devices import PrinterCatalog
+from timiniprint.protocol.families import get_protocol_behavior
 from tools.render_readme_models import (
     load_inventory_entries,
     render_supported_models_block,
@@ -11,11 +13,46 @@ from tools.render_readme_models import (
 )
 
 
+def _detect_readme_name(catalog: PrinterCatalog, name: str):
+    candidates = (
+        name,
+        f"{name}-ABCD",
+        f"{name}_ABCD",
+        f"{name}ABCD",
+    )
+    for candidate in candidates:
+        detected = catalog.detect_device(candidate)
+        if detected is not None:
+            return detected
+    return None
+
+
 class ReadmeModelInventoryTests(unittest.TestCase):
     def test_inventory_validates_against_runtime_catalog(self) -> None:
         entries = load_inventory_entries()
 
         self.assertEqual(validate_inventory(entries), [])
+
+    def test_readme_inventory_matches_runtime_detection_contract(self) -> None:
+        catalog = PrinterCatalog.load()
+        entries = load_inventory_entries()
+
+        for entry in entries:
+            for name in entry.visible_names:
+                with self.subTest(entry=entry.id, status=entry.status, name=name):
+                    detected = _detect_readme_name(catalog, name)
+                    if entry.status == "supported":
+                        self.assertIsNotNone(detected)
+                        assert detected is not None
+                        self.assertTrue(
+                            get_protocol_behavior(detected.protocol_family).implemented,
+                            detected.protocol_family,
+                        )
+                    elif entry.rule_keys:
+                        if detected is not None:
+                            self.assertIn(detected.detection_rule_key, entry.rule_keys)
+                    else:
+                        self.assertIsNone(detected)
 
     def test_supported_and_todo_blocks_render_non_empty_content(self) -> None:
         entries = load_inventory_entries()
@@ -55,6 +92,14 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])LP100S(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M08F(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M832(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])Q302(?![A-Z0-9_-])", supported))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])T02(?![A-Z0-9_-])", supported))
+        self.assertIn("- M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88", todo)
+        self.assertIn("- M832 and clones: M836", todo)
+        self.assertIn("- Q302 and clones: Q580", todo)
+        self.assertIn("- T02 and clones: T02E, Q02E, C02E", todo)
         self.assertIsNone(re.search(r"/", supported))
         self.assertIsNone(re.search(r"/", todo))
         self.assertNotIn("DP_A4 and clones: DP-A4", supported)

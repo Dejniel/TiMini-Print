@@ -736,7 +736,7 @@
     },
     {
       "id": "m08f-family",
-      "status": "supported",
+      "status": "todo",
       "primary_names": [
         "M08F",
         "TP81",
@@ -749,7 +749,7 @@
     },
     {
       "id": "m832-family",
-      "status": "supported",
+      "status": "todo",
       "primary_names": [
         "M832",
         "M836"
@@ -757,7 +757,7 @@
     },
     {
       "id": "q302-family",
-      "status": "supported",
+      "status": "todo",
       "primary_names": [
         "Q302",
         "Q580"
@@ -765,7 +765,7 @@
     },
     {
       "id": "t02-family",
-      "status": "supported",
+      "status": "todo",
       "primary_names": [
         "T02",
         "T02E",
@@ -860,10 +860,7 @@
       "primary_names": [
         "MXW-A4"
       ],
-      "original_app_name": "V10G family",
-      "rule_keys": [
-        "alias_mxw_a4"
-      ]
+      "original_app_name": "V10G family"
     },
     {
       "id": "todo-ibleem-v10",
