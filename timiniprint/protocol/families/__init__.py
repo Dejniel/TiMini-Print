@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..family import ProtocolCommandSet, ProtocolFamily, ProtocolSpec, ProtocolTransportStyle
 from .base import (
+    BleBulkWriteProfile,
     BleTransportProfile,
     FlowControlProfile,
     PrintJobRequest,
@@ -103,6 +104,7 @@ def protocol_requires_speed(protocol_family: ProtocolFamily | str | None) -> boo
 
 
 __all__ = [
+    "BleBulkWriteProfile",
     "BleTransportProfile",
     "FlowControlProfile",
     "PrintJobRequest",

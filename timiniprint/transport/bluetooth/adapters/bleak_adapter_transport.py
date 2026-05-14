@@ -9,7 +9,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 from .... import reporting
 from ....printing.runtime.base import RuntimeController
 from ....printing.runtime.factory import _runtime_controller_for_family
-from ....protocol.families import BleTransportProfile, split_prefixed_bulk_stream
+from ....protocol.families import BleBulkWriteProfile, BleTransportProfile, split_prefixed_bulk_stream
 from ....protocol.family import ProtocolFamily
 from ....protocol.packet import make_packet, prefixed_packet_length
 from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSelection
@@ -90,10 +90,11 @@ class _BleakTransportSession:
 
         self.bindings.bulk_write_char = None
         self.bindings.bulk_write_char_uuid = ""
-        if transport.bulk_char_uuid:
+        bulk_write = transport.bulk_write
+        if bulk_write is not None:
             self.bindings.bulk_write_char = self._find_characteristic_by_uuid(
                 services,
-                transport.bulk_char_uuid,
+                bulk_write.char_uuid,
                 preferred_service_uuid=transport.preferred_service_uuid,
             )
             self.bindings.bulk_write_char_uuid = _BleWriteEndpointResolver._normalize_uuid(
@@ -241,8 +242,15 @@ class _BleakTransportSession:
         if not self.bindings.write_char:
             raise RuntimeError("No write characteristic available")
 
-        if self._transport_profile.split_bulk_writes:
-            await self._send_split(client, data, mtu_size=mtu_size, timeout=timeout)
+        bulk_write = self._transport_profile.bulk_write
+        if bulk_write is not None:
+            await self._send_split(
+                client,
+                data,
+                bulk_write=bulk_write,
+                mtu_size=mtu_size,
+                timeout=timeout,
+            )
             return
         await self._send_standard(client, data, mtu_size=mtu_size, timeout=timeout)
 
@@ -268,6 +276,7 @@ class _BleakTransportSession:
                 self.bindings.write_char,
                 mtu_size,
                 response=response,
+                reserve=self._transport_profile.write_without_response_payload_reserve,
             )
             chunk_size = min(mtu_payload, self._transport_profile.standard_chunk_cap)
             delay_seconds = self._transport_profile.standard_write_delay_ms / 1000.0
@@ -276,6 +285,7 @@ class _BleakTransportSession:
                 f"write mode response={response} strategy={self.bindings.write_selection_strategy} "
                 f"char={self.bindings.write_char_uuid} payload={len(data)} "
                 f"mtu_payload={mtu_payload} chunk={chunk_size} chunks={chunk_count} "
+                f"reserve={self._transport_profile.write_without_response_payload_reserve} "
                 f"delay_ms={self._transport_profile.standard_write_delay_ms} "
                 f"head={data[:16].hex()} tail={data[-16:].hex()}"
             )
@@ -298,6 +308,7 @@ class _BleakTransportSession:
         client: Any,
         data: bytes,
         *,
+        bulk_write: BleBulkWriteProfile,
         mtu_size: int,
         timeout: float,
     ) -> None:
@@ -307,7 +318,7 @@ class _BleakTransportSession:
         split = split_prefixed_bulk_stream(
             data,
             self._protocol_family,
-            self._transport_profile.split_tail_packets,
+            bulk_write.tail_packets,
         )
         # TODO: Legacy BLE split runtime hooks for V5X/V5G/V5C live here because
         # they depend on notifications and BLE bulk/write characteristics. New
@@ -374,13 +385,32 @@ class _BleakTransportSession:
                 "preferred_uuid",
                 False,
             )
+            bulk_mtu_payload = self._effective_mtu_payload(
+                self.bindings.bulk_write_char,
+                mtu_size,
+                response=bulk_response,
+                reserve=self._transport_profile.write_without_response_payload_reserve,
+            )
+            bulk_chunk_size = min(bulk_mtu_payload, bulk_write.chunk_cap)
+            bulk_chunk_count = (
+                (len(split.bulk_payload) + bulk_chunk_size - 1) // bulk_chunk_size
+                if bulk_chunk_size
+                else 0
+            )
+            self.report_debug(
+                f"split bulk response={bulk_response} payload={len(split.bulk_payload)} "
+                f"mtu_payload={bulk_mtu_payload} chunk={bulk_chunk_size} chunks={bulk_chunk_count} "
+                f"reserve={self._transport_profile.write_without_response_payload_reserve} "
+                f"delay_ms={bulk_write.write_delay_ms} "
+                f"flow_control={self._transport_profile.flow_control is not None}"
+            )
             await self._write_chunks(
                 client,
                 self.bindings.bulk_write_char,
                 split.bulk_payload,
                 response=bulk_response,
-                chunk_size=min(mtu_size, self._transport_profile.bulk_chunk_cap),
-                delay_seconds=self._transport_profile.bulk_write_delay_ms / 1000.0,
+                chunk_size=bulk_chunk_size,
+                delay_seconds=bulk_write.write_delay_ms / 1000.0,
                 timeout=timeout,
                 wait_for_flow=self._transport_profile.flow_control is not None,
             )
@@ -547,9 +577,16 @@ class _BleakTransportSession:
         )
 
     @staticmethod
-    def _effective_mtu_payload(characteristic: Any, fallback: int, *, response: bool) -> int:
+    def _effective_mtu_payload(
+        characteristic: Any,
+        fallback: int,
+        *,
+        response: bool,
+        reserve: int = 0,
+    ) -> int:
         if response:
             return fallback
+        payload = fallback
         try:
             max_without_response = getattr(
                 characteristic,
@@ -557,10 +594,12 @@ class _BleakTransportSession:
                 None,
             )
         except Exception:
-            return fallback
+            max_without_response = None
         if isinstance(max_without_response, int) and max_without_response > 0:
-            return min(max_without_response, 512)
-        return fallback
+            payload = min(max_without_response, 512)
+        if reserve > 0:
+            payload -= reserve
+        return max(1, payload)
 
     def report_debug(self, message: str) -> None:
         self._reporter.debug(short="BLE", detail=message)

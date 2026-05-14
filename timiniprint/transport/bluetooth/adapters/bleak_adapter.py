@@ -18,6 +18,8 @@ from .... import reporting
 from ....protocol.families import get_protocol_behavior
 from ....protocol.family import ProtocolFamily
 
+_BLE_DEFAULT_MTU_PAYLOAD = 20
+
 
 def _missing_bleak_error() -> RuntimeError:
     return RuntimeError(
@@ -43,7 +45,7 @@ class _BleakSocket:
         self._address: Optional[str] = None
         self._connected = False
         self._loop: Optional[asyncio.AbstractEventLoop] = None
-        self._mtu_size = 180
+        self._mtu_size = _BLE_DEFAULT_MTU_PAYLOAD
         self._timeout = 30.0
         self._pairing_hint = pairing_hint is True and not IS_MACOS
         self._protocol_family = protocol_family

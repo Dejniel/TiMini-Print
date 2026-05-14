@@ -21,6 +21,7 @@ _GRAY_BAND_ROWS = 20
 # transport out of the old 20-byte fallback path without changing payloads.
 _BLE_STANDARD_CHUNK_CAP = 56 * 8
 _BLE_STANDARD_WRITE_DELAY_MS = 30
+_BLE_WRITE_WITHOUT_RESPONSE_PAYLOAD_RESERVE = 5
 V5G_CONNECT_QUERY_PACKET = bytes.fromhex("5178A30001000000FF")
 
 
@@ -125,6 +126,7 @@ TRANSPORT = BleTransportProfile(
     prefer_generic_notify=True,
     standard_chunk_cap=_BLE_STANDARD_CHUNK_CAP,
     standard_write_delay_ms=_BLE_STANDARD_WRITE_DELAY_MS,
+    write_without_response_payload_reserve=_BLE_WRITE_WITHOUT_RESPONSE_PAYLOAD_RESERVE,
 )
 
 

@@ -86,6 +86,11 @@ class BleakSocketTests(unittest.TestCase):
         self.assertTrue(all(len(call[1]) <= 20 for call in client.calls))
         self.assertTrue(all(call[2] is False for call in client.calls))
 
+    def test_default_mtu_payload_starts_conservative(self) -> None:
+        s = _BleakSocket()
+
+        self.assertEqual(s._mtu_size, 20)
+
     def test_send_async_v5x_routes_commands_and_bulk_data(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5X)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
@@ -127,10 +132,10 @@ class BleakSocketTests(unittest.TestCase):
         self.assertEqual(client.calls[0][0], cmd.uuid)
         self.assertEqual(client.calls[1][0], cmd.uuid)
         self.assertEqual(client.calls[2][0], cmd.uuid)
-        self.assertEqual(client.calls[3][0], bulk.uuid)
-        self.assertEqual(client.calls[4][0], cmd.uuid)
+        self.assertTrue(all(call[0] == bulk.uuid for call in client.calls[3:-1]))
+        self.assertEqual(client.calls[-1][0], cmd.uuid)
         self.assertEqual(client.calls[0][1], V5X_GET_SERIAL_PACKET)
-        self.assertEqual(client.calls[4][1], V5X_FINALIZE_PACKET)
+        self.assertEqual(client.calls[-1][1], V5X_FINALIZE_PACKET)
 
     def test_v5x_notify_updates_flow_state(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5X)
