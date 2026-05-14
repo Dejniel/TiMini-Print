@@ -1864,6 +1864,51 @@
     "a4xii": false
   },
   {
+    "profile_key": "dl_x7pro",
+    "size": 4,
+    "paper_size": 1280,
+    "print_size": 1280,
+    "one_length": 8,
+    "dev_dpi": 300,
+    "can_change_mtu": true,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 40,
+    "default_protocol_family": "legacy",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "legacy_rle"
+    },
+    "stream": {
+      "chunk_size": 512,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "tuning": {
+      "speed": {
+        "image": 10,
+        "text": 10
+      },
+      "energy": {
+        "image": {
+          "low": 7000,
+          "middle": 7000,
+          "high": 7000
+        },
+        "text": {
+          "low": 8000,
+          "middle": 8000,
+          "high": 8000
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
     "profile_key": "fc02",
     "size": 2,
     "paper_size": 384,
@@ -3881,6 +3926,51 @@
           "low": 9500,
           "middle": 9500,
           "high": 9500
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
+    "profile_key": "p4",
+    "size": 8,
+    "paper_size": 1600,
+    "print_size": 1728,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "can_change_mtu": true,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "default_protocol_family": "legacy",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "legacy_rle"
+    },
+    "stream": {
+      "chunk_size": 512,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "tuning": {
+      "speed": {
+        "image": 40,
+        "text": 30
+      },
+      "energy": {
+        "image": {
+          "low": 17000,
+          "middle": 17000,
+          "high": 17000
+        },
+        "text": {
+          "low": 30000,
+          "middle": 30000,
+          "high": 30000
         }
       }
     },

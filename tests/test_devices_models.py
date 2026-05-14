@@ -154,6 +154,20 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(resolved.protocol_family, ProtocolFamily.LEGACY)
         self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LEGACY_RLE)
 
+        dl_x7pro = self.catalog.detect_device("DL_X7Pro-1234")
+        self.assertIsNotNone(dl_x7pro)
+        self.assertEqual(dl_x7pro.profile_key, "dl_x7pro")
+        self.assertEqual(dl_x7pro.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(dl_x7pro.profile.print_size, 1280)
+        self.assertEqual(dl_x7pro.profile.dev_dpi, 300)
+
+        p4 = self.catalog.detect_device("P4-1234")
+        self.assertIsNotNone(p4)
+        self.assertEqual(p4.profile_key, "p4")
+        self.assertEqual(p4.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(p4.profile.paper_size, 1600)
+        self.assertEqual(p4.profile.print_size, 1728)
+
     def test_old_small_bucket_uses_v5g_and_mac59_switches_family_only(self) -> None:
         normal = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:58")
         mac59 = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:59")
@@ -602,8 +616,6 @@ class DevicesModelsTests(unittest.TestCase):
             "LP220S",
             "YINTIBAO-V5PRO",
             "MP300S",
-            "P4-ABCD",
-            "DL_X7Pro-ABCD",
         ):
             with self.subTest(name=name):
                 self.assertIsNone(self.catalog.detect_device(name))

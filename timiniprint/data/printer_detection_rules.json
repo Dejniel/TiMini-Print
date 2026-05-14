@@ -848,6 +848,14 @@
     "protocol_family": "legacy"
   },
   {
+    "rule_key": "profile_dl_x7pro",
+    "prefixes": [
+      "DL_X7Pro-"
+    ],
+    "profile_key": "dl_x7pro",
+    "protocol_family": "legacy"
+  },
+  {
     "rule_key": "profile_dt1_0",
     "prefixes": [
       "DT1-0-"
@@ -1900,6 +1908,14 @@
       "P2-"
     ],
     "profile_key": "d1",
+    "protocol_family": "legacy"
+  },
+  {
+    "rule_key": "profile_p4",
+    "prefixes": [
+      "P4-"
+    ],
+    "profile_key": "p4",
     "protocol_family": "legacy"
   },
   {

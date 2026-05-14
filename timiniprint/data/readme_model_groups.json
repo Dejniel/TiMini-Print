@@ -27,6 +27,7 @@
         "DL_X2",
         "DL_X2Pro",
         "DL_X7",
+        "DL_X7Pro",
         "DT1-0",
         "DTR-R0",
         "DY01",
@@ -84,6 +85,7 @@
         "P1",
         "P10",
         "P2",
+        "P4",
         "P5",
         "P5AI",
         "P6",
@@ -612,13 +614,6 @@
       "original_app_name": "iBleem V7PRO family"
     },
     {
-      "id": "todo-dl-x7pro",
-      "status": "todo",
-      "primary_names": [
-        "DL_X7Pro"
-      ]
-    },
-    {
       "id": "gt02-family",
       "status": "supported",
       "primary_names": [
@@ -878,14 +873,6 @@
         "PRINTER"
       ],
       "original_app_name": "iBleem V10 family"
-    },
-    {
-      "id": "todo-ibleem-v8s-p4",
-      "status": "todo",
-      "primary_names": [
-        "P4"
-      ],
-      "original_app_name": "iBleem V8S family"
     },
     {
       "id": "todo-ibleem-v8s-other",
