@@ -289,11 +289,12 @@ class BleakTransportSessionTests(unittest.TestCase):
             )
             await asyncio.sleep(0)
             session.handle_notification(V5X_NOTIFY_GET_SERIAL_ACK)
-            await asyncio.sleep(0)
-            self.assertTrue(wait_a7.done())
+            self.assertEqual(
+                await asyncio.wait_for(wait_a7, timeout=0.2),
+                V5X_NOTIFY_GET_SERIAL_ACK,
+            )
             self.assertFalse(wait_aa.done())
             session.handle_notification(V5X_NOTIFY_START_READY)
-            self.assertEqual(await wait_a7, V5X_NOTIFY_GET_SERIAL_ACK)
             self.assertEqual(await wait_aa, V5X_NOTIFY_START_READY)
 
         asyncio.run(run())
