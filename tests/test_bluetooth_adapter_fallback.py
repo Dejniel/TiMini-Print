@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import threading
 import unittest
+from unittest import mock
 
 from tests.helpers import build_capture_reporter
 from timiniprint.transport.bluetooth.adapters.adapter_fallback import _FallbackAdapter, _FallbackSocket
@@ -159,6 +161,31 @@ class BluetoothAdapterFallbackTests(unittest.TestCase):
         self.assertIsNotNone(caller_thread_id)
         self.assertIsNotNone(callback_thread_id)
         self.assertNotEqual(caller_thread_id, callback_thread_id)
+
+
+    def test_linux_att_connect_unpacks_address_channel_tuple(self) -> None:
+        # The shared adapter-fallback wrapper iterates over RFCOMM channels and
+        # passes the same (address, channel) tuple to every backend it owns,
+        # including the LE-only Linux direct-ATT socket. The L2CAP/ATT path
+        # has no use for the RFCOMM channel, but it must accept the tuple
+        # form rather than crashing on `tuple.replace`. Without this, the
+        # backend silently falls back to Bleak — which is the very path the
+        # Linux direct-ATT workaround was added to avoid (#23).
+        sock = _LinuxAttSocket()
+        captured: dict[str, object] = {}
+
+        def fake_open(address, address_type, *, timeout):
+            captured["address"] = address
+            raise OSError(errno.ENETUNREACH, "stop after capturing address")
+
+        with mock.patch(
+            "timiniprint.transport.bluetooth.adapters.linux_att._open_att_socket",
+            side_effect=fake_open,
+        ):
+            with self.assertRaises(RuntimeError):
+                sock.connect(("48:0F:57:C5:60:53", 1))
+
+        self.assertEqual(captured["address"], "48:0F:57:C5:60:53")
 
 
 if __name__ == "__main__":
