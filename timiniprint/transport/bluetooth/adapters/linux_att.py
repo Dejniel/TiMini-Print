@@ -25,6 +25,8 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import errno as errno_module
+import select
 import socket
 import struct
 import threading
@@ -349,7 +351,14 @@ class _LinuxAttClient:
         if self._sock is not None:
             self._sock.settimeout(timeout)
 
-    def connect(self, address: str) -> None:
+    def connect(self, address) -> None:
+        # The shared adapter-fallback wrapper passes the same address/channel
+        # tuple it iterates over to every backend, including this one.
+        # The RFCOMM channel is meaningless for an LE L2CAP/ATT socket — but
+        # we still have to accept the tuple form so we don't blow up before
+        # we get to the actual connect.
+        if isinstance(address, tuple):
+            address = address[0]
         self._reporter.debug(short="BLE", detail=f"Linux direct ATT connect: address={address}")
         last_error: Exception | None = None
         for address_type in (_BDADDR_LE_PUBLIC, _BDADDR_LE_RANDOM):
@@ -750,14 +759,21 @@ def _open_att_socket(address: str, address_type: int, *, timeout: float) -> sock
     if not hasattr(socket, "AF_BLUETOOTH"):
         raise RuntimeError("Python socket module lacks AF_BLUETOOTH support")
     sock = socket.socket(_AF_BLUETOOTH, socket.SOCK_SEQPACKET, _BTPROTO_L2CAP)
-    sock.settimeout(timeout)
     try:
         try:
             sock.setsockopt(_SOL_BLUETOOTH, _BT_SECURITY, struct.pack("I", _BT_SECURITY_LOW))
         except OSError:
             pass
         _bind_l2cap(sock, "00:00:00:00:00:00", _BDADDR_LE_PUBLIC)
-        _connect_l2cap(sock, address, address_type)
+        # The connect itself runs in blocking mode. Empirically, the
+        # AF_BLUETOOTH/L2CAP kernel path treats non-blocking connect
+        # (settimeout != None) differently and can hang indefinitely
+        # without marking the socket writable, even for peers that
+        # accept the connection cleanly in blocking mode. Apply the
+        # caller-requested timeout only after the connect has succeeded
+        # so it governs subsequent read/write operations.
+        _connect_l2cap(sock, address, address_type, timeout=timeout)
+        sock.settimeout(timeout)
         return sock
     except Exception:
         try:
@@ -779,13 +795,25 @@ def _bind_l2cap(sock: socket.socket, address: str, address_type: int) -> None:
             raise OSError(errno, "L2CAP bind failed")
 
 
-def _connect_l2cap(sock: socket.socket, address: str, address_type: int) -> None:
+def _connect_l2cap(sock: socket.socket, address: str, address_type: int, *, timeout: float | None = None) -> None:
     sockaddr = _make_sockaddr_l2(address, address_type)
     libc = ctypes.CDLL(None, use_errno=True)
     result = libc.connect(sock.fileno(), ctypes.byref(sockaddr), ctypes.sizeof(sockaddr))
-    if result != 0:
-        errno = ctypes.get_errno()
-        raise OSError(errno, "L2CAP ATT connect failed")
+    if result == 0:
+        return
+    err = ctypes.get_errno()
+    if err not in (errno_module.EINPROGRESS, errno_module.EALREADY, errno_module.EWOULDBLOCK):
+        raise OSError(err, "L2CAP ATT connect failed")
+    # When the caller put the socket in non-blocking mode (settimeout != None)
+    # the raw libc.connect() returns EINPROGRESS even though the kernel is
+    # still working on the L2CAP create-connection. Wait for the socket to
+    # become writable, then read SO_ERROR.
+    _, writable, _ = select.select([], [sock], [], timeout)
+    if not writable:
+        raise OSError(errno_module.ETIMEDOUT, "L2CAP ATT connect timed out")
+    so_error = sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
+    if so_error != 0:
+        raise OSError(so_error, "L2CAP ATT connect failed")
 
 
 def _make_sockaddr_l2(address: str, address_type: int) -> _SockaddrL2:
