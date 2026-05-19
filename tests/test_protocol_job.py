@@ -1270,9 +1270,17 @@ class ProtocolJobTests(unittest.TestCase):
             self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G),
             data,
         )
+        self.assertEqual(
+            data.count(self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G)),
+            2,
+        )
         self.assertIn(
             self.commands.make_packet(0xA2, bytes([0x55]), ProtocolFamily.V5G),
             data,
+        )
+        self.assertLess(
+            data.index(self.commands.make_packet(0xA2, bytes([0x55]), ProtocolFamily.V5G)),
+            data.rindex(self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G)),
         )
         self.assertGreaterEqual(
             data.count(self.commands.make_packet(0xA1, bytes([0x30, 0x00]), ProtocolFamily.V5G)),
@@ -1316,6 +1324,10 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(
             self.commands.make_packet(0xCF, bytes.fromhex("08000200AABB"), ProtocolFamily.V5G),
             data,
+        )
+        self.assertEqual(
+            data.count(self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G)),
+            1,
         )
         self.assertGreaterEqual(
             data.count(self.commands.make_packet(0xA1, bytes([0x30, 0x00]), ProtocolFamily.V5G)),

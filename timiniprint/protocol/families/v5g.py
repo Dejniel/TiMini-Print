@@ -113,6 +113,7 @@ def build_job(request: PrintJobRequest) -> bytes:
         job += _gray_frames(request)
     else:
         job += _dot_frames(request)
+        job += _feed_packet(request.speed, request.protocol_family)
 
     for _ in range(max(0, request.post_print_feed_count)):
         job += _paper_packet(request.dev_dpi, request.protocol_family)
