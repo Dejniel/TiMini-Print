@@ -12,6 +12,7 @@ from typing import Optional, Sequence
 from .. import reporting
 from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarget
 from ..printing.builder import PrintJobBuilder
+from ..printing.debug_dump import build_protocol_job_debug_dump
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
 from ..printing.send import send_prepared_job
@@ -45,6 +46,16 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         nargs=2,
         metavar=("KEY", "PATH"),
         help="Write a fresh device config JSON for a known printer profile key and exit",
+    )
+    parser.add_argument(
+        "--debug-profile",
+        metavar="KEY",
+        help="Use a known printer profile for offline debug actions; never connects to a printer",
+    )
+    parser.add_argument(
+        "--debug-dump-protocol-job",
+        metavar="PATH",
+        help="Write an offline protocol-job debug dump as JSON and exit; this is not a print/replay format",
     )
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-profiles", action="store_true", help="List known printer profiles and exit")
@@ -245,6 +256,27 @@ def _resolve_serial_device(
     )
 
 
+def _resolve_debug_dump_device(
+    args: argparse.Namespace,
+    catalog: PrinterCatalog,
+) -> PrinterDevice:
+    if args.debug_profile and args.device_config:
+        raise RuntimeError("Use either --debug-profile or --device-config for debug dumps, not both")
+    if args.debug_profile:
+        return catalog.device_from_profile(args.debug_profile)
+    if args.device_config:
+        return catalog.device_from_config(_load_device_config(args.device_config), transport_target=None)
+    if args.bluetooth:
+        device = catalog.detect_device(args.bluetooth)
+        if device is None:
+            raise RuntimeError(f"Could not detect printer model from name '{args.bluetooth}'")
+        return device
+    raise RuntimeError(
+        "--debug-dump-protocol-job requires --debug-profile KEY, --device-config PATH, "
+        "or --bluetooth NAME"
+    )
+
+
 def _field_value(value) -> object:
     return value.value if hasattr(value, "value") else value
 
@@ -321,6 +353,57 @@ def export_profile_config(
             f"path={out_path} "
             f"profile={device.profile_key} "
             f"family={device.protocol_family.value}"
+        ),
+    )
+    return 0
+
+
+def debug_dump_protocol_job(
+    args: argparse.Namespace,
+    reporter: reporting.Reporter,
+) -> int:
+    catalog = PrinterCatalog.load()
+    device = _resolve_debug_dump_device(args, catalog)
+    _debug_resolved_device(reporter, device, action="debug-dump")
+    job = build_print_job(
+        device,
+        args.path,
+        text_mode=_resolve_text_mode(args),
+        blackening=_resolve_blackening(args),
+        text_input=_resolve_text_input(args),
+        text_font=_resolve_text_font(args),
+        text_columns=_resolve_text_columns(args),
+        text_wrap=_resolve_text_wrap(args),
+        trim_side_margins=_resolve_trim_side_margins(args),
+        trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
+        pdf_pages=_resolve_pdf_pages(args),
+        pdf_page_gap_mm=_resolve_pdf_page_gap(args),
+        paper_mode=_resolve_paper_mode(args),
+    )
+    paper_mode = _resolve_paper_mode(args)
+    dump = build_protocol_job_debug_dump(
+        device,
+        job,
+        settings={
+            "text_mode": _resolve_text_mode(args),
+            "darkness": _resolve_blackening(args),
+            "paper_mode": None if paper_mode is None else paper_mode.value,
+            "text_input": args.text is not None,
+            "path": args.path,
+        },
+    )
+    Path(args.debug_dump_protocol_job).write_text(
+        json.dumps(dump, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    reporter.debug(
+        short="Debug",
+        detail=(
+            "Wrote protocol job debug dump: "
+            f"path={args.debug_dump_protocol_job} "
+            f"profile={device.profile_key} "
+            f"family={device.protocol_family.value} "
+            f"bytes={len(job.payload)}"
         ),
     )
     return 0
@@ -534,6 +617,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.serial
             or args.device_config
             or args.export_device_config
+            or args.debug_profile
+            or args.debug_dump_protocol_job
         ):
             reporter.error(
                 detail=(
@@ -548,7 +633,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             reporter.error(detail=str(exc), exc=exc)
             return 2
     if args.export_device_config:
-        if args.path or args.text is not None or args.feed or args.retract:
+        if (
+            args.path
+            or args.text is not None
+            or args.feed
+            or args.retract
+            or args.debug_profile
+            or args.debug_dump_protocol_job
+        ):
             reporter.error(
                 detail=(
                     "Provide either --export-device-config or a file path/--text/"
@@ -561,6 +653,34 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         except Exception as exc:
             reporter.error(detail=str(exc), exc=exc)
             return 2
+    if args.debug_dump_protocol_job:
+        if args.feed or args.retract or args.serial:
+            reporter.error(
+                detail=(
+                    "Provide --debug-dump-protocol-job with a printable file path or --text, "
+                    "not with --feed/--retract or --serial. Use --debug-profile, --device-config, "
+                    "or --bluetooth to select the offline device."
+                )
+            )
+            return 2
+        if args.path and args.text is not None:
+            reporter.error(detail="Provide either a file path or --text, not both. Use --help for usage.")
+            return 2
+        if not args.path and args.text is None:
+            reporter.error(
+                detail="Missing file path or --text for --debug-dump-protocol-job. Use --help for usage."
+            )
+            return 2
+        try:
+            return debug_dump_protocol_job(args, reporter)
+        except Exception as exc:
+            reporter.error(detail=str(exc), exc=exc)
+            return 2
+    if args.debug_profile:
+        reporter.error(
+            detail="--debug-profile is only valid with --debug-dump-protocol-job. Use --help for usage."
+        )
+        return 2
     action = _resolve_paper_motion_action(args)
     if action and (args.path or args.text is not None):
         reporter.error(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import tempfile
 import sys
 import types
@@ -14,6 +15,9 @@ install_crc8_stub()
 
 from timiniprint.app import cli
 from timiniprint.devices import BluetoothTarget, PrinterCatalog
+from timiniprint.protocol import ProtocolJob
+from timiniprint.protocol.family import ProtocolFamily
+from timiniprint.protocol.packet import make_packet
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 
 
@@ -32,6 +36,8 @@ class AppCliFlowsTests(unittest.TestCase):
             device_config=None,
             export_device_config=None,
             export_profile_config=None,
+            debug_profile=None,
+            debug_dump_protocol_job=None,
             force_text_mode=False,
             force_image_mode=False,
             darkness=None,
@@ -189,6 +195,44 @@ class AppCliFlowsTests(unittest.TestCase):
                 cli.main(["--export-profile-config", "luck_a2", "printer.json", "--bluetooth", "X6H"]),
                 2,
             )
+
+    def test_debug_dump_protocol_job_writes_offline_profile_dump(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            dump_path = f"{tmpdir}/job.json"
+            args = self._args(
+                debug_profile="gt01",
+                debug_dump_protocol_job=dump_path,
+                text="hello",
+                darkness=5,
+            )
+            packet = make_packet(0xA4, b"\x35", ProtocolFamily.LEGACY)
+
+            with patch(
+                "timiniprint.app.cli.build_print_job",
+                return_value=ProtocolJob(payload=packet),
+            ) as build_job:
+                code = cli.debug_dump_protocol_job(args, cli._build_cli_reporter(verbose=False))
+
+            self.assertEqual(code, 0)
+            build_job.assert_called_once()
+            with open(dump_path, encoding="utf-8") as handle:
+                payload = json.load(handle)
+            self.assertEqual(payload["schema"], "timiniprint/debug-protocol-job/v1")
+            self.assertTrue(payload["diagnostic_only"])
+            self.assertEqual(payload["device"]["profile_key"], "gt01")
+            self.assertEqual(payload["device"]["protocol_family"], "legacy")
+            self.assertEqual(payload["settings"]["darkness"], 5)
+            self.assertIn("connect_packets", payload["transport"])
+            self.assertEqual(payload["job"]["payload_bytes"], len(packet))
+            self.assertEqual(payload["packets"][0]["op"], "A4")
+            self.assertEqual(payload["payload_hex"], packet.hex())
+
+    def test_main_rejects_debug_profile_without_debug_dump(self) -> None:
+        args = self._args(debug_profile="gt01", text="hello")
+        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ):
+            self.assertEqual(cli.main(["--debug-profile", "gt01", "--text", "hello"]), 2)
 
     def test_device_config_with_bluetooth_uses_raw_target_resolution(self) -> None:
         catalog = PrinterCatalog.load()
