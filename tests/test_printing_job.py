@@ -138,13 +138,19 @@ class PrintingJobTests(unittest.TestCase):
     def test_v5g_runtime_controller_uses_donor_density_profile(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
-        builder = self.job_mod.PrintJobBuilder(resolved, page_loader=_FakeLoader([]))
+        builder = self.job_mod.PrintJobBuilder(
+            resolved,
+            page_loader=_FakeLoader([Page(Image.new("1", (8, 1), 1), dither=True, is_text=False)]),
+        )
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.txt"
             path.write_text("x", encoding="utf-8")
             with patch("timiniprint.printing.builder.image_to_raster_set", return_value=RasterSet(
                 rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 8, width=8, pixel_format=PixelFormat.BW1)}
-            )), patch("timiniprint.protocol.job._build_job_model_from_raster_set", return_value=(b"A", ())):
+            )), patch(
+                "timiniprint.protocol.job._build_job_model_from_raster_set",
+                return_value=(b"A", ()),
+            ) as build_model_mock:
                 job = builder.build_from_file(str(path))
 
         controller = job.runtime_controller
@@ -155,6 +161,7 @@ class PrintingJobTests(unittest.TestCase):
         self.assertEqual(snapshot["density_profile"]["profile_key"], "mx06")
         self.assertEqual(snapshot["density_levels"]["image"]["middle"], 180)
         self.assertEqual(snapshot["density_levels"]["text"]["middle"], 130)
+        self.assertEqual(build_model_mock.call_args.kwargs["density"], 180)
         self.assertIsNone(
             builder.device.profile.select_density(
                 is_text=False,
