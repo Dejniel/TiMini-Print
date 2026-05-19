@@ -8,6 +8,27 @@ from ..protocol.families import get_protocol_behavior
 from ..protocol.packet import prefixed_packet_length
 
 
+def build_protocol_packet_summary(device: PrinterDevice, payload: bytes) -> dict[str, object]:
+    """Return a compact packet overview for verbose diagnostics."""
+    packets = _packet_debug_entries(device, payload)
+    op_counts: dict[str, int] = {}
+    for packet in packets:
+        op = packet["op"]
+        key = str(op) if op is not None else "raw"
+        op_counts[key] = op_counts.get(key, 0) + 1
+    return {
+        "packet_count": len(packets),
+        "op_counts": op_counts,
+        "head_ops": [packet["op"] for packet in packets[:8]],
+        "tail_ops": [packet["op"] for packet in packets[-8:]],
+        "parse_errors": [
+            packet["parse_error"]
+            for packet in packets
+            if "parse_error" in packet
+        ],
+    }
+
+
 def build_protocol_job_debug_dump(
     device: PrinterDevice,
     job: ProtocolJob,

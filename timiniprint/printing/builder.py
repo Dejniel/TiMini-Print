@@ -3,12 +3,14 @@ from __future__ import annotations
 import os
 from typing import Optional, TYPE_CHECKING
 
+from .. import reporting
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
 from ..rendering.converters import Page, PageLoader
 from ..rendering.renderer import apply_page_transforms, image_to_raster_set
+from .diagnostics import report_protocol_job_build, report_raster_build
 from .settings import PrintSettings
 
 if TYPE_CHECKING:
@@ -24,10 +26,12 @@ class PrintJobBuilder:
         settings: Optional[PrintSettings] = None,
         page_loader: Optional[PageLoader] = None,
         runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
+        reporter: reporting.Reporter | None = None,
     ) -> None:
         self.device = device
         self.settings = settings or PrintSettings()
         self.runtime_context = runtime_context
+        self._reporter = reporter
         pdf_page_gap_px = self._mm_to_px(self.settings.pdf_page_gap_mm, self.device.profile.dev_dpi)
         self.page_loader = page_loader or PageLoader(
             text_font=self.settings.text_font,
@@ -46,11 +50,12 @@ class PrintJobBuilder:
         width = self._normalized_width(self.device.profile.width)
         pages = self.page_loader.load(path, width)
         pages = apply_page_transforms(pages, rotate_90_clockwise=self.settings.rotate_90_clockwise)
-        required_formats = self.protocol.resolve_image_pipeline(
+        pipeline = self.protocol.resolve_image_pipeline(
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
             runtime_capabilities=self.runtime_context.capabilities,
-        ).formats[:1]
+        )
+        required_formats = pipeline.formats[:1]
         gamma_handle, gamma_value = self._resolve_gray_preprocessing()
         payload_parts: list[bytes] = []
         steps = []
@@ -60,6 +65,19 @@ class PrintJobBuilder:
             raster_set = image_to_raster_set(
                 page.image,
                 required_formats,
+                dither=self._use_dither(page),
+                gamma_handle=gamma_handle,
+                gamma_value=gamma_value,
+            )
+            report_raster_build(
+                self._reporter,
+                device=self.device,
+                settings=self.settings,
+                page_index=page_index,
+                page_count=page_count,
+                page=page,
+                raster_set=raster_set,
+                is_text=is_text,
                 dither=self._use_dither(page),
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
@@ -80,7 +98,7 @@ class PrintJobBuilder:
             )
             payload_parts.append(page_job.payload)
             steps.extend(page_job.steps)
-        return ProtocolJob(
+        job = ProtocolJob(
             runtime_controller=(
                 self.runtime_context.runtime_controller
                 or self.protocol.create_runtime_controller()
@@ -88,6 +106,15 @@ class PrintJobBuilder:
             payload_segments=tuple(payload_parts),
             steps=tuple(steps),
         )
+        report_protocol_job_build(
+            self._reporter,
+            device=self.device,
+            settings=self.settings,
+            job=job,
+            pipeline=pipeline,
+            page_count=page_count,
+        )
+        return job
 
     def _resolve_gray_preprocessing(self) -> tuple[bool, Optional[float]]:
         pipeline = self.protocol.resolve_image_pipeline(

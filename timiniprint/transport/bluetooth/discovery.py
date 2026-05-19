@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Tuple
 
+from ... import reporting
 from ...devices import BluetoothTarget, PrinterCatalog, PrinterDevice
 from ...devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from ...devices.profiles import DetectionNormalizer
@@ -40,8 +41,13 @@ class _ResolvedBluetoothTarget:
 class BluetoothDiscovery:
     """Discover reachable Bluetooth printers and resolve them into devices."""
 
-    def __init__(self, catalog: PrinterCatalog) -> None:
+    def __init__(
+        self,
+        catalog: PrinterCatalog,
+        reporter: reporting.Reporter | None = None,
+    ) -> None:
         self._catalog = catalog
+        self._reporter = reporter
 
     async def _scan_endpoints(
         self,
@@ -91,10 +97,9 @@ class BluetoothDiscovery:
             include_classic=include_classic,
             include_ble=include_ble,
         )
-        return BluetoothScanResult(
-            devices=self.devices_from_scan(devices),
-            failures=failures,
-        )
+        resolved = self.devices_from_scan(devices)
+        self._report_scan_debug(devices, resolved, failures)
+        return BluetoothScanResult(devices=resolved, failures=failures)
 
     async def scan_devices(
         self,
@@ -241,6 +246,58 @@ class BluetoothDiscovery:
                 )
             )
         return candidates
+
+    def _report_scan_debug(
+        self,
+        endpoints: Iterable[DeviceInfo],
+        resolved: Iterable[PrinterDevice],
+        failures: Iterable[ScanFailure],
+    ) -> None:
+        if self._reporter is None:
+            return
+        endpoint_list = list(endpoints)
+        resolved_list = list(resolved)
+        failure_list = list(failures)
+        classic_seen = sum(1 for item in endpoint_list if item.transport == DeviceTransport.CLASSIC)
+        ble_seen = sum(1 for item in endpoint_list if item.transport == DeviceTransport.BLE)
+        merged = sum(1 for item in resolved_list if item.transport_badge == "[classic+ble]")
+        self._reporter.debug(
+            short="Discovery",
+            detail=reporting.format_kv(
+                "Discovery summary",
+                classic_seen=classic_seen,
+                ble_seen=ble_seen,
+                merged=merged,
+                supported=len(resolved_list),
+                failures=len(failure_list),
+            ),
+        )
+        for endpoint in endpoint_list:
+            detected = self._catalog.detect_device(endpoint.name or "", endpoint.address)
+            if detected is None:
+                self._reporter.debug(
+                    short="Discovery",
+                    detail=reporting.format_kv(
+                        "Discovery ignored",
+                        name=endpoint.name or "<unknown>",
+                        address=endpoint.address or "<unknown>",
+                        transport=endpoint.transport.value,
+                        reason="no_supported_rule",
+                    ),
+                )
+                continue
+            self._reporter.debug(
+                short="Discovery",
+                detail=reporting.format_kv(
+                    "Discovery matched",
+                    name=endpoint.name or "<unknown>",
+                    address=endpoint.address or "<unknown>",
+                    transport=endpoint.transport.value,
+                    profile=detected.profile_key,
+                    family=detected.protocol_family.value,
+                    rule=detected.detection_rule_key,
+                ),
+            )
 
     @staticmethod
     def _group_candidates(

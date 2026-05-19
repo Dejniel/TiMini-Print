@@ -98,6 +98,23 @@ def summarize_detail(detail: str) -> str:
     return text
 
 
+def format_kv(label: str, **fields: Any) -> str:
+    parts = [f"{key}={_format_field_value(value)}" for key, value in fields.items()]
+    return f"{label}: " + " ".join(parts)
+
+
+def _format_field_value(value: Any) -> str:
+    if value is None:
+        return "<none>"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float):
+        return f"{value:.2f}"
+    if isinstance(value, (list, tuple, set)):
+        return ",".join(_format_field_value(item) for item in value) or "<none>"
+    return str(value)
+
+
 @dataclass(frozen=True)
 class ReportMessage:
     level: str

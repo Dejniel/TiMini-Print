@@ -115,7 +115,7 @@ def _write_device_config(path: str, config: Mapping[str, object]) -> None:
 def scan_devices(reporter: reporting.Reporter) -> int:
     async def run() -> None:
         catalog = PrinterCatalog.load()
-        discovery = BluetoothDiscovery(catalog)
+        discovery = BluetoothDiscovery(catalog, reporter=reporter)
         result = await discovery.scan_report(
             include_classic=True,
             include_ble=True,
@@ -157,6 +157,7 @@ def create_print_job_builder(
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
+    reporter: reporting.Reporter | None = None,
 ) -> PrintJobBuilder:
     settings = PrintSettings(
         text_mode=text_mode,
@@ -172,7 +173,12 @@ def create_print_job_builder(
     )
     if blackening is not None:
         settings.blackening = blackening
-    return PrintJobBuilder(device, settings=settings, runtime_context=runtime_context)
+    return PrintJobBuilder(
+        device,
+        settings=settings,
+        runtime_context=runtime_context,
+        reporter=reporter,
+    )
 
 
 def build_print_job(
@@ -191,6 +197,7 @@ def build_print_job(
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
+    reporter: reporting.Reporter | None = None,
 ) -> ProtocolJob:
     builder = create_print_job_builder(
         device=device,
@@ -206,6 +213,7 @@ def build_print_job(
         paper_mode=paper_mode,
         runtime_context=runtime_context,
         image_encoding_override=image_encoding_override,
+        reporter=reporter,
     )
     if text_input is None:
         if not path:
@@ -229,8 +237,9 @@ def build_paper_motion_job(device: PrinterDevice, action: str) -> ProtocolJob:
 async def _resolve_bluetooth_device(
     args: argparse.Namespace,
     catalog: PrinterCatalog,
+    reporter: reporting.Reporter | None = None,
 ) -> PrinterDevice:
-    discovery = BluetoothDiscovery(catalog)
+    discovery = BluetoothDiscovery(catalog, reporter=reporter)
     config = _load_device_config(args.device_config) if args.device_config else None
     if config is None:
         return await discovery.resolve_device(args.bluetooth)
@@ -325,7 +334,11 @@ def export_device_config(
         if args.serial:
             device = _resolve_serial_device(args, catalog)
         else:
-            device = await _resolve_bluetooth_device(args, catalog)
+            device = await _resolve_bluetooth_device(
+                args,
+                catalog,
+                reporter=reporter if args.verbose else None,
+            )
         _write_device_config(
             args.export_device_config,
             catalog.serialize_device_config(device),
@@ -393,6 +406,7 @@ def debug_dump_protocol_job(
         pdf_page_gap_mm=_resolve_pdf_page_gap(args),
         paper_mode=_resolve_paper_mode(args),
         image_encoding_override=image_encoding_override,
+        reporter=reporter if args.verbose else None,
     )
     paper_mode = _resolve_paper_mode(args)
     dump = build_protocol_job_debug_dump(
@@ -510,7 +524,11 @@ def print_bluetooth(
     catalog = PrinterCatalog.load()
 
     async def run() -> None:
-        device = await _resolve_bluetooth_device(args, catalog)
+        device = await _resolve_bluetooth_device(
+            args,
+            catalog,
+            reporter=reporter if args.verbose else None,
+        )
         _debug_resolved_device(reporter, device, action="print")
         connection = await BleakBluetoothConnector(reporter=reporter).connect(device)
         try:
@@ -531,6 +549,7 @@ def print_bluetooth(
                 paper_mode=_resolve_paper_mode(args),
                 image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
+                reporter=reporter if args.verbose else None,
             )
             await send_prepared_job(device, connection, job, reporter=reporter)
         finally:
@@ -567,6 +586,7 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
                 paper_mode=_resolve_paper_mode(args),
                 image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
+                reporter=reporter if args.verbose else None,
             )
             await send_prepared_job(device, connection, job, reporter=reporter)
         finally:
@@ -584,7 +604,11 @@ def paper_motion_bluetooth(
     catalog = PrinterCatalog.load()
 
     async def run() -> None:
-        device = await _resolve_bluetooth_device(args, catalog)
+        device = await _resolve_bluetooth_device(
+            args,
+            catalog,
+            reporter=reporter if args.verbose else None,
+        )
         _debug_resolved_device(reporter, device, action=action)
         job = build_paper_motion_job(device, action)
         connection = await BleakBluetoothConnector(reporter=reporter).connect(device)

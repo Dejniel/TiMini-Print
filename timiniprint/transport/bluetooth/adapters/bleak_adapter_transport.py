@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
@@ -12,6 +13,13 @@ from ....printing.runtime.factory import _runtime_controller_for_family
 from ....protocol.families import BleBulkWriteProfile, BleTransportProfile, split_prefixed_bulk_stream
 from ....protocol.family import ProtocolFamily
 from ....protocol.packet import make_packet, prefixed_packet_length
+from .bleak_adapter_diagnostics import (
+    BleWriteCounters,
+    BleWriteProgress,
+    report_ble_split_bulk_plan,
+    report_ble_write_plan,
+    report_ble_write_summary,
+)
 from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSelection
 
 
@@ -57,6 +65,9 @@ class _BleakTransportSession:
         self._client: Any = None
         self._runtime_controller = _runtime_controller_for_family(protocol_family)
         self._notification_waiters: list[_NotificationWaiter] = []
+        self._notification_count = 0
+        self._flow_pause_count = 0
+        self._flow_resume_count = 0
 
     @property
     def flow_can_write(self) -> bool:
@@ -281,15 +292,23 @@ class _BleakTransportSession:
             chunk_size = min(mtu_payload, self._transport_profile.standard_chunk_cap)
             delay_seconds = self._transport_profile.standard_write_delay_ms / 1000.0
             chunk_count = (len(data) + chunk_size - 1) // chunk_size if chunk_size else 0
-            self.report_debug(
-                f"write mode response={response} strategy={self.bindings.write_selection_strategy} "
-                f"char={self.bindings.write_char_uuid} payload={len(data)} "
-                f"mtu_payload={mtu_payload} chunk={chunk_size} chunks={chunk_count} "
-                f"reserve={self._transport_profile.write_without_response_payload_reserve} "
-                f"delay_ms={self._transport_profile.standard_write_delay_ms} "
-                f"head={data[:16].hex()} tail={data[-16:].hex()}"
+            report_ble_write_plan(
+                self._reporter,
+                response=response,
+                strategy=self.bindings.write_selection_strategy,
+                char_uuid=self.bindings.write_char_uuid,
+                payload_bytes=len(data),
+                mtu_payload=mtu_payload,
+                chunk_size=chunk_size,
+                chunk_count=chunk_count,
+                reserve=self._transport_profile.write_without_response_payload_reserve,
+                delay_ms=self._transport_profile.standard_write_delay_ms,
+                payload_head=data[:16],
+                payload_tail=data[-16:],
             )
-            await self._write_chunks(
+            counters_before = self._write_counters()
+            started = time.monotonic()
+            chunks_written = await self._write_chunks(
                 client,
                 self.bindings.write_char,
                 data,
@@ -298,6 +317,17 @@ class _BleakTransportSession:
                 delay_seconds=delay_seconds,
                 timeout=timeout,
                 wait_for_flow=self._transport_profile.wait_for_flow_on_standard_write,
+                progress_label="standard",
+                total_chunks=chunk_count,
+            )
+            report_ble_write_summary(
+                self._reporter,
+                "standard write done",
+                byte_count=len(data),
+                chunks_written=chunks_written,
+                elapsed_seconds=time.monotonic() - started,
+                before=counters_before,
+                after=self._write_counters(),
             )
         finally:
             if self._runtime_controller is not None:
@@ -397,14 +427,20 @@ class _BleakTransportSession:
                 if bulk_chunk_size
                 else 0
             )
-            self.report_debug(
-                f"split bulk response={bulk_response} payload={len(split.bulk_payload)} "
-                f"mtu_payload={bulk_mtu_payload} chunk={bulk_chunk_size} chunks={bulk_chunk_count} "
-                f"reserve={self._transport_profile.write_without_response_payload_reserve} "
-                f"delay_ms={bulk_write.write_delay_ms} "
-                f"flow_control={self._transport_profile.flow_control is not None}"
+            report_ble_split_bulk_plan(
+                self._reporter,
+                response=bulk_response,
+                payload_bytes=len(split.bulk_payload),
+                mtu_payload=bulk_mtu_payload,
+                chunk_size=bulk_chunk_size,
+                chunk_count=bulk_chunk_count,
+                reserve=self._transport_profile.write_without_response_payload_reserve,
+                delay_ms=bulk_write.write_delay_ms,
+                flow_control=self._transport_profile.flow_control is not None,
             )
-            await self._write_chunks(
+            counters_before = self._write_counters()
+            started = time.monotonic()
+            chunks_written = await self._write_chunks(
                 client,
                 self.bindings.bulk_write_char,
                 split.bulk_payload,
@@ -413,6 +449,17 @@ class _BleakTransportSession:
                 delay_seconds=bulk_write.write_delay_ms / 1000.0,
                 timeout=timeout,
                 wait_for_flow=self._transport_profile.flow_control is not None,
+                progress_label="split bulk",
+                total_chunks=bulk_chunk_count,
+            )
+            report_ble_write_summary(
+                self._reporter,
+                "split bulk done",
+                byte_count=len(split.bulk_payload),
+                chunks_written=chunks_written,
+                elapsed_seconds=time.monotonic() - started,
+                before=counters_before,
+                after=self._write_counters(),
             )
 
         for packet in split.trailing_commands:
@@ -437,14 +484,30 @@ class _BleakTransportSession:
         delay_seconds: float,
         timeout: float,
         wait_for_flow: bool = False,
-    ) -> None:
-        for offset in range(0, len(data), chunk_size):
+        progress_label: str | None = None,
+        total_chunks: int | None = None,
+    ) -> int:
+        if chunk_size <= 0:
+            raise ValueError("BLE chunk size must be positive")
+        progress = BleWriteProgress(progress_label, total_chunks) if progress_label else None
+        chunks_written = 0
+        for chunk_index, offset in enumerate(range(0, len(data), chunk_size), start=1):
             if wait_for_flow:
                 await self._wait_for_flow(timeout)
             chunk = data[offset : offset + chunk_size]
             await client.write_gatt_char(char, chunk, response=response)
+            chunks_written = chunk_index
+            byte_count = min(offset + chunk_size, len(data))
+            progress_message = None if progress is None else progress.message_for(
+                chunk_index,
+                byte_count,
+                len(data),
+            )
+            if progress_message:
+                self.report_debug(progress_message)
             if delay_seconds:
                 await asyncio.sleep(delay_seconds)
+        return chunks_written
 
     async def _wait_for_flow(self, timeout: float) -> None:
         if self.flow_can_write:
@@ -458,15 +521,18 @@ class _BleakTransportSession:
             raise TimeoutError("Timed out waiting for BLE flow-control resume") from None
 
     def handle_notification(self, payload: bytes) -> None:
+        self._notification_count += 1
         self._match_notification_waiters(payload)
         flow_control = self._transport_profile.flow_control
         if flow_control is not None:
             if payload in flow_control.pause_packets:
                 self.flow_can_write = False
+                self._flow_pause_count += 1
                 self.report_debug(f"flow pause: {payload.hex()}")
                 return
             if payload in flow_control.resume_packets:
                 self.flow_can_write = True
+                self._flow_resume_count += 1
                 self.report_debug(f"flow resume: {payload.hex()}")
                 return
         if self._runtime_controller is not None:
@@ -606,6 +672,13 @@ class _BleakTransportSession:
 
     def report_warning(self, *, short: str, detail: str) -> None:
         self._reporter.warning(short=short, detail=detail)
+
+    def _write_counters(self) -> BleWriteCounters:
+        return BleWriteCounters(
+            notifications=self._notification_count,
+            flow_pauses=self._flow_pause_count,
+            flow_resumes=self._flow_resume_count,
+        )
 
     def can_send_control_packet(self) -> bool:
         return bool(self._client and self.bindings.write_char)
