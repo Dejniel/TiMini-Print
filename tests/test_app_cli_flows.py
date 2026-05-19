@@ -208,13 +208,13 @@ class AppCliFlowsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             dump_path = f"{tmpdir}/job.json"
             args = self._args(
-                debug_profile="gt01",
+                debug_profile="mx06",
                 debug_dump_protocol_job=dump_path,
                 debug_image_encoding="v5g_gray",
                 text="hello",
                 darkness=5,
             )
-            packet = make_packet(0xA4, b"\x35", ProtocolFamily.LEGACY)
+            packet = make_packet(0xA4, b"\x35", ProtocolFamily.V5G)
 
             with patch(
                 "timiniprint.app.cli.build_print_job",
@@ -229,10 +229,13 @@ class AppCliFlowsTests(unittest.TestCase):
                 payload = json.load(handle)
             self.assertEqual(payload["schema"], "timiniprint/debug-protocol-job/v1")
             self.assertTrue(payload["diagnostic_only"])
-            self.assertEqual(payload["device"]["profile_key"], "gt01")
-            self.assertEqual(payload["device"]["protocol_family"], "legacy")
+            self.assertEqual(payload["device"]["profile_key"], "mx06")
+            self.assertEqual(payload["device"]["protocol_family"], "v5g")
+            self.assertEqual(payload["device"]["image_pipeline"]["encoding"], "v5g_dot")
             self.assertEqual(payload["settings"]["darkness"], 5)
             self.assertEqual(payload["settings"]["image_encoding_override"], "v5g_gray")
+            self.assertEqual(payload["job"]["effective_image_pipeline"]["encoding"], "v5g_gray")
+            self.assertEqual(payload["job"]["effective_image_pipeline"]["formats"][0], "gray4")
             self.assertIn("connect_packets", payload["transport"])
             self.assertEqual(payload["job"]["payload_bytes"], len(packet))
             self.assertEqual(payload["packets"][0]["op"], "A4")

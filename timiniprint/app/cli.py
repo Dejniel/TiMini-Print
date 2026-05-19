@@ -374,6 +374,10 @@ def debug_dump_protocol_job(
     catalog = PrinterCatalog.load()
     device = _resolve_debug_dump_device(args, catalog)
     _debug_resolved_device(reporter, device, action="debug-dump")
+    image_encoding_override = _resolve_image_encoding_override(args)
+    effective_image_pipeline = PrinterProtocol(device).resolve_image_pipeline(
+        image_encoding_override=image_encoding_override,
+    )
     job = build_print_job(
         device,
         args.path,
@@ -388,7 +392,7 @@ def debug_dump_protocol_job(
         pdf_pages=_resolve_pdf_pages(args),
         pdf_page_gap_mm=_resolve_pdf_page_gap(args),
         paper_mode=_resolve_paper_mode(args),
-        image_encoding_override=_resolve_image_encoding_override(args),
+        image_encoding_override=image_encoding_override,
     )
     paper_mode = _resolve_paper_mode(args)
     dump = build_protocol_job_debug_dump(
@@ -402,6 +406,7 @@ def debug_dump_protocol_job(
             "text_input": args.text is not None,
             "path": args.path,
         },
+        effective_image_pipeline=effective_image_pipeline,
     )
     Path(args.debug_dump_protocol_job).write_text(
         json.dumps(dump, indent=2, sort_keys=True) + "\n",

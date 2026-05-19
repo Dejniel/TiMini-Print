@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Mapping
 
 from ..devices import PrinterDevice
-from ..protocol import ProtocolJob
+from ..protocol import ImagePipelineConfig, ProtocolJob
 from ..protocol.families import get_protocol_behavior
 from ..protocol.packet import prefixed_packet_length
 
@@ -13,6 +13,7 @@ def build_protocol_job_debug_dump(
     job: ProtocolJob,
     *,
     settings: Mapping[str, object],
+    effective_image_pipeline: ImagePipelineConfig | None = None,
 ) -> dict[str, object]:
     runtime_density_profile = device.runtime_density_profile
     transport = get_protocol_behavior(device.protocol_family).transport
@@ -49,6 +50,11 @@ def build_protocol_job_debug_dump(
         "job": {
             "payload_bytes": len(job.payload),
             "payload_segments": len(job.payload_segments),
+            "effective_image_pipeline": (
+                None
+                if effective_image_pipeline is None
+                else _image_pipeline_debug_entry(effective_image_pipeline)
+            ),
             "steps": [
                 {
                     "label": step.label,
@@ -66,6 +72,13 @@ def build_protocol_job_debug_dump(
         },
         "packets": _packet_debug_entries(device, job.payload),
         "payload_hex": job.payload.hex(),
+    }
+
+
+def _image_pipeline_debug_entry(pipeline: ImagePipelineConfig) -> dict[str, object]:
+    return {
+        "encoding": pipeline.encoding.value,
+        "formats": [pixel_format.value for pixel_format in pipeline.formats],
     }
 
 
