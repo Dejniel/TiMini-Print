@@ -17,7 +17,7 @@ from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
 from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
-from ..protocol import PaperMode, PrinterProtocol, ProtocolJob
+from ..protocol import ImageEncoding, PaperMode, PrinterProtocol, ProtocolJob
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 from ..transport.bluetooth.types import DeviceTransport
 from ..transport.serial import SerialConnector
@@ -56,6 +56,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         "--debug-dump-protocol-job",
         metavar="PATH",
         help="Write an offline protocol-job debug dump as JSON and exit; this is not a print/replay format",
+    )
+    parser.add_argument(
+        "--debug-image-encoding",
+        choices=[encoding.value for encoding in ImageEncoding],
+        help="Debug only: override the protocol image encoding when building a print job",
     )
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-profiles", action="store_true", help="List known printer profiles and exit")
@@ -151,6 +156,7 @@ def create_print_job_builder(
     pdf_page_gap_mm: int = 5,
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
+    image_encoding_override: Optional[ImageEncoding] = None,
 ) -> PrintJobBuilder:
     settings = PrintSettings(
         text_mode=text_mode,
@@ -162,6 +168,7 @@ def create_print_job_builder(
         pdf_pages=pdf_pages,
         pdf_page_gap_mm=pdf_page_gap_mm,
         paper_mode=paper_mode,
+        image_encoding_override=image_encoding_override,
     )
     if blackening is not None:
         settings.blackening = blackening
@@ -183,20 +190,22 @@ def build_print_job(
     pdf_page_gap_mm: int = 5,
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
+    image_encoding_override: Optional[ImageEncoding] = None,
 ) -> ProtocolJob:
     builder = create_print_job_builder(
-        device,
-        text_mode,
-        blackening,
-        text_font,
-        text_columns,
-        text_wrap,
-        trim_side_margins,
-        trim_top_bottom_margins,
-        pdf_pages,
-        pdf_page_gap_mm,
-        paper_mode,
-        runtime_context,
+        device=device,
+        text_mode=text_mode,
+        blackening=blackening,
+        text_font=text_font,
+        text_columns=text_columns,
+        text_wrap=text_wrap,
+        trim_side_margins=trim_side_margins,
+        trim_top_bottom_margins=trim_top_bottom_margins,
+        pdf_pages=pdf_pages,
+        pdf_page_gap_mm=pdf_page_gap_mm,
+        paper_mode=paper_mode,
+        runtime_context=runtime_context,
+        image_encoding_override=image_encoding_override,
     )
     if text_input is None:
         if not path:
@@ -379,6 +388,7 @@ def debug_dump_protocol_job(
         pdf_pages=_resolve_pdf_pages(args),
         pdf_page_gap_mm=_resolve_pdf_page_gap(args),
         paper_mode=_resolve_paper_mode(args),
+        image_encoding_override=_resolve_image_encoding_override(args),
     )
     paper_mode = _resolve_paper_mode(args)
     dump = build_protocol_job_debug_dump(
@@ -388,6 +398,7 @@ def debug_dump_protocol_job(
             "text_mode": _resolve_text_mode(args),
             "darkness": _resolve_blackening(args),
             "paper_mode": None if paper_mode is None else paper_mode.value,
+            "image_encoding_override": args.debug_image_encoding,
             "text_input": args.text is not None,
             "path": args.path,
         },
@@ -465,6 +476,12 @@ def _resolve_paper_mode(args: argparse.Namespace) -> PaperMode | None:
     return PaperMode(args.paper_mode)
 
 
+def _resolve_image_encoding_override(args: argparse.Namespace) -> ImageEncoding | None:
+    if not args.debug_image_encoding:
+        return None
+    return ImageEncoding(args.debug_image_encoding)
+
+
 def _resolve_trim_side_margins(args: argparse.Namespace) -> bool:
     return bool(args.trim_side_margins)
 
@@ -507,6 +524,7 @@ def print_bluetooth(
                 pdf_pages=_resolve_pdf_pages(args),
                 pdf_page_gap_mm=_resolve_pdf_page_gap(args),
                 paper_mode=_resolve_paper_mode(args),
+                image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
             )
             await send_prepared_job(device, connection, job, reporter=reporter)
@@ -542,6 +560,7 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
                 pdf_pages=_resolve_pdf_pages(args),
                 pdf_page_gap_mm=_resolve_pdf_page_gap(args),
                 paper_mode=_resolve_paper_mode(args),
+                image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
             )
             await send_prepared_job(device, connection, job, reporter=reporter)
@@ -619,6 +638,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.export_device_config
             or args.debug_profile
             or args.debug_dump_protocol_job
+            or args.debug_image_encoding
         ):
             reporter.error(
                 detail=(
@@ -640,6 +660,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.retract
             or args.debug_profile
             or args.debug_dump_protocol_job
+            or args.debug_image_encoding
         ):
             reporter.error(
                 detail=(
@@ -685,6 +706,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if action and (args.path or args.text is not None):
         reporter.error(
             detail="Provide either --feed/--retract or a file path/--text, not both. Use --help for usage."
+        )
+        return 2
+    if action and args.debug_image_encoding:
+        reporter.error(
+            detail="--debug-image-encoding is only valid for print jobs, not --feed/--retract."
         )
         return 2
     if args.path and args.text is not None:

@@ -15,7 +15,7 @@ install_crc8_stub()
 
 from timiniprint.app import cli
 from timiniprint.devices import BluetoothTarget, PrinterCatalog
-from timiniprint.protocol import ProtocolJob
+from timiniprint.protocol import ImageEncoding, ProtocolJob
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.packet import make_packet
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
@@ -38,6 +38,7 @@ class AppCliFlowsTests(unittest.TestCase):
             export_profile_config=None,
             debug_profile=None,
             debug_dump_protocol_job=None,
+            debug_image_encoding=None,
             force_text_mode=False,
             force_image_mode=False,
             darkness=None,
@@ -103,6 +104,13 @@ class AppCliFlowsTests(unittest.TestCase):
     def test_resolve_paper_mode_returns_enum(self) -> None:
         self.assertIsNone(cli._resolve_paper_mode(self._args()))
         self.assertEqual(cli._resolve_paper_mode(self._args(paper_mode="tag")).value, "tag")
+
+    def test_resolve_image_encoding_override_returns_enum(self) -> None:
+        self.assertIsNone(cli._resolve_image_encoding_override(self._args()))
+        self.assertEqual(
+            cli._resolve_image_encoding_override(self._args(debug_image_encoding="v5g_gray")),
+            ImageEncoding.V5G_GRAY,
+        )
 
     def test_print_and_motion_flows_use_connectors(self) -> None:
         args = self._args(path="x.txt", bluetooth="X6H")
@@ -202,6 +210,7 @@ class AppCliFlowsTests(unittest.TestCase):
             args = self._args(
                 debug_profile="gt01",
                 debug_dump_protocol_job=dump_path,
+                debug_image_encoding="v5g_gray",
                 text="hello",
                 darkness=5,
             )
@@ -215,6 +224,7 @@ class AppCliFlowsTests(unittest.TestCase):
 
             self.assertEqual(code, 0)
             build_job.assert_called_once()
+            self.assertEqual(build_job.call_args.kwargs["image_encoding_override"], ImageEncoding.V5G_GRAY)
             with open(dump_path, encoding="utf-8") as handle:
                 payload = json.load(handle)
             self.assertEqual(payload["schema"], "timiniprint/debug-protocol-job/v1")
@@ -222,6 +232,7 @@ class AppCliFlowsTests(unittest.TestCase):
             self.assertEqual(payload["device"]["profile_key"], "gt01")
             self.assertEqual(payload["device"]["protocol_family"], "legacy")
             self.assertEqual(payload["settings"]["darkness"], 5)
+            self.assertEqual(payload["settings"]["image_encoding_override"], "v5g_gray")
             self.assertIn("connect_packets", payload["transport"])
             self.assertEqual(payload["job"]["payload_bytes"], len(packet))
             self.assertEqual(payload["packets"][0]["op"], "A4")
@@ -233,6 +244,13 @@ class AppCliFlowsTests(unittest.TestCase):
             "timiniprint.app.cli.emit_startup_warnings"
         ):
             self.assertEqual(cli.main(["--debug-profile", "gt01", "--text", "hello"]), 2)
+
+    def test_main_rejects_debug_image_encoding_with_motion(self) -> None:
+        args = self._args(feed=True, debug_image_encoding="v5g_gray")
+        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ):
+            self.assertEqual(cli.main(["--feed", "--debug-image-encoding", "v5g_gray"]), 2)
 
     def test_device_config_with_bluetooth_uses_raw_target_resolution(self) -> None:
         catalog = PrinterCatalog.load()
