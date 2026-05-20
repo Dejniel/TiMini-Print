@@ -16,6 +16,7 @@ from ....protocol.packet import make_packet, prefixed_packet_length
 from .bleak_adapter_diagnostics import (
     BleWriteCounters,
     BleWriteProgress,
+    report_ble_disconnect_state,
     report_ble_split_bulk_plan,
     report_ble_write_plan,
     report_ble_write_summary,
@@ -68,6 +69,13 @@ class _BleakTransportSession:
         self._notification_count = 0
         self._flow_pause_count = 0
         self._flow_resume_count = 0
+        self._session_started_monotonic: float | None = None
+        self._last_write_monotonic: float | None = None
+        self._last_write_label: str | None = None
+        self._last_bulk_write_monotonic: float | None = None
+        self._last_notification_monotonic: float | None = None
+        self._write_chunk_count = 0
+        self._write_byte_count = 0
 
     @property
     def flow_can_write(self) -> bool:
@@ -208,6 +216,7 @@ class _BleakTransportSession:
         timeout: float,
     ) -> None:
         self._client = client
+        self._session_started_monotonic = time.monotonic()
         if self._runtime_controller is not None:
             await self._runtime_controller.initialize_connection(self, mtu_size=mtu_size, timeout=timeout)
         if not self._transport_profile.connect_packets:
@@ -496,6 +505,7 @@ class _BleakTransportSession:
                 await self._wait_for_flow(timeout)
             chunk = data[offset : offset + chunk_size]
             await client.write_gatt_char(char, chunk, response=response)
+            self._record_write_activity(progress_label, len(chunk))
             chunks_written = chunk_index
             byte_count = min(offset + chunk_size, len(data))
             progress_message = None if progress is None else progress.message_for(
@@ -522,6 +532,7 @@ class _BleakTransportSession:
 
     def handle_notification(self, payload: bytes) -> None:
         self._notification_count += 1
+        self._last_notification_monotonic = time.monotonic()
         self._match_notification_waiters(payload)
         flow_control = self._transport_profile.flow_control
         if flow_control is not None:
@@ -672,6 +683,39 @@ class _BleakTransportSession:
 
     def report_warning(self, *, short: str, detail: str) -> None:
         self._reporter.warning(short=short, detail=detail)
+
+    def report_disconnect_diagnostics(self) -> None:
+        now = time.monotonic()
+        report_ble_disconnect_state(
+            self._reporter,
+            connected_seconds=self._elapsed_since(now, self._session_started_monotonic),
+            notify_started=self.notify_started,
+            notifications=self._notification_count,
+            pending_waiters=len(self._notification_waiters),
+            write_chunks=self._write_chunk_count,
+            write_bytes=self._write_byte_count,
+            last_write_label=self._last_write_label,
+            since_last_write_seconds=self._elapsed_since(now, self._last_write_monotonic),
+            since_last_bulk_write_seconds=self._elapsed_since(now, self._last_bulk_write_monotonic),
+            since_last_notify_seconds=self._elapsed_since(now, self._last_notification_monotonic),
+            flow_pauses=self._flow_pause_count,
+            flow_resumes=self._flow_resume_count,
+        )
+
+    def _record_write_activity(self, label: str | None, byte_count: int) -> None:
+        now = time.monotonic()
+        self._last_write_monotonic = now
+        self._last_write_label = label or "control"
+        self._write_chunk_count += 1
+        self._write_byte_count += byte_count
+        if label == "split bulk":
+            self._last_bulk_write_monotonic = now
+
+    @staticmethod
+    def _elapsed_since(now: float, then: float | None) -> float | None:
+        if then is None:
+            return None
+        return max(0.0, now - then)
 
     def _write_counters(self) -> BleWriteCounters:
         return BleWriteCounters(

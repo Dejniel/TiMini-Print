@@ -94,6 +94,42 @@ class PrintingJobTests(unittest.TestCase):
         self.assertEqual(build_job_mock.call_args_list[1].kwargs["page_index"], 2)
         self.assertEqual(build_job_mock.call_args_list[1].kwargs["page_count"], 2)
 
+    def test_build_from_file_applies_debug_row_markers_before_protocol_build(self) -> None:
+        img = Image.new("1", (16, 12), 1)
+        loader = _FakeLoader([Page(img, dither=False, is_text=False)])
+        builder = self.job_mod.PrintJobBuilder(
+            self.device,
+            settings=self.job_mod.PrintSettings(debug_row_markers_interval=10),
+            page_loader=loader,
+        )
+        raster_set = RasterSet(
+            rasters={
+                PixelFormat.BW1: RasterBuffer(
+                    pixels=[0] * (16 * 12),
+                    width=16,
+                    pixel_format=PixelFormat.BW1,
+                )
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "a.txt"
+            path.write_text("x", encoding="utf-8")
+            with patch(
+                "timiniprint.printing.builder.image_to_raster_set",
+                return_value=raster_set,
+            ), patch(
+                "timiniprint.protocol.job._build_job_model_from_raster_set",
+                return_value=(b"A", ()),
+            ) as build_job_mock:
+                out = builder.build_from_file(str(path))
+
+        self.assertEqual(out.payload, b"A")
+        marked = build_job_mock.call_args.kwargs["raster_set"].require(PixelFormat.BW1)
+        self.assertEqual(marked.pixels[16], 1)
+        self.assertEqual(marked.pixels[31], 1)
+        self.assertGreater(sum(marked.pixels[160:176]), 2)
+
     def test_build_from_file_can_rotate_pages_clockwise_for_any_file_type(self) -> None:
         img = Image.new("1", (8, 16), 1)
         loader = _FakeLoader([Page(img, dither=False, is_text=False)])

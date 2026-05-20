@@ -10,6 +10,7 @@ from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
 from ..rendering.converters import Page, PageLoader
 from ..rendering.renderer import apply_page_transforms, image_to_raster_set
+from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
 from .settings import PrintSettings
 
@@ -69,6 +70,11 @@ class PrintJobBuilder:
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
             )
+            if self.settings.debug_row_markers_interval is not None:
+                raster_set = apply_debug_row_markers(
+                    raster_set,
+                    self.settings.debug_row_markers_interval,
+                )
             report_raster_build(
                 self._reporter,
                 device=self.device,

@@ -62,6 +62,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         choices=[encoding.value for encoding in ImageEncoding],
         help="Debug only: override the protocol image encoding when building a print job",
     )
+    parser.add_argument(
+        "--debug-row-markers",
+        type=int,
+        metavar="N",
+        help="Debug only: add side row markers every N raster rows",
+    )
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-profiles", action="store_true", help="List known printer profiles and exit")
     parser.add_argument("--text", metavar="TEXT", help="Print raw text instead of a file path")
@@ -157,8 +163,11 @@ def create_print_job_builder(
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
+    debug_row_markers_interval: Optional[int] = None,
     reporter: reporting.Reporter | None = None,
 ) -> PrintJobBuilder:
+    if debug_row_markers_interval is not None and debug_row_markers_interval <= 0:
+        raise ValueError("Debug row marker interval must be positive")
     settings = PrintSettings(
         text_mode=text_mode,
         text_font=text_font,
@@ -170,6 +179,7 @@ def create_print_job_builder(
         pdf_page_gap_mm=pdf_page_gap_mm,
         paper_mode=paper_mode,
         image_encoding_override=image_encoding_override,
+        debug_row_markers_interval=debug_row_markers_interval,
     )
     if blackening is not None:
         settings.blackening = blackening
@@ -197,6 +207,7 @@ def build_print_job(
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
+    debug_row_markers_interval: Optional[int] = None,
     reporter: reporting.Reporter | None = None,
 ) -> ProtocolJob:
     builder = create_print_job_builder(
@@ -213,6 +224,7 @@ def build_print_job(
         paper_mode=paper_mode,
         runtime_context=runtime_context,
         image_encoding_override=image_encoding_override,
+        debug_row_markers_interval=debug_row_markers_interval,
         reporter=reporter,
     )
     if text_input is None:
@@ -406,6 +418,7 @@ def debug_dump_protocol_job(
         pdf_page_gap_mm=_resolve_pdf_page_gap(args),
         paper_mode=_resolve_paper_mode(args),
         image_encoding_override=image_encoding_override,
+        debug_row_markers_interval=args.debug_row_markers,
         reporter=reporter if args.verbose else None,
     )
     paper_mode = _resolve_paper_mode(args)
@@ -417,6 +430,7 @@ def debug_dump_protocol_job(
             "darkness": _resolve_blackening(args),
             "paper_mode": None if paper_mode is None else paper_mode.value,
             "image_encoding_override": args.debug_image_encoding,
+            "debug_row_markers": args.debug_row_markers,
             "text_input": args.text is not None,
             "path": args.path,
         },
@@ -517,6 +531,17 @@ def _resolve_paper_motion_action(args: argparse.Namespace) -> Optional[str]:
     return None
 
 
+def _print_input_count(args: argparse.Namespace) -> int:
+    return sum(
+        1
+        for has_input in (
+            bool(args.path),
+            args.text is not None,
+        )
+        if has_input
+    )
+
+
 def print_bluetooth(
     args: argparse.Namespace,
     reporter: reporting.Reporter,
@@ -549,6 +574,7 @@ def print_bluetooth(
                 paper_mode=_resolve_paper_mode(args),
                 image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
+                debug_row_markers_interval=args.debug_row_markers,
                 reporter=reporter if args.verbose else None,
             )
             await send_prepared_job(device, connection, job, reporter=reporter)
@@ -586,6 +612,7 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
                 paper_mode=_resolve_paper_mode(args),
                 image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
+                debug_row_markers_interval=args.debug_row_markers,
                 reporter=reporter if args.verbose else None,
             )
             await send_prepared_job(device, connection, job, reporter=reporter)
@@ -668,6 +695,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.debug_profile
             or args.debug_dump_protocol_job
             or args.debug_image_encoding
+            or args.debug_row_markers is not None
         ):
             reporter.error(
                 detail=(
@@ -690,6 +718,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.debug_profile
             or args.debug_dump_protocol_job
             or args.debug_image_encoding
+            or args.debug_row_markers is not None
         ):
             reporter.error(
                 detail=(
@@ -713,12 +742,19 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 )
             )
             return 2
-        if args.path and args.text is not None:
-            reporter.error(detail="Provide either a file path or --text, not both. Use --help for usage.")
-            return 2
-        if not args.path and args.text is None:
+        print_inputs = _print_input_count(args)
+        if print_inputs > 1:
             reporter.error(
-                detail="Missing file path or --text for --debug-dump-protocol-job. Use --help for usage."
+                detail=(
+                    "Provide either a file path or --text, not both. Use --help for usage."
+                )
+            )
+            return 2
+        if print_inputs == 0:
+            reporter.error(
+                detail=(
+                    "Missing file path or --text for --debug-dump-protocol-job. Use --help for usage."
+                )
             )
             return 2
         try:
@@ -737,16 +773,23 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             detail="Provide either --feed/--retract or a file path/--text, not both. Use --help for usage."
         )
         return 2
-    if action and args.debug_image_encoding:
+    if action and (args.debug_image_encoding or args.debug_row_markers is not None):
         reporter.error(
-            detail="--debug-image-encoding is only valid for print jobs, not --feed/--retract."
+            detail="Debug print modifiers are only valid for print jobs, not --feed/--retract."
         )
         return 2
-    if args.path and args.text is not None:
-        reporter.error(detail="Provide either a file path or --text, not both. Use --help for usage.")
+    print_inputs = _print_input_count(args)
+    if print_inputs > 1:
+        reporter.error(
+            detail=(
+                "Provide either a file path or --text, not both. Use --help for usage."
+            )
+        )
         return 2
-    if not action and not args.path and args.text is None:
-        reporter.error(detail="Missing file path, --text, or a paper motion option. Use --help for usage.")
+    if not action and print_inputs == 0:
+        reporter.error(
+            detail="Missing file path, --text, or a paper motion option. Use --help for usage."
+        )
         return 2
     try:
         if action:

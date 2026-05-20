@@ -325,6 +325,7 @@ class _BleakSocket:
         """Stop notifications before disconnecting the bleak client."""
         if not self._client:
             return
+        self._transport.report_disconnect_diagnostics()
         await self._transport.stop_notify_if_started(self._client)
         disconnect = getattr(self._client, "disconnect", None)
         if not callable(disconnect):

@@ -39,6 +39,7 @@ class AppCliFlowsTests(unittest.TestCase):
             debug_profile=None,
             debug_dump_protocol_job=None,
             debug_image_encoding=None,
+            debug_row_markers=None,
             force_text_mode=False,
             force_image_mode=False,
             darkness=None,
@@ -81,6 +82,14 @@ class AppCliFlowsTests(unittest.TestCase):
         ):
             self.assertEqual(cli.main(["a.pdf", "--text", "x"]), 2)
 
+    def test_main_accepts_debug_row_markers_with_print_input(self) -> None:
+        args = self._args(text="hello", debug_row_markers=10)
+        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ), patch("timiniprint.app.cli.print_bluetooth", return_value=0) as print_bluetooth:
+            self.assertEqual(cli.main(["--debug-row-markers", "10", "--text", "hello"]), 0)
+        print_bluetooth.assert_called_once()
+
     def test_build_print_job_text_path_and_cleanup(self) -> None:
         device = MagicMock()
 
@@ -100,6 +109,24 @@ class AppCliFlowsTests(unittest.TestCase):
         ):
             job = cli.build_print_job(device, path=None, text_input="hello")
         self.assertTrue(job.payload.startswith(b"OK:"))
+
+    def test_create_print_job_builder_passes_debug_row_markers_to_settings(self) -> None:
+        device = MagicMock()
+
+        with patch.object(cli, "PrintJobBuilder") as builder_cls, patch.object(
+            cli,
+            "PrintSettings",
+        ) as settings_cls:
+            settings = types.SimpleNamespace(blackening=3)
+            settings_cls.return_value = settings
+            cli.create_print_job_builder(
+                device,
+                debug_row_markers_interval=10,
+            )
+
+        settings_cls.assert_called_once()
+        self.assertEqual(settings_cls.call_args.kwargs["debug_row_markers_interval"], 10)
+        builder_cls.assert_called_once()
 
     def test_resolve_paper_mode_returns_enum(self) -> None:
         self.assertIsNone(cli._resolve_paper_mode(self._args()))
@@ -234,6 +261,7 @@ class AppCliFlowsTests(unittest.TestCase):
             self.assertEqual(payload["device"]["image_pipeline"]["encoding"], "v5g_dot")
             self.assertEqual(payload["settings"]["darkness"], 5)
             self.assertEqual(payload["settings"]["image_encoding_override"], "v5g_gray")
+            self.assertIsNone(payload["settings"]["debug_row_markers"])
             self.assertEqual(payload["job"]["effective_image_pipeline"]["encoding"], "v5g_gray")
             self.assertEqual(payload["job"]["effective_image_pipeline"]["formats"][0], "gray4")
             self.assertIn("connect_packets", payload["transport"])
@@ -254,6 +282,13 @@ class AppCliFlowsTests(unittest.TestCase):
             "timiniprint.app.cli.emit_startup_warnings"
         ):
             self.assertEqual(cli.main(["--feed", "--debug-image-encoding", "v5g_gray"]), 2)
+
+    def test_main_rejects_debug_row_markers_with_motion(self) -> None:
+        args = self._args(feed=True, debug_row_markers=10)
+        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ):
+            self.assertEqual(cli.main(["--feed", "--debug-row-markers", "10"]), 2)
 
     def test_device_config_with_bluetooth_uses_raw_target_resolution(self) -> None:
         catalog = PrinterCatalog.load()

@@ -128,3 +128,45 @@ def report_ble_split_bulk_plan(
             flow_control=flow_control,
         ),
     )
+
+
+def report_ble_disconnect_state(
+    reporter: reporting.Reporter,
+    *,
+    connected_seconds: float | None,
+    notify_started: bool,
+    notifications: int,
+    pending_waiters: int,
+    write_chunks: int,
+    write_bytes: int,
+    last_write_label: str | None,
+    since_last_write_seconds: float | None,
+    since_last_bulk_write_seconds: float | None,
+    since_last_notify_seconds: float | None,
+    flow_pauses: int,
+    flow_resumes: int,
+) -> None:
+    reporter.debug(
+        short="BLE",
+        detail=reporting.format_kv(
+            "disconnect state",
+            connected_ms=_ms_or_none(connected_seconds),
+            notify_started=notify_started,
+            notifications=notifications,
+            pending_waiters=pending_waiters,
+            write_chunks=write_chunks,
+            write_bytes=write_bytes,
+            last_write=last_write_label or "<none>",
+            since_last_write_ms=_ms_or_none(since_last_write_seconds),
+            since_last_bulk_write_ms=_ms_or_none(since_last_bulk_write_seconds),
+            since_last_notify_ms=_ms_or_none(since_last_notify_seconds),
+            flow_pause=flow_pauses,
+            flow_resume=flow_resumes,
+        ),
+    )
+
+
+def _ms_or_none(seconds: float | None) -> float | str:
+    if seconds is None:
+        return "<none>"
+    return max(0.0, seconds * 1000.0)

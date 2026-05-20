@@ -28,6 +28,7 @@ class PrintSettings:
     paper_mode: Optional[PaperMode] = None
     image_encoding_override: Optional[ImageEncoding] = None
     pixel_format_override: Optional[PixelFormat] = None
+    debug_row_markers_interval: Optional[int] = None
     v5x_gamma_handle: bool = False
     v5x_gamma_value: Optional[float] = None
     v5c_gamma_handle: bool = True

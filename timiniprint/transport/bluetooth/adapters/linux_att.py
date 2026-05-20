@@ -270,6 +270,10 @@ class _LinuxAttSocket:
     def close(self) -> None:
         if self._client is not None:
             try:
+                self._transport.report_disconnect_diagnostics()
+            except Exception:
+                pass
+            try:
                 self._run(self._transport.stop_notify_if_started(self._client))
             except Exception:
                 pass
