@@ -77,7 +77,6 @@
         "MV-B530",
         "MX02",
         "MX03",
-        "MX05",
         "MX07",
         "MX08",
         "MX09",
@@ -635,7 +634,8 @@
       "id": "mx06-family",
       "status": "supported",
       "primary_names": [
-        "MX06"
+        "MX06",
+        "MX05"
       ]
     },
     {

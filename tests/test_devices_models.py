@@ -174,10 +174,13 @@ class DevicesModelsTests(unittest.TestCase):
 
         self.assertIsNotNone(normal)
         self.assertIsNotNone(mac59)
-        self.assertEqual(normal.profile_key, "mx05")
-        self.assertEqual(mac59.profile_key, "mx05")
+        self.assertEqual(normal.profile_key, "mx06")
+        self.assertEqual(mac59.profile_key, "mx06")
         self.assertEqual(normal.protocol_family, ProtocolFamily.V5G)
         self.assertEqual(mac59.protocol_family, ProtocolFamily.V5X)
+        self.assertEqual(normal.runtime_variant, "mx06")
+        self.assertIsNotNone(normal.runtime_density_profile)
+        self.assertEqual(normal.runtime_density_profile.profile_key, "mx06")
 
     def test_old_small_bucket_shared_names_resolve_to_shared_profile(self) -> None:
         normal = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")
@@ -502,7 +505,6 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertEqual(resolved.protocol_family, family)
 
     def test_v5g_profiles_keep_source_backed_pipeline_and_density_cases(self) -> None:
-        mx05 = self.catalog.require_profile("mx05")
         mx07 = self.catalog.require_profile("mx07")
         mx10 = self.catalog.require_profile("v5g_small_203")
         xopoppy = self.catalog.require_profile("xopoppy")
@@ -510,17 +512,12 @@ class DevicesModelsTests(unittest.TestCase):
         gt02 = self.catalog.require_profile("gt02_v5g")
         shared = self.catalog.require_profile("v5g_small_203")
 
-        self.assertEqual(mx05.default_protocol_family, ProtocolFamily.V5G)
-        self.assertEqual(mx05.default_image_pipeline.encoding, ImageEncoding.V5G_DOT)
-        self.assertEqual(mx05.default_image_pipeline.formats[0], PixelFormat.BW1)
-        self.assertIsNotNone(mx05.density)
-        self.assertEqual(mx05.energy.text.high, 20000)
-
         self.assertIsNotNone(mx07.density)
         self.assertEqual(mx07.density.image.high, 100)
 
         self.assertEqual(mx10.default_protocol_family, ProtocolFamily.V5G)
-        self.assertEqual(mx10.speed.image, 30)
+        self.assertIsNone(mx10.speed)
+        self.assertEqual(mx10.post_print_feed_count, 1)
         self.assertEqual(mx10.energy.image.middle, 10000)
         self.assertEqual(mx10.energy.text.high, 20000)
 
@@ -535,7 +532,8 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(gt02.density.text.high, 150)
 
         self.assertEqual(shared.default_protocol_family, ProtocolFamily.V5G)
-        self.assertEqual(shared.speed.image, 30)
+        self.assertIsNone(shared.speed)
+        self.assertEqual(shared.post_print_feed_count, 1)
         self.assertEqual(shared.energy.image.middle, 10000)
         self.assertEqual(shared.energy.text.high, 20000)
 

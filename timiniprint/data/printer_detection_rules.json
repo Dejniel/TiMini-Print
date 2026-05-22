@@ -59,7 +59,7 @@
     "prefixes": [
       "MX05"
     ],
-    "profile_key": "mx05",
+    "profile_key": "mx06",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -1360,8 +1360,10 @@
     "prefixes": [
       "MX05-"
     ],
-    "profile_key": "mx05",
-    "protocol_family": "v5g"
+    "profile_key": "mx06",
+    "protocol_family": "v5g",
+    "runtime_variant": "mx06",
+    "runtime_density_profile_key": "mx06"
   },
   {
     "rule_key": "profile_mx06",
@@ -2003,8 +2005,10 @@
     "prefixes": [
       "MX05"
     ],
-    "profile_key": "mx05",
-    "protocol_family": "v5g"
+    "profile_key": "mx06",
+    "protocol_family": "v5g",
+    "runtime_variant": "mx06",
+    "runtime_density_profile_key": "mx06"
   },
   {
     "rule_key": "rule_mx06_v5g",

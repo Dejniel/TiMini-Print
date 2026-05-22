@@ -1605,12 +1605,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -3374,12 +3370,8 @@
       "chunk_size": 123,
       "delay_ms": 4
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 55,
-        "text": 45
-      },
       "energy": {
         "image": {
           "low": 20000,
@@ -3421,12 +3413,8 @@
       "chunk_size": 123,
       "delay_ms": 4
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 55,
-        "text": 45
-      },
       "energy": {
         "image": {
           "low": 20000,
@@ -3437,65 +3425,6 @@
           "low": 0,
           "middle": 0,
           "high": 0
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "mx05",
-    "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
-    "one_length": 8,
-    "dev_dpi": 200,
-    "can_change_mtu": true,
-    "has_id": false,
-    "use_spp": false,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "v5g",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
-      ],
-      "encoding": "v5g_dot"
-    },
-    "stream": {
-      "chunk_size": 63,
-      "delay_ms": 6
-    },
-    "post_print_feed_count": 4,
-    "tuning": {
-      "speed": {
-        "image": 36,
-        "text": 36
-      },
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 15000
-        },
-        "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 20000
-        }
-      },
-      "density": {
-        "text": {
-          "low": 100,
-          "middle": 130,
-          "high": 150
-        },
-        "image": {
-          "low": 150,
-          "middle": 180,
-          "high": 200
         }
       }
     },
@@ -3527,12 +3456,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -3586,12 +3511,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -3645,12 +3566,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -3704,12 +3621,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -3763,12 +3676,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -4587,12 +4496,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -4646,12 +4551,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,
@@ -5186,12 +5087,8 @@
       "chunk_size": 63,
       "delay_ms": 6
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 1,
     "tuning": {
-      "speed": {
-        "image": 30,
-        "text": 30
-      },
       "energy": {
         "image": {
           "low": 10000,

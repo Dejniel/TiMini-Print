@@ -15,6 +15,10 @@ _QUALITY_BY_LEVEL = (0x31, 0x32, 0x33, 0x34, 0x35)
 # a V5G print job.
 _START_LATTICE = bytes.fromhex("AA551738445F5F5F44382C")
 _FINISH_LATTICE = bytes.fromhex("AA55170000000000000017")
+# Source V5G wrappers use fixed BD feed/control values around the image data.
+# These are protocol command values, not the native BLE writer speed/delay.
+_PRE_IMAGE_FEED_SPEED = 0x0A
+_POST_IMAGE_FEED_SPEED = 0x19
 # Gray jobs are sent in 20-row compressed bands.
 _GRAY_BAND_ROWS = 20
 # 384-dot V5G row packets are 56 bytes. Eight rows per BLE write keeps the
@@ -98,14 +102,12 @@ def _gray_frames(request: PrintJobRequest) -> bytes:
 
 
 def build_job(request: PrintJobRequest) -> bytes:
-    if request.speed is None:
-        raise ValueError("v5g requires speed tuning")
     job = bytearray()
     job += _quality_packet(request.blackening, request.protocol_family)
     job += _lattice_packet(True, request.protocol_family)
     job += _energy_packet(request.energy, request.protocol_family)
     job += _print_mode_packet(request.is_text, request.protocol_family)
-    job += _feed_packet(request.speed, request.protocol_family)
+    job += _feed_packet(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
     if request.density is not None:
         job += _density_packet(request.density, request.protocol_family)
 
@@ -113,7 +115,7 @@ def build_job(request: PrintJobRequest) -> bytes:
         job += _gray_frames(request)
     else:
         job += _dot_frames(request)
-        job += _feed_packet(request.speed, request.protocol_family)
+    job += _feed_packet(_POST_IMAGE_FEED_SPEED, request.protocol_family)
 
     for _ in range(max(0, request.post_print_feed_count)):
         job += _paper_packet(request.dev_dpi, request.protocol_family)
@@ -132,7 +134,6 @@ TRANSPORT = BleTransportProfile(
 
 
 BEHAVIOR = ProtocolBehavior(
-    requires_speed=True,
     transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),

@@ -1239,7 +1239,7 @@ class ProtocolJobTests(unittest.TestCase):
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
             is_text=False,
-            speed=30,
+            speed=None,
             energy=15000,
             density=None,
             blackening=3,
@@ -1247,6 +1247,7 @@ class ProtocolJobTests(unittest.TestCase):
             protocol_family=ProtocolFamily.V5G,
             feed_padding=12,
             dev_dpi=203,
+            post_print_feed_count=1,
             image_pipeline=self.v5g_dot,
         )
 
@@ -1267,12 +1268,20 @@ class ProtocolJobTests(unittest.TestCase):
             data,
         )
         self.assertIn(
-            self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G),
+            self.commands.make_packet(0xBD, bytes([0x0A]), ProtocolFamily.V5G),
+            data,
+        )
+        self.assertIn(
+            self.commands.make_packet(0xBD, bytes([0x19]), ProtocolFamily.V5G),
             data,
         )
         self.assertEqual(
-            data.count(self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G)),
-            2,
+            data.count(self.commands.make_packet(0xBD, bytes([0x0A]), ProtocolFamily.V5G)),
+            1,
+        )
+        self.assertEqual(
+            data.count(self.commands.make_packet(0xBD, bytes([0x19]), ProtocolFamily.V5G)),
+            1,
         )
         self.assertIn(
             self.commands.make_packet(0xA2, bytes([0x55]), ProtocolFamily.V5G),
@@ -1280,11 +1289,11 @@ class ProtocolJobTests(unittest.TestCase):
         )
         self.assertLess(
             data.index(self.commands.make_packet(0xA2, bytes([0x55]), ProtocolFamily.V5G)),
-            data.rindex(self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G)),
+            data.rindex(self.commands.make_packet(0xBD, bytes([0x19]), ProtocolFamily.V5G)),
         )
-        self.assertGreaterEqual(
+        self.assertEqual(
             data.count(self.commands.make_packet(0xA1, bytes([0x30, 0x00]), ProtocolFamily.V5G)),
-            2,
+            1,
         )
         self.assertTrue(data.endswith(self.commands.make_packet(0xA3, bytes([0x00]), ProtocolFamily.V5G)))
 
@@ -1305,7 +1314,7 @@ class ProtocolJobTests(unittest.TestCase):
             data = self.builders._build_job_from_raster_set(
                 raster_set=raster_set,
                 is_text=False,
-                speed=30,
+                speed=None,
                 energy=15000,
                 density=0x1234,
                 blackening=4,
@@ -1326,7 +1335,11 @@ class ProtocolJobTests(unittest.TestCase):
             data,
         )
         self.assertEqual(
-            data.count(self.commands.make_packet(0xBD, bytes([30]), ProtocolFamily.V5G)),
+            data.count(self.commands.make_packet(0xBD, bytes([0x0A]), ProtocolFamily.V5G)),
+            1,
+        )
+        self.assertEqual(
+            data.count(self.commands.make_packet(0xBD, bytes([0x19]), ProtocolFamily.V5G)),
             1,
         )
         self.assertGreaterEqual(
