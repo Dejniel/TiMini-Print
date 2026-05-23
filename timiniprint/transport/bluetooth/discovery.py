@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from ... import reporting
@@ -28,6 +28,7 @@ class BluetoothScanResult:
 
     devices: List[PrinterDevice]
     failures: List[ScanFailure]
+    raw_endpoints: List[DeviceInfo] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -99,7 +100,7 @@ class BluetoothDiscovery:
         )
         resolved = self.devices_from_scan(devices)
         self._report_scan_debug(devices, resolved, failures)
-        return BluetoothScanResult(devices=resolved, failures=failures)
+        return BluetoothScanResult(devices=resolved, failures=failures, raw_endpoints=devices)
 
     async def scan_devices(
         self,
@@ -371,29 +372,33 @@ class BluetoothDiscovery:
         )
 
     def _single_transport_target(self, endpoint: DeviceInfo) -> _ResolvedBluetoothTarget:
+        target = self.transport_target_from_endpoint(endpoint)
+        return _ResolvedBluetoothTarget(
+            display_name=endpoint.name or endpoint.address,
+            transport_target=target,
+        )
+
+    @staticmethod
+    def transport_target_from_endpoint(endpoint: DeviceInfo) -> BluetoothTarget:
+        """Return a concrete Bluetooth target for one raw scan endpoint."""
         bluetooth_endpoint = BluetoothEndpoint(
             name=endpoint.name or "",
             address=endpoint.address,
             paired=endpoint.paired,
-            transport=self._to_transport(endpoint),
+            transport=BluetoothDiscovery._to_transport(endpoint),
         )
         if bluetooth_endpoint.transport is BluetoothEndpointTransport.CLASSIC:
-            target = BluetoothTarget(
+            return BluetoothTarget(
                 classic_endpoint=bluetooth_endpoint,
                 ble_endpoint=None,
                 display_address=bluetooth_endpoint.address,
                 transport_badge="[classic]",
             )
-        else:
-            target = BluetoothTarget(
-                classic_endpoint=None,
-                ble_endpoint=bluetooth_endpoint,
-                display_address=bluetooth_endpoint.address,
-                transport_badge="[ble]",
-            )
-        return _ResolvedBluetoothTarget(
-            display_name=endpoint.name or endpoint.address,
-            transport_target=target,
+        return BluetoothTarget(
+            classic_endpoint=None,
+            ble_endpoint=bluetooth_endpoint,
+            display_address=bluetooth_endpoint.address,
+            transport_badge="[ble]",
         )
 
     def _merge_transport_targets(

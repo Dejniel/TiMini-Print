@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests.helpers import reset_registry_cache
 from timiniprint.devices import PrinterCatalog
+from timiniprint.devices.device import BluetoothEndpointTransport
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
@@ -63,6 +64,7 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
 
         self.assertEqual(result.failures, [])
         self.assertEqual(scan_mock.await_count, 2)
+        self.assertEqual(result.raw_endpoints, [classic, ble])
         self.assertEqual(len(result.devices), 1)
         self.assertEqual(result.devices[0].transport_badge, "[classic+ble]")
         self.assertEqual(result.devices[0].profile_key, "x6h")
@@ -83,6 +85,20 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(resolved.display_name, "PPA2L_3F19")
         self.assertEqual(resolved.transport_target.display_address, "AA:BB:CC:DD:EE:01")
         self.assertEqual(resolved.transport_target.transport_badge, "[classic]")
+
+    def test_transport_target_from_endpoint_preserves_ble_endpoint(self) -> None:
+        endpoint = DeviceInfo(
+            name="MysteryPrinter",
+            address="AA:BB:CC:DD:EE:01",
+            transport=DeviceTransport.BLE,
+        )
+
+        target = self.discovery.transport_target_from_endpoint(endpoint)
+
+        self.assertIsNone(target.classic_endpoint)
+        self.assertIsNotNone(target.ble_endpoint)
+        self.assertEqual(target.ble_endpoint.transport, BluetoothEndpointTransport.BLE)
+        self.assertEqual(target.transport_badge, "[ble]")
 
     def test_device_config_roundtrip_preserves_detected_bluetooth_metadata(self) -> None:
         auto = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")

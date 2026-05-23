@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 
 from timiniprint import reporting
 from timiniprint.app.gui import TiMiniPrintGUI
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
+from timiniprint.transport.bluetooth import BluetoothDiscovery, BluetoothScanResult
+from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 
 
 class GuiPaperMotionStatusTests(unittest.TestCase):
@@ -69,6 +72,74 @@ class GuiPaperModeChoiceTests(unittest.TestCase):
         device = catalog.device_from_profile("luck_ppa2l")
 
         self.assertEqual(TiMiniPrintGUI._default_paper_mode_label_for_device(device), "Tag")
+
+
+class GuiDebugDeviceListTests(unittest.TestCase):
+    def test_unsupported_endpoint_label_marks_debug_only_devices(self) -> None:
+        endpoint = DeviceInfo(
+            name="MysteryPrinter",
+            address="AA:BB:CC:DD:EE:01",
+            paired=False,
+            transport=DeviceTransport.BLE,
+        )
+
+        label = TiMiniPrintGUI._unsupported_endpoint_label(endpoint)
+
+        self.assertEqual(label, "MysteryPrinter (AA:BB:CC:DD:EE:01) [ble] [unsupported] [unpaired]")
+
+    def test_effective_selected_device_can_force_profile_for_unsupported_endpoint(self) -> None:
+        catalog = PrinterCatalog.load()
+        endpoint = DeviceInfo(
+            name="MysteryPrinter",
+            address="AA:BB:CC:DD:EE:01",
+            transport=DeviceTransport.BLE,
+        )
+        label = TiMiniPrintGUI._unsupported_endpoint_label(endpoint)
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.catalog = catalog
+        gui.discovery = BluetoothDiscovery(catalog)
+        gui.device_var = SimpleNamespace(get=lambda: label)
+        gui.debug_mode_var = SimpleNamespace(get=lambda: True)
+        gui.debug_profile_var = SimpleNamespace(get=lambda: "x6h")
+        gui.device_map = {}
+        gui._debug_profile_choice_map = {"x6h": "x6h"}
+        gui._last_scan_result = BluetoothScanResult(
+            devices=[],
+            failures=[],
+            raw_endpoints=[endpoint],
+        )
+
+        device = gui._effective_selected_device()
+
+        self.assertIsNotNone(device)
+        self.assertEqual(device.profile_key, "x6h")
+        self.assertEqual(device.display_name, "MysteryPrinter")
+        self.assertEqual(device.transport_badge, "[ble]")
+
+    def test_scan_status_count_uses_raw_endpoints_only_in_debug_mode(self) -> None:
+        supported = DeviceInfo(
+            name="X6H-ABCD",
+            address="AA:BB:CC:DD:EE:01",
+            transport=DeviceTransport.CLASSIC,
+        )
+        unsupported = DeviceInfo(
+            name="MysteryPrinter",
+            address="AA:BB:CC:DD:EE:02",
+            transport=DeviceTransport.BLE,
+        )
+        catalog = PrinterCatalog.load()
+        result = BluetoothScanResult(
+            devices=[catalog.detect_device(supported.name, supported.address)],
+            failures=[],
+            raw_endpoints=[supported, unsupported],
+        )
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.debug_mode_var = SimpleNamespace(get=lambda: False)
+
+        self.assertEqual(gui._scan_result_status_count(result), 1)
+
+        gui.debug_mode_var = SimpleNamespace(get=lambda: True)
+        self.assertEqual(gui._scan_result_status_count(result), 2)
 
 
 if __name__ == "__main__":

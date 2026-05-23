@@ -25,6 +25,17 @@ class ReportingTests(unittest.TestCase):
         self.assertIn("Error: e", text)
         self.assertNotIn("s", text)
 
+    def test_stderr_sink_levels_can_be_updated(self) -> None:
+        out = io.StringIO()
+        sink = reporting.StderrSink(stream=out, levels={"warning", "error"})
+        sink.emit(reporting.ReportMessage(level="debug", key=None, short="d1"))
+        sink.set_levels({"warning", "error", "debug"})
+        sink.emit(reporting.ReportMessage(level="debug", key=None, short="d2"))
+
+        text = out.getvalue()
+        self.assertNotIn("d1", text)
+        self.assertIn("d2", text)
+
     def test_queue_status_sink_mapping(self) -> None:
         q = queue.Queue()
         sink = reporting.QueueStatusSink(q)
