@@ -235,6 +235,11 @@ class _LinuxAttSocket:
             return False
         return self._transport.can_wait_for_notification()
 
+    def can_send_control_packet_wait_notification(self) -> bool:
+        if not self._connected or self._client is None:
+            return False
+        return self._transport.can_send_control_packet_wait_notification()
+
     def query_control_packet(self, packet: bytes, *, timeout: float = 1.0, reply_complete=None) -> bytes | None:
         if not self._connected or self._client is None:
             return None
@@ -262,6 +267,29 @@ class _LinuxAttSocket:
             self._transport.wait_for_notification(
                 label,
                 match,
+                timeout=timeout,
+                required=required,
+            )
+        )
+
+    def send_control_packet_wait_notification(
+        self,
+        packet: bytes,
+        *,
+        label: str,
+        match: Callable[[bytes], bool],
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        if not self._connected or self._client is None:
+            if required:
+                raise RuntimeError("Not connected to BLE device")
+            return None
+        return self._run(
+            self._transport.send_control_packet_wait_notification(
+                packet,
+                label=label,
+                match=match,
                 timeout=timeout,
                 required=required,
             )

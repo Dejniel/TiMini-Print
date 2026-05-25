@@ -2738,5 +2738,16 @@
     ],
     "profile_key": "luck_a42_luckp",
     "protocol_family": "luck_normal_a4"
+  },
+  {
+    "rule_key": "rule_niimbot_d110",
+    "prefixes": [
+      "D110-"
+    ],
+    "exact_names": [
+      "D110"
+    ],
+    "profile_key": "niimbot_d110",
+    "protocol_family": "niimbot"
   }
 ]

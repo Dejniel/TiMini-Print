@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import TYPE_CHECKING
 
 from .. import reporting
@@ -45,12 +47,15 @@ async def _send_protocol_steps(
     timeout: float,
 ) -> bool:
     if any(step.operation is ProtocolStepOperation.QUERY for step in steps):
-        if not session.can_query_control_packet():
+        if (
+            not session.can_query_control_packet()
+            and not session.can_send_control_packet_wait_notification()
+        ):
             session.report_warning(
                 short="Protocol query unavailable",
                 detail=(
                     "This job needs request/response protocol steps, but the current transport "
-                    "cannot query replies. Falling back to stream-only send."
+                    "cannot query replies or send BLE notification queries. Falling back to stream-only send."
                 ),
             )
             return False
@@ -61,16 +66,8 @@ async def _send_protocol_steps(
             await session.send_standard_payload(step.data)
             continue
 
-        query_timeout = step.timeout_sec if step.timeout_sec is not None else timeout
-        reply = await session.query_control_packet(
-            step.data,
-            timeout=query_timeout,
-            reply_complete=_reply_complete_for(step),
-        )
-        session.report_debug(
-            f"Protocol query {step.label}: tx={_hex_preview(step.data)} rx={_hex_preview(reply)}"
-        )
-        if not reply_matches_expectation(step.expect, reply):
+        reply = await _execute_query_step(session, step, timeout=timeout)
+        if not _reply_matches_for(step, reply):
             session.report_warning(
                 short=f"Protocol {step.label} reply mismatch",
                 detail=(
@@ -81,10 +78,92 @@ async def _send_protocol_steps(
     return True
 
 
+async def _execute_query_step(
+    session: RuntimeConnectionSession,
+    step: ProtocolStep,
+    *,
+    timeout: float,
+) -> bytes | None:
+    if step.repeat_interval_sec is None:
+        return await _query_once(session, step, timeout=timeout)
+
+    deadline = time.monotonic() + (
+        step.repeat_timeout_sec if step.repeat_timeout_sec is not None else timeout
+    )
+    reply: bytes | None = None
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return reply
+        reply = await _query_once(
+            session,
+            step,
+            timeout=min(timeout, remaining),
+            limit_to_call_timeout=True,
+        )
+        if _reply_matches_for(step, reply):
+            return reply
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return reply
+        await asyncio.sleep(min(step.repeat_interval_sec, remaining))
+
+
+async def _query_once(
+    session: RuntimeConnectionSession,
+    step: ProtocolStep,
+    *,
+    timeout: float,
+    limit_to_call_timeout: bool = False,
+) -> bytes | None:
+    if step.timeout_sec is None:
+        query_timeout = timeout
+    elif limit_to_call_timeout:
+        query_timeout = min(step.timeout_sec, timeout)
+    else:
+        query_timeout = step.timeout_sec
+    reply_complete = _reply_complete_for(step)
+    if session.can_query_control_packet():
+        reply = await session.query_control_packet(
+            step.data,
+            timeout=query_timeout,
+            reply_complete=reply_complete,
+        )
+    else:
+        if reply_complete is None:
+            session.report_debug(
+                f"Protocol send {step.label}: {_packet_summary(step.data)}"
+            )
+            await session.send_standard_payload(step.data)
+            reply = None
+        else:
+            reply = await session.send_control_packet_wait_notification(
+                step.data,
+                label=step.label,
+                match=reply_complete,
+                timeout=query_timeout,
+                required=False,
+            )
+    session.report_debug(
+        f"Protocol query {step.label}: tx={_hex_preview(step.data)} rx={_hex_preview(reply)}"
+    )
+    return reply
+
+
 def _reply_complete_for(step: ProtocolStep):
+    if step.reply_matcher is not None:
+        return step.reply_matcher.complete
     if step.expect is ProtocolReplyExpectation.NONE:
         return None
     return lambda reply: reply_matches_expectation(step.expect, reply)
+
+
+def _reply_matches_for(step: ProtocolStep, reply: bytes | None) -> bool:
+    if step.reply_matcher is not None:
+        if step.reply_matcher.matches is not None:
+            return step.reply_matcher.matches(reply)
+        return bool(reply and step.reply_matcher.complete(reply))
+    return reply_matches_expectation(step.expect, reply)
 
 
 def _packet_summary(data: bytes) -> str:

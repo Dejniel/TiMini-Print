@@ -236,6 +236,11 @@ class _BleakSocket:
             return False
         return self._transport.can_wait_for_notification()
 
+    def can_send_control_packet_wait_notification(self) -> bool:
+        if not self._connected or not self._client:
+            return False
+        return self._transport.can_send_control_packet_wait_notification()
+
     def query_control_packet(
         self,
         packet: bytes,
@@ -273,6 +278,31 @@ class _BleakSocket:
             self._transport.wait_for_notification(
                 label,
                 match,
+                timeout=timeout,
+                required=required,
+            )
+        )
+
+    def send_control_packet_wait_notification(
+        self,
+        packet: bytes,
+        *,
+        label: str,
+        match: Callable[[bytes], bool],
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        if not self._connected or not self._client:
+            if required:
+                raise RuntimeError("Not connected to BLE device")
+            return None
+        if not self._loop:
+            raise RuntimeError("Event loop not initialized")
+        return self._loop.run_until_complete(
+            self._transport.send_control_packet_wait_notification(
+                packet,
+                label=label,
+                match=match,
                 timeout=timeout,
                 required=required,
             )

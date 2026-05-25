@@ -248,6 +248,9 @@ def render_todo_models_block(entries: list[InventoryEntry]) -> str:
     main_names: list[str] = []
     lines = []
     for entry in todo:
+        if _renders_inline(entry):
+            main_names.extend(_public_readme_name(name) for name in entry.primary_names)
+            continue
         if _renders_as_single_name(entry):
             main_names.append(_entry_label(entry, include_original_app_name=False))
             continue

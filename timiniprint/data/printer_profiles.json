@@ -5336,5 +5336,59 @@
       }
     },
     "a4xii": false
+  },
+  {
+    "profile_key": "niimbot_d110",
+    "size": 1,
+    "paper_size": 96,
+    "print_size": 96,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "can_change_mtu": true,
+    "has_id": true,
+    "use_spp": false,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 0,
+    "default_protocol_family": "niimbot",
+    "default_protocol_variant": "d110",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "niimbot_d110"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 10
+    },
+    "post_print_feed_count": 0,
+    "tuning": {
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 1,
+          "middle": 2,
+          "high": 3
+        },
+        "text": {
+          "low": 1,
+          "middle": 2,
+          "high": 3
+        }
+      }
+    },
+    "a4xii": false
   }
 ]

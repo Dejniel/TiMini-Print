@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 
@@ -17,6 +18,12 @@ class ProtocolReplyExpectation(str, Enum):
 
 
 @dataclass(frozen=True)
+class ProtocolReplyMatcher:
+    complete: Callable[[bytes], bool]
+    matches: Callable[[bytes | None], bool] | None = None
+
+
+@dataclass(frozen=True)
 class ProtocolStep:
     """One protocol-level operation in a printable job."""
 
@@ -26,11 +33,20 @@ class ProtocolStep:
     expect: ProtocolReplyExpectation = ProtocolReplyExpectation.NONE
     timeout_sec: float | None = None
     include_in_payload: bool = True
+    reply_matcher: ProtocolReplyMatcher | None = None
+    repeat_interval_sec: float | None = None
+    repeat_timeout_sec: float | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "data", bytes(self.data))
         object.__setattr__(self, "operation", ProtocolStepOperation(self.operation))
         object.__setattr__(self, "expect", ProtocolReplyExpectation(self.expect))
+        if self.timeout_sec is not None and self.timeout_sec < 0:
+            raise ValueError("Protocol step timeout must be non-negative")
+        if self.repeat_interval_sec is not None and self.repeat_interval_sec <= 0:
+            raise ValueError("Protocol step repeat interval must be positive")
+        if self.repeat_timeout_sec is not None and self.repeat_timeout_sec < 0:
+            raise ValueError("Protocol step repeat timeout must be non-negative")
 
     @classmethod
     def send(cls, label: str, data: bytes) -> "ProtocolStep":
@@ -45,6 +61,9 @@ class ProtocolStep:
         expect: ProtocolReplyExpectation,
         timeout_sec: float | None = None,
         include_in_payload: bool = True,
+        reply_matcher: ProtocolReplyMatcher | None = None,
+        repeat_interval_sec: float | None = None,
+        repeat_timeout_sec: float | None = None,
     ) -> "ProtocolStep":
         return cls(
             label=label,
@@ -53,6 +72,9 @@ class ProtocolStep:
             expect=expect,
             timeout_sec=timeout_sec,
             include_in_payload=include_in_payload,
+            reply_matcher=reply_matcher,
+            repeat_interval_sec=repeat_interval_sec,
+            repeat_timeout_sec=repeat_timeout_sec,
         )
 
 

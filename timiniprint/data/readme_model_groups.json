@@ -149,6 +149,17 @@
       ]
     },
     {
+      "id": "niimbot-d110",
+      "status": "supported",
+      "display_label": "D110",
+      "primary_names": [
+        "D110"
+      ],
+      "clone_names": [
+        "D110-"
+      ]
+    },
+    {
       "id": "shipping-printer-ctp750by",
       "status": "supported",
       "primary_names": [
@@ -904,6 +915,37 @@
         "PAPERGO"
       ],
       "original_app_name": "iBleem V6 family"
+    },
+    {
+      "id": "todo-niimbot-candidates",
+      "status": "todo",
+      "render_mode": "flat",
+      "primary_names": [
+        "B1",
+        "B1 Pro",
+        "B18",
+        "B18S",
+        "B21",
+        "B21-C2B",
+        "B21-L2B",
+        "B21S",
+        "B21S-C2B",
+        "B21_Pro",
+        "B24",
+        "B3S",
+        "B3S_P",
+        "D101",
+        "D11",
+        "D11S",
+        "D11_H",
+        "D110_M",
+        "Hi-D110",
+        "Hi-NB-D11",
+        "JCB3S",
+        "M2_H",
+        "N1",
+        "S6"
+      ]
     },
     {
       "id": "todo-luck-hanyin",

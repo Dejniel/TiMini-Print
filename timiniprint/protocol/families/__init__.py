@@ -15,6 +15,7 @@ from .dck import BEHAVIOR as DCK_BEHAVIOR
 from .legacy import BEHAVIOR as LEGACY_BEHAVIOR
 from .luck_normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
 from .luck_normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
+from .niimbot import BEHAVIOR as NIIMBOT_BEHAVIOR
 from .v5g import BEHAVIOR as V5G_BEHAVIOR
 from .v5c import BEHAVIOR as V5C_BEHAVIOR
 from .v5x import BEHAVIOR as V5X_BEHAVIOR
@@ -83,6 +84,14 @@ _DEFINITIONS = {
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=DCK_BEHAVIOR,
+    ),
+    ProtocolFamily.NIIMBOT: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.NIIMBOT,
+            transport_style=ProtocolTransportStyle.STANDARD,
+        ),
+        behavior=NIIMBOT_BEHAVIOR,
     ),
 }
 

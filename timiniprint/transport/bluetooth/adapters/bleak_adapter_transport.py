@@ -733,6 +733,9 @@ class _BleakTransportSession:
     def can_wait_for_notification(self) -> bool:
         return self.notify_started
 
+    def can_send_control_packet_wait_notification(self) -> bool:
+        return self.can_send_control_packet() and self.can_wait_for_notification()
+
     async def wait_for_notification(
         self,
         label: str,
@@ -746,20 +749,42 @@ class _BleakTransportSession:
                 raise RuntimeError(f"BLE notification wait unavailable: {label}")
             self.report_debug(f"optional notification wait unavailable: {label}")
             return None
-        loop = asyncio.get_running_loop()
-        waiter = _NotificationWaiter(
-            label=label,
-            match=match,
-            future=loop.create_future(),
-        )
-        self._notification_waiters.append(waiter)
+        waiter = self._register_notification_waiter(label, match)
         try:
-            return await asyncio.wait_for(waiter.future, timeout=max(0.0, timeout))
-        except TimeoutError:
+            return await self._wait_for_registered_notification(
+                waiter,
+                timeout=timeout,
+                required=required,
+            )
+        finally:
+            self._remove_notification_waiter(waiter)
+
+    async def send_control_packet_wait_notification(
+        self,
+        packet: bytes,
+        *,
+        label: str,
+        match: Callable[[bytes], bool],
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        if not self.can_send_control_packet_wait_notification():
             if required:
-                raise TimeoutError(f"Timed out waiting for BLE notification: {label}") from None
-            self.report_debug(f"optional notification wait timed out: {label}")
+                raise RuntimeError(f"BLE notification query unavailable: {label}")
+            self.report_debug(f"optional notification query unavailable: {label}")
             return None
+        waiter = self._register_notification_waiter(label, match)
+        try:
+            sent = await self.send_control_packet(packet, timeout=timeout)
+            if not sent:
+                if required:
+                    raise RuntimeError(f"BLE control send failed before notification wait: {label}")
+                return None
+            return await self._wait_for_registered_notification(
+                waiter,
+                timeout=timeout,
+                required=required,
+            )
         finally:
             self._remove_notification_waiter(waiter)
 
@@ -791,6 +816,35 @@ class _BleakTransportSession:
     ) -> bytes | None:
         _ = packet, timeout, reply_complete
         return None
+
+    def _register_notification_waiter(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+    ) -> _NotificationWaiter:
+        loop = asyncio.get_running_loop()
+        waiter = _NotificationWaiter(
+            label=label,
+            match=match,
+            future=loop.create_future(),
+        )
+        self._notification_waiters.append(waiter)
+        return waiter
+
+    async def _wait_for_registered_notification(
+        self,
+        waiter: _NotificationWaiter,
+        *,
+        timeout: float,
+        required: bool,
+    ) -> bytes | None:
+        try:
+            return await asyncio.wait_for(waiter.future, timeout=max(0.0, timeout))
+        except TimeoutError:
+            if required:
+                raise TimeoutError(f"Timed out waiting for BLE notification: {waiter.label}") from None
+            self.report_debug(f"optional notification wait timed out: {waiter.label}")
+            return None
 
     def _match_notification_waiters(self, payload: bytes) -> None:
         for waiter in tuple(self._notification_waiters):

@@ -11,6 +11,7 @@ class ProtocolCommandSet(str, Enum):
     V5X = "v5x"
     V5C = "v5c"
     DCK = "dck"
+    NIIMBOT = "niimbot"
 
 
 class ProtocolTransportStyle(str, Enum):
@@ -35,6 +36,7 @@ class ProtocolFamily(str, Enum):
     V5X = "v5x"
     V5C = "v5c"
     DCK = "dck"
+    NIIMBOT = "niimbot"
 
     @classmethod
     def from_value(cls, value: "ProtocolFamily | str | None") -> "ProtocolFamily":

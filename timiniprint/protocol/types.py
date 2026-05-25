@@ -19,6 +19,7 @@ class ImageEncoding(str, Enum):
     V5C_A4 = "v5c_a4"
     V5C_A5 = "v5c_a5"
     DCK_DEFAULT = "dck_default"
+    NIIMBOT_D110 = "niimbot_d110"
 
 
 class PaperMode(str, Enum):

@@ -52,6 +52,29 @@ class _QuerySocket(_Socket):
         raise TimeoutError()
 
 
+class _BleNotificationQuerySocket(_Socket):
+    def __init__(self, *, can_send_wait: bool = True):
+        super().__init__(fail=False)
+        self.can_send_wait = can_send_wait
+
+    def can_send_control_packet_wait_notification(self):
+        return self.can_send_wait
+
+    def send_control_packet_wait_notification(
+        self,
+        packet,
+        *,
+        label,
+        match,
+        timeout,
+        required=True,
+    ):
+        _ = label, timeout, required
+        self.sent.append(bytes(packet))
+        reply = b"ACK"
+        return reply if match(reply) else None
+
+
 class _Reporter:
     def __init__(self):
         self.debugs = []
@@ -254,6 +277,27 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         backend._transport = DeviceTransport.BLE
         self.assertFalse(backend.can_query_control_packet())
+
+    def test_ble_notification_query_capability_requires_socket_support(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        backend._sock = _BleNotificationQuerySocket(can_send_wait=True)
+        backend._connected = True
+        backend._transport = DeviceTransport.BLE
+
+        self.assertTrue(backend.can_send_control_packet_wait_notification())
+        reply = backend._send_control_packet_wait_notification_blocking(
+            b"Q",
+            "ack",
+            lambda data: data == b"ACK",
+            0.1,
+            True,
+        )
+
+        self.assertEqual(reply, b"ACK")
+        self.assertEqual(backend._sock.sent, [b"Q"])
+
+        backend._sock = _BleNotificationQuerySocket(can_send_wait=False)
+        self.assertFalse(backend.can_send_control_packet_wait_notification())
 
 
 if __name__ == "__main__":

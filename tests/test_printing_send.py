@@ -4,7 +4,7 @@ from collections.abc import Callable
 import unittest
 
 from timiniprint.printing.send import send_prepared_job
-from timiniprint.protocol import ProtocolJob, ProtocolReplyExpectation, ProtocolStep
+from timiniprint.protocol import ProtocolJob, ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
 
 
 class _Reporter:
@@ -34,6 +34,7 @@ class _Connection:
         self.query_match_results: list[bool] = []
         self.standard_payloads: list[bytes] = []
         self.sent_jobs: list[ProtocolJob] = []
+        self.notification_query_packets: list[bytes] = []
 
     def can_query_control_packet(self) -> bool:
         return self.can_query
@@ -63,6 +64,54 @@ class _Connection:
 
     async def send_standard_payload(self, data: bytes) -> None:
         self.standard_payloads.append(bytes(data))
+
+
+class _NotificationConnection(_Connection):
+    def __init__(self, *, replies: list[bytes | None]) -> None:
+        super().__init__(can_query=False, replies=replies)
+
+    def can_wait_for_notification(self) -> bool:
+        return True
+
+    def can_send_control_packet_wait_notification(self) -> bool:
+        return True
+
+    async def send_control_packet_wait_notification(
+        self,
+        packet: bytes,
+        *,
+        label: str,
+        match,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        _ = label, timeout, required
+        self.notification_query_packets.append(bytes(packet))
+        if not self.replies:
+            return None
+        reply = self.replies.pop(0)
+        if reply is not None:
+            self.query_match_results.append(match(reply))
+        return reply
+
+
+class _WaitOnlyConnection(_Connection):
+    def __init__(self) -> None:
+        super().__init__(can_query=False)
+
+    def can_wait_for_notification(self) -> bool:
+        return True
+
+    async def wait_for_notification(
+        self,
+        label: str,
+        match,
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        _ = label, match, timeout, required
+        return b"ACK"
 
 
 class _SendOnlyConnection:
@@ -152,6 +201,82 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(connection.sent_jobs[0].payload, b"B")
         self.assertEqual(len(reporter.warnings), 1)
         self.assertIn("raw standard payload chunks", reporter.warnings[0][1])
+
+    async def test_send_prepared_job_can_query_via_ble_notification(self) -> None:
+        matcher = ProtocolReplyMatcher(
+            complete=lambda reply: reply == b"ACK",
+            matches=lambda reply: reply == b"ACK",
+        )
+        connection = _NotificationConnection(replies=[b"ACK"])
+        reporter = _Reporter()
+        job = ProtocolJob(
+            steps=(
+                ProtocolStep.query(
+                    "notify query",
+                    b"Q",
+                    expect=ProtocolReplyExpectation.NONE,
+                    reply_matcher=matcher,
+                ),
+            )
+        )
+
+        await send_prepared_job(object(), connection, job, reporter=reporter)
+
+        self.assertEqual(connection.notification_query_packets, [b"Q"])
+        self.assertEqual(connection.query_match_results, [True])
+        self.assertEqual(connection.sent_jobs, [])
+        self.assertEqual(reporter.warnings, [])
+
+    async def test_send_prepared_job_requires_atomic_ble_notification_query(self) -> None:
+        matcher = ProtocolReplyMatcher(
+            complete=lambda reply: reply == b"ACK",
+            matches=lambda reply: reply == b"ACK",
+        )
+        connection = _WaitOnlyConnection()
+        reporter = _Reporter()
+        job = ProtocolJob(
+            steps=(
+                ProtocolStep.query(
+                    "notify query",
+                    b"Q",
+                    expect=ProtocolReplyExpectation.NONE,
+                    reply_matcher=matcher,
+                ),
+            )
+        )
+
+        await send_prepared_job(object(), connection, job, reporter=reporter)
+
+        self.assertEqual(connection.notification_query_packets, [])
+        self.assertEqual(connection.query_match_results, [])
+        self.assertEqual(len(connection.sent_jobs), 1)
+        self.assertEqual(reporter.warnings[0][0], "Protocol query unavailable")
+
+    async def test_repeated_query_total_timeout_caps_single_attempt_timeout(self) -> None:
+        matcher = ProtocolReplyMatcher(
+            complete=lambda reply: reply == b"ACK",
+            matches=lambda reply: reply == b"ACK",
+        )
+        connection = _Connection(replies=[None])
+        reporter = _Reporter()
+        job = ProtocolJob(
+            steps=(
+                ProtocolStep.query(
+                    "poll",
+                    b"P",
+                    expect=ProtocolReplyExpectation.NONE,
+                    timeout_sec=10.0,
+                    reply_matcher=matcher,
+                    repeat_interval_sec=1.0,
+                    repeat_timeout_sec=0.01,
+                ),
+            )
+        )
+
+        await send_prepared_job(object(), connection, job, timeout=5.0, reporter=reporter)
+
+        self.assertEqual(connection.query_packets, [b"P"])
+        self.assertLessEqual(connection.query_timeouts[0], 0.01)
 
 
 if __name__ == "__main__":

@@ -92,6 +92,12 @@ class RuntimeConnectionSession:
             return bool(can_wait_for_notification())
         return False
 
+    def can_send_control_packet_wait_notification(self) -> bool:
+        can_send_wait = getattr(self._connection, "can_send_control_packet_wait_notification", None)
+        if callable(can_send_wait):
+            return bool(can_send_wait())
+        return False
+
     def can_send_standard_payload(self) -> bool:
         send_standard_payload = getattr(self._connection, "send_standard_payload", None)
         return callable(send_standard_payload)
@@ -136,6 +142,28 @@ class RuntimeConnectionSession:
         return await wait_for_notification(
             label,
             match,
+            timeout=timeout,
+            required=required,
+        )
+
+    async def send_control_packet_wait_notification(
+        self,
+        packet: bytes,
+        *,
+        label: str,
+        match: Callable[[bytes], bool],
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        send_wait = getattr(self._connection, "send_control_packet_wait_notification", None)
+        if not callable(send_wait) or not self.can_send_control_packet_wait_notification():
+            if required:
+                raise RuntimeError("Connection does not support atomic BLE notification queries")
+            return None
+        return await send_wait(
+            packet,
+            label=label,
+            match=match,
             timeout=timeout,
             required=required,
         )
