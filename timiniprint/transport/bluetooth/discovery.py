@@ -78,6 +78,34 @@ class BluetoothDiscovery:
                 devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
         return devices, failures
 
+    def _scan_endpoints_blocking(
+        self,
+        *,
+        timeout: float = 5.0,
+        include_classic: bool = True,
+        include_ble: bool = True,
+    ) -> tuple[List[DeviceInfo], List[ScanFailure]]:
+        devices, failures = SppBackend.scan_with_failures_blocking(
+            timeout=timeout,
+            include_classic=include_classic,
+            include_ble=include_ble,
+        )
+        if include_classic and include_ble:
+            resolved_targets = self._transport_targets_from_scan(devices)
+            needs_retry = any(
+                item.transport_target.classic_endpoint is not None
+                and item.transport_target.ble_endpoint is None
+                for item in resolved_targets
+            )
+            if needs_retry:
+                ble_devices, _failures = SppBackend.scan_with_failures_blocking(
+                    timeout=timeout,
+                    include_classic=False,
+                    include_ble=True,
+                )
+                devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
+        return devices, failures
+
     def _filter_supported_endpoints(self, devices: Iterable[DeviceInfo]) -> List[DeviceInfo]:
         filtered = []
         for device in devices:
@@ -94,6 +122,23 @@ class BluetoothDiscovery:
     ) -> BluetoothScanResult:
         """Scan Bluetooth and return logical devices plus transport scan failures."""
         devices, failures = await self._scan_endpoints(
+            timeout=timeout,
+            include_classic=include_classic,
+            include_ble=include_ble,
+        )
+        resolved = self.devices_from_scan(devices)
+        self._report_scan_debug(devices, resolved, failures)
+        return BluetoothScanResult(devices=resolved, failures=failures, raw_endpoints=devices)
+
+    def scan_report_blocking(
+        self,
+        *,
+        timeout: float = 5.0,
+        include_classic: bool = True,
+        include_ble: bool = True,
+    ) -> BluetoothScanResult:
+        """Blocking scan variant for UI workers that must not use asyncio executors."""
+        devices, failures = self._scan_endpoints_blocking(
             timeout=timeout,
             include_classic=include_classic,
             include_ble=include_ble,

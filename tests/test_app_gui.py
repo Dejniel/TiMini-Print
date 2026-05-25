@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from timiniprint import reporting
 from timiniprint.app.gui import TiMiniPrintGUI
@@ -140,6 +141,59 @@ class GuiDebugDeviceListTests(unittest.TestCase):
 
         gui.debug_mode_var = SimpleNamespace(get=lambda: True)
         self.assertEqual(gui._scan_result_status_count(result), 2)
+
+    def test_scan_uses_blocking_discovery_worker(self) -> None:
+        catalog = PrinterCatalog.load()
+        result = BluetoothScanResult(
+            devices=[catalog.detect_device("X6H-ABCD", "AA:BB:CC:DD:EE:01")],
+            failures=[],
+            raw_endpoints=[],
+        )
+        queued = []
+        statuses = []
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui._closing = False
+        gui._scan_busy = False
+        gui.discovery = SimpleNamespace(scan_report_blocking=lambda: result)
+        gui.queue = SimpleNamespace(put=queued.append)
+        gui.debug_mode_var = SimpleNamespace(get=lambda: False)
+        gui._queue_status = lambda key, **ctx: statuses.append((key, ctx))
+        gui._queue_warning = lambda *args, **kwargs: None
+        gui._queue_error = lambda *args, **kwargs: None
+
+        with patch("timiniprint.app.gui.threading.Thread", _InlineThread):
+            gui.scan()
+
+        self.assertFalse(gui._scan_busy)
+        self.assertEqual(queued, [("devices", result)])
+        self.assertEqual(statuses[0][0], reporting.STATUS_SCAN_START)
+        self.assertEqual(statuses[-1], (reporting.STATUS_SCAN_DONE, {"count": 1}))
+
+    def test_scan_failure_clears_busy_state(self) -> None:
+        errors = []
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui._closing = False
+        gui._scan_busy = False
+        gui.discovery = SimpleNamespace(scan_report_blocking=lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+        gui._queue_status = lambda *args, **kwargs: None
+        gui._queue_warning = lambda *args, **kwargs: None
+        gui._queue_error = lambda key, **ctx: errors.append((key, ctx))
+
+        with patch("timiniprint.app.gui.threading.Thread", _InlineThread):
+            gui.scan()
+
+        self.assertFalse(gui._scan_busy)
+        self.assertEqual(errors[0][0], reporting.ERROR_SCAN_FAILED)
+
+
+class _InlineThread:
+    def __init__(self, *, target, name=None, daemon=None):
+        self._target = target
+        self.name = name
+        self.daemon = daemon
+
+    def start(self) -> None:
+        self._target()
 
 
 if __name__ == "__main__":

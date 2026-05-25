@@ -31,32 +31,57 @@ DEBUG_AUTO_LABEL = "Auto"
 
 class BleLoop:
     def __init__(self) -> None:
-        self._loop = asyncio.new_event_loop()
+        self._loop: asyncio.AbstractEventLoop | None = None
+        self._loop_ready = threading.Event()
+        self._shutdown_timeout = 2.0
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
+        if not self._loop_ready.wait(timeout=2.0):
+            raise RuntimeError("BLE event loop did not start")
 
     def _run(self) -> None:
-        asyncio.set_event_loop(self._loop)
-        self._loop.run_forever()
-        pending = [task for task in asyncio.all_tasks(self._loop) if not task.done()]
-        for task in pending:
-            task.cancel()
-        if pending:
-            self._loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
-        self._loop.run_until_complete(self._loop.shutdown_asyncgens())
-        self._loop.close()
+        loop = asyncio.new_event_loop()
+        self._loop = loop
+        asyncio.set_event_loop(loop)
+        self._loop_ready.set()
+        try:
+            loop.run_forever()
+            pending = [task for task in asyncio.all_tasks(loop) if not task.done()]
+            for task in pending:
+                task.cancel()
+            if pending:
+                loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(self._shutdown_default_executor(loop))
+        finally:
+            loop.close()
+            asyncio.set_event_loop(None)
+
+    async def _shutdown_default_executor(self, loop: asyncio.AbstractEventLoop) -> None:
+        try:
+            await loop.shutdown_default_executor(timeout=self._shutdown_timeout)
+        except TypeError:
+            await loop.shutdown_default_executor()
 
     def submit(self, coro, callback=None):
-        future = asyncio.run_coroutine_threadsafe(coro, self._loop)
+        self._loop_ready.wait()
+        loop = self._loop
+        if loop is None or loop.is_closed():
+            coro.close()
+            raise RuntimeError("BLE event loop is closed")
+        future = asyncio.run_coroutine_threadsafe(coro, loop)
         if callback:
             future.add_done_callback(callback)
         return future
 
     def shutdown(self, timeout: float = 2.0) -> None:
-        if self._loop.is_closed():
+        self._loop_ready.wait(timeout)
+        loop = self._loop
+        if loop is None or loop.is_closed():
             return
-        self._loop.call_soon_threadsafe(self._loop.stop)
-        self._thread.join(timeout)
+        self._shutdown_timeout = timeout
+        loop.call_soon_threadsafe(loop.stop)
+        self._thread.join(timeout + 0.2)
 
 
 class TiMiniPrintGUI(tk.Tk):
@@ -114,6 +139,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._paper_motion_action = None
         self._paper_motion_job = None
         self._paper_motion_busy = False
+        self._scan_busy = False
         self._layout_ready = False
         self._closing = False
         self._paper_mode_choice_map: dict[str, PaperMode] = {}
@@ -149,16 +175,9 @@ class TiMiniPrintGUI(tk.Tk):
         ttk.Label(device_frame, text="Profile:").grid(row=1, column=0, sticky="w", **padding)
         self.profile_label = ttk.Label(device_frame, textvariable=self.profile_var, width=48)
         self.profile_label.grid(row=1, column=1, sticky="ew", **padding)
-        self.debug_mode_check = ttk.Checkbutton(
-            device_frame,
-            text="Debug only for programmers",
-            variable=self.debug_mode_var,
-            command=self._on_debug_mode_changed,
-        )
-        self.debug_mode_check.grid(row=1, column=2, sticky="e", **padding)
 
         self.connection_button = ttk.Button(device_frame, text="Connect", command=self.toggle_connection)
-        self.connection_button.grid(row=1, column=3, sticky="e", **padding)
+        self.connection_button.grid(row=1, column=2, sticky="e", **padding)
 
         self.debug_frame = ttk.LabelFrame(self, text="Debug overrides")
         self.debug_frame.columnconfigure(1, weight=1)
@@ -334,14 +353,23 @@ class TiMiniPrintGUI(tk.Tk):
 
         status_frame = ttk.Frame(self)
         status_frame.pack(fill="x", padx=10, pady=10)
+        self.debug_mode_check = ttk.Checkbutton(
+            status_frame,
+            text="Debug only for programmers",
+            variable=self.debug_mode_var,
+            command=self._on_debug_mode_changed,
+        )
+        self.debug_mode_check.pack(side="right")
         ttk.Label(status_frame, text="Status:").pack(side="left")
-        ttk.Label(status_frame, textvariable=self.status_var).pack(side="left", padx=6)
+        ttk.Label(status_frame, textvariable=self.status_var).pack(side="left", padx=6, fill="x", expand=True)
 
         self._update_option_sections(self.file_var.get())
         self._refresh_paper_mode_controls()
         self._refresh_debug_controls()
 
     def _process_queue(self) -> None:
+        if self._closing:
+            return
         while True:
             try:
                 action, payload = self.queue.get_nowait()
@@ -361,7 +389,8 @@ class TiMiniPrintGUI(tk.Tk):
                 self.status_var.set(f"Error: {payload}")
             elif action == "connecting":
                 self._set_connecting_state(bool(payload))
-        self.after(100, self._process_queue)
+        if not self._closing:
+            self.after(100, self._process_queue)
 
     def _device_label(self, device) -> str:
         name = device.display_name or ""
@@ -431,11 +460,16 @@ class TiMiniPrintGUI(tk.Tk):
         self.reporter.error(key, detail=detail, exc=exc, **ctx)
 
     def scan(self) -> None:
+        if self._closing or self._scan_busy:
+            return
+        self._scan_busy = True
         self._queue_status(reporting.STATUS_SCAN_START)
 
-        def done(fut):
+        def run_scan() -> None:
             try:
-                result = fut.result()
+                result = self.discovery.scan_report_blocking()
+                if self._closing:
+                    return
                 self.queue.put(("devices", result))
                 for failure in result.failures:
                     if failure.transport == DeviceTransport.BLE:
@@ -447,9 +481,12 @@ class TiMiniPrintGUI(tk.Tk):
                     count=self._scan_result_status_count(result),
                 )
             except Exception as exc:
-                self._queue_error(reporting.ERROR_SCAN_FAILED, detail=str(exc), exc=exc)
+                if not self._closing:
+                    self._queue_error(reporting.ERROR_SCAN_FAILED, detail=str(exc), exc=exc)
+            finally:
+                self._scan_busy = False
 
-        self.ble_loop.submit(self.discovery.scan_report(), callback=done)
+        threading.Thread(target=run_scan, name="timiniprint-gui-scan", daemon=True).start()
 
     def _scan_result_status_count(self, result: BluetoothScanResult) -> int:
         if self.debug_mode_var.get():

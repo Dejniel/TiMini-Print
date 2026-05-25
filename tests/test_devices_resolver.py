@@ -69,6 +69,23 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(result.devices[0].transport_badge, "[classic+ble]")
         self.assertEqual(result.devices[0].profile_key, "x6h")
 
+    def test_blocking_scan_retry_ble_when_classic_only_detected(self) -> None:
+        classic = DeviceInfo(name="X6H-ABCD", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.CLASSIC)
+        ble = DeviceInfo(name="X6H-ABCD", address="UUID-1", transport=DeviceTransport.BLE)
+
+        with patch(
+            "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures_blocking",
+            side_effect=[([classic], []), ([ble], [])],
+        ) as scan_mock:
+            result = self.discovery.scan_report_blocking(include_classic=True, include_ble=True)
+
+        self.assertEqual(result.failures, [])
+        self.assertEqual(scan_mock.call_count, 2)
+        self.assertEqual(result.raw_endpoints, [classic, ble])
+        self.assertEqual(len(result.devices), 1)
+        self.assertEqual(result.devices[0].transport_badge, "[classic+ble]")
+        self.assertEqual(result.devices[0].profile_key, "x6h")
+
     def test_resolve_transport_target_allows_unsupported_name(self) -> None:
         classic = DeviceInfo(
             name="PPA2L_3F19",

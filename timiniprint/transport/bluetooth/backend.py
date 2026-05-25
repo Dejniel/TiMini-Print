@@ -44,6 +44,14 @@ class SppBackend:
             include_ble,
         )
 
+    @staticmethod
+    def scan_with_failures_blocking(
+        timeout: float = 5.0,
+        include_classic: bool = True,
+        include_ble: bool = True,
+    ) -> Tuple[List[DeviceInfo], List[ScanFailure]]:
+        return _scan_blocking(timeout, include_classic, include_ble)
+
     async def connect(
         self,
         device: DeviceInfo,
