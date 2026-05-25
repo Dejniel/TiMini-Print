@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests.helpers import reset_registry_cache
 from timiniprint.devices import PrinterCatalog
-from timiniprint.devices.device import BluetoothEndpointTransport
+from timiniprint.devices.device import BluetoothEndpointTransport, BluetoothTarget
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
@@ -173,6 +173,50 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
 
         attempts = backend.connect_attempts.await_args.args[0]
         self.assertEqual([item.transport for item in attempts], [DeviceTransport.BLE, DeviceTransport.CLASSIC])
+
+    def test_ble_first_classic_match_can_use_single_anonymous_ble_endpoint(self) -> None:
+        classic = DeviceInfo(name="MX10", address="A1:11:02:24:EF:A7", transport=DeviceTransport.CLASSIC)
+        ble = DeviceInfo(name="", address="EE:2E:02:06:67:16", transport=DeviceTransport.BLE)
+
+        devices = self.discovery.devices_from_scan([classic, ble])
+
+        self.assertEqual(len(devices), 1)
+        device = devices[0]
+        self.assertEqual(device.profile_key, "v5g_small_203")
+        self.assertIsInstance(device.transport_target, BluetoothTarget)
+        self.assertIsNotNone(device.transport_target.classic_endpoint)
+        self.assertIsNotNone(device.transport_target.ble_endpoint)
+        self.assertEqual(device.transport_badge, "[classic+ble]")
+
+        backend = MagicMock()
+        backend.connect_attempts = AsyncMock()
+        with patch("timiniprint.transport.bluetooth.connector.SppBackend", return_value=backend):
+            _run(BleakBluetoothConnector().connect(device))
+
+        attempts = backend.connect_attempts.await_args.args[0]
+        self.assertEqual([item.transport for item in attempts], [DeviceTransport.BLE, DeviceTransport.CLASSIC])
+        self.assertEqual(attempts[0].address, "EE:2E:02:06:67:16")
+
+    def test_anonymous_ble_is_not_attached_to_spp_preferred_profile(self) -> None:
+        classic = DeviceInfo(name="X6H-ABCD", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.CLASSIC)
+        ble = DeviceInfo(name="", address="EE:2E:02:06:67:16", transport=DeviceTransport.BLE)
+
+        devices = self.discovery.devices_from_scan([classic, ble])
+
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices[0].profile_key, "x6h")
+        self.assertEqual(devices[0].transport_badge, "[classic]")
+
+    def test_anonymous_ble_is_not_attached_when_ambiguous(self) -> None:
+        classic = DeviceInfo(name="MX10", address="A1:11:02:24:EF:A7", transport=DeviceTransport.CLASSIC)
+        ble_one = DeviceInfo(name="", address="EE:2E:02:06:67:16", transport=DeviceTransport.BLE)
+        ble_two = DeviceInfo(name="", address="EE:2E:02:06:67:17", transport=DeviceTransport.BLE)
+
+        devices = self.discovery.devices_from_scan([classic, ble_one, ble_two])
+
+        self.assertEqual(len(devices), 1)
+        self.assertEqual(devices[0].profile_key, "v5g_small_203")
+        self.assertEqual(devices[0].transport_badge, "[classic]")
 
 
 def _run(coro):

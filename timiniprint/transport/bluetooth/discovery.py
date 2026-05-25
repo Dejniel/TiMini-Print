@@ -164,7 +164,8 @@ class BluetoothDiscovery:
 
     def devices_from_scan(self, devices: Iterable[DeviceInfo]) -> List[PrinterDevice]:
         """Resolve raw scan endpoints into logical printer devices."""
-        filtered = self._filter_supported_endpoints(devices)
+        endpoint_list = list(devices)
+        filtered = self._filter_supported_endpoints(endpoint_list)
         candidates = self._build_endpoint_candidates(filtered)
         grouped = self._group_candidates(candidates)
 
@@ -179,6 +180,7 @@ class BluetoothDiscovery:
                 resolved.append(self._single_candidate(item))
             for item in ble_items:
                 resolved.append(self._single_candidate(item))
+        resolved = self._attach_single_anonymous_ble_endpoint(resolved, endpoint_list)
         return self._sort_devices(resolved)
 
     def _transport_targets_from_scan(
@@ -307,6 +309,13 @@ class BluetoothDiscovery:
         classic_seen = sum(1 for item in endpoint_list if item.transport == DeviceTransport.CLASSIC)
         ble_seen = sum(1 for item in endpoint_list if item.transport == DeviceTransport.BLE)
         merged = sum(1 for item in resolved_list if item.transport_badge == "[classic+ble]")
+        attached_ble_addresses = {
+            item.transport_target.ble_endpoint.address
+            for item in resolved_list
+            if isinstance(item.transport_target, BluetoothTarget)
+            and item.transport_target.classic_endpoint is not None
+            and item.transport_target.ble_endpoint is not None
+        }
         self._reporter.debug(
             short="Discovery",
             detail=reporting.format_kv(
@@ -321,6 +330,18 @@ class BluetoothDiscovery:
         for endpoint in endpoint_list:
             detected = self._catalog.detect_device(endpoint.name or "", endpoint.address)
             if detected is None:
+                if endpoint.address in attached_ble_addresses:
+                    self._reporter.debug(
+                        short="Discovery",
+                        detail=reporting.format_kv(
+                            "Discovery attached",
+                            name=endpoint.name or "<unknown>",
+                            address=endpoint.address or "<unknown>",
+                            transport=endpoint.transport.value,
+                            reason="single_ble_endpoint_for_ble_first_profile",
+                        ),
+                    )
+                    continue
                 self._reporter.debug(
                     short="Discovery",
                     detail=reporting.format_kv(
@@ -415,6 +436,51 @@ class BluetoothDiscovery:
             transport_target=target,
             detection_rule_key=classic_candidate.device.detection_rule_key,
         )
+
+    def _attach_single_anonymous_ble_endpoint(
+        self,
+        resolved: List[PrinterDevice],
+        endpoints: Iterable[DeviceInfo],
+    ) -> List[PrinterDevice]:
+        if len(resolved) != 1:
+            return resolved
+        device = resolved[0]
+        if device.profile.use_spp:
+            return resolved
+        target = device.transport_target
+        if (
+            not isinstance(target, BluetoothTarget)
+            or target.classic_endpoint is None
+            or target.ble_endpoint is not None
+        ):
+            return resolved
+
+        anonymous_ble = [
+            endpoint
+            for endpoint in endpoints
+            if endpoint.transport == DeviceTransport.BLE
+            and not (endpoint.name or "").strip()
+            and self._catalog.detect_device(endpoint.name or "", endpoint.address) is None
+        ]
+        if len(anonymous_ble) != 1:
+            return resolved
+
+        ble_endpoint = anonymous_ble[0]
+        return [
+            device.with_transport_target(
+                BluetoothTarget(
+                    classic_endpoint=target.classic_endpoint,
+                    ble_endpoint=BluetoothEndpoint(
+                        name="",
+                        address=ble_endpoint.address,
+                        paired=ble_endpoint.paired,
+                        transport=BluetoothEndpointTransport.BLE,
+                    ),
+                    display_address=target.display_address,
+                    transport_badge="[classic+ble]",
+                )
+            )
+        ]
 
     def _single_transport_target(self, endpoint: DeviceInfo) -> _ResolvedBluetoothTarget:
         target = self.transport_target_from_endpoint(endpoint)
