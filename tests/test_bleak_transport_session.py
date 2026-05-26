@@ -579,6 +579,46 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         asyncio.run(run())
 
+    def test_v5g_helper_selects_text_density_from_f2_value_when_be_is_image_mode(self) -> None:
+        session, client = self._make_session(ProtocolFamily.V5G)
+        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session.bindings.write_char = cmd
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = cmd.uuid
+        session.debug_update(temperature_c=54)
+        runtime_controller = _make_v5g_controller(
+            helper_kind="mx10",
+            density_profile_key="mx06",
+            image_levels=DensityLevels(low=150, middle=180, high=200),
+            text_levels=DensityLevels(low=100, middle=130, high=150),
+            applies_d2_status=True,
+            applies_didian_status=False,
+        )
+        data = (
+            make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
+            + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
+            + make_packet(0xF2, (130).to_bytes(2, "little"), ProtocolFamily.V5G)
+            + make_packet(0xA2, b"\x55" * 40, ProtocolFamily.V5G)
+        )
+
+        async def run() -> None:
+            with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.send(
+                    client,
+                    data,
+                    mtu_size=180,
+                    timeout=0.2,
+                    runtime_controller=runtime_controller,
+                )
+                sent = write_chunks.await_args.args[2]
+                self.assertIn(
+                    make_packet(0xF2, (110).to_bytes(2, "little"), ProtocolFamily.V5G),
+                    sent,
+                )
+
+        asyncio.run(run())
+
     def test_v5g_mx10_helper_rewrites_continuous_density_packets(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5G)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])

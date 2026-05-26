@@ -456,9 +456,12 @@ class V5GRuntimeController(RuntimeController):
         if len(density_indexes) <= 4:
             return False
         first_index = density_indexes[0]
-        current_mode_is_text = self._mode_before_packet_index(session, packets, first_index)
-        levels = self._select_levels(is_text=current_mode_is_text)
         first_value = self._extract_density_value(session, packets[first_index])
+        current_mode_is_text = self._mode_before_packet_index(session, packets, first_index)
+        levels, _mode_is_text = self._levels_for_density_value(
+            first_value,
+            fallback_is_text=current_mode_is_text,
+        )
         if levels is None or first_value is None:
             return False
         helper_kind = self._state.helper_kind
@@ -472,8 +475,11 @@ class V5GRuntimeController(RuntimeController):
     def _build_single_density_map(self, session, packets: list[bytes], density_indexes: list[int]) -> dict[int, int]:
         first_index = density_indexes[0]
         current_mode_is_text = self._mode_before_packet_index(session, packets, first_index)
-        levels = self._select_levels(is_text=current_mode_is_text)
         current_value = self._extract_density_value(session, packets[first_index])
+        levels, current_mode_is_text = self._levels_for_density_value(
+            current_value,
+            fallback_is_text=current_mode_is_text,
+        )
         if current_value is None or levels is None:
             return {}
 
@@ -505,8 +511,11 @@ class V5GRuntimeController(RuntimeController):
     ) -> dict[int, int]:
         first_index = density_indexes[0]
         current_mode_is_text = self._mode_before_packet_index(session, packets, first_index)
-        levels = self._select_levels(is_text=current_mode_is_text)
         first_value = self._extract_density_value(session, packets[first_index])
+        levels, current_mode_is_text = self._levels_for_density_value(
+            first_value,
+            fallback_is_text=current_mode_is_text,
+        )
         if levels is None or first_value is None:
             return {}
         helper_kind = self._state.helper_kind
@@ -578,6 +587,36 @@ class V5GRuntimeController(RuntimeController):
             if session.extract_prefixed_opcode(packet) == 0xBE:
                 is_text = self._extract_print_mode(session, packet)
         return is_text
+
+    def _levels_for_density_value(
+        self,
+        value: int | None,
+        *,
+        fallback_is_text: bool,
+    ) -> tuple[DensityLevels | None, bool]:
+        if value is None:
+            return self._select_levels(is_text=fallback_is_text), fallback_is_text
+        text_levels = self._select_levels(is_text=True)
+        image_levels = self._select_levels(is_text=False)
+        text_score = self._density_level_distance(text_levels, value)
+        image_score = self._density_level_distance(image_levels, value)
+        if text_score is None and image_score is None:
+            return None, fallback_is_text
+        if image_score is None or (text_score is not None and text_score < image_score):
+            return text_levels, True
+        if text_score is None or image_score < text_score:
+            return image_levels, False
+        return self._select_levels(is_text=fallback_is_text), fallback_is_text
+
+    @staticmethod
+    def _density_level_distance(levels: DensityLevels | None, value: int) -> int | None:
+        if levels is None:
+            return None
+        return min(
+            abs(value - levels.low),
+            abs(value - levels.middle),
+            abs(value - levels.high),
+        )
 
     @staticmethod
     def _extract_density_value(session, packet: bytes) -> int | None:

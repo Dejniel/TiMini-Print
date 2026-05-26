@@ -40,8 +40,8 @@ def _energy_packet(energy: int, protocol_family) -> bytes:
     return make_packet(0xAF, int(energy).to_bytes(2, "little", signed=False), protocol_family)
 
 
-def _print_mode_packet(is_text: bool, protocol_family) -> bytes:
-    return make_packet(0xBE, bytes([1 if is_text else 0]), protocol_family)
+def _print_mode_packet(protocol_family) -> bytes:
+    return make_packet(0xBE, bytes([0x00]), protocol_family)
 
 
 def _feed_packet(speed: int, protocol_family) -> bytes:
@@ -103,10 +103,11 @@ def _gray_frames(request: PrintJobRequest) -> bytes:
 
 def build_job(request: PrintJobRequest) -> bytes:
     job = bytearray()
+    job += _state_query_packet(request.protocol_family)
     job += _quality_packet(request.blackening, request.protocol_family)
-    job += _lattice_packet(True, request.protocol_family)
     job += _energy_packet(request.energy, request.protocol_family)
-    job += _print_mode_packet(request.is_text, request.protocol_family)
+    job += _lattice_packet(True, request.protocol_family)
+    job += _print_mode_packet(request.protocol_family)
     job += _feed_packet(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
     if request.density is not None:
         job += _density_packet(request.density, request.protocol_family)

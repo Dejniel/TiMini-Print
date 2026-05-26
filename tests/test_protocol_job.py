@@ -1295,7 +1295,41 @@ class ProtocolJobTests(unittest.TestCase):
             data.count(self.commands.make_packet(0xA1, bytes([0x30, 0x00]), ProtocolFamily.V5G)),
             1,
         )
+        state_query = self.commands.make_packet(0xA3, bytes([0x00]), ProtocolFamily.V5G)
+        quality = self.commands.make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
+        energy = self.commands.make_packet(0xAF, (15000).to_bytes(2, "little"), ProtocolFamily.V5G)
+        start_lattice = self.commands.make_packet(
+            0xA6,
+            bytes.fromhex("AA551738445F5F5F44382C"),
+            ProtocolFamily.V5G,
+        )
+        print_mode = self.commands.make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
+        self.assertLess(data.index(state_query), data.index(quality))
+        self.assertLess(data.index(quality), data.index(energy))
+        self.assertLess(data.index(energy), data.index(start_lattice))
+        self.assertLess(data.index(start_lattice), data.index(print_mode))
+        self.assertEqual(data.count(state_query), 2)
         self.assertTrue(data.endswith(self.commands.make_packet(0xA3, bytes([0x00]), ProtocolFamily.V5G)))
+
+    def test_build_v5g_text_job_still_uses_source_image_mode_packet(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=True,
+            speed=None,
+            energy=15000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.V5G,
+            feed_padding=12,
+            dev_dpi=203,
+            post_print_feed_count=1,
+            image_pipeline=self.v5g_dot,
+        )
+
+        self.assertIn(self.commands.make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G), data)
+        self.assertNotIn(self.commands.make_packet(0xBE, bytes([0x01]), ProtocolFamily.V5G), data)
 
     def test_build_v5g_gray_job_uses_density_and_compressed_frame(self) -> None:
         raster_set = self._raster_set(
