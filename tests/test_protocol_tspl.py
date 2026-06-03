@@ -27,10 +27,14 @@ class TsplProtocolTests(unittest.TestCase):
             blackening=3,
         )
 
+        self.assertTrue(job.payload.startswith(b"\x10\xff\x10\x03\x02"))
         self.assertIn(b"SIZE 1 mm,0.25 mm\r\n", job.payload)
-        self.assertIn(b"GAP 2 mm,0 mm\r\n", job.payload)
-        self.assertIn(b"DENSITY 8\r\n", job.payload)
-        self.assertIn(b"CLS\r\nDIRECTION 0\r\n", job.payload)
+        self.assertIn(b"DIRECTION 0,0\r\n", job.payload)
+        self.assertIn(b"GAP 3 mm,0 mm\r\n", job.payload)
+        self.assertIn(b"SET RIBBON OFF\r\n", job.payload)
+        self.assertIn(b"DENSITY 9\r\n", job.payload)
+        self.assertIn(b"REFERENCE 0,0\r\n", job.payload)
+        self.assertIn(b"SPEED 6\r\n", job.payload)
         self.assertIn(b"BITMAP 0,0,1,2,0,\x80@\r\n", job.payload)
         self.assertTrue(job.payload.endswith(b"PRINT 1,1\r\n"))
 
@@ -46,15 +50,23 @@ class TsplProtocolTests(unittest.TestCase):
             blackening=3,
         )
 
-        self.assertLess(job.payload.index(b"SIZE "), job.payload.index(b"GAP "))
-        self.assertLess(job.payload.index(b"GAP "), job.payload.index(b"SPEED 4\r\n"))
-        self.assertLess(job.payload.index(b"SPEED 4\r\n"), job.payload.index(b"DENSITY 8\r\n"))
-        self.assertLess(job.payload.index(b"DENSITY 8\r\n"), job.payload.index(b"CLS\r\n"))
-        self.assertLess(job.payload.index(b"CLS\r\n"), job.payload.index(b"DIRECTION 0\r\n"))
-        self.assertLess(job.payload.index(b"DIRECTION 0\r\n"), job.payload.index(b"BITMAP "))
-        self.assertLess(job.payload.index(b"BITMAP "), job.payload.index(b"PRINT 1,1\r\n"))
+        expected_order = (
+            b"\x10\xff\x10\x03\x02",
+            b"SIZE ",
+            b"DIRECTION 0,0\r\n",
+            b"GAP ",
+            b"SET RIBBON OFF\r\n",
+            b"DENSITY 9\r\n",
+            b"REFERENCE 0,0\r\n",
+            b"SPEED 4\r\n",
+            b"CLS\r\n",
+            b"BITMAP ",
+            b"PRINT 1,1\r\n",
+        )
+        positions = [job.payload.index(marker) for marker in expected_order]
+        self.assertEqual(positions, sorted(positions))
 
-    def test_p1_plain_mode_uses_continuous_gap(self) -> None:
+    def test_p1_plain_mode_uses_continuous_media_setup_and_gap(self) -> None:
         device = PrinterCatalog.load().device_from_profile("tspl_p1")
         raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
 
@@ -64,6 +76,7 @@ class TsplProtocolTests(unittest.TestCase):
             paper_mode=PaperMode.PLAIN,
         )
 
+        self.assertTrue(job.payload.startswith(b"\x10\xff\x10\x03\x01"))
         self.assertIn(b"GAP 0 mm,0 mm\r\n", job.payload)
 
     def test_catalog_detects_eleph_p1_as_tspl_without_stealing_old_p1(self) -> None:

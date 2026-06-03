@@ -5365,6 +5365,10 @@
     },
     "post_print_feed_count": 0,
     "tuning": {
+      "speed": {
+        "image": 6,
+        "text": 6
+      },
       "energy": {
         "image": {
           "low": 0,
@@ -5380,13 +5384,13 @@
       "density": {
         "image": {
           "low": 6,
-          "middle": 8,
-          "high": 10
+          "middle": 9,
+          "high": 13
         },
         "text": {
           "low": 6,
-          "middle": 8,
-          "high": 10
+          "middle": 9,
+          "high": 13
         }
       }
     },
