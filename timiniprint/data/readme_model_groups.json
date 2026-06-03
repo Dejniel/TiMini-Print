@@ -81,7 +81,6 @@
         "MX08",
         "MX09",
         "MX11",
-        "P1",
         "P10",
         "P2",
         "P4",
@@ -147,6 +146,24 @@
         "ZP802",
         "ZPA4Z1"
       ]
+    },
+    {
+      "id": "tinyprint-p1",
+      "status": "supported",
+      "display_label": "P1",
+      "primary_names": [
+        "P1-"
+      ],
+      "original_app_name": "legacy"
+    },
+    {
+      "id": "eleph-label-p1",
+      "status": "supported",
+      "display_label": "P1",
+      "primary_names": [
+        "P1_"
+      ],
+      "original_app_name": "TSPL"
     },
     {
       "id": "niimbot-d110",

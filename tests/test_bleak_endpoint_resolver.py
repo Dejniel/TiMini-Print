@@ -96,6 +96,38 @@ class BleakEndpointResolverTests(unittest.TestCase):
         self.assertEqual(selection.char_uuid, "0000ff02-0000-1000-8000-00805f9b34fb")
         self.assertEqual(selection.strategy, "preferred_uuid")
 
+    def test_profile_specific_preferred_uuid_is_not_global_fallback(self) -> None:
+        services = [
+            _FakeService(
+                "000018f0-0000-1000-8000-00805f9b34fb",
+                [
+                    _FakeCharacteristic(
+                        "00002af0-0000-1000-8000-00805f9b34fb",
+                        ["write-without-response"],
+                    ),
+                    _FakeCharacteristic(
+                        "00002af1-0000-1000-8000-00805f9b34fb",
+                        ["write-without-response"],
+                    ),
+                ],
+            )
+        ]
+
+        generic = self.resolver.resolve(services)
+        specific = self.resolver.resolve(
+            services,
+            preferred_service_uuid="000018f0-0000-1000-8000-00805f9b34fb",
+            preferred_write_char_uuid="00002af1-0000-1000-8000-00805f9b34fb",
+        )
+
+        self.assertIsNotNone(generic)
+        assert generic is not None
+        self.assertEqual(generic.strategy, "generic_fallback")
+        self.assertIsNotNone(specific)
+        assert specific is not None
+        self.assertEqual(specific.strategy, "preferred_uuid")
+        self.assertEqual(specific.char_uuid, "00002af1-0000-1000-8000-00805f9b34fb")
+
 
 if __name__ == "__main__":
     unittest.main()

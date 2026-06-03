@@ -165,7 +165,12 @@ class _LinuxAttSocket:
             self._client.connect(address)
             self._connected = True
             self._mtu_size = min(max(1, self._client.mtu_size - 3), 512)
-            selection = self._write_resolver.resolve(self._client.services)
+            transport = get_protocol_behavior(self._protocol_family).transport
+            selection = self._write_resolver.resolve(
+                self._client.services,
+                preferred_service_uuid=transport.preferred_service_uuid,
+                preferred_write_char_uuid=transport.preferred_write_char_uuid,
+            )
             if not selection:
                 raise RuntimeError(
                     f"Could not find a writable GATT characteristic on device {address}."

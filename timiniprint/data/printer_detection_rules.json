@@ -2740,6 +2740,15 @@
     "protocol_family": "luck_normal_a4"
   },
   {
+    "rule_key": "rule_tspl_p1",
+    "prefixes": [
+      "P1_"
+    ],
+    "profile_key": "tspl_p1",
+    "protocol_family": "tspl",
+    "protocol_variant": "p1"
+  },
+  {
     "rule_key": "rule_niimbot_d110",
     "prefixes": [
       "D110-"

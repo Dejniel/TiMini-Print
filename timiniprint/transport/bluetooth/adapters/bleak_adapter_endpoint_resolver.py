@@ -61,8 +61,18 @@ class _BleWriteEndpointResolver:
     def __init__(self, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
         self._reporter = reporter
 
-    def resolve(self, services: Iterable[object]) -> Optional[_WriteSelection]:
-        candidates = self._collect_candidates(services)
+    def resolve(
+        self,
+        services: Iterable[object],
+        *,
+        preferred_service_uuid: str = "",
+        preferred_write_char_uuid: str = "",
+    ) -> Optional[_WriteSelection]:
+        candidates = self._collect_candidates(
+            services,
+            preferred_service_uuid=preferred_service_uuid,
+            preferred_write_char_uuid=preferred_write_char_uuid,
+        )
         self._log_candidates(candidates)
         return self._select_candidate(candidates)
 
@@ -152,8 +162,16 @@ class _BleWriteEndpointResolver:
         return score
 
     @classmethod
-    def _collect_candidates(cls, services: Iterable[object]) -> List[_WriteCandidate]:
+    def _collect_candidates(
+        cls,
+        services: Iterable[object],
+        *,
+        preferred_service_uuid: str = "",
+        preferred_write_char_uuid: str = "",
+    ) -> List[_WriteCandidate]:
         candidates: List[_WriteCandidate] = []
+        service_preference = cls._normalize_uuid(preferred_service_uuid)
+        write_preference = cls._normalize_uuid(preferred_write_char_uuid)
         for service in services:
             service_uuid = cls._normalize_uuid(getattr(service, "uuid", ""))
             for characteristic in getattr(service, "characteristics", []):
@@ -174,12 +192,14 @@ class _BleWriteEndpointResolver:
                             char_uuid,
                             cls._PREFERRED_WRITE_UUIDS,
                             cls._PREFERRED_WRITE_SHORT,
-                        ),
+                        )
+                        or (bool(write_preference) and char_uuid == write_preference),
                         service_preferred=cls._uuid_is_preferred(
                             service_uuid,
                             cls._PREFERRED_SERVICE_UUIDS,
                             cls._PREFERRED_SERVICE_SHORT,
-                        ),
+                        )
+                        or (bool(service_preference) and service_uuid == service_preference),
                         notify_preferred=cls._uuid_is_preferred(
                             char_uuid,
                             cls._PREFERRED_NOTIFY_UUIDS,

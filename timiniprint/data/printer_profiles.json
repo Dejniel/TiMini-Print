@@ -5338,6 +5338,61 @@
     "a4xii": false
   },
   {
+    "profile_key": "tspl_p1",
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "can_change_mtu": true,
+    "has_id": false,
+    "use_spp": false,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 0,
+    "default_protocol_family": "tspl",
+    "default_protocol_variant": "p1",
+    "default_paper_mode": "tag",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "tspl_bitmap"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 10
+    },
+    "post_print_feed_count": 0,
+    "tuning": {
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 6,
+          "middle": 8,
+          "high": 10
+        },
+        "text": {
+          "low": 6,
+          "middle": 8,
+          "high": 10
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
     "profile_key": "niimbot_d110",
     "size": 1,
     "paper_size": 96,

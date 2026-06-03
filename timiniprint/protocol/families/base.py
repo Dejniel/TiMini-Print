@@ -40,6 +40,7 @@ class BleTransportProfile:
     standard_chunk_cap: int = 20
     standard_write_delay_ms: int = 50
     preferred_service_uuid: str = ""
+    preferred_write_char_uuid: str = ""
     notify_char_uuid: str = ""
     prefer_generic_notify: bool = False
     flow_control: FlowControlProfile | None = None

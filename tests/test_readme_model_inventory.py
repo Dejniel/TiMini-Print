@@ -67,6 +67,8 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertRegex(supported, r"(?<![A-Z0-9_-])DP_A4(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])DL_X7Pro(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])")
+        self.assertIn("P1 (TSPL)", supported)
+        self.assertIn("P1 (legacy)", supported)
         self.assertIn("- JXPRINTER and clones: PRINTER", todo)
         self.assertIn("- BAYPAGE and clones: YINTIBAO-V8S", todo)
         self.assertIn("- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4", todo)

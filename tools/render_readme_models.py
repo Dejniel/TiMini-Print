@@ -353,7 +353,7 @@ def validate_inventory(entries: list[InventoryEntry]) -> list[str]:
 
         if entry.status == "supported":
             for name in entry.visible_names:
-                public_name = _public_readme_name(name)
+                public_name = _render_primary_name(name, original_app_name=entry.original_app_name)
                 owner = supported_visible_names.get(public_name)
                 if owner is not None:
                     if owner != entry.id:

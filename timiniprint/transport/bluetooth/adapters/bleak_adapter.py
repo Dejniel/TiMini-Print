@@ -172,7 +172,12 @@ class _BleakSocket:
         """Resolve the primary writable characteristic for this connection."""
         if not self._client or not self._connected:
             return None
-        return self._write_resolver.resolve(self._client.services)
+        transport = get_protocol_behavior(self._protocol_family_or_default()).transport
+        return self._write_resolver.resolve(
+            self._client.services,
+            preferred_service_uuid=transport.preferred_service_uuid,
+            preferred_write_char_uuid=transport.preferred_write_char_uuid,
+        )
 
     def send(self, data: bytes) -> int:
         return self.send_payload(data)
