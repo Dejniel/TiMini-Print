@@ -31,7 +31,7 @@ class TsplProtocolTests(unittest.TestCase):
         self.assertIn(b"GAP 2 mm,0 mm\r\n", job.payload)
         self.assertIn(b"DENSITY 8\r\n", job.payload)
         self.assertIn(b"CLS\r\nDIRECTION 0\r\n", job.payload)
-        self.assertIn(b"BITMAP 0,0,1,2,0\x80@\r\n", job.payload)
+        self.assertIn(b"BITMAP 0,0,1,2,0,\x80@\r\n", job.payload)
         self.assertTrue(job.payload.endswith(b"PRINT 1,1\r\n"))
 
     def test_p1_profile_uses_source_backed_command_order(self) -> None:

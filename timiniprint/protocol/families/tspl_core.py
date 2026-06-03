@@ -37,7 +37,7 @@ class TsplRecipe:
         job += _command("CLS")
         job += _command("DIRECTION", str(self.default_direction))
         job += (
-            _command_head("BITMAP", f"0,0,{width_bytes},{raster.height},0")
+            _command_head("BITMAP", f"0,0,{width_bytes},{raster.height},0,")
             + bitmap
             + _LINE_END
         )
