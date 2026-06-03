@@ -19,6 +19,7 @@ class ImageEncoding(str, Enum):
     V5C_A4 = "v5c_a4"
     V5C_A5 = "v5c_a5"
     DCK_DEFAULT = "dck_default"
+    HPRT_ESC_RASTER = "hprt_esc_raster"
     NIIMBOT_D110 = "niimbot_d110"
     TSPL_BITMAP = "tspl_bitmap"
 

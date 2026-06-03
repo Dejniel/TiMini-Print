@@ -2749,6 +2749,19 @@
     "protocol_variant": "p1"
   },
   {
+    "rule_key": "rule_hprt_esc_toprint_zl1",
+    "prefixes": [
+      "P11_",
+      "P2_",
+      "P3_",
+      "P5_",
+      "YHK_"
+    ],
+    "profile_key": "hprt_esc_toprint_zl1",
+    "protocol_family": "hprt_esc",
+    "protocol_variant": "toprint_zl1"
+  },
+  {
     "rule_key": "rule_niimbot_d110",
     "prefixes": [
       "D110-"

@@ -33,6 +33,7 @@ class InventoryEntry:
     render_mode: str | None
     display_label: str | None
     original_app_name: str | None
+    preserve_suffixes: bool
     notes: str | None
 
     @property
@@ -78,6 +79,7 @@ def load_inventory_entries(path: Path = INVENTORY_PATH) -> list[InventoryEntry]:
                 original_app_name=None
                 if item.get("original_app_name") in (None, "")
                 else str(item["original_app_name"]).strip(),
+                preserve_suffixes=bool(item.get("preserve_suffixes", False)),
                 notes=None if item.get("notes") in (None, "") else str(item["notes"]).strip(),
             )
         )
@@ -105,36 +107,44 @@ def _public_readme_name(name: str) -> str:
     return name[:-1] if name.endswith(("-", "_")) else name
 
 
-def _alias_merge_key(name: str) -> str:
-    return _public_readme_name(name).replace("-", "_")
+def _entry_public_name(entry: InventoryEntry, name: str) -> str:
+    return name if entry.preserve_suffixes else _public_readme_name(name)
+
+
+def _entry_alias_merge_key(entry: InventoryEntry, name: str) -> str:
+    return _entry_public_name(entry, name).replace("-", "_")
 
 
 def _dedupe_names(names: tuple[str, ...] | list[str]) -> list[str]:
     ordered: list[str] = []
     seen: set[str] = set()
     for name in names:
-        public_name = _public_readme_name(name)
-        if public_name in seen:
+        if name in seen:
             continue
-        seen.add(public_name)
-        ordered.append(public_name)
+        seen.add(name)
+        ordered.append(name)
     return ordered
 
 
-def _render_primary_name(name: str, *, original_app_name: str | None) -> str:
-    public_name = _public_readme_name(name)
+def _render_primary_name(
+    name: str,
+    *,
+    original_app_name: str | None,
+    preserve_suffixes: bool = False,
+) -> str:
+    public_name = name if preserve_suffixes else _public_readme_name(name)
     if original_app_name:
         return f"{public_name} ({original_app_name})"
     return public_name
 
 
 def _display_clone_names(entry: InventoryEntry) -> list[str]:
-    primary_names = {_alias_merge_key(name) for name in entry.primary_names}
+    primary_names = {_entry_alias_merge_key(entry, name) for name in entry.primary_names}
     clone_names = []
     seen = set(primary_names)
     for name in entry.clone_names:
-        public_name = _public_readme_name(name)
-        merge_key = _alias_merge_key(name)
+        public_name = _entry_public_name(entry, name)
+        merge_key = _entry_alias_merge_key(entry, name)
         if merge_key in seen:
             continue
         seen.add(merge_key)
@@ -148,10 +158,10 @@ def _primary_group_clone_names(entry: InventoryEntry) -> list[str]:
     if _renders_inline(entry):
         return []
     clone_names: list[str] = []
-    seen = {_alias_merge_key(entry.primary_names[0])}
+    seen = {_entry_alias_merge_key(entry, entry.primary_names[0])}
     for name in entry.primary_names[1:]:
-        public_name = _public_readme_name(name)
-        merge_key = _alias_merge_key(name)
+        public_name = _entry_public_name(entry, name)
+        merge_key = _entry_alias_merge_key(entry, name)
         if merge_key in seen:
             continue
         seen.add(merge_key)
@@ -163,8 +173,8 @@ def _entry_clone_names(entry: InventoryEntry) -> list[str]:
     clone_names: list[str] = []
     seen: set[str] = set()
     for name in _primary_group_clone_names(entry) + _display_clone_names(entry):
-        public_name = _public_readme_name(name)
-        merge_key = _alias_merge_key(name)
+        public_name = _entry_public_name(entry, name)
+        merge_key = _entry_alias_merge_key(entry, name)
         if merge_key in seen:
             continue
         seen.add(merge_key)
@@ -177,8 +187,15 @@ def _renders_inline(entry: InventoryEntry) -> bool:
 
 
 def _renders_as_single_name(entry: InventoryEntry) -> bool:
-    primary_public_names = _dedupe_names(entry.primary_names)
-    primary_alias_keys = {_alias_merge_key(name) for name in entry.primary_names}
+    primary_public_names: list[str] = []
+    seen_public_names: set[str] = set()
+    for name in entry.primary_names:
+        public_name = _entry_public_name(entry, name)
+        if public_name in seen_public_names:
+            continue
+        seen_public_names.add(public_name)
+        primary_public_names.append(public_name)
+    primary_alias_keys = {_entry_alias_merge_key(entry, name) for name in entry.primary_names}
     if len(primary_alias_keys) != 1:
         return False
     if _entry_clone_names(entry):
@@ -192,7 +209,7 @@ def _entry_label(entry: InventoryEntry, *, include_original_app_name: bool) -> s
     if entry.display_label:
         label = entry.display_label
     else:
-        label = _public_readme_name(entry.primary_names[0])
+        label = _entry_public_name(entry, entry.primary_names[0])
     if include_original_app_name and entry.original_app_name:
         return f"{label} ({entry.original_app_name})"
     return label
@@ -204,20 +221,33 @@ def render_supported_models_block(entries: list[InventoryEntry]) -> str:
     for entry in supported:
         if _renders_inline(entry):
             for name in entry.primary_names:
-                main_names.append(_render_primary_name(name, original_app_name=entry.original_app_name))
+                main_names.append(
+                    _render_primary_name(
+                        name,
+                        original_app_name=entry.original_app_name,
+                        preserve_suffixes=entry.preserve_suffixes,
+                    )
+                )
             continue
         if _renders_as_single_name(entry):
             main_names.append(
                 _render_primary_name(
                     entry.primary_names[0],
                     original_app_name=entry.original_app_name,
+                    preserve_suffixes=entry.preserve_suffixes,
                 )
             )
             continue
         if entry.display_label or _entry_clone_names(entry):
             continue
         for name in entry.primary_names:
-            main_names.append(_render_primary_name(name, original_app_name=entry.original_app_name))
+            main_names.append(
+                _render_primary_name(
+                    name,
+                    original_app_name=entry.original_app_name,
+                    preserve_suffixes=entry.preserve_suffixes,
+                )
+            )
     main_names = _dedupe_names(main_names)
     main_names.sort(key=_display_name_sort_key)
 
@@ -353,7 +383,11 @@ def validate_inventory(entries: list[InventoryEntry]) -> list[str]:
 
         if entry.status == "supported":
             for name in entry.visible_names:
-                public_name = _render_primary_name(name, original_app_name=entry.original_app_name)
+                public_name = _render_primary_name(
+                    name,
+                    original_app_name=entry.original_app_name,
+                    preserve_suffixes=entry.preserve_suffixes,
+                )
                 owner = supported_visible_names.get(public_name)
                 if owner is not None:
                     if owner != entry.id:

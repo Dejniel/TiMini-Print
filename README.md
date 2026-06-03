@@ -133,6 +133,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 - MX06 and clones: MX05
 - MX10 and clones: AZ-P2108X, MXW009, KP-IM606, GV-MA211
 - MXTP-100 and clones: CYLO BT PRINTER, EWTTO ET-Z0499
+- P11 (HPRT ESC) and clones: P2_, P3_, P5_, YHK_
 - PR02 and clones: XW008
 - PR20 and clones: XW001
 - PR30 and clones: XW002
@@ -146,7 +147,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 ## Potential future support
 These models or protocol families are not in the supported list yet, but they look implementable with [more support](#we-need-you).
 <!-- BEGIN todo-models -->
-B1, B1 Pro, B18, B18S, B21, B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro, B24, B3S, B3S_P, D101, D11, D11S, D11_H, D110_M, Hi-D110, Hi-NB-D11, JCB3S, M2_H, N1, S6, JX400R, JX400R06P, MXW-A4
+B1, B1 Pro, B18, B18S, B21, B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro, B24, B3S, B3S_P, D101, D11, D11S, D11_H, D110_M, Hi-D110, Hi-NB-D11, JCB3S, M2_H, N1, S6, JX400R, JX400R06P, MP300, MXW-A4
 - AL200 and clones: AL2, RPP02N
 - BAYPAGE and clones: YINTIBAO-V8S
 - C21 and clones: D2, E2, NEWSMY
@@ -161,7 +162,6 @@ B1, B1 Pro, B18, B18S, B21, B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro, B24, B3S,
 - M832 and clones: M836
 - P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4
 - P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO
-- P3 and clones: MP300
 - P3S and clones: MP300S
 - Q302 and clones: Q580
 - T02 and clones: T02E, Q02E, C02E

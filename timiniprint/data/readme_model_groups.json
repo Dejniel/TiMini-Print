@@ -166,6 +166,24 @@
       "original_app_name": "TSPL"
     },
     {
+      "id": "toprint-hprt-esc-zl1",
+      "status": "supported",
+      "display_label": "P11 (HPRT ESC)",
+      "primary_names": [
+        "P11_"
+      ],
+      "clone_names": [
+        "P2_",
+        "P3_",
+        "P5_",
+        "YHK_"
+      ],
+      "preserve_suffixes": true,
+      "rule_keys": [
+        "rule_hprt_esc_toprint_zl1"
+      ]
+    },
+    {
       "id": "niimbot-d110",
       "status": "supported",
       "display_label": "D110",
@@ -626,7 +644,6 @@
       "id": "p3-family",
       "status": "todo",
       "primary_names": [
-        "P3",
         "MP300"
       ],
       "original_app_name": "iBleem V7 family"

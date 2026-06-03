@@ -69,11 +69,12 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertRegex(supported, r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])")
         self.assertIn("P1 (TSPL)", supported)
         self.assertIn("P1 (legacy)", supported)
+        self.assertIn("- P11 (HPRT ESC) and clones: P2_, P3_, P5_, YHK_", supported)
         self.assertIn("- JXPRINTER and clones: PRINTER", todo)
         self.assertIn("- BAYPAGE and clones: YINTIBAO-V8S", todo)
         self.assertIn("- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4", todo)
         self.assertIn("- P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO", todo)
-        self.assertIn("- P3 and clones: MP300", todo)
+        self.assertIn("MP300", todo)
         self.assertIn("- P3S and clones: MP300S", todo)
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])DL_X7Pro(?![A-Z0-9_-])", todo))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])", todo))
@@ -98,7 +99,6 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])MP100S(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])LP100(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])LP100S(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M08F(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M832(?![A-Z0-9_-])", supported))
@@ -112,7 +112,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertIsNone(re.search(r"/", todo))
         self.assertNotIn("DP_A4 and clones: DP-A4", supported)
 
-    def test_rendered_readme_names_do_not_keep_trailing_detection_suffixes(self) -> None:
+    def test_rendered_readme_names_do_not_keep_unexpected_detection_suffixes(self) -> None:
         entries = load_inventory_entries()
 
         rendered = "\n".join(
@@ -120,6 +120,12 @@ class ReadmeModelInventoryTests(unittest.TestCase):
                 render_supported_models_block(entries),
                 render_todo_models_block(entries),
             ]
+        )
+        rendered = re.sub(
+            r"^- P11 \(HPRT ESC\) and clones: P2_, P3_, P5_, YHK_$",
+            "- P11 (HPRT ESC) and clones: P2, P3, P5, YHK",
+            rendered,
+            flags=re.M,
         )
 
         self.assertIsNone(re.search(r"\b[^\s,()]+[_-](?=[,\n])", rendered))

@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ...raster import PixelFormat, RasterBuffer
-from ..encoding import pack_line
 from ..types import PaperMode
 from .base import PrintJobRequest
+from .bitmap import pack_bw1_rows, packed_row_width_bytes
 
 
 _LINE_END = b"\r\n"
@@ -119,17 +119,13 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
 def _bitmap_payload(raster: RasterBuffer) -> bytes:
     if raster.width % 8 != 0:
         raise ValueError("TSPL bitmap jobs require width divisible by 8")
-    payload = bytearray()
-    for row in range(raster.height):
-        line = raster.pixels[row * raster.width : (row + 1) * raster.width]
-        payload += pack_line(list(line), lsb_first=False)
-    return bytes(payload)
+    return pack_bw1_rows(raster, lsb_first=False)
 
 
 def _width_bytes(raster: RasterBuffer) -> int:
     if raster.width % 8 != 0:
         raise ValueError("TSPL bitmap jobs require width divisible by 8")
-    return raster.width // 8
+    return packed_row_width_bytes(raster.width)
 
 
 def _density(value: int | None, *, default: int) -> int:

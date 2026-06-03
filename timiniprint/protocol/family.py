@@ -11,6 +11,7 @@ class ProtocolCommandSet(str, Enum):
     V5X = "v5x"
     V5C = "v5c"
     DCK = "dck"
+    HPRT_ESC = "hprt_esc"
     NIIMBOT = "niimbot"
     TSPL = "tspl"
 
@@ -37,6 +38,7 @@ class ProtocolFamily(str, Enum):
     V5X = "v5x"
     V5C = "v5c"
     DCK = "dck"
+    HPRT_ESC = "hprt_esc"
     NIIMBOT = "niimbot"
     TSPL = "tspl"
 

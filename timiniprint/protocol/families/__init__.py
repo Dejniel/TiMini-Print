@@ -12,6 +12,7 @@ from .base import (
     split_prefixed_bulk_stream,
 )
 from .dck import BEHAVIOR as DCK_BEHAVIOR
+from .hprt_esc import BEHAVIOR as HPRT_ESC_BEHAVIOR
 from .legacy import BEHAVIOR as LEGACY_BEHAVIOR
 from .luck_normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
 from .luck_normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
@@ -85,6 +86,14 @@ _DEFINITIONS = {
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=DCK_BEHAVIOR,
+    ),
+    ProtocolFamily.HPRT_ESC: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.HPRT_ESC,
+            transport_style=ProtocolTransportStyle.STANDARD,
+        ),
+        behavior=HPRT_ESC_BEHAVIOR,
     ),
     ProtocolFamily.NIIMBOT: ProtocolDefinition(
         spec=ProtocolSpec(
