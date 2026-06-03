@@ -17,20 +17,24 @@ _P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE = 0x02
 @dataclass(frozen=True)
 class TsplMediaSetup:
     command: bytes
-    tag_paper_type: int
-    plain_paper_type: int
 
-    def build(self, paper_mode: PaperMode | None) -> bytes:
-        paper_type = (
-            self.plain_paper_type if paper_mode == PaperMode.PLAIN else self.tag_paper_type
-        )
+    def build(self, paper_type: int) -> bytes:
         return self.command + bytes([paper_type])
+
+
+@dataclass(frozen=True)
+class TsplPaperRecipe:
+    media_paper_type: int
+    gap_mm: float
+    height_extra_mm: float = 0.0
+    include_speed: bool = True
 
 
 @dataclass(frozen=True)
 class TsplRecipe:
     protocol_variant: str
-    default_gap_mm: float = 2.0
+    paper_recipes: dict[PaperMode, TsplPaperRecipe]
+    default_paper_mode: PaperMode = PaperMode.TAG
     default_density: int = 8
     default_direction: int = 0
     default_mirror: int | None = None
@@ -45,21 +49,27 @@ class TsplRecipe:
         raster.validate()
         width_bytes = _width_bytes(raster)
         density = _density(request.density, default=self.default_density)
-        gap_mm = 0.0 if request.paper_mode == PaperMode.PLAIN else self.default_gap_mm
+        paper_recipe = self._paper_recipe(request.paper_mode)
         bitmap = _bitmap_payload(raster)
 
         job = bytearray()
         if self.media_setup is not None:
-            job += self.media_setup.build(request.paper_mode)
-        job += _command("SIZE", f"{_px_to_mm(raster.width, request.dev_dpi)} mm,{_px_to_mm(raster.height, request.dev_dpi)} mm")
+            job += self.media_setup.build(paper_recipe.media_paper_type)
+        job += _command(
+            "SIZE",
+            (
+                f"{_px_to_mm(raster.width, request.dev_dpi)} mm,"
+                f"{_px_to_mm(raster.height, request.dev_dpi, extra_mm=paper_recipe.height_extra_mm)} mm"
+            ),
+        )
         job += _command("DIRECTION", _direction_value(self.default_direction, self.default_mirror))
-        job += _command("GAP", f"{_format_mm(gap_mm)} mm,0 mm")
+        job += _command("GAP", f"{_format_mm(paper_recipe.gap_mm)} mm,0 mm")
         if self.include_ribbon_off:
             job += _command("SET RIBBON", "OFF")
         job += _command("DENSITY", str(density))
         if self.include_reference_origin:
             job += _command("REFERENCE", "0,0")
-        if request.speed is not None:
+        if paper_recipe.include_speed and request.speed is not None:
             job += _command("SPEED", str(request.speed))
         job += _command("CLS")
         job += (
@@ -70,18 +80,29 @@ class TsplRecipe:
         job += _command("PRINT", "1,1")
         return bytes(job)
 
+    def _paper_recipe(self, paper_mode: PaperMode | None) -> TsplPaperRecipe:
+        resolved_mode = self.default_paper_mode if paper_mode is None else paper_mode
+        return self.paper_recipes[resolved_mode]
+
 
 def build_p1_job(request: PrintJobRequest) -> bytes:
     return TsplRecipe(
         protocol_variant="p1",
-        default_gap_mm=3.0,
+        paper_recipes={
+            PaperMode.TAG: TsplPaperRecipe(
+                media_paper_type=_P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE,
+                gap_mm=3.0,
+            ),
+            PaperMode.PLAIN: TsplPaperRecipe(
+                media_paper_type=_P1_ESC_PAPER_TYPE_CONTINUOUS_REEL,
+                gap_mm=0.0,
+                height_extra_mm=5.0,
+                include_speed=False,
+            ),
+        },
         default_density=9,
         default_mirror=0,
-        media_setup=TsplMediaSetup(
-            command=_P1_ESC_PAPER_TYPE_COMMAND,
-            tag_paper_type=_P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE,
-            plain_paper_type=_P1_ESC_PAPER_TYPE_CONTINUOUS_REEL,
-        ),
+        media_setup=TsplMediaSetup(command=_P1_ESC_PAPER_TYPE_COMMAND),
         include_ribbon_off=True,
         include_reference_origin=True,
     ).build_job(request)
@@ -123,8 +144,8 @@ def _direction_value(direction: int, mirror: int | None) -> str:
     return f"{direction},{mirror}"
 
 
-def _px_to_mm(value: int, dpi: int) -> str:
-    return _format_mm(float(value) * 25.4 / float(dpi))
+def _px_to_mm(value: int, dpi: int, *, extra_mm: float = 0.0) -> str:
+    return _format_mm(float(value) * 25.4 / float(dpi) + extra_mm)
 
 
 def _format_mm(value: float) -> str:

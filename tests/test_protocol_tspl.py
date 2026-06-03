@@ -42,7 +42,7 @@ class TsplProtocolTests(unittest.TestCase):
         device = PrinterCatalog.load().device_from_profile("tspl_p1")
         profile = replace(device.profile, speed=SpeedProfile(image=4, text=3))
         device = replace(device, profile=profile)
-        raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
+        raster = RasterBuffer(pixels=[0] * 64, width=8, pixel_format=PixelFormat.BW1)
 
         job = PrinterProtocol(device).build_job(
             RasterSet.from_single(raster),
@@ -66,9 +66,11 @@ class TsplProtocolTests(unittest.TestCase):
         positions = [job.payload.index(marker) for marker in expected_order]
         self.assertEqual(positions, sorted(positions))
 
-    def test_p1_plain_mode_uses_continuous_media_setup_and_gap(self) -> None:
+    def test_p1_plain_mode_uses_continuous_media_setup_and_recipe(self) -> None:
         device = PrinterCatalog.load().device_from_profile("tspl_p1")
-        raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
+        profile = replace(device.profile, speed=SpeedProfile(image=4, text=3))
+        device = replace(device, profile=profile)
+        raster = RasterBuffer(pixels=[0] * 64, width=8, pixel_format=PixelFormat.BW1)
 
         job = PrinterProtocol(device).build_job(
             RasterSet.from_single(raster),
@@ -77,7 +79,9 @@ class TsplProtocolTests(unittest.TestCase):
         )
 
         self.assertTrue(job.payload.startswith(b"\x10\xff\x10\x03\x01"))
+        self.assertIn(b"SIZE 1 mm,6 mm\r\n", job.payload)
         self.assertIn(b"GAP 0 mm,0 mm\r\n", job.payload)
+        self.assertNotIn(b"SPEED ", job.payload)
 
     def test_catalog_detects_eleph_p1_as_tspl_without_stealing_old_p1(self) -> None:
         catalog = PrinterCatalog.load()
