@@ -96,12 +96,14 @@ async def _execute_query_step(
     if step.repeat_interval_sec is None:
         return await _query_once(session, step, timeout=timeout)
 
-    deadline = time.monotonic() + (
-        step.repeat_timeout_sec if step.repeat_timeout_sec is not None else timeout
-    )
+    budget = step.repeat_timeout_sec if step.repeat_timeout_sec is not None else timeout
+    deadline = time.monotonic() + budget
     reply: bytes | None = None
     while True:
-        remaining = deadline - time.monotonic()
+        # Clamp to the configured budget: `deadline - monotonic()` can float a hair
+        # above `budget` (catastrophic cancellation at large monotonic() values,
+        # seen on Windows), which would let a single attempt exceed the cap.
+        remaining = min(budget, deadline - time.monotonic())
         if remaining <= 0:
             return reply
         reply = await _query_once(
@@ -112,7 +114,7 @@ async def _execute_query_step(
         )
         if _reply_matches_for(step, reply):
             return reply
-        remaining = deadline - time.monotonic()
+        remaining = min(budget, deadline - time.monotonic())
         if remaining <= 0:
             return reply
         await asyncio.sleep(min(step.repeat_interval_sec, remaining))
