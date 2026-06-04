@@ -710,10 +710,6 @@ class DevicesModelsTests(unittest.TestCase):
             "M836-ABCD",
             "Q302-ABCD",
             "Q580-ABCD",
-            "T02-ABCD",
-            "T02E-ABCD",
-            "Q02E",
-            "C02E",
             "MXW-A4-ABCD",
         ):
             with self.subTest(name=name):

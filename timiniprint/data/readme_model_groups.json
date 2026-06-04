@@ -184,6 +184,22 @@
       ]
     },
     {
+      "id": "phomemo-m02-family",
+      "status": "supported",
+      "display_label": "M02 (Phomemo)",
+      "primary_names": [
+        "M02"
+      ],
+      "clone_names": [
+        "M02S"
+      ],
+      "original_app_name": "Phomemo",
+      "rule_keys": [
+        "rule_phomemo_m02",
+        "rule_phomemo_m02s"
+      ]
+    },
+    {
       "id": "niimbot-d110",
       "status": "supported",
       "display_label": "D110",
@@ -809,13 +825,20 @@
       ]
     },
     {
-      "id": "t02-family",
-      "status": "todo",
+      "id": "phomemo-t02-family",
+      "status": "supported",
+      "display_label": "T02 (Phomemo)",
       "primary_names": [
-        "T02",
+        "T02"
+      ],
+      "clone_names": [
         "T02E",
         "Q02E",
         "C02E"
+      ],
+      "original_app_name": "Phomemo",
+      "rule_keys": [
+        "rule_phomemo_t02"
       ]
     },
     {

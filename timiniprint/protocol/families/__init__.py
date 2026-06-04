@@ -17,6 +17,7 @@ from .legacy import BEHAVIOR as LEGACY_BEHAVIOR
 from .luck_normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
 from .luck_normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
 from .niimbot import BEHAVIOR as NIIMBOT_BEHAVIOR
+from .phomemo_escpos import BEHAVIOR as PHOMEMO_ESCPOS_BEHAVIOR
 from .tspl import BEHAVIOR as TSPL_BEHAVIOR
 from .v5g import BEHAVIOR as V5G_BEHAVIOR
 from .v5c import BEHAVIOR as V5C_BEHAVIOR
@@ -110,6 +111,14 @@ _DEFINITIONS = {
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=TSPL_BEHAVIOR,
+    ),
+    ProtocolFamily.PHOMEMO_ESCPOS: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.PHOMEMO_ESCPOS,
+            transport_style=ProtocolTransportStyle.STANDARD,
+        ),
+        behavior=PHOMEMO_ESCPOS_BEHAVIOR,
     ),
 }
 

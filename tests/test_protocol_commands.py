@@ -36,6 +36,7 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertEqual(ProtocolFamily.V5X.command_set, ProtocolCommandSet.V5X)
         self.assertEqual(ProtocolFamily.V5C.command_set, ProtocolCommandSet.V5C)
         self.assertEqual(ProtocolFamily.DCK.command_set, ProtocolCommandSet.DCK)
+        self.assertEqual(ProtocolFamily.PHOMEMO_ESCPOS.command_set, ProtocolCommandSet.PHOMEMO_ESCPOS)
 
         self.assertEqual(ProtocolFamily.LEGACY.transport_style, ProtocolTransportStyle.STANDARD)
         self.assertEqual(ProtocolFamily.LEGACY_PREFIXED.transport_style, ProtocolTransportStyle.STANDARD)
@@ -44,6 +45,7 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertEqual(ProtocolFamily.V5X.transport_style, ProtocolTransportStyle.SPLIT_BULK)
         self.assertEqual(ProtocolFamily.V5C.transport_style, ProtocolTransportStyle.FLOW_CONTROLLED)
         self.assertEqual(ProtocolFamily.DCK.transport_style, ProtocolTransportStyle.STANDARD)
+        self.assertEqual(ProtocolFamily.PHOMEMO_ESCPOS.transport_style, ProtocolTransportStyle.STANDARD)
 
     def test_protocol_family_accepts_current_serialized_values(self) -> None:
         self.assertEqual(ProtocolFamily.from_value(None), ProtocolFamily.LEGACY)
@@ -54,6 +56,7 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertEqual(ProtocolFamily.from_value("v5x"), ProtocolFamily.V5X)
         self.assertEqual(ProtocolFamily.from_value("v5c"), ProtocolFamily.V5C)
         self.assertEqual(ProtocolFamily.from_value("dck"), ProtocolFamily.DCK)
+        self.assertEqual(ProtocolFamily.from_value("phomemo_escpos"), ProtocolFamily.PHOMEMO_ESCPOS)
 
     def test_luck_normal_families_do_not_expose_prefixed_packet_layout(self) -> None:
         self.assertFalse(ProtocolFamily.LUCK_NORMAL.uses_prefixed_packets)

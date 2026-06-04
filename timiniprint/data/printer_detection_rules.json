@@ -2771,5 +2771,57 @@
     ],
     "profile_key": "niimbot_d110",
     "protocol_family": "niimbot"
+  },
+  {
+    "rule_key": "rule_phomemo_m02s",
+    "prefixes": [
+      "M02S-",
+      "M02S_",
+      "Mr.in_M02S"
+    ],
+    "exact_names": [
+      "M02S",
+      "Mr.in_M02S"
+    ],
+    "profile_key": "phomemo_m02s",
+    "protocol_family": "phomemo_escpos",
+    "protocol_variant": "m02s"
+  },
+  {
+    "rule_key": "rule_phomemo_m02",
+    "prefixes": [
+      "M02-",
+      "M02_"
+    ],
+    "exact_names": [
+      "M02",
+      "Mr.in",
+      "Mr.in_M02"
+    ],
+    "profile_key": "phomemo_m02",
+    "protocol_family": "phomemo_escpos",
+    "protocol_variant": "m02"
+  },
+  {
+    "rule_key": "rule_phomemo_t02",
+    "prefixes": [
+      "T02-",
+      "T02_",
+      "T02E-",
+      "T02E_",
+      "Q02E-",
+      "Q02E_",
+      "C02E-",
+      "C02E_"
+    ],
+    "exact_names": [
+      "T02",
+      "T02E",
+      "Q02E",
+      "C02E"
+    ],
+    "profile_key": "phomemo_t02",
+    "protocol_family": "phomemo_escpos",
+    "protocol_variant": "t02"
   }
 ]

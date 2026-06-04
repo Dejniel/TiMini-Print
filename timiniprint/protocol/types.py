@@ -22,6 +22,7 @@ class ImageEncoding(str, Enum):
     HPRT_ESC_RASTER = "hprt_esc_raster"
     NIIMBOT_D110 = "niimbot_d110"
     TSPL_BITMAP = "tspl_bitmap"
+    PHOMEMO_ESCPOS_RASTER = "phomemo_escpos_raster"
 
 
 class PaperMode(str, Enum):

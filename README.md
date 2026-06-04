@@ -133,6 +133,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 - ITP05 and clones: ITP05H, DYA46, DP_ITP05
 - ITP06 and clones: DYA49, DP_ITP06
 - M01 and clones: PR25, XW003, XW009
+- M02 (Phomemo) and clones: M02S
 - MX06 and clones: MX05
 - MX10 and clones: AZ-P2108X, MXW009, KP-IM606, GV-MA211
 - MXTP-100 and clones: CYLO BT PRINTER, EWTTO ET-Z0499
@@ -143,6 +144,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 - PR35 and clones: XW004
 - PR89 and clones: XW006
 - PR893 and clones: XW007
+- T02 (Phomemo) and clones: T02E, Q02E, C02E
 - V5X and clones: MXW01, MXW01-1, MXW-W5, X1, X2, C17, AC695X_PRINT, JK01, PORTABLEPRINTER, INSTANTPRINTPLUS, REKA, HDMDT-00, KERUI, BH03
 - YT01 and clones: YT02, MX01, MXPC-100, URBANWORX KIDS CAMERA, BQ01, BQ05, BQ06, BQ06B, BQ07, BQ08, BQ7A, BQ7B, BQ95, BQ95B, BQ95C, BQ96, EWTTO ET-N3687, EWTTO ET-N3689, K06, X6
 <!-- END supported-models -->
@@ -167,6 +169,5 @@ B1, B1 Pro, B18, B18S, B21, B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro, B24, B3S,
 - P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO
 - P3S and clones: MP300S
 - Q302 and clones: Q580
-- T02 and clones: T02E, Q02E, C02E
 - YINTIBAO and clones: PAPERGO
 <!-- END todo-models -->
