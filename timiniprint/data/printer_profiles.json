@@ -1,6 +1,9 @@
 [
   {
     "profile_key": "15p3",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 1,
     "paper_size": 90,
     "print_size": 96,
@@ -46,6 +49,9 @@
   },
   {
     "profile_key": "58p5",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -91,6 +97,9 @@
   },
   {
     "profile_key": "a200",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1648,
     "print_size": 1664,
@@ -137,6 +146,9 @@
   },
   {
     "profile_key": "luck_a2",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -192,6 +204,9 @@
   },
   {
     "profile_key": "luck_a2h",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -247,6 +262,9 @@
   },
   {
     "profile_key": "luck_ppa2l",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -304,6 +322,9 @@
   },
   {
     "profile_key": "luck_ppa2lh",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -361,6 +382,9 @@
   },
   {
     "profile_key": "a33",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -406,6 +430,9 @@
   },
   {
     "profile_key": "luck_a40",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -461,6 +488,9 @@
   },
   {
     "profile_key": "luck_lujiang_a4",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -517,6 +547,9 @@
   },
   {
     "profile_key": "luck_lujiang_a4_dense",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -573,6 +606,9 @@
   },
   {
     "profile_key": "luck_a49h",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -629,6 +665,9 @@
   },
   {
     "profile_key": "luck_a4_compressed_tattoo",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -685,6 +724,9 @@
   },
   {
     "profile_key": "luck_a4_compressed_tattoo_96",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -741,6 +783,9 @@
   },
   {
     "profile_key": "luck_a4_compressed_tattoo_96_dense",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -797,6 +842,9 @@
   },
   {
     "profile_key": "luck_u8",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -853,6 +901,9 @@
   },
   {
     "profile_key": "luck_apl86",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -909,6 +960,9 @@
   },
   {
     "profile_key": "luck_apl86h",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -965,6 +1019,9 @@
   },
   {
     "profile_key": "luck_d80",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1021,6 +1078,9 @@
   },
   {
     "profile_key": "luck_d80h",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -1077,6 +1137,9 @@
   },
   {
     "profile_key": "luck_a80h_way1",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -1133,6 +1196,9 @@
   },
   {
     "profile_key": "luck_qirui_q1",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1189,6 +1255,9 @@
   },
   {
     "profile_key": "luck_qirui_q2",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -1245,6 +1314,9 @@
   },
   {
     "profile_key": "luck_a41_luckp",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1301,6 +1373,9 @@
   },
   {
     "profile_key": "luck_a42_luckp",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1357,6 +1432,9 @@
   },
   {
     "profile_key": "a41iii",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1648,
     "print_size": 1664,
@@ -1403,6 +1481,9 @@
   },
   {
     "profile_key": "a43",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1448,6 +1529,9 @@
   },
   {
     "profile_key": "a4300",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -1493,6 +1577,10 @@
   },
   {
     "profile_key": "ai01",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1536,6 +1624,9 @@
   },
   {
     "profile_key": "an01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1581,6 +1672,10 @@
   },
   {
     "profile_key": "bq02",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1636,6 +1731,9 @@
   },
   {
     "profile_key": "cp01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1681,6 +1779,9 @@
   },
   {
     "profile_key": "d1",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1726,6 +1827,9 @@
   },
   {
     "profile_key": "d100",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 4,
     "paper_size": 864,
     "print_size": 864,
@@ -1771,6 +1875,9 @@
   },
   {
     "profile_key": "dl_x2",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1816,6 +1923,9 @@
   },
   {
     "profile_key": "dl_x7",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 4,
     "paper_size": 864,
     "print_size": 864,
@@ -1861,6 +1971,9 @@
   },
   {
     "profile_key": "dl_x7pro",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 4,
     "paper_size": 1280,
     "print_size": 1280,
@@ -1906,6 +2019,9 @@
   },
   {
     "profile_key": "fc02",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1951,6 +2067,9 @@
   },
   {
     "profile_key": "fl01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1996,6 +2115,9 @@
   },
   {
     "profile_key": "gb01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2041,6 +2163,9 @@
   },
   {
     "profile_key": "gb02",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2086,6 +2211,9 @@
   },
   {
     "profile_key": "gb02sh",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2131,6 +2259,9 @@
   },
   {
     "profile_key": "gb03",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2176,6 +2307,9 @@
   },
   {
     "profile_key": "gb03_2",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2221,6 +2355,9 @@
   },
   {
     "profile_key": "gb03ph",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2266,6 +2403,9 @@
   },
   {
     "profile_key": "gb03sl",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2311,6 +2451,9 @@
   },
   {
     "profile_key": "gb04",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2356,6 +2499,9 @@
   },
   {
     "profile_key": "gb05",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2401,6 +2547,9 @@
   },
   {
     "profile_key": "gt01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2446,6 +2595,9 @@
   },
   {
     "profile_key": "gt02",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2491,6 +2643,9 @@
   },
   {
     "profile_key": "gt04",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2536,6 +2691,9 @@
   },
   {
     "profile_key": "gt08",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2581,6 +2739,9 @@
   },
   {
     "profile_key": "gt09",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2626,6 +2787,9 @@
   },
   {
     "profile_key": "gw09",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2671,6 +2835,9 @@
   },
   {
     "profile_key": "hd1",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -2716,6 +2883,9 @@
   },
   {
     "profile_key": "jx001",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2761,6 +2931,9 @@
   },
   {
     "profile_key": "jxm800",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2806,6 +2979,9 @@
   },
   {
     "profile_key": "label_printer",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 1,
     "paper_size": 90,
     "print_size": 96,
@@ -2851,6 +3027,9 @@
   },
   {
     "profile_key": "lt01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2896,6 +3075,9 @@
   },
   {
     "profile_key": "ly01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2941,6 +3123,9 @@
   },
   {
     "profile_key": "ly02",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2986,6 +3171,9 @@
   },
   {
     "profile_key": "ly03",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3031,6 +3219,9 @@
   },
   {
     "profile_key": "ly05",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -3076,6 +3267,9 @@
   },
   {
     "profile_key": "ly10",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3121,6 +3315,9 @@
   },
   {
     "profile_key": "ly11",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -3166,6 +3363,9 @@
   },
   {
     "profile_key": "m01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3211,6 +3411,9 @@
   },
   {
     "profile_key": "m2",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3256,6 +3459,9 @@
   },
   {
     "profile_key": "mini_printer",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3301,6 +3507,9 @@
   },
   {
     "profile_key": "mpa81",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -3346,6 +3555,10 @@
   },
   {
     "profile_key": "mx02",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3389,6 +3602,10 @@
   },
   {
     "profile_key": "mx03",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -3432,6 +3649,10 @@
   },
   {
     "profile_key": "mx07",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3487,6 +3708,9 @@
   },
   {
     "profile_key": "p10",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3532,6 +3756,9 @@
   },
   {
     "profile_key": "p4",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -3577,6 +3804,9 @@
   },
   {
     "profile_key": "p5",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -3622,6 +3852,9 @@
   },
   {
     "profile_key": "p6",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3667,6 +3900,9 @@
   },
   {
     "profile_key": "p7",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3712,6 +3948,9 @@
   },
   {
     "profile_key": "pr02",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3757,6 +3996,9 @@
   },
   {
     "profile_key": "pr30",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -3802,6 +4044,9 @@
   },
   {
     "profile_key": "pr35",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -3847,6 +4092,9 @@
   },
   {
     "profile_key": "pr89",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -3892,6 +4140,9 @@
   },
   {
     "profile_key": "pr893",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2592,
@@ -3937,6 +4188,9 @@
   },
   {
     "profile_key": "professional_printer",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -3982,6 +4236,9 @@
   },
   {
     "profile_key": "pt001",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4027,6 +4284,9 @@
   },
   {
     "profile_key": "s01",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4072,6 +4332,9 @@
   },
   {
     "profile_key": "s101",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4117,6 +4380,9 @@
   },
   {
     "profile_key": "s102_2",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4162,6 +4428,9 @@
   },
   {
     "profile_key": "shipping_printer",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 4,
     "paper_size": 864,
     "print_size": 800,
@@ -4207,6 +4476,9 @@
   },
   {
     "profile_key": "u1",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4252,6 +4524,10 @@
   },
   {
     "profile_key": "gt02_v5g",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4307,6 +4583,10 @@
   },
   {
     "profile_key": "v5g_small_203",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4350,6 +4630,10 @@
   },
   {
     "profile_key": "v5x",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4393,6 +4677,9 @@
   },
   {
     "profile_key": "x1",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -4438,6 +4725,9 @@
   },
   {
     "profile_key": "x101h",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4483,6 +4773,9 @@
   },
   {
     "profile_key": "x16",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4528,6 +4821,9 @@
   },
   {
     "profile_key": "x5",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4573,6 +4869,9 @@
   },
   {
     "profile_key": "x5_2",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4618,6 +4917,9 @@
   },
   {
     "profile_key": "x6",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4663,6 +4965,9 @@
   },
   {
     "profile_key": "x6h",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4708,6 +5013,9 @@
   },
   {
     "profile_key": "x7",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4753,6 +5061,9 @@
   },
   {
     "profile_key": "x7hp",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4798,6 +5109,9 @@
   },
   {
     "profile_key": "x8",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -4843,6 +5157,9 @@
   },
   {
     "profile_key": "x9",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -4888,6 +5205,9 @@
   },
   {
     "profile_key": "xw001",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4933,6 +5253,9 @@
   },
   {
     "profile_key": "xw002",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -4978,6 +5301,10 @@
   },
   {
     "profile_key": "ytb01",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5019,6 +5346,9 @@
   },
   {
     "profile_key": "zhhc",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5064,6 +5394,9 @@
   },
   {
     "profile_key": "zp802",
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -5109,6 +5442,10 @@
   },
   {
     "profile_key": "tspl_p1",
+    "origin_app_packages": [
+      "com.sandu.JxPrinter",
+      "com.fyhd.toprint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5168,6 +5505,10 @@
   },
   {
     "profile_key": "hprt_esc_toprint_zl1",
+    "origin_app_packages": [
+      "com.sandu.JxPrinter",
+      "com.fyhd.toprint"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5223,6 +5564,9 @@
   },
   {
     "profile_key": "niimbot_d110",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
     "size": 1,
     "paper_size": 96,
     "print_size": 96,
@@ -5277,6 +5621,9 @@
   },
   {
     "profile_key": "phomemo_m02",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5332,6 +5679,9 @@
   },
   {
     "profile_key": "phomemo_m02s",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5387,6 +5737,9 @@
   },
   {
     "profile_key": "phomemo_t02",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5442,6 +5795,9 @@
   },
   {
     "profile_key": "phomemo_m02_pro",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
     "size": 2,
     "paper_size": 624,
     "print_size": 624,

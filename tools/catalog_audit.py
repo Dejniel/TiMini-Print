@@ -131,6 +131,24 @@ def generate_report(
                 }
             )
 
+    for profile in profiles_raw:
+        if not profile.get("origin_app_packages"):
+            errors.append(
+                {
+                    "kind": "missing_profile_origin_app_packages",
+                    "profile_key": profile["profile_key"],
+                }
+            )
+
+    for rule in rules_raw:
+        if not rule.get("origin_app_packages"):
+            errors.append(
+                {
+                    "kind": "missing_rule_origin_app_packages",
+                    "rule_key": rule["rule_key"],
+                }
+            )
+
     for rule in rules_raw:
         reachability_error = _find_rule_reachability_error(catalog, rule)
         if reachability_error is not None:

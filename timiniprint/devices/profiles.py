@@ -141,6 +141,7 @@ class PrinterProfile:
     post_print_feed_count: int = 2
     a4xii: bool = False
     add_mor_pix: Optional[bool] = None
+    origin_app_packages: tuple[str, ...] = ()
 
     @property
     def width(self) -> int:
@@ -184,6 +185,7 @@ class DetectionRule:
     image_pipeline: ImagePipelineConfig | None = None
     runtime_variant: str | None = None
     runtime_defaults_key: str | None = None
+    origin_app_packages: tuple[str, ...] = ()
     _folded_prefixes: tuple[str, ...] = field(init=False, repr=False)
     _folded_exact_names: tuple[str, ...] = field(init=False, repr=False)
 

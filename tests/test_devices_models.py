@@ -135,7 +135,9 @@ class DevicesModelsTests(unittest.TestCase):
             model_from_json(PrinterProfile, payload)
 
     def test_model_codec_profile_roundtrip_keeps_normalized_shape(self) -> None:
-        profile = model_from_json(PrinterProfile, _profile_payload())
+        payload = _profile_payload()
+        payload["origin_app_packages"] = ["com.example.demo"]
+        profile = model_from_json(PrinterProfile, payload)
 
         payload = model_to_json(profile)
 
@@ -143,6 +145,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(payload["default_protocol_variant"], None)
         self.assertEqual(payload["default_paper_mode"], None)
         self.assertEqual(payload["print_defaults"]["speed"]["image"], 10)
+        self.assertEqual(payload["origin_app_packages"][0], "com.example.demo")
 
     def test_ppa2l_profiles_default_to_tag_mode(self) -> None:
         ppa2l = self.catalog.require_profile("luck_ppa2l")
@@ -243,6 +246,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(d1.energy.image.middle, 5000)
         self.assertEqual(d1.energy.image.high, 5000)
         self.assertEqual(d1.energy.text.middle, 8000)
+        self.assertEqual(d1.origin_app_packages[0], "com.frogtosea.tinyPrint")
 
         ht0125 = self.catalog.detect_device("HT0125-ABCD")
         self.assertIsNotNone(ht0125)
@@ -273,6 +277,20 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x16.profile_key, "x16")
         self.assertFalse(x16.profile.can_print_label)
         self.assertEqual(x16.profile.energy.image.middle, 5000)
+
+    def test_origin_app_packages_keep_conflicting_names_explicit(self) -> None:
+        rules = {rule.rule_key: rule for rule in self.catalog.rules}
+
+        tiny_p1 = rules["profile_p1"]
+        toprint_p1 = rules["rule_tspl_p1"]
+        dck_d1 = rules["alias_c21"]
+
+        self.assertEqual(tiny_p1.origin_app_packages[0], "com.frogtosea.tinyPrint")
+        self.assertEqual(toprint_p1.origin_app_packages[0], "com.sandu.JxPrinter")
+        self.assertEqual(toprint_p1.origin_app_packages[1], "com.fyhd.toprint")
+        self.assertEqual(dck_d1.origin_app_packages[0], "com.fun.mxw")
+        self.assertEqual(dck_d1.origin_app_packages[1], "com.bleem.liugm")
+        self.assertEqual(self.catalog.require_profile("d1").origin_app_packages[0], "com.frogtosea.tinyPrint")
 
     def test_old_small_bucket_uses_v5g_and_mac59_switches_family_only(self) -> None:
         normal = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:58")
