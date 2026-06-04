@@ -1,6 +1,8 @@
 [
   {
-    "runtime_defaults_key": "mx06",
+    "key": "mx06",
+    "profile_key": "v5g_small_203",
+    "variant": "mx06",
     "density": {
       "image": {
         "low": 150,
@@ -16,12 +18,12 @@
     "capabilities": {
       "d2_status": true,
       "didian_status": false
-    },
-    "profile_key": "v5g_small_203",
-    "runtime_variant": "mx06"
+    }
   },
   {
-    "runtime_defaults_key": "mx08",
+    "key": "mx08",
+    "profile_key": "v5g_small_203",
+    "variant": "d2",
     "density": {
       "image": {
         "low": 60,
@@ -37,12 +39,12 @@
     "capabilities": {
       "d2_status": true,
       "didian_status": false
-    },
-    "profile_key": "v5g_small_203",
-    "runtime_variant": "d2"
+    }
   },
   {
-    "runtime_defaults_key": "mx09",
+    "key": "mx09",
+    "profile_key": "v5g_small_203",
+    "variant": "d2",
     "density": {
       "image": {
         "low": 100,
@@ -58,12 +60,12 @@
     "capabilities": {
       "d2_status": true,
       "didian_status": true
-    },
-    "profile_key": "v5g_small_203",
-    "runtime_variant": "d2"
+    }
   },
   {
-    "runtime_defaults_key": "mx11",
+    "key": "mx11",
+    "profile_key": "v5g_small_203",
+    "variant": "mx10",
     "density": {
       "image": {
         "low": 100,
@@ -79,12 +81,12 @@
     "capabilities": {
       "d2_status": false,
       "didian_status": false
-    },
-    "profile_key": "v5g_small_203",
-    "runtime_variant": "mx10"
+    }
   },
   {
-    "runtime_defaults_key": "xopoppy",
+    "key": "xopoppy",
+    "profile_key": "v5g_small_203",
+    "variant": "mx10",
     "density": {
       "image": {
         "low": 60,
@@ -100,8 +102,6 @@
     "capabilities": {
       "d2_status": false,
       "didian_status": false
-    },
-    "profile_key": "v5g_small_203",
-    "runtime_variant": "mx10"
+    }
   }
 ]

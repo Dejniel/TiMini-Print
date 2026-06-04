@@ -70,6 +70,19 @@ class StreamProfile:
     chunk_size: int
     delay_ms: int
 
+    def __post_init__(self) -> None:
+        if self.chunk_size <= 0:
+            raise ValueError("stream.chunk_size must be greater than zero")
+        if self.delay_ms < 0:
+            raise ValueError("stream.delay_ms must not be negative")
+
+
+@dataclass(frozen=True)
+class PrintDefaults:
+    energy: ModeLevelProfile
+    speed: SpeedProfile | None = None
+    density: ModeLevelProfile | None = None
+
 
 @dataclass(frozen=True)
 class RuntimeCapabilities:
@@ -120,20 +133,30 @@ class PrinterProfile:
     label_value: str
     back_paper_num: int
     default_protocol_family: ProtocolFamily
-    default_protocol_variant: str | None
-    default_paper_mode: PaperMode | None
     default_image_pipeline: ImagePipelineConfig
     stream: StreamProfile
-    speed: SpeedProfile | None
-    energy: ModeLevelProfile
+    print_defaults: PrintDefaults
+    default_protocol_variant: str | None = None
+    default_paper_mode: PaperMode | None = None
     post_print_feed_count: int = 2
-    density: ModeLevelProfile | None = None
     a4xii: bool = False
     add_mor_pix: Optional[bool] = None
 
     @property
     def width(self) -> int:
         return self.print_size
+
+    @property
+    def speed(self) -> SpeedProfile | None:
+        return self.print_defaults.speed
+
+    @property
+    def energy(self) -> ModeLevelProfile:
+        return self.print_defaults.energy
+
+    @property
+    def density(self) -> ModeLevelProfile | None:
+        return self.print_defaults.density
 
     def select_speed(self, *, is_text: bool) -> int | None:
         if self.speed is None:
@@ -152,10 +175,10 @@ class PrinterProfile:
 @dataclass(frozen=True)
 class DetectionRule:
     rule_key: str
-    prefixes: tuple[str, ...]
-    exact_names: tuple[str, ...]
     profile_key: str
     protocol_family: ProtocolFamily
+    prefixes: tuple[str, ...] = ()
+    exact_names: tuple[str, ...] = ()
     protocol_variant: str | None = None
     mac_suffixes: tuple[str, ...] = ()
     image_pipeline: ImagePipelineConfig | None = None
@@ -165,15 +188,26 @@ class DetectionRule:
     _folded_exact_names: tuple[str, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        prefixes = tuple(DetectionNormalizer.normalize_name(prefix) for prefix in self.prefixes)
+        exact_names = tuple(DetectionNormalizer.normalize_name(name) for name in self.exact_names)
+        if not prefixes and not exact_names:
+            raise ValueError("Detection rule requires at least one prefix or exact_name")
+        object.__setattr__(self, "prefixes", prefixes)
+        object.__setattr__(self, "exact_names", exact_names)
+        object.__setattr__(
+            self,
+            "mac_suffixes",
+            tuple(str(suffix).upper() for suffix in self.mac_suffixes),
+        )
         object.__setattr__(
             self,
             "_folded_prefixes",
-            tuple(DetectionNormalizer.fold_name(prefix) for prefix in self.prefixes),
+            tuple(DetectionNormalizer.fold_name(prefix) for prefix in prefixes),
         )
         object.__setattr__(
             self,
             "_folded_exact_names",
-            tuple(DetectionNormalizer.fold_name(name) for name in self.exact_names),
+            tuple(DetectionNormalizer.fold_name(name) for name in exact_names),
         )
 
     def matches(
@@ -208,6 +242,7 @@ __all__ = [
     "DetectionRule",
     "LevelProfile",
     "ModeLevelProfile",
+    "PrintDefaults",
     "PrinterProfile",
     "PrinterRuntimeDefaults",
     "RuntimeCapabilities",

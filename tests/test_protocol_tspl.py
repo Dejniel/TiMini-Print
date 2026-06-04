@@ -40,7 +40,13 @@ class TsplProtocolTests(unittest.TestCase):
 
     def test_p1_profile_uses_source_backed_command_order(self) -> None:
         device = PrinterCatalog.load().device_from_profile("tspl_p1")
-        profile = replace(device.profile, speed=SpeedProfile(image=4, text=3))
+        profile = replace(
+            device.profile,
+            print_defaults=replace(
+                device.profile.print_defaults,
+                speed=SpeedProfile(image=4, text=3),
+            ),
+        )
         device = replace(device, profile=profile)
         raster = RasterBuffer(pixels=[0] * 64, width=8, pixel_format=PixelFormat.BW1)
 
@@ -68,7 +74,13 @@ class TsplProtocolTests(unittest.TestCase):
 
     def test_p1_plain_mode_uses_continuous_media_setup_and_recipe(self) -> None:
         device = PrinterCatalog.load().device_from_profile("tspl_p1")
-        profile = replace(device.profile, speed=SpeedProfile(image=4, text=3))
+        profile = replace(
+            device.profile,
+            print_defaults=replace(
+                device.profile.print_defaults,
+                speed=SpeedProfile(image=4, text=3),
+            ),
+        )
         device = replace(device, profile=profile)
         raster = RasterBuffer(pixels=[0] * 64, width=8, pixel_format=PixelFormat.BW1)
 

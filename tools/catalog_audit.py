@@ -12,6 +12,8 @@ if str(REPO_ROOT) not in __import__("sys").path:
     __import__("sys").path.insert(0, str(REPO_ROOT))
 
 from timiniprint.devices import PrinterCatalog  # noqa: E402
+from timiniprint.devices.model_codec import model_from_json  # noqa: E402
+from timiniprint.devices.profiles import DetectionRule, PrinterProfile  # noqa: E402
 
 
 def _sample_names(rule: dict[str, Any]) -> list[str]:
@@ -96,8 +98,8 @@ def generate_report(
         )
     else:
         catalog = PrinterCatalog(
-            [PrinterCatalog._parse_profile(entry) for entry in profiles_raw],
-            [PrinterCatalog._parse_rule(entry) for entry in rules_raw],
+            [model_from_json(PrinterProfile, entry) for entry in profiles_raw],
+            [model_from_json(DetectionRule, entry) for entry in rules_raw],
         )
 
     referenced_profiles = {rule["profile_key"] for rule in rules_raw}

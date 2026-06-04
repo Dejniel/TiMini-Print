@@ -4,10 +4,11 @@ import unittest
 
 from tests.helpers import reset_registry_cache
 from timiniprint.devices import PrinterCatalog
+from timiniprint.devices.model_codec import model_from_json, model_to_json
 from timiniprint.devices.profiles import DetectionRule
+from timiniprint.devices.profiles import PrinterProfile, PrinterRuntimeDefaults
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding, PaperMode
-from timiniprint.raster import PixelFormat
 
 
 def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) -> dict:
@@ -58,13 +59,13 @@ def _with_optional_speed(payload: dict, speed: dict | None) -> dict:
 
 def _runtime_defaults_payload(
     *,
-    runtime_defaults_key: str = "demo-runtime",
+    key: str = "demo-runtime",
     profile_key: str = "demo",
 ) -> dict:
     return {
-        "runtime_defaults_key": runtime_defaults_key,
+        "key": key,
         "profile_key": profile_key,
-        "runtime_variant": "mx06",
+        "variant": "mx06",
         "density": {
             "image": {"low": 100, "middle": 120, "high": 140},
             "text": {"low": 80, "middle": 100, "high": 120},
@@ -103,28 +104,45 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(profile.stream.chunk_size, 180)
         self.assertEqual(profile.stream.delay_ms, 4)
 
-    def test_parse_profile_rejects_non_positive_stream_chunk_size(self) -> None:
+    def test_model_codec_rejects_non_positive_stream_chunk_size(self) -> None:
         payload = _profile_payload()
         payload["stream"]["chunk_size"] = 0
         with self.assertRaisesRegex(ValueError, "stream.chunk_size"):
-            PrinterCatalog._parse_profile(payload)
+            model_from_json(PrinterProfile, payload)
 
-    def test_parse_profile_allows_missing_speed_for_non_speed_family(self) -> None:
+    def test_model_codec_allows_missing_speed_for_non_speed_family(self) -> None:
         payload = _with_optional_speed(_profile_payload(), None)
         payload["default_protocol_family"] = "luck_normal"
 
-        profile = PrinterCatalog._parse_profile(payload)
+        profile = model_from_json(PrinterProfile, payload)
 
         self.assertIsNone(profile.speed)
 
-    def test_parse_profile_accepts_default_paper_mode(self) -> None:
+    def test_model_codec_accepts_default_paper_mode(self) -> None:
         payload = _with_optional_speed(_profile_payload(), None)
         payload["default_protocol_family"] = "luck_normal"
         payload["default_paper_mode"] = "tag"
 
-        profile = PrinterCatalog._parse_profile(payload)
+        profile = model_from_json(PrinterProfile, payload)
 
         self.assertEqual(profile.default_paper_mode, PaperMode.TAG)
+
+    def test_model_codec_rejects_unknown_catalog_fields(self) -> None:
+        payload = _profile_payload()
+        payload["extra"] = "bad"
+
+        with self.assertRaisesRegex(ValueError, "unknown PrinterProfile field"):
+            model_from_json(PrinterProfile, payload)
+
+    def test_model_codec_profile_roundtrip_keeps_normalized_shape(self) -> None:
+        profile = model_from_json(PrinterProfile, _profile_payload())
+
+        payload = model_to_json(profile)
+
+        self.assertEqual(payload["profile_key"], "demo")
+        self.assertEqual(payload["default_protocol_variant"], None)
+        self.assertEqual(payload["default_paper_mode"], None)
+        self.assertEqual(payload["print_defaults"]["speed"]["image"], 10)
 
     def test_ppa2l_profiles_default_to_tag_mode(self) -> None:
         ppa2l = self.catalog.require_profile("luck_ppa2l")
@@ -134,7 +152,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(ppa2lh.default_paper_mode, PaperMode.TAG)
 
     def test_catalog_rejects_missing_speed_for_speed_family(self) -> None:
-        profile = PrinterCatalog._parse_profile(_with_optional_speed(_profile_payload(), None))
+        profile = model_from_json(PrinterProfile, _with_optional_speed(_profile_payload(), None))
 
         with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             PrinterCatalog([profile], [])
@@ -142,7 +160,7 @@ class DevicesModelsTests(unittest.TestCase):
     def test_catalog_rejects_missing_speed_for_speed_rule_override(self) -> None:
         payload = _with_optional_speed(_profile_payload(), None)
         payload["default_protocol_family"] = "luck_normal"
-        profile = PrinterCatalog._parse_profile(payload)
+        profile = model_from_json(PrinterProfile, payload)
         rule = DetectionRule(
             rule_key="demo",
             prefixes=("DEMO",),
@@ -155,21 +173,23 @@ class DevicesModelsTests(unittest.TestCase):
             PrinterCatalog([profile], [rule])
 
     def test_catalog_rejects_runtime_defaults_key_collision_with_profile_key(self) -> None:
-        profile = PrinterCatalog._parse_profile(_profile_payload("demo"))
-        runtime_defaults = PrinterCatalog._parse_printer_runtime_defaults(
+        profile = model_from_json(PrinterProfile, _profile_payload("demo"))
+        runtime_defaults = [
+            model_from_json(PrinterRuntimeDefaults, entry)
+            for entry in
             [
                 _runtime_defaults_payload(
-                    runtime_defaults_key="demo",
+                    key="demo",
                     profile_key="demo",
                 )
             ]
-        )
+        ]
 
         with self.assertRaisesRegex(ValueError, "collide with profile keys: demo"):
             PrinterCatalog([profile], [], runtime_defaults)
 
     def test_first_match_wins_for_mac_suffix_rules(self) -> None:
-        shared_profile = PrinterCatalog._parse_profile(_profile_payload("shared"))
+        shared_profile = model_from_json(PrinterProfile, _profile_payload("shared"))
         rules = [
             DetectionRule(
                 rule_key="mac59",
