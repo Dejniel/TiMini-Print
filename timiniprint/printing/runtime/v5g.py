@@ -7,6 +7,11 @@ from typing import Optional
 
 from ...devices.profiles import RuntimeSettings
 from ...protocol.family import ProtocolFamily
+from ...protocol.families.v5g import (
+    V5G_TEMPERATURE_QUERY_PACKET,
+    decode_density_payload,
+    encode_density_payload,
+)
 from ...protocol.packet import make_packet
 from .base import RuntimeController
 
@@ -371,6 +376,17 @@ class V5GRuntimeController(RuntimeController):
                 raise KeyError(f"Unknown V5G debug field '{key}'")
             setattr(self._state, key, value)
 
+    async def probe_capabilities(self, session, *, timeout: float) -> None:
+        if not session.can_send_control_packet_wait_notification():
+            return
+        await session.send_control_packet_wait_notification(
+            V5G_TEMPERATURE_QUERY_PACKET,
+            label="v5g temperature",
+            match=lambda payload: session.extract_prefixed_opcode(payload) == 0xD3,
+            timeout=min(timeout, 0.4),
+            required=False,
+        )
+
     async def stop(self, session) -> None:
         if self._state.pending_reset_task is None:
             return
@@ -431,7 +447,7 @@ class V5GRuntimeController(RuntimeController):
             if index in rewrite_map:
                 packet = make_packet(
                     0xF2,
-                    int(rewrite_map[index]).to_bytes(2, "little", signed=False),
+                    encode_density_payload(rewrite_map[index]),
                     ProtocolFamily.V5G,
                 )
                 last_density_value = rewrite_map[index]
@@ -622,7 +638,7 @@ class V5GRuntimeController(RuntimeController):
         payload = session.extract_prefixed_payload(packet)
         if payload is None or len(payload) != 2:
             return None
-        return payload[0] | (payload[1] << 8)
+        return decode_density_payload(payload)
 
     @staticmethod
     def _extract_print_mode(session, packet: bytes) -> bool:
@@ -691,7 +707,7 @@ class V5GRuntimeController(RuntimeController):
     async def _send_density_reset(self, session, value: int) -> None:
         packet = make_packet(
             0xF2,
-            int(value).to_bytes(2, "little", signed=False),
+            encode_density_payload(value),
             ProtocolFamily.V5G,
         )
         await session.send_control_packet(packet, timeout=0.2)

@@ -9,6 +9,7 @@ from tests.helpers import install_crc8_stub
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol import PrinterProtocol, ProtocolReplyExpectation, ProtocolStepOperation
 from timiniprint.protocol.family import ProtocolFamily
+from timiniprint.protocol.families.v5g import encode_density_payload
 from timiniprint.protocol.families.v5x import V5X_FINALIZE_PACKET, V5X_GET_SERIAL_PACKET
 
 
@@ -1305,10 +1306,10 @@ class ProtocolJobTests(unittest.TestCase):
         )
         print_mode = self.commands.make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
         self.assertLess(data.index(state_query), data.index(quality))
-        self.assertLess(data.index(quality), data.index(energy))
-        self.assertLess(data.index(energy), data.index(start_lattice))
-        self.assertLess(data.index(start_lattice), data.index(print_mode))
-        self.assertEqual(data.count(state_query), 2)
+        self.assertLess(data.index(quality), data.index(start_lattice))
+        self.assertLess(data.index(start_lattice), data.index(energy))
+        self.assertLess(data.index(energy), data.index(print_mode))
+        self.assertEqual(data.count(state_query), 3)
         self.assertTrue(data.endswith(self.commands.make_packet(0xA3, bytes([0x00]), ProtocolFamily.V5G)))
 
     def test_build_v5g_text_job_still_uses_source_image_mode_packet(self) -> None:
@@ -1350,7 +1351,7 @@ class ProtocolJobTests(unittest.TestCase):
                 is_text=False,
                 speed=None,
                 energy=15000,
-                density=0x1234,
+                density=200,
                 blackening=4,
                 lsb_first=True,
                 protocol_family=ProtocolFamily.V5G,
@@ -1360,9 +1361,15 @@ class ProtocolJobTests(unittest.TestCase):
                 image_pipeline=self.v5g_gray,
             )
 
-        self.assertIn(
-            self.commands.make_packet(0xF2, bytes.fromhex("3412"), ProtocolFamily.V5G),
-            data,
+        density_packet = self.commands.make_packet(
+            0xF2,
+            encode_density_payload(200),
+            ProtocolFamily.V5G,
+        )
+        self.assertIn(density_packet, data)
+        self.assertLess(
+            data.index(density_packet),
+            data.index(self.commands.make_packet(0xA3, bytes([0x00]), ProtocolFamily.V5G)),
         )
         self.assertIn(
             self.commands.make_packet(0xCF, bytes.fromhex("08000200AABB"), ProtocolFamily.V5G),

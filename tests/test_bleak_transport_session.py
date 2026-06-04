@@ -24,7 +24,11 @@ from timiniprint.protocol.families import (
     split_prefixed_bulk_stream,
 )
 from timiniprint.protocol.family import ProtocolFamily
-from timiniprint.protocol.families.v5g import V5G_CONNECT_QUERY_PACKET
+from timiniprint.protocol.families.v5g import (
+    V5G_CONNECT_QUERY_PACKET,
+    V5G_TEMPERATURE_QUERY_PACKET,
+    encode_density_payload,
+)
 from timiniprint.protocol.families.v5x import (
     V5X_CONNECT_INIT_PACKET,
     V5X_FINALIZE_PACKET,
@@ -104,6 +108,10 @@ def _v5c_state(session):
 
 def _make_level_profile(levels: DensityLevels) -> LevelProfile:
     return LevelProfile(low=levels.low, middle=levels.middle, high=levels.high)
+
+
+def _v5g_density_packet(value: int) -> bytes:
+    return make_packet(0xF2, encode_density_payload(value), ProtocolFamily.V5G)
 
 
 def _make_v5g_controller(
@@ -556,6 +564,43 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertTrue(_v5g_state(session).d2_status)
         self.assertEqual(_v5g_state(session).temperature_c, 60)
 
+    def test_v5g_probe_queries_temperature_before_job_build(self) -> None:
+        session, client = self._make_session(ProtocolFamily.V5G)
+        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session.bindings.write_char = cmd
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = cmd.uuid
+        session._client = client
+        _enable_notification_waits(session)
+        runtime_controller = _make_v5g_controller(
+            helper_kind="mx10",
+            runtime_defaults_key="mx06",
+            image_levels=DensityLevels(low=150, middle=180, high=200),
+            text_levels=DensityLevels(low=100, middle=130, high=150),
+        )
+
+        async def run() -> None:
+            await session.attach_runtime_controller(
+                runtime_controller,
+                mtu_size=180,
+                timeout=0.2,
+            )
+
+            async def notify_temperature() -> None:
+                while not client.calls:
+                    await asyncio.sleep(0)
+                session.handle_notification(make_packet(0xD3, bytes([28]), ProtocolFamily.V5G))
+
+            task = asyncio.create_task(notify_temperature())
+            await runtime_controller.probe_capabilities(session, timeout=0.2)
+            await task
+
+        asyncio.run(run())
+
+        self.assertEqual(client.calls, [(cmd.uuid, V5G_TEMPERATURE_QUERY_PACKET, False)])
+        self.assertEqual(runtime_controller.debug_snapshot()["temperature_c"], 28)
+
     def test_v5g_mx10_helper_rewrites_single_density_packet(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5G)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
@@ -575,7 +620,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
-            + make_packet(0xF2, (180).to_bytes(2, "little"), ProtocolFamily.V5G)
+            + _v5g_density_packet(180)
             + make_packet(0xA2, b"\x55" * 40, ProtocolFamily.V5G)
         )
 
@@ -590,7 +635,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
-                    make_packet(0xF2, (120).to_bytes(2, "little"), ProtocolFamily.V5G),
+                    _v5g_density_packet(120),
                     sent,
                 )
 
@@ -615,7 +660,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
-            + make_packet(0xF2, (130).to_bytes(2, "little"), ProtocolFamily.V5G)
+            + _v5g_density_packet(130)
             + make_packet(0xA2, b"\x55" * 40, ProtocolFamily.V5G)
         )
 
@@ -630,7 +675,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
-                    make_packet(0xF2, (110).to_bytes(2, "little"), ProtocolFamily.V5G),
+                    _v5g_density_packet(110),
                     sent,
                 )
 
@@ -652,7 +697,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             applies_d2_status=True,
             applies_didian_status=False,
         )
-        density_packet = make_packet(0xF2, (180).to_bytes(2, "little"), ProtocolFamily.V5G)
+        density_packet = _v5g_density_packet(180)
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
@@ -672,7 +717,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 expected_values = [160, 145, 130, 115, 100]
                 for value in expected_values:
                     self.assertIn(
-                        make_packet(0xF2, value.to_bytes(2, "little"), ProtocolFamily.V5G),
+                        _v5g_density_packet(value),
                         sent,
                     )
 
@@ -697,7 +742,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
-            + make_packet(0xF2, (130).to_bytes(2, "little"), ProtocolFamily.V5G)
+            + _v5g_density_packet(130)
             + make_packet(0xA2, b"\x55" * 40, ProtocolFamily.V5G)
         )
 
@@ -712,7 +757,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
-                    make_packet(0xF2, (100).to_bytes(2, "little"), ProtocolFamily.V5G),
+                    _v5g_density_packet(100),
                     sent,
                 )
 
@@ -741,7 +786,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
-            + make_packet(0xF2, (180).to_bytes(2, "little"), ProtocolFamily.V5G)
+            + _v5g_density_packet(180)
             + make_packet(0xA2, b"\x55" * 40, ProtocolFamily.V5G)
         )
 
@@ -756,7 +801,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
-                    make_packet(0xF2, (130).to_bytes(2, "little"), ProtocolFamily.V5G),
+                    _v5g_density_packet(130),
                     sent,
                 )
 
@@ -782,7 +827,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             applies_d2_status=True,
             applies_didian_status=False,
         )
-        density_packet = make_packet(0xF2, (180).to_bytes(2, "little"), ProtocolFamily.V5G)
+        density_packet = _v5g_density_packet(180)
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
@@ -802,7 +847,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 expected_values = [140, 140, 140, 140, 135, 130]
                 for value in expected_values:
                     self.assertIn(
-                        make_packet(0xF2, value.to_bytes(2, "little"), ProtocolFamily.V5G),
+                        _v5g_density_packet(value),
                         sent,
                     )
 
@@ -823,7 +868,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             applies_d2_status=True,
             applies_didian_status=False,
         )
-        density_packet = make_packet(0xF2, (110).to_bytes(2, "little"), ProtocolFamily.V5G)
+        density_packet = _v5g_density_packet(110)
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
@@ -843,7 +888,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 expected_values = [90, 90, 90, 90, 80]
                 for value in expected_values:
                     self.assertIn(
-                        make_packet(0xF2, value.to_bytes(2, "little"), ProtocolFamily.V5G),
+                        _v5g_density_packet(value),
                         sent,
                     )
 
@@ -867,7 +912,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 packet = write_chunks.await_args.args[2]
                 self.assertEqual(
                     packet,
-                    make_packet(0xF2, (120).to_bytes(2, "little"), ProtocolFamily.V5G),
+                    _v5g_density_packet(120),
                 )
 
         asyncio.run(run())

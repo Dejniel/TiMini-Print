@@ -19,6 +19,9 @@ _FINISH_LATTICE = bytes.fromhex("AA55170000000000000017")
 # These are protocol command values, not the native BLE writer speed/delay.
 _PRE_IMAGE_FEED_SPEED = 0x0A
 _POST_IMAGE_FEED_SPEED = 0x19
+_DENSITY_PAYLOAD_PREFIX = 0x01
+_DENSITY_MIN = 1
+_DENSITY_MAX = 200
 # Gray jobs are sent in 20-row compressed bands.
 _GRAY_BAND_ROWS = 20
 # 384-dot V5G row packets are 56 bytes. Eight rows per BLE write keeps the
@@ -27,6 +30,18 @@ _BLE_STANDARD_CHUNK_CAP = 56 * 8
 _BLE_STANDARD_WRITE_DELAY_MS = 30
 _BLE_WRITE_WITHOUT_RESPONSE_PAYLOAD_RESERVE = 5
 V5G_CONNECT_QUERY_PACKET = bytes.fromhex("5178A30001000000FF")
+V5G_TEMPERATURE_QUERY_PACKET = bytes.fromhex("5178D30001000000FF")
+
+
+def encode_density_payload(density: int) -> bytes:
+    value = max(_DENSITY_MIN, min(_DENSITY_MAX, int(density)))
+    return bytes([_DENSITY_PAYLOAD_PREFIX, value])
+
+
+def decode_density_payload(payload: bytes) -> int | None:
+    if len(payload) != 2 or payload[0] != _DENSITY_PAYLOAD_PREFIX:
+        return None
+    return payload[1]
 
 
 def _quality_packet(blackening: int, protocol_family) -> bytes:
@@ -65,7 +80,7 @@ def _lattice_packet(start: bool, protocol_family) -> bytes:
 
 
 def _density_packet(density: int, protocol_family) -> bytes:
-    return make_packet(0xF2, int(density).to_bytes(2, "little", signed=False), protocol_family)
+    return make_packet(0xF2, encode_density_payload(density), protocol_family)
 
 
 def _dot_frames(request: PrintJobRequest) -> bytes:
@@ -103,14 +118,14 @@ def _gray_frames(request: PrintJobRequest) -> bytes:
 
 def build_job(request: PrintJobRequest) -> bytes:
     job = bytearray()
-    job += _state_query_packet(request.protocol_family)
-    job += _quality_packet(request.blackening, request.protocol_family)
-    job += _energy_packet(request.energy, request.protocol_family)
-    job += _lattice_packet(True, request.protocol_family)
-    job += _print_mode_packet(request.protocol_family)
-    job += _feed_packet(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
     if request.density is not None:
         job += _density_packet(request.density, request.protocol_family)
+    job += _state_query_packet(request.protocol_family)
+    job += _quality_packet(request.blackening, request.protocol_family)
+    job += _lattice_packet(True, request.protocol_family)
+    job += _energy_packet(request.energy, request.protocol_family)
+    job += _print_mode_packet(request.protocol_family)
+    job += _feed_packet(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
 
     if request.image_pipeline.encoding == ImageEncoding.V5G_GRAY:
         job += _gray_frames(request)
@@ -121,6 +136,7 @@ def build_job(request: PrintJobRequest) -> bytes:
     for _ in range(max(0, request.post_print_feed_count)):
         job += _paper_packet(request.dev_dpi, request.protocol_family)
     job += _lattice_packet(False, request.protocol_family)
+    job += _state_query_packet(request.protocol_family)
     job += _state_query_packet(request.protocol_family)
     return bytes(job)
 
