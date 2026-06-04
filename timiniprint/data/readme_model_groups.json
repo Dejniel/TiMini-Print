@@ -186,17 +186,27 @@
     {
       "id": "phomemo-m02-family",
       "status": "supported",
-      "display_label": "M02 (Phomemo)",
+      "display_label": "M02",
       "primary_names": [
         "M02"
       ],
       "clone_names": [
         "M02S"
       ],
-      "original_app_name": "Phomemo",
       "rule_keys": [
         "rule_phomemo_m02",
         "rule_phomemo_m02s"
+      ]
+    },
+    {
+      "id": "phomemo-m02-pro",
+      "status": "supported",
+      "display_label": "M02 Pro",
+      "primary_names": [
+        "M02 Pro"
+      ],
+      "rule_keys": [
+        "rule_phomemo_m02_pro"
       ]
     },
     {
@@ -827,7 +837,7 @@
     {
       "id": "phomemo-t02-family",
       "status": "supported",
-      "display_label": "T02 (Phomemo)",
+      "display_label": "T02",
       "primary_names": [
         "T02"
       ],
@@ -836,7 +846,6 @@
         "Q02E",
         "C02E"
       ],
-      "original_app_name": "Phomemo",
       "rule_keys": [
         "rule_phomemo_t02"
       ]

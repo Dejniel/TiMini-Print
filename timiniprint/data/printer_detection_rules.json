@@ -2823,5 +2823,21 @@
     "profile_key": "phomemo_t02",
     "protocol_family": "phomemo_escpos",
     "protocol_variant": "t02"
+  },
+  {
+    "rule_key": "rule_phomemo_m02_pro",
+    "prefixes": [
+      "M02 Pro-",
+      "M02 Pro_",
+      "M02PRO-",
+      "M02PRO_"
+    ],
+    "exact_names": [
+      "M02 Pro",
+      "M02PRO"
+    ],
+    "profile_key": "phomemo_m02_pro",
+    "protocol_family": "phomemo_escpos",
+    "protocol_variant": "m02_pro"
   }
 ]

@@ -66,6 +66,21 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         self.assertIn(b"\x1d\x76\x30\x00\x01\x00\x01\x00\x00", job.payload)
         self.assertTrue(job.payload.endswith(b"\x1b\x64\x04"))
 
+    def test_m02_pro_profile_builds_300dpi_raster_job(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("phomemo_m02_pro")
+        raster = RasterBuffer(pixels=[0] * 624, width=624, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+        )
+
+        self.assertEqual(device.profile.print_size, 624)
+        self.assertEqual(device.profile.dev_dpi, 300)
+        self.assertEqual(device.protocol_variant, "m02_pro")
+        self.assertIn(b"\x1d\x76\x30\x00\x4e\x00\x01\x00", job.payload)
+        self.assertTrue(job.payload.endswith(b"\x1b\x64\x02"))
+
     def test_m02_detection_does_not_steal_m02s(self) -> None:
         catalog = PrinterCatalog.load()
 
@@ -86,6 +101,22 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         self.assertEqual(m02s.profile_key, "phomemo_m02s")
         self.assertEqual(m02s.protocol_variant, "m02s")
         self.assertEqual(m02s_alias.profile_key, "phomemo_m02s")
+
+    def test_m02_pro_detection_does_not_steal_m02(self) -> None:
+        catalog = PrinterCatalog.load()
+
+        for name in ("M02 Pro", "M02PRO", "M02 PRO-ABCD", "m02pro_abcd"):
+            with self.subTest(name=name):
+                device = catalog.detect_device(name)
+                self.assertIsNotNone(device)
+                assert device is not None
+                self.assertEqual(device.profile_key, "phomemo_m02_pro")
+                self.assertEqual(device.protocol_variant, "m02_pro")
+
+        m02 = catalog.detect_device("M02")
+        self.assertIsNotNone(m02)
+        assert m02 is not None
+        self.assertEqual(m02.profile_key, "phomemo_m02")
 
     def test_t02_detection_does_not_steal_other_02_models(self) -> None:
         catalog = PrinterCatalog.load()

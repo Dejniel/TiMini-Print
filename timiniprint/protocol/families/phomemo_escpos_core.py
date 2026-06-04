@@ -60,7 +60,7 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
 
 def _recipe_for_variant(protocol_variant: str | None) -> PhomemoEscposRecipe:
     variant = protocol_variant or "m02"
-    if variant in {"m02", "m02s", "t02"}:
+    if variant in {"m02", "m02s", "m02_pro", "t02"}:
         return PhomemoEscposRecipe(protocol_variant=variant)
     raise ValueError(f"Unsupported Phomemo ESC/POS protocol variant: {protocol_variant}")
 
