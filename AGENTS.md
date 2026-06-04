@@ -63,6 +63,7 @@ Private local notes may live in ignored files such as `AGENTS.local.md`.
 - Reuse shared internals at the right level: codec, packet wrapper, raster recipe, or command dialect.
 - Prefer explicit model fields such as `protocol_variant`, `paper_mode`, or runtime defaults over hidden heuristics.
 - Detection rules should not silently route unknown models to unrelated profiles.
+- If two source apps or hardware reports use the same advertised model name for different profiles or protocols, model both variants explicitly. Do not overwrite one source-backed profile with another source's values; leave automatic detection conservative and let advanced/manual selection choose the variant when needed.
 - Add new models only when the protocol recipe matches the implementation.
 - `paper_mode` means medium/recipe selection, not heating, density, or width.
 

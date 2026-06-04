@@ -31,14 +31,14 @@
       },
       "energy": {
         "image": {
-          "low": 1400,
-          "middle": 1400,
-          "high": 1400
+          "low": 5000,
+          "middle": 5000,
+          "high": 5000
         },
         "text": {
-          "low": 1400,
-          "middle": 1400,
-          "high": 1400
+          "low": 8000,
+          "middle": 8000,
+          "high": 8000
         }
       }
     },
@@ -1711,14 +1711,14 @@
       },
       "energy": {
         "image": {
-          "low": 1400,
-          "middle": 1400,
-          "high": 1400
+          "low": 5000,
+          "middle": 5000,
+          "high": 5000
         },
         "text": {
-          "low": 1400,
-          "middle": 1400,
-          "high": 1400
+          "low": 8000,
+          "middle": 8000,
+          "high": 8000
         }
       }
     },
@@ -2026,14 +2026,14 @@
       },
       "energy": {
         "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 15000
+          "low": 8000,
+          "middle": 12000,
+          "high": 17500
         },
         "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 15000
+          "low": 0,
+          "middle": 0,
+          "high": 0
         }
       }
     },
@@ -2566,7 +2566,7 @@
       },
       "energy": {
         "image": {
-          "low": 3000,
+          "low": 5000,
           "middle": 3500,
           "high": 4000
         },
@@ -2611,7 +2611,7 @@
       },
       "energy": {
         "image": {
-          "low": 3000,
+          "low": 5000,
           "middle": 3500,
           "high": 4000
         },
@@ -4482,6 +4482,51 @@
     "a4xii": false
   },
   {
+    "profile_key": "x16",
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "can_change_mtu": true,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "1",
+    "back_paper_num": 40,
+    "default_protocol_family": "legacy",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "legacy_rle"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 10,
+        "text": 10
+      },
+      "energy": {
+        "image": {
+          "low": 5000,
+          "middle": 5000,
+          "high": 5000
+        },
+        "text": {
+          "low": 8000,
+          "middle": 8000,
+          "high": 8000
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
     "profile_key": "x5",
     "size": 2,
     "paper_size": 384,
@@ -4783,7 +4828,7 @@
       },
       "energy": {
         "image": {
-          "low": 3000,
+          "low": 5000,
           "middle": 3500,
           "high": 4000
         },

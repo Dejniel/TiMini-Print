@@ -237,6 +237,43 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(p4.profile.paper_size, 1600)
         self.assertEqual(p4.profile.print_size, 1728)
 
+    def test_tinyprint_legacy_profiles_keep_source_defaults(self) -> None:
+        d1 = self.catalog.require_profile("d1")
+        self.assertEqual(d1.energy.image.low, 5000)
+        self.assertEqual(d1.energy.image.middle, 5000)
+        self.assertEqual(d1.energy.image.high, 5000)
+        self.assertEqual(d1.energy.text.middle, 8000)
+
+        ht0125 = self.catalog.detect_device("HT0125-ABCD")
+        self.assertIsNotNone(ht0125)
+        self.assertEqual(ht0125.profile_key, "d1")
+        self.assertEqual(ht0125.profile.energy.image.middle, 5000)
+        self.assertEqual(ht0125.profile.energy.text.middle, 8000)
+
+        label_printer = self.catalog.require_profile("label_printer")
+        self.assertEqual(label_printer.energy.image.middle, 1400)
+        self.assertEqual(label_printer.energy.text.middle, 1400)
+
+        tiny_15p3 = self.catalog.require_profile("15p3")
+        self.assertEqual(tiny_15p3.energy.image.middle, 5000)
+        self.assertEqual(tiny_15p3.energy.text.middle, 8000)
+
+        self.assertEqual(self.catalog.require_profile("gt08").energy.image.low, 5000)
+        self.assertEqual(self.catalog.require_profile("gt09").energy.image.low, 5000)
+        self.assertEqual(self.catalog.require_profile("x8").energy.image.low, 5000)
+
+        gb01 = self.catalog.require_profile("gb01")
+        self.assertEqual(gb01.energy.image.low, 8000)
+        self.assertEqual(gb01.energy.image.middle, 12000)
+        self.assertEqual(gb01.energy.image.high, 17500)
+        self.assertEqual(gb01.energy.text.middle, 0)
+
+        x16 = self.catalog.detect_device("X16-ABCD")
+        self.assertIsNotNone(x16)
+        self.assertEqual(x16.profile_key, "x16")
+        self.assertFalse(x16.profile.can_print_label)
+        self.assertEqual(x16.profile.energy.image.middle, 5000)
+
     def test_old_small_bucket_uses_v5g_and_mac59_switches_family_only(self) -> None:
         normal = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:58")
         mac59 = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:59")
