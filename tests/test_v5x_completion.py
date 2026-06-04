@@ -7,6 +7,7 @@ from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.job import ProtocolJob
 from timiniprint.protocol.packet import make_packet
+from timiniprint.protocol.steps import ProtocolStep
 from timiniprint.printing.send import send_prepared_job
 
 
@@ -111,6 +112,15 @@ class _SendOnlyConnection:
         self.sent.append(job)
 
 
+class _StandardPayloadConnection(_SendOnlyConnection):
+    def __init__(self) -> None:
+        super().__init__()
+        self.standard_payloads: list[bytes] = []
+
+    async def send_standard_payload(self, data: bytes) -> None:
+        self.standard_payloads.append(bytes(data))
+
+
 class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
     async def test_send_prepared_job_invokes_wait_for_completion(self) -> None:
         spy = _SpyController()
@@ -118,6 +128,20 @@ class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
         connection = _SendOnlyConnection()
         await send_prepared_job(object(), connection, job)
         self.assertEqual(len(connection.sent), 1)
+        self.assertEqual(spy.completed, 1)
+
+    async def test_send_prepared_job_invokes_wait_for_completion_after_protocol_steps(self) -> None:
+        spy = _SpyController()
+        job = ProtocolJob(
+            steps=(ProtocolStep.send("bitmap", b"data"),),
+            runtime_controller=spy,
+        )
+        connection = _StandardPayloadConnection()
+
+        await send_prepared_job(object(), connection, job)
+
+        self.assertEqual(connection.standard_payloads, [b"data"])
+        self.assertEqual(connection.sent, [])
         self.assertEqual(spy.completed, 1)
 
     async def test_send_prepared_job_without_controller_is_fine(self) -> None:

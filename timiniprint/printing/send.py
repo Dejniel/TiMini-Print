@@ -23,11 +23,12 @@ async def send_prepared_job(
     reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
 ) -> None:
     """Send a prepared protocol job, executing named protocol steps when present."""
+    session = RuntimeConnectionSession(device, connection, reporter=reporter)
+    sent_via_steps = False
+
     if job.steps:
-        session = RuntimeConnectionSession(device, connection, reporter=reporter)
         if session.can_send_standard_payload():
-            if await _send_protocol_steps(session, job.steps, timeout=timeout):
-                return
+            sent_via_steps = await _send_protocol_steps(session, job.steps, timeout=timeout)
         else:
             session.report_warning(
                 short="Protocol step send unavailable",
@@ -37,7 +38,8 @@ async def send_prepared_job(
                 ),
             )
 
-    await connection.send(job)
+    if not sent_via_steps:
+        await connection.send(job)
 
     # The transport returns as soon as the bytes are written, but some printers
     # (e.g. V5X/MXW01) keep printing for several seconds afterwards. Give the
@@ -45,8 +47,7 @@ async def send_prepared_job(
     # caller closes the connection, so we don't truncate the output.
     controller = job.runtime_controller
     if controller is not None:
-        completion_session = RuntimeConnectionSession(device, connection, reporter=reporter)
-        await controller.wait_for_completion(completion_session, timeout=timeout)
+        await controller.wait_for_completion(session, timeout=timeout)
 
 
 async def _send_protocol_steps(
