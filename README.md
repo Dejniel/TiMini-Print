@@ -1,5 +1,5 @@
 # TiMini Print Bluetooth Printer Tool
-Alternative [desktop software for Chinese Bluetooth thermal printers](https://github.com/Dejniel/TiMini-Print/releases) that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Phomemo”, “Luck Jingle”, “NIIMBOT”, or “iBleem”.
+Alternative [desktop software for Chinese Bluetooth thermal printers](https://github.com/Dejniel/TiMini-Print/releases) that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Phomemo”, “Luck Jingle”, “NIIMBOT”, “iBleem”, or “Eleph-label”.
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode, plus [custom integrations](#library-integration).
 
@@ -152,22 +152,28 @@ If you want to build your own integration instead of using only the bundled GUI 
 ## Potential future support
 These models or protocol families are not in the supported list yet, but they look implementable with [more support](#we-need-you).
 <!-- BEGIN todo-models -->
-B1, B1 Pro, B18, B18S, B21, B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro, B24, B3S, B3S_P, D101, D11, D11S, D11_H, D110_M, Hi-D110, Hi-NB-D11, JCB3S, M2_H, N1, S6, JX400R, JX400R06P, MP300, MXW-A4
+B1, B1 Pro, B18, B18S, B21, B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro, B24, B3S, B3S_P, D101, D11, D11S, D11_H, D110_M, Hi-D110, Hi-NB-D11, JCB3S, M2_H, N1, S6, JX400R, JX400R06P, M02X, MP300, MXW-A4
 - AL200 and clones: AL2, RPP02N
 - BAYPAGE and clones: YINTIBAO-V8S
 - C21 and clones: D2, E2, NEWSMY
 - D12 and clones: D11s, C2, C3, C16
+- D30 and clones: D35, D50, Q30, Q30S
 - D400 and clones: Y810BT, QR380A, TB41, QR_386A, ITPP941, P80S, ITPP130B
 - D82 and clones: D82S, D83, A10, FICHERO_6181
 - ITP05N and clones: ITP06N, PCPS_D80, DP_A80, DP_A80S, DP_A80W, PD_A4, GD-88
 - JXPRINTER and clones: PRINTER
 - LP100 and clones: LP220, LY100_BLE
 - LP100S and clones: LP220S
+- M03 and clones: M200, M250, M221, M260
+- M04S and clones: M04AS
 - M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88
+- M110 and clones: M120, M220
 - M832 and clones: M836
 - P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4
 - P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO
+- P12 and clones: P12 Pro, A30
 - P3S and clones: MP300S
+- PM-241-BT and clones: PM241, PM 241
 - Q302 and clones: Q580
 - YINTIBAO and clones: PAPERGO
 <!-- END todo-models -->

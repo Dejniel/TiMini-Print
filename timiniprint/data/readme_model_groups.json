@@ -210,6 +210,89 @@
       ]
     },
     {
+      "id": "phomemo-m02x-family",
+      "status": "todo",
+      "display_label": "M02X",
+      "primary_names": [
+        "M02X"
+      ]
+    },
+    {
+      "id": "phomemo-p12-family",
+      "status": "todo",
+      "display_label": "P12",
+      "primary_names": [
+        "P12"
+      ],
+      "clone_names": [
+        "P12 Pro",
+        "A30"
+      ]
+    },
+    {
+      "id": "phomemo-m03-family",
+      "status": "todo",
+      "display_label": "M03",
+      "primary_names": [
+        "M03"
+      ],
+      "clone_names": [
+        "M200",
+        "M250",
+        "M221",
+        "M260"
+      ]
+    },
+    {
+      "id": "phomemo-m04-family",
+      "status": "todo",
+      "display_label": "M04S",
+      "primary_names": [
+        "M04S"
+      ],
+      "clone_names": [
+        "M04AS"
+      ]
+    },
+    {
+      "id": "phomemo-m110-family",
+      "status": "todo",
+      "display_label": "M110",
+      "primary_names": [
+        "M110"
+      ],
+      "clone_names": [
+        "M120",
+        "M220"
+      ]
+    },
+    {
+      "id": "phomemo-d-family",
+      "status": "todo",
+      "display_label": "D30",
+      "primary_names": [
+        "D30"
+      ],
+      "clone_names": [
+        "D35",
+        "D50",
+        "Q30",
+        "Q30S"
+      ]
+    },
+    {
+      "id": "phomemo-pm241-family",
+      "status": "todo",
+      "display_label": "PM-241-BT",
+      "primary_names": [
+        "PM-241-BT"
+      ],
+      "clone_names": [
+        "PM241",
+        "PM 241"
+      ]
+    },
+    {
       "id": "niimbot-d110",
       "status": "supported",
       "display_label": "D110",
