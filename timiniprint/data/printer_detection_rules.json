@@ -2094,7 +2094,9 @@
       "MXTP-100"
     ],
     "profile_key": "v5g_small_203",
-    "protocol_family": "v5g"
+    "protocol_family": "v5g",
+    "runtime_variant": "mx06",
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_mxpc_100_v5g",
@@ -2154,7 +2156,9 @@
       "CYLOBTPRINTER"
     ],
     "profile_key": "v5g_small_203",
-    "protocol_family": "v5g"
+    "protocol_family": "v5g",
+    "runtime_variant": "mx06",
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_xopoppy_v5g",
@@ -2188,7 +2192,9 @@
       "EWTTOET-Z0499"
     ],
     "profile_key": "v5g_small_203",
-    "protocol_family": "v5g"
+    "protocol_family": "v5g",
+    "runtime_variant": "mx06",
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_bq05_v5g",

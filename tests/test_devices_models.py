@@ -695,6 +695,21 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertIsNotNone(resolved)
                 self.assertEqual(resolved.profile_key, profile_key)
 
+    def test_fun_print_mx06_derived_names_use_runtime_density_defaults(self) -> None:
+        for name in ("MXTP-100-ABCD", "CYLO BT PRINTER", "EWTTO ET-Z0499"):
+            with self.subTest(name=name):
+                resolved = self.catalog.detect_device(name, "AA:BB:CC:DD:EE:58")
+
+                self.assertIsNotNone(resolved)
+                self.assertEqual(resolved.profile_key, "v5g_small_203")
+                self.assertEqual(resolved.protocol_family, ProtocolFamily.V5G)
+                self.assert_runtime_settings(
+                    resolved,
+                    variant="mx06",
+                    defaults_key="mx06",
+                    d2_status=True,
+                )
+
     def test_old_ibleem_proxy_buckets_no_longer_resolve(self) -> None:
         for name in (
             "P100-ABCD",
