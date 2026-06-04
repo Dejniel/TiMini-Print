@@ -92,6 +92,16 @@ class RuntimeController:
     async def stop(self, session: RuntimeSessionApi) -> None:
         return None
 
+    async def wait_for_completion(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+        """Wait for the device to finish the job before the caller disconnects.
+
+        Default is a no-op. Families whose hardware keeps working after the last
+        byte is sent (e.g. V5X, which keeps printing for several seconds) override
+        this to hold the link until the device reports done, so closing the
+        transport early does not truncate the output.
+        """
+        return None
+
     async def probe_capabilities(self, session: RuntimeSessionApi, *, timeout: float) -> None:
         return None
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -40,6 +41,7 @@ class _V5XSessionState:
     error_group: Optional[int] = None
     error_code: Optional[int] = None
     last_error_signature: Optional[tuple[int, int]] = None
+    first_status_monotonic: Optional[float] = None
     status_poll_ack_seen: bool = False
     last_ab_status: Optional[int] = None
     mxw_sign_requested: bool = False
@@ -60,6 +62,16 @@ class _V5XJobContext:
 
 
 class V5XRuntimeController(RuntimeController):
+    # The MXW01 keeps physically printing (and does an end-of-job paper feed) for
+    # several seconds after the last byte is sent. Closing the BLE link before it
+    # finishes truncates the output. After a job we hold the link and wait for the
+    # printer to go quiet/idle, then a short grace, before allowing disconnect.
+    # NB: never poll 0xA3 to elicit status — that opcode moves paper; the printer
+    # streams 0xA1 status frames on its own while printing, so we only listen.
+    _COMPLETION_QUIET_S: float = 3.0
+    _COMPLETION_GRACE_S: float = 3.0
+    _COMPLETION_MAX_S: float = 60.0
+
     def __init__(self) -> None:
         self._state = _V5XSessionState()
 
@@ -206,6 +218,38 @@ class V5XRuntimeController(RuntimeController):
         if ack_token is None:
             return
         self._clear_command_ack_state(ack_token)
+
+    async def wait_for_completion(self, session, *, timeout: float) -> None:
+        # Hold the BLE link after the job is sent until the printer finishes. The
+        # MXW01 streams 0xA1 status frames while printing; treat the job as done
+        # when it reports idle (task_state=0) or after a quiet window with no
+        # status, then wait a short grace before returning (caller disconnects).
+        # We only listen — polling 0xA3 to elicit status would feed paper.
+        if not session.can_wait_for_notification():
+            return
+        session.report_debug("V5X waiting for print completion before disconnect")
+        deadline = time.monotonic() + self._COMPLETION_MAX_S
+        capped = True
+        while time.monotonic() < deadline:
+            frame = await session.wait_for_notification(
+                "V5X print completion 0xa1",
+                lambda payload: session.extract_prefixed_opcode(payload) == 0xA1,
+                timeout=self._COMPLETION_QUIET_S,
+                required=False,
+            )
+            if frame is None:
+                session.report_debug("V5X status quiet; print assumed finished")
+                capped = False
+                break
+            raw = session.extract_prefixed_payload(frame)
+            if raw and raw[0] == 0x00:
+                session.report_debug("V5X reported idle (task_state=0); print finished")
+                capped = False
+                break
+        if capped:
+            session.report_debug("V5X completion wait hit max cap; disconnecting anyway")
+        if self._COMPLETION_GRACE_S > 0:
+            await asyncio.sleep(self._COMPLETION_GRACE_S)
 
     def handle_notification(self, session, payload: bytes) -> None:
         opcode = session.extract_prefixed_opcode(payload)
@@ -486,6 +530,14 @@ class V5XRuntimeController(RuntimeController):
         self._state.temperature_c = raw[4]
         self._state.error_group = raw[6]
         self._state.error_code = raw[7]
+        now = time.monotonic()
+        if self._state.first_status_monotonic is None:
+            self._state.first_status_monotonic = now
+        elapsed = now - self._state.first_status_monotonic
+        session.report_debug(
+            f"V5X status +{elapsed:5.2f}s: state={self._state.task_state_name} "
+            f"battery={raw[3]} temp={raw[4]}C err={raw[6]}/{raw[7]}"
+        )
         self._handle_error_state(session, raw[6], raw[7])
 
     @staticmethod

@@ -39,6 +39,15 @@ async def send_prepared_job(
 
     await connection.send(job)
 
+    # The transport returns as soon as the bytes are written, but some printers
+    # (e.g. V5X/MXW01) keep printing for several seconds afterwards. Give the
+    # runtime controller a chance to wait for the device to finish before the
+    # caller closes the connection, so we don't truncate the output.
+    controller = job.runtime_controller
+    if controller is not None:
+        completion_session = RuntimeConnectionSession(device, connection, reporter=reporter)
+        await controller.wait_for_completion(completion_session, timeout=timeout)
+
 
 async def _send_protocol_steps(
     session: RuntimeConnectionSession,
