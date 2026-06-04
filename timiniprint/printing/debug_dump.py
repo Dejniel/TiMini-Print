@@ -36,7 +36,9 @@ def build_protocol_job_debug_dump(
     settings: Mapping[str, object],
     effective_image_pipeline: ImagePipelineConfig | None = None,
 ) -> dict[str, object]:
-    runtime_density_profile = device.runtime_density_profile
+    runtime_settings = device.runtime_settings
+    runtime_defaults = None if runtime_settings is None else runtime_settings.defaults
+    runtime_capabilities = None if runtime_settings is None else runtime_settings.capabilities
     transport = get_protocol_behavior(device.protocol_family).transport
     return {
         "schema": "timiniprint/debug-protocol-job/v1",
@@ -50,12 +52,21 @@ def build_protocol_job_debug_dump(
                 "encoding": device.image_pipeline.encoding.value,
                 "formats": [pixel_format.value for pixel_format in device.image_pipeline.formats],
             },
-            "runtime_variant": device.runtime_variant,
-            "runtime_density_profile_key": (
+            "runtime_variant": None if runtime_settings is None else runtime_settings.variant,
+            "runtime_defaults_key": (
                 None
-                if runtime_density_profile is None
-                else runtime_density_profile.profile_key
+                if runtime_defaults is None
+                else runtime_defaults.key
             ),
+            "runtime_density": (
+                None if runtime_defaults is None else _mode_level_debug_entry(runtime_defaults.density)
+            ),
+            "runtime_capabilities": {
+                "d2_status": False if runtime_capabilities is None else runtime_capabilities.d2_status,
+                "didian_status": (
+                    False if runtime_capabilities is None else runtime_capabilities.didian_status
+                ),
+            },
             "detection_rule_key": device.detection_rule_key,
         },
         "settings": dict(settings),
@@ -100,6 +111,21 @@ def _image_pipeline_debug_entry(pipeline: ImagePipelineConfig) -> dict[str, obje
     return {
         "encoding": pipeline.encoding.value,
         "formats": [pixel_format.value for pixel_format in pipeline.formats],
+    }
+
+
+def _mode_level_debug_entry(profile) -> dict[str, dict[str, int]]:
+    return {
+        "image": {
+            "low": profile.image.low,
+            "middle": profile.image.middle,
+            "high": profile.image.high,
+        },
+        "text": {
+            "low": profile.text.low,
+            "middle": profile.text.middle,
+            "high": profile.text.high,
+        },
     }
 
 

@@ -95,11 +95,11 @@ class BleakBluetoothConnection:
         )
 
     async def send(self, job: ProtocolJob) -> None:
-        """Send a protocol job using the device's stream tuning and runtime state."""
+        """Send a protocol job using the device's stream settings and runtime state."""
         await self._send_payload(job.payload, runtime_controller=job.runtime_controller)
 
     async def send_standard_payload(self, data: bytes) -> None:
-        """Send raw protocol payload using the device's stream tuning."""
+        """Send raw protocol payload using the device's stream settings."""
         await self._send_payload(data, runtime_controller=None)
 
     async def _send_payload(self, data: bytes, *, runtime_controller=None) -> None:

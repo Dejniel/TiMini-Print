@@ -8,7 +8,7 @@ from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImagePipelineConfig
 
 if TYPE_CHECKING:
-    from .profiles import PrinterProfile
+    from .profiles import PrinterProfile, RuntimeSettings
 
 
 class BluetoothEndpointTransport(str, Enum):
@@ -85,8 +85,7 @@ class PrinterDevice:
     protocol_family: ProtocolFamily
     protocol_variant: str | None
     image_pipeline: ImagePipelineConfig
-    runtime_variant: str | None = None
-    runtime_density_profile: "PrinterProfile | None" = None
+    runtime_settings: "RuntimeSettings | None" = None
     transport_target: TransportTarget | None = None
     detection_rule_key: str = ""
 

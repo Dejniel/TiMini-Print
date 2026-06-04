@@ -20,14 +20,25 @@ That is why the public model is built from:
 
 ### `PrinterProfile`
 Static catalog data.
-It describes printer capabilities and tuning.
+It describes printer capabilities and print defaults.
 
 A `PrinterProfile` is not enough to print by itself.
 It does not say:
 - which protocol family is active right now
 - which protocol variant is active right now
 - which image pipeline is active right now
+- which runtime defaults/capabilities are active right now
 - which transport target is active right now
+
+### `RuntimeSettings`
+Runtime catalog data.
+It describes stateful print-session behavior that is not part of the static printer profile:
+- `variant`: which runtime algorithm to use
+- `defaults`: default dynamic density inputs for that algorithm
+- `capabilities`: status-notification features used by the runtime controller
+
+This exists so dynamic V5G/MX density behavior does not have to borrow a second
+`PrinterProfile` just to get density defaults.
 
 ### `PrinterDevice`
 The central runtime object.
@@ -37,7 +48,7 @@ It combines:
 - protocol family
 - optional protocol variant
 - image pipeline
-- runtime metadata
+- runtime settings
 - optional transport target
 
 If code needs to talk about “this actual printer instance as we currently intend to use it”, it should normally use `PrinterDevice`.
@@ -111,7 +122,7 @@ It contains:
 - `PrinterProfile`
 - detection rules
 - `PrinterCatalog`
-- device config serialization
+- config serialization
 
 ### `timiniprint.raster`
 Owns shared raster data types.

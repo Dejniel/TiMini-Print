@@ -65,7 +65,7 @@ class CatalogAuditTests(unittest.TestCase):
                 "default_image_pipeline": {"formats": ["bw1"], "encoding": "legacy_raw"},
                 "stream": {"chunk_size": 180, "delay_ms": 4},
                 "post_print_feed_count": 2,
-                "tuning": {
+                "print_defaults": {
                     "speed": {"image": 10, "text": 8},
                     "energy": {
                         "image": {"low": 5000, "middle": 5000, "high": 5000},
@@ -90,7 +90,7 @@ class CatalogAuditTests(unittest.TestCase):
                 "default_image_pipeline": {"formats": ["bw1"], "encoding": "legacy_raw"},
                 "stream": {"chunk_size": 180, "delay_ms": 4},
                 "post_print_feed_count": 2,
-                "tuning": {
+                "print_defaults": {
                     "speed": {"image": 10, "text": 8},
                     "energy": {
                         "image": {"low": 5000, "middle": 5000, "high": 5000},

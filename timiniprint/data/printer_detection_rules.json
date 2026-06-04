@@ -59,7 +59,7 @@
     "prefixes": [
       "MX05"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -70,7 +70,7 @@
     "prefixes": [
       "MX06"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -92,7 +92,7 @@
     "prefixes": [
       "MX08"
     ],
-    "profile_key": "mx08",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -103,7 +103,7 @@
     "prefixes": [
       "MX09"
     ],
-    "profile_key": "mx09",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -125,7 +125,7 @@
     "prefixes": [
       "MX11"
     ],
-    "profile_key": "mx11",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -158,7 +158,7 @@
     "prefixes": [
       "MXTP-100"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -235,7 +235,7 @@
     "prefixes": [
       "CYLOBTPRINTER"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -246,7 +246,7 @@
     "prefixes": [
       "XOPOPPY"
     ],
-    "profile_key": "xopoppy",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -279,7 +279,7 @@
     "prefixes": [
       "EWTTOET-Z0499"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5x",
     "mac_suffixes": [
       "59"
@@ -1360,40 +1360,40 @@
     "prefixes": [
       "MX05-"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx06",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "profile_mx06",
     "prefixes": [
       "MX06-"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx06",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "profile_mx08",
     "prefixes": [
       "MX08-"
     ],
-    "profile_key": "mx08",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "d2",
-    "runtime_density_profile_key": "mx08"
+    "runtime_defaults_key": "mx08"
   },
   {
     "rule_key": "profile_mx09",
     "prefixes": [
       "MX09-"
     ],
-    "profile_key": "mx09",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "d2",
-    "runtime_density_profile_key": "mx09"
+    "runtime_defaults_key": "mx09"
   },
   {
     "rule_key": "profile_mx10",
@@ -1403,17 +1403,17 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "profile_mx11",
     "prefixes": [
       "MX11-"
     ],
-    "profile_key": "mx11",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx11"
+    "runtime_defaults_key": "mx11"
   },
   {
     "rule_key": "profile_p5ai",
@@ -2005,20 +2005,20 @@
     "prefixes": [
       "MX05"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx06",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_mx06_v5g",
     "prefixes": [
       "MX06"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx06",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_mx07_v5g",
@@ -2033,20 +2033,20 @@
     "prefixes": [
       "MX08"
     ],
-    "profile_key": "mx08",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "d2",
-    "runtime_density_profile_key": "mx08"
+    "runtime_defaults_key": "mx08"
   },
   {
     "rule_key": "rule_mx09_v5g",
     "prefixes": [
       "MX09"
     ],
-    "profile_key": "mx09",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "d2",
-    "runtime_density_profile_key": "mx09"
+    "runtime_defaults_key": "mx09"
   },
   {
     "rule_key": "rule_mx10_v5g",
@@ -2056,17 +2056,17 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_mx11_v5g",
     "prefixes": [
       "MX11"
     ],
-    "profile_key": "mx11",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx11"
+    "runtime_defaults_key": "mx11"
   },
   {
     "rule_key": "rule_mx12_v5g",
@@ -2076,7 +2076,7 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx11"
+    "runtime_defaults_key": "mx11"
   },
   {
     "rule_key": "rule_mx13_v5g",
@@ -2086,14 +2086,14 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "xopoppy"
+    "runtime_defaults_key": "xopoppy"
   },
   {
     "rule_key": "rule_mxtp_100_v5g",
     "prefixes": [
       "MXTP-100"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g"
   },
   {
@@ -2112,7 +2112,7 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_pd01_v5g",
@@ -2122,7 +2122,7 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "pd01",
-    "runtime_density_profile_key": "mx11"
+    "runtime_defaults_key": "mx11"
   },
   {
     "rule_key": "rule_miniprinter_v5g",
@@ -2153,7 +2153,7 @@
     "prefixes": [
       "CYLOBTPRINTER"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g"
   },
   {
@@ -2161,10 +2161,10 @@
     "prefixes": [
       "XOPOPPY"
     ],
-    "profile_key": "xopoppy",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "xopoppy"
+    "runtime_defaults_key": "xopoppy"
   },
   {
     "rule_key": "rule_bq01_v5g",
@@ -2187,7 +2187,7 @@
     "prefixes": [
       "EWTTOET-Z0499"
     ],
-    "profile_key": "mx06",
+    "profile_key": "v5g_small_203",
     "protocol_family": "v5g"
   },
   {
@@ -2286,7 +2286,7 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_mxw010_v5g",
@@ -2296,7 +2296,7 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": null
+    "runtime_defaults_key": null
   },
   {
     "rule_key": "rule_ewttoet_n3689_v5g",
@@ -2322,7 +2322,7 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_gv_ma211_v5g",
@@ -2332,7 +2332,7 @@
     "profile_key": "v5g_small_203",
     "protocol_family": "v5g",
     "runtime_variant": "mx10",
-    "runtime_density_profile_key": "mx06"
+    "runtime_defaults_key": "mx06"
   },
   {
     "rule_key": "rule_bq03_v5g",

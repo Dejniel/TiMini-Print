@@ -90,7 +90,14 @@ class PrinterProtocol:
         resolved_paper_mode = (
             paper_mode if paper_mode is not None else self.device.profile.default_paper_mode
         )
-        density_profile = self.device.runtime_density_profile or self.device.profile
+        runtime_density = (
+            None
+            if self.device.runtime_settings is None
+            else self.device.runtime_settings.select_density(
+                is_text=is_text,
+                blackening=blackening,
+            )
+        )
         payload, steps = _build_job_model_from_raster_set(
             raster_set=raster_set,
             is_text=is_text,
@@ -99,7 +106,9 @@ class PrinterProtocol:
                 is_text=is_text,
                 blackening=blackening,
             ),
-            density=density_profile.select_density(
+            density=runtime_density
+            if runtime_density is not None
+            else self.device.profile.select_density(
                 is_text=is_text,
                 blackening=blackening,
             ),

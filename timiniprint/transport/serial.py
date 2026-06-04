@@ -10,7 +10,7 @@ from ..protocol import ProtocolJob
 
 
 class SerialConnection:
-    """Serial connection that writes jobs using the device's stream tuning."""
+    """Serial connection that writes jobs using the device's stream settings."""
 
     def __init__(
         self,

@@ -69,15 +69,15 @@ python3 timiniprint_gui.py
 
 - Print via a serial port (skip Bluetooth connection):
   ```bash
-  ./TiMini-Print-Command-Line-Linux-x86_64 --bluetooth "PRINTER_NAME" --export-device-config printer.json
-  ./TiMini-Print-Command-Line-Linux-x86_64 --serial /dev/rfcomm0 --device-config printer.json /path/to/file.pdf
+  ./TiMini-Print-Command-Line-Linux-x86_64 --export-config luck_a2 printer.json
+  ./TiMini-Print-Command-Line-Linux-x86_64 --serial /dev/rfcomm0 --config printer.json /path/to/file.pdf
   ```
 
 - Force a specific model for an unsupported or random Bluetooth name:
   ```bash
   ./TiMini-Print-Command-Line-Linux-x86_64 --list-profiles
-  ./TiMini-Print-Command-Line-Linux-x86_64 --export-profile-config luck_a2 printer.json
-  ./TiMini-Print-Command-Line-Linux-x86_64 --bluetooth "PPA2L_3F19" --device-config printer.json /path/to/file.pdf
+  ./TiMini-Print-Command-Line-Linux-x86_64 --export-config luck_a2 printer.json
+  ./TiMini-Print-Command-Line-Linux-x86_64 --config printer.json /path/to/file.pdf
   ```
 
 - Print raw text without creating a file:
@@ -96,10 +96,13 @@ python3 timiniprint_gui.py
   ```
 
 ## Notes
-- If `--bluetooth` is omitted, the first supported printer found is used
-- For `--serial`, you must pass `--device-config`
-- `--export-profile-config KEY PATH` writes a fresh `device-config` JSON from a known profile key, while `--export-device-config` writes the full resolved runtime config as JSON; `--device-config` loads either form back and forces the saved protocol/profile/runtime values
-- Manual `--device-config` overrides are for advanced testing only; if you force the wrong profile or protocol family, printing may still fail
+- If `--bluetooth` and `--config` are omitted, the first supported printer found is used
+- With `--config`, `--bluetooth` is optional; without it, the first Bluetooth target found is used unless the config has a saved Bluetooth target
+- Use `--bluetooth NAME_OR_ADDRESS --config printer.json` when several Bluetooth devices are nearby and you want to choose one explicitly
+- For `--serial`, you must pass `--config`
+- `--config KEY` uses a known profile/runtime defaults key directly; `--config PATH` loads an editable JSON config
+- `--export-config KEY PATH` writes a full editable JSON config from a known profile/runtime defaults key
+- Manual config overrides are for advanced testing only; if you force the wrong profile or protocol family, printing may still fail
 - `--paper-mode tag` or `--paper-mode plain` overrides the profile's default media mode when the selected protocol supports it
 
 # Notes

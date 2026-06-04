@@ -24,10 +24,19 @@ It carries the resolved:
 - protocol family
 - optional protocol variant
 - image pipeline
-- runtime metadata
+- optional runtime settings
 - optional transport target
 
 A `PrinterDevice` is the one object that both protocol code and transport code agree on.
+
+Runtime settings are separate from the static profile:
+- `variant` selects the stateful runtime algorithm, when a family needs one
+- `defaults` provides runtime density defaults such as V5G/MX dynamic density inputs
+- `capabilities` describes runtime notification features used by the controller
+
+Editable JSON configs keep this separation too: `profile_overrides` edits the
+static profile, while `runtime_overrides` edits runtime variant, defaults key,
+density, and capabilities.
 
 ### `PrintJobBuilder`
 `PrintJobBuilder(device, settings=...)` is the normal high-level entry point.
@@ -206,7 +215,7 @@ class MyConnection:
         return None
 
     async def send(self, job):
-        # Use the stream tuning resolved for this device.
+        # Use the stream settings resolved for this device.
         chunk_size = self._device.profile.stream.chunk_size
         delay_ms = self._device.profile.stream.delay_ms
 
@@ -261,7 +270,7 @@ It applies detection rules to a known device name and optional address.
 Use it when you already have values such as:
 - a BLE name from somewhere else
 - a saved MAC address
-- a stored device config flow that still wants catalog-backed detection
+- a stored config flow that still wants catalog-backed detection
 
 Example:
 
@@ -280,7 +289,7 @@ It returns real reachable Bluetooth printers as `PrinterDevice` objects.
 
 Use it when your program needs to find printers nearby.
 
-## Save and reload a resolved device config
+## Save and reload an editable config
 
 Use this when you want to inspect or tweak the resolved runtime values instead of relying on auto-detection every time.
 
@@ -295,10 +304,11 @@ device = catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
 if device is None:
     raise RuntimeError("Printer profile not detected")
 
-# Export the fully resolved device state.
-config = catalog.serialize_device_config(device)
+# Export an editable config. profile_key remains the catalog fallback;
+# profile_overrides can be edited or partially deleted.
+config = catalog.serialize_config(device)
 Path("printer.json").write_text(
-    json.dumps(config, indent=2, sort_keys=True) + "\n",
+    json.dumps(config, indent=2) + "\n",
     encoding="utf-8",
 )
 
@@ -308,10 +318,11 @@ manual_device = catalog.device_from_config(loaded)
 ```
 
 This config captures:
-- profile
+- base profile key
+- full editable profile overrides
 - protocol family
 - image pipeline
-- runtime variant metadata
+- runtime overrides: variant, defaults key, density, and capabilities
 - optional transport target
 
 This is the right tool if you want to experiment with runtime values without adding more one-off CLI flags.
@@ -420,7 +431,7 @@ Examples:
 - profile loading
 - detection rules
 - `PrinterDevice` creation
-- device config serialization
+- config serialization
 
 ### Add it to `timiniprint.transport` when it is about actual I/O
 Examples:

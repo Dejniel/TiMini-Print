@@ -171,7 +171,7 @@ class PrintingJobTests(unittest.TestCase):
             0,
         )
 
-    def test_v5g_runtime_controller_uses_donor_density_profile(self) -> None:
+    def test_v5g_runtime_controller_uses_runtime_defaults(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         builder = self.job_mod.PrintJobBuilder(
@@ -193,8 +193,10 @@ class PrintingJobTests(unittest.TestCase):
         self.assertIsNotNone(controller)
         snapshot = controller.debug_snapshot()
         self.assertEqual(snapshot["helper_kind"], "mx10")
-        self.assertEqual(snapshot["density_profile_key"], "mx06")
-        self.assertEqual(snapshot["density_profile"]["profile_key"], "mx06")
+        self.assertEqual(snapshot["runtime_defaults_key"], "mx06")
+        self.assertEqual(snapshot["runtime_defaults"]["key"], "mx06")
+        self.assertTrue(snapshot["capabilities"]["d2_status"])
+        self.assertFalse(snapshot["capabilities"]["didian_status"])
         self.assertEqual(snapshot["density_levels"]["image"]["middle"], 180)
         self.assertEqual(snapshot["density_levels"]["text"]["middle"], 130)
         self.assertEqual(build_model_mock.call_args.kwargs["density"], 180)
@@ -211,7 +213,7 @@ class PrintingJobTests(unittest.TestCase):
             )
         )
 
-    def test_v5g_runtime_controller_can_use_xopoppy_density_profile(self) -> None:
+    def test_v5g_runtime_controller_can_use_xopoppy_runtime_defaults(self) -> None:
         resolved = self.catalog.detect_device("XOPOPPY-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         builder = self.job_mod.PrintJobBuilder(resolved, page_loader=_FakeLoader([]))
@@ -226,7 +228,7 @@ class PrintingJobTests(unittest.TestCase):
         controller = job.runtime_controller
         self.assertIsNotNone(controller)
         snapshot = controller.debug_snapshot()
-        self.assertEqual(snapshot["density_profile"]["profile_key"], "xopoppy")
+        self.assertEqual(snapshot["runtime_defaults"]["key"], "xopoppy")
         self.assertEqual(snapshot["density_levels"]["image"]["middle"], 80)
         self.assertEqual(snapshot["density_levels"]["text"]["middle"], 80)
 

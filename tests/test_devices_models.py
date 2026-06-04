@@ -36,7 +36,7 @@ def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) ->
             "delay_ms": 4,
         },
         "post_print_feed_count": 2,
-        "tuning": {
+        "print_defaults": {
             "speed": speed,
             "energy": {
                 "image": {"low": 5000, "middle": 5000, "high": 5000},
@@ -48,18 +48,53 @@ def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) ->
 
 def _with_optional_speed(payload: dict, speed: dict | None) -> dict:
     payload = dict(payload)
-    payload["tuning"] = dict(payload["tuning"])
+    payload["print_defaults"] = dict(payload["print_defaults"])
     if speed is None:
-        payload["tuning"].pop("speed", None)
+        payload["print_defaults"].pop("speed", None)
     else:
-        payload["tuning"]["speed"] = speed
+        payload["print_defaults"]["speed"] = speed
     return payload
+
+
+def _runtime_defaults_payload(
+    *,
+    runtime_defaults_key: str = "demo-runtime",
+    profile_key: str = "demo",
+) -> dict:
+    return {
+        "runtime_defaults_key": runtime_defaults_key,
+        "profile_key": profile_key,
+        "runtime_variant": "mx06",
+        "density": {
+            "image": {"low": 100, "middle": 120, "high": 140},
+            "text": {"low": 80, "middle": 100, "high": 120},
+        },
+        "capabilities": {
+            "d2_status": True,
+            "didian_status": False,
+        },
+    }
 
 
 class DevicesModelsTests(unittest.TestCase):
     def setUp(self) -> None:
         reset_registry_cache()
         self.catalog = PrinterCatalog.load()
+
+    def assert_runtime_settings(
+        self,
+        device,
+        *,
+        variant: str | None,
+        defaults_key: str | None,
+        d2_status: bool = False,
+        didian_status: bool = False,
+    ) -> None:
+        self.assertIsNotNone(device.runtime_settings)
+        self.assertEqual(device.runtime_settings.variant, variant)
+        self.assertEqual(device.runtime_settings.defaults_key, defaults_key)
+        self.assertEqual(device.runtime_settings.capabilities.d2_status, d2_status)
+        self.assertEqual(device.runtime_settings.capabilities.didian_status, didian_status)
 
     def test_catalog_loads_profiles_and_rules(self) -> None:
         self.assertGreater(len(self.catalog.profiles), 0)
@@ -101,7 +136,7 @@ class DevicesModelsTests(unittest.TestCase):
     def test_catalog_rejects_missing_speed_for_speed_family(self) -> None:
         profile = PrinterCatalog._parse_profile(_with_optional_speed(_profile_payload(), None))
 
-        with self.assertRaisesRegex(ValueError, "requires speed tuning"):
+        with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             PrinterCatalog([profile], [])
 
     def test_catalog_rejects_missing_speed_for_speed_rule_override(self) -> None:
@@ -116,8 +151,22 @@ class DevicesModelsTests(unittest.TestCase):
             protocol_family=ProtocolFamily.LEGACY,
         )
 
-        with self.assertRaisesRegex(ValueError, "requires speed tuning"):
+        with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             PrinterCatalog([profile], [rule])
+
+    def test_catalog_rejects_runtime_defaults_key_collision_with_profile_key(self) -> None:
+        profile = PrinterCatalog._parse_profile(_profile_payload("demo"))
+        runtime_defaults = PrinterCatalog._parse_printer_runtime_defaults(
+            [
+                _runtime_defaults_payload(
+                    runtime_defaults_key="demo",
+                    profile_key="demo",
+                )
+            ]
+        )
+
+        with self.assertRaisesRegex(ValueError, "collide with profile keys: demo"):
+            PrinterCatalog([profile], [], runtime_defaults)
 
     def test_first_match_wins_for_mac_suffix_rules(self) -> None:
         shared_profile = PrinterCatalog._parse_profile(_profile_payload("shared"))
@@ -174,13 +223,16 @@ class DevicesModelsTests(unittest.TestCase):
 
         self.assertIsNotNone(normal)
         self.assertIsNotNone(mac59)
-        self.assertEqual(normal.profile_key, "mx06")
-        self.assertEqual(mac59.profile_key, "mx06")
+        self.assertEqual(normal.profile_key, "v5g_small_203")
+        self.assertEqual(mac59.profile_key, "v5g_small_203")
         self.assertEqual(normal.protocol_family, ProtocolFamily.V5G)
         self.assertEqual(mac59.protocol_family, ProtocolFamily.V5X)
-        self.assertEqual(normal.runtime_variant, "mx06")
-        self.assertIsNotNone(normal.runtime_density_profile)
-        self.assertEqual(normal.runtime_density_profile.profile_key, "mx06")
+        self.assert_runtime_settings(
+            normal,
+            variant="mx06",
+            defaults_key="mx06",
+            d2_status=True,
+        )
 
     def test_old_small_bucket_shared_names_resolve_to_shared_profile(self) -> None:
         normal = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")
@@ -188,8 +240,8 @@ class DevicesModelsTests(unittest.TestCase):
 
         self.assertIsNotNone(normal)
         self.assertIsNotNone(mac59)
-        self.assertEqual(normal.profile_key, "xopoppy")
-        self.assertEqual(mac59.profile_key, "xopoppy")
+        self.assertEqual(normal.profile_key, "v5g_small_203")
+        self.assertEqual(mac59.profile_key, "v5g_small_203")
         self.assertEqual(normal.protocol_family, ProtocolFamily.V5G)
         self.assertEqual(mac59.protocol_family, ProtocolFamily.V5X)
 
@@ -204,69 +256,78 @@ class DevicesModelsTests(unittest.TestCase):
         mxw010 = self.catalog.detect_device("MXW010-ABCD", "AA:BB:CC:DD:EE:58")
 
         self.assertIsNotNone(mx06)
-        self.assertEqual(mx06.runtime_variant, "mx06")
-        self.assertIsNotNone(mx06.runtime_density_profile)
-        self.assertEqual(mx06.runtime_density_profile.profile_key, "mx06")
+        self.assert_runtime_settings(mx06, variant="mx06", defaults_key="mx06", d2_status=True)
 
         self.assertIsNotNone(mx08)
-        self.assertEqual(mx08.runtime_variant, "d2")
-        self.assertIsNotNone(mx08.runtime_density_profile)
-        self.assertEqual(mx08.runtime_density_profile.profile_key, "mx08")
+        self.assert_runtime_settings(mx08, variant="d2", defaults_key="mx08", d2_status=True)
 
         self.assertIsNotNone(mx09)
-        self.assertEqual(mx09.runtime_variant, "d2")
-        self.assertIsNotNone(mx09.runtime_density_profile)
-        self.assertEqual(mx09.runtime_density_profile.profile_key, "mx09")
+        self.assert_runtime_settings(
+            mx09,
+            variant="d2",
+            defaults_key="mx09",
+            d2_status=True,
+            didian_status=True,
+        )
 
         self.assertIsNotNone(mx10)
-        self.assertEqual(mx10.runtime_variant, "mx10")
-        self.assertIsNotNone(mx10.runtime_density_profile)
-        self.assertEqual(mx10.runtime_density_profile.profile_key, "mx06")
+        self.assert_runtime_settings(mx10, variant="mx10", defaults_key="mx06", d2_status=True)
 
         self.assertIsNotNone(pd01)
-        self.assertEqual(pd01.runtime_variant, "pd01")
-        self.assertIsNotNone(pd01.runtime_density_profile)
-        self.assertEqual(pd01.runtime_density_profile.profile_key, "mx11")
+        self.assert_runtime_settings(pd01, variant="pd01", defaults_key="mx11")
 
         self.assertIsNotNone(xopoppy)
-        self.assertEqual(xopoppy.runtime_variant, "mx10")
-        self.assertIsNotNone(xopoppy.runtime_density_profile)
-        self.assertEqual(xopoppy.runtime_density_profile.profile_key, "xopoppy")
+        self.assert_runtime_settings(xopoppy, variant="mx10", defaults_key="xopoppy")
 
         self.assertIsNotNone(mx13)
-        self.assertEqual(mx13.runtime_variant, "mx10")
-        self.assertIsNotNone(mx13.runtime_density_profile)
-        self.assertEqual(mx13.runtime_density_profile.profile_key, "xopoppy")
+        self.assert_runtime_settings(mx13, variant="mx10", defaults_key="xopoppy")
 
         self.assertIsNotNone(mxw010)
-        self.assertEqual(mxw010.runtime_variant, "mx10")
-        self.assertIsNone(mxw010.runtime_density_profile)
+        self.assert_runtime_settings(mxw010, variant="mx10", defaults_key=None)
 
-    def test_device_config_roundtrip_preserves_runtime_fields(self) -> None:
-        resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
+    def test_config_roundtrip_preserves_runtime_fields(self) -> None:
+        resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
 
         self.assertIsNotNone(resolved)
-        config = self.catalog.serialize_device_config(resolved)
+        config = self.catalog.serialize_config(resolved)
         rebuilt = self.catalog.device_from_config(config)
 
         self.assertEqual(rebuilt.display_name, resolved.display_name)
         self.assertEqual(rebuilt.profile_key, resolved.profile_key)
         self.assertEqual(rebuilt.protocol_family, resolved.protocol_family)
         self.assertEqual(rebuilt.image_pipeline, resolved.image_pipeline)
-        self.assertEqual(rebuilt.runtime_variant, resolved.runtime_variant)
-        self.assertEqual(
-            None if rebuilt.runtime_density_profile is None else rebuilt.runtime_density_profile.profile_key,
-            None if resolved.runtime_density_profile is None else resolved.runtime_density_profile.profile_key,
+        self.assert_runtime_settings(
+            rebuilt,
+            variant=resolved.runtime_settings.variant,
+            defaults_key=resolved.runtime_settings.defaults_key,
+            d2_status=resolved.runtime_settings.capabilities.d2_status,
+            didian_status=resolved.runtime_settings.capabilities.didian_status,
         )
         self.assertEqual(rebuilt.address, resolved.address)
         self.assertEqual(rebuilt.transport_badge, resolved.transport_badge)
 
-    def test_device_config_roundtrip_preserves_protocol_variant(self) -> None:
+    def test_config_runtime_density_override_updates_runtime_defaults_only(self) -> None:
+        resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
+        self.assertIsNotNone(resolved)
+        config = self.catalog.serialize_config(resolved)
+        config["runtime_overrides"]["density"] = {
+            "image": {"middle": 177},
+        }
+
+        rebuilt = self.catalog.device_from_config(config)
+
+        self.assertIsNotNone(rebuilt.runtime_settings)
+        self.assertIsNotNone(rebuilt.runtime_settings.defaults)
+        self.assertEqual(rebuilt.runtime_settings.defaults.key, "mx06")
+        self.assertEqual(rebuilt.runtime_settings.defaults.density.image.middle, 177)
+        self.assertIsNone(rebuilt.profile.density)
+
+    def test_config_roundtrip_preserves_protocol_variant(self) -> None:
         resolved = self.catalog.detect_device("QIRUI_Q2_1234")
 
         self.assertIsNotNone(resolved)
         self.assertEqual(resolved.protocol_variant, "qirui_q2")
-        config = self.catalog.serialize_device_config(resolved)
+        config = self.catalog.serialize_config(resolved)
         rebuilt = self.catalog.device_from_config(config)
 
         self.assertEqual(rebuilt.profile_key, resolved.profile_key)
@@ -274,10 +335,26 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.protocol_variant, resolved.protocol_variant)
         self.assertEqual(rebuilt.image_pipeline, resolved.image_pipeline)
 
+    def test_config_profile_overrides_fall_back_to_base_profile(self) -> None:
+        base = self.catalog.device_from_profile("gt01")
+        config = self.catalog.serialize_config(base)
+        config["profile_overrides"] = {
+            "stream": {
+                "delay_ms": 9,
+            },
+        }
+
+        rebuilt = self.catalog.device_from_config(config)
+
+        self.assertEqual(rebuilt.profile.stream.chunk_size, base.profile.stream.chunk_size)
+        self.assertEqual(rebuilt.profile.stream.delay_ms, 9)
+        self.assertEqual(rebuilt.protocol_family, base.protocol_family)
+        self.assertEqual(rebuilt.image_pipeline, base.image_pipeline)
+
     def test_device_from_config_rejects_unknown_protocol_variant(self) -> None:
         base = self.catalog.device_from_profile("luck_a40")
-        config = self.catalog.serialize_device_config(base)
-        config["protocol_variant"] = "not_a_variant"
+        config = self.catalog.serialize_config(base)
+        config["profile_overrides"]["default_protocol_variant"] = "not_a_variant"
 
         with self.assertRaisesRegex(
             RuntimeError,
@@ -507,7 +584,6 @@ class DevicesModelsTests(unittest.TestCase):
     def test_v5g_profiles_keep_source_backed_pipeline_and_density_cases(self) -> None:
         mx07 = self.catalog.require_profile("mx07")
         mx10 = self.catalog.require_profile("v5g_small_203")
-        xopoppy = self.catalog.require_profile("xopoppy")
         bq02 = self.catalog.require_profile("bq02")
         gt02 = self.catalog.require_profile("gt02_v5g")
         shared = self.catalog.require_profile("v5g_small_203")
@@ -521,8 +597,10 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(mx10.energy.image.middle, 10000)
         self.assertEqual(mx10.energy.text.high, 20000)
 
-        self.assertIsNotNone(xopoppy.density)
-        self.assertEqual(xopoppy.density.text.middle, 80)
+        xopoppy_runtime = self.catalog.device_from_key("xopoppy")
+        self.assertIsNotNone(xopoppy_runtime.runtime_settings)
+        self.assertIsNotNone(xopoppy_runtime.runtime_settings.defaults)
+        self.assertEqual(xopoppy_runtime.runtime_settings.defaults.density.text.middle, 80)
 
         self.assertIsNotNone(bq02.density)
         self.assertEqual(bq02.density.text.high, 180)
@@ -556,7 +634,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_derived_names_map_to_final_profiles(self) -> None:
         expected = {
-            "MXTP-100-ABCD": "mx06",
+            "MXTP-100-ABCD": "v5g_small_203",
             "MXPC-100-ABCD": "v5g_small_203",
             "LY10-ABCD": "ly10",
             "PD01-ABCD": "v5g_small_203",
@@ -564,7 +642,7 @@ class DevicesModelsTests(unittest.TestCase):
             "MX12-ABCD": "v5g_small_203",
             "MX13-ABCD": "v5g_small_203",
             "MX07-ABCD": "mx07",
-            "XOPOPPY-ABCD": "xopoppy",
+            "XOPOPPY-ABCD": "v5g_small_203",
             "PR20-ABCD": "xw001",
             "XW001-ABCD": "xw001",
             "PR25-ABCD": "m01",
@@ -582,8 +660,8 @@ class DevicesModelsTests(unittest.TestCase):
             "BQ17-ABCD": "bq02",
             "MINIPRINTER": "gt02_v5g",
             "JL-BR22": "gt02_v5g",
-            "CYLOBTPrinter": "mx06",
-            "EWTTO ET-Z0499": "mx06",
+            "CYLOBTPrinter": "v5g_small_203",
+            "EWTTO ET-Z0499": "v5g_small_203",
             "GV-MA211-ABCD": "v5g_small_203",
             "X6": "v5g_small_203",
             "K06-ABCD": "v5g_small_203",

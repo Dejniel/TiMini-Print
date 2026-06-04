@@ -17,13 +17,7 @@ if TYPE_CHECKING:
 def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | None:
     if device.protocol_family is ProtocolFamily.V5G:
         return V5GRuntimeController(
-            helper_kind=device.runtime_variant,
-            density_profile_key=(
-                None
-                if device.runtime_density_profile is None
-                else device.runtime_density_profile.profile_key
-            ),
-            density_profile=device.runtime_density_profile or device.profile,
+            runtime_settings=device.runtime_settings,
         )
     if device.protocol_family is ProtocolFamily.V5X:
         return V5XRuntimeController()

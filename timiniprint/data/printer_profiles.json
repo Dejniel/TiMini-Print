@@ -24,7 +24,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -69,7 +69,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -114,7 +114,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 20,
         "text": 30
@@ -162,7 +162,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 5000,
@@ -217,7 +217,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 5000,
@@ -274,7 +274,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 5000,
@@ -331,7 +331,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 5000,
@@ -384,7 +384,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 25,
         "text": 25
@@ -431,7 +431,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -487,7 +487,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -543,7 +543,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -599,7 +599,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -655,7 +655,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -711,7 +711,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -767,7 +767,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -823,7 +823,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -879,7 +879,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -935,7 +935,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -991,7 +991,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -1047,7 +1047,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -1103,7 +1103,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -1159,7 +1159,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 5000,
@@ -1215,7 +1215,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 5000,
@@ -1271,7 +1271,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -1327,7 +1327,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -1380,7 +1380,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 20,
         "text": 30
@@ -1426,7 +1426,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 30
@@ -1471,7 +1471,7 @@
       "delay_ms": 2
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 30
@@ -1518,7 +1518,7 @@
       "delay_ms": 5
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 0,
@@ -1559,7 +1559,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -1606,7 +1606,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 1,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -1659,7 +1659,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 20,
         "text": 10
@@ -1704,7 +1704,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -1749,7 +1749,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -1794,7 +1794,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -1839,7 +1839,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -1884,7 +1884,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -1929,7 +1929,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 25,
         "text": 25
@@ -1974,7 +1974,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 20,
         "text": 10
@@ -2019,7 +2019,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 35,
         "text": 25
@@ -2064,7 +2064,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 26,
         "text": 25
@@ -2109,7 +2109,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 25,
         "text": 25
@@ -2154,7 +2154,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 10
@@ -2199,7 +2199,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -2244,7 +2244,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 25,
         "text": 25
@@ -2289,7 +2289,7 @@
       "delay_ms": 10
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -2334,7 +2334,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 26,
         "text": 25
@@ -2379,7 +2379,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 26,
         "text": 25
@@ -2424,7 +2424,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 25
@@ -2469,7 +2469,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 25
@@ -2514,7 +2514,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 25
@@ -2559,7 +2559,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 22
@@ -2604,7 +2604,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 22
@@ -2649,7 +2649,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 22
@@ -2694,7 +2694,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 35
@@ -2739,7 +2739,7 @@
       "delay_ms": 3
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 90,
         "text": 45
@@ -2784,7 +2784,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 26,
         "text": 25
@@ -2829,7 +2829,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -2874,7 +2874,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -2919,7 +2919,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 25
@@ -2964,7 +2964,7 @@
       "delay_ms": 2
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 45,
         "text": 35
@@ -3009,7 +3009,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -3054,7 +3054,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 35
@@ -3099,7 +3099,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 26,
         "text": 25
@@ -3144,7 +3144,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 26,
         "text": 25
@@ -3189,7 +3189,7 @@
       "delay_ms": 5
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 45,
         "text": 25
@@ -3234,7 +3234,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -3279,7 +3279,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 20,
         "text": 20
@@ -3324,7 +3324,7 @@
       "delay_ms": 2
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 30
@@ -3371,7 +3371,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 1,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 20000,
@@ -3414,7 +3414,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 1,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 20000,
@@ -3425,61 +3425,6 @@
           "low": 0,
           "middle": 0,
           "high": 0
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "mx06",
-    "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
-    "one_length": 8,
-    "dev_dpi": 200,
-    "can_change_mtu": true,
-    "has_id": false,
-    "use_spp": false,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "v5g",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
-      ],
-      "encoding": "v5g_dot"
-    },
-    "stream": {
-      "chunk_size": 63,
-      "delay_ms": 6
-    },
-    "post_print_feed_count": 1,
-    "tuning": {
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 15000
-        },
-        "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 20000
-        }
-      },
-      "density": {
-        "text": {
-          "low": 100,
-          "middle": 130,
-          "high": 150
-        },
-        "image": {
-          "low": 150,
-          "middle": 180,
-          "high": 200
         }
       }
     },
@@ -3512,7 +3457,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 1,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -3535,171 +3480,6 @@
           "low": 60,
           "middle": 80,
           "high": 100
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "mx08",
-    "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
-    "one_length": 8,
-    "dev_dpi": 200,
-    "can_change_mtu": true,
-    "has_id": false,
-    "use_spp": false,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "v5g",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
-      ],
-      "encoding": "v5g_dot"
-    },
-    "stream": {
-      "chunk_size": 63,
-      "delay_ms": 6
-    },
-    "post_print_feed_count": 1,
-    "tuning": {
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 15000
-        },
-        "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 20000
-        }
-      },
-      "density": {
-        "text": {
-          "low": 50,
-          "middle": 70,
-          "high": 100
-        },
-        "image": {
-          "low": 60,
-          "middle": 90,
-          "high": 110
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "mx09",
-    "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
-    "one_length": 8,
-    "dev_dpi": 200,
-    "can_change_mtu": true,
-    "has_id": false,
-    "use_spp": false,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "v5g",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
-      ],
-      "encoding": "v5g_dot"
-    },
-    "stream": {
-      "chunk_size": 63,
-      "delay_ms": 6
-    },
-    "post_print_feed_count": 1,
-    "tuning": {
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 15000
-        },
-        "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 20000
-        }
-      },
-      "density": {
-        "text": {
-          "low": 80,
-          "middle": 100,
-          "high": 120
-        },
-        "image": {
-          "low": 100,
-          "middle": 120,
-          "high": 140
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "mx11",
-    "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
-    "one_length": 8,
-    "dev_dpi": 200,
-    "can_change_mtu": true,
-    "has_id": false,
-    "use_spp": false,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "v5g",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
-      ],
-      "encoding": "v5g_dot"
-    },
-    "stream": {
-      "chunk_size": 63,
-      "delay_ms": 6
-    },
-    "post_print_feed_count": 1,
-    "tuning": {
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 15000
-        },
-        "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 20000
-        }
-      },
-      "density": {
-        "text": {
-          "low": 100,
-          "middle": 130,
-          "high": 150
-        },
-        "image": {
-          "low": 100,
-          "middle": 130,
-          "high": 150
         }
       }
     },
@@ -3730,7 +3510,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -3775,7 +3555,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 30
@@ -3820,7 +3600,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -3865,7 +3645,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -3910,7 +3690,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 10
@@ -3955,7 +3735,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4000,7 +3780,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 18,
         "text": 18
@@ -4045,7 +3825,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 18,
         "text": 18
@@ -4090,7 +3870,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 30
@@ -4135,7 +3915,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 65,
         "text": 30
@@ -4180,7 +3960,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 20,
         "text": 15
@@ -4225,7 +4005,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4270,7 +4050,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4315,7 +4095,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 10
@@ -4360,7 +4140,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 10
@@ -4405,7 +4185,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4450,7 +4230,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4497,7 +4277,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 1,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -4552,7 +4332,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 1,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 10000,
@@ -4595,7 +4375,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 9000,
@@ -4636,7 +4416,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 35
@@ -4681,7 +4461,7 @@
       "delay_ms": 10
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4726,7 +4506,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 10
@@ -4771,7 +4551,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4816,7 +4596,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4861,7 +4641,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4906,7 +4686,7 @@
       "delay_ms": 6
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4951,7 +4731,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -4996,7 +4776,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 30,
         "text": 22
@@ -5041,7 +4821,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 40,
         "text": 30
@@ -5056,61 +4836,6 @@
           "low": 33000,
           "middle": 33000,
           "high": 33000
-        }
-      }
-    },
-    "a4xii": false
-  },
-  {
-    "profile_key": "xopoppy",
-    "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
-    "one_length": 8,
-    "dev_dpi": 200,
-    "can_change_mtu": true,
-    "has_id": false,
-    "use_spp": false,
-    "can_print_label": false,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "default_protocol_family": "v5g",
-    "default_image_pipeline": {
-      "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
-      ],
-      "encoding": "v5g_dot"
-    },
-    "stream": {
-      "chunk_size": 63,
-      "delay_ms": 6
-    },
-    "post_print_feed_count": 1,
-    "tuning": {
-      "energy": {
-        "image": {
-          "low": 10000,
-          "middle": 10000,
-          "high": 15000
-        },
-        "text": {
-          "low": 15000,
-          "middle": 15000,
-          "high": 20000
-        }
-      },
-      "density": {
-        "text": {
-          "low": 60,
-          "middle": 80,
-          "high": 100
-        },
-        "image": {
-          "low": 60,
-          "middle": 80,
-          "high": 100
         }
       }
     },
@@ -5141,7 +4866,7 @@
       "delay_ms": 2
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 45,
         "text": 35
@@ -5186,7 +4911,7 @@
       "delay_ms": 2
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 45,
         "text": 35
@@ -5231,7 +4956,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 12000,
@@ -5272,7 +4997,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 10,
         "text": 10
@@ -5317,7 +5042,7 @@
       "delay_ms": 4
     },
     "post_print_feed_count": 2,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 20,
         "text": 1
@@ -5364,7 +5089,7 @@
       "delay_ms": 10
     },
     "post_print_feed_count": 0,
-    "tuning": {
+    "print_defaults": {
       "speed": {
         "image": 6,
         "text": 6
@@ -5423,7 +5148,7 @@
       "delay_ms": 10
     },
     "post_print_feed_count": 0,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 0,
@@ -5477,7 +5202,7 @@
       "delay_ms": 10
     },
     "post_print_feed_count": 0,
-    "tuning": {
+    "print_defaults": {
       "energy": {
         "image": {
           "low": 0,

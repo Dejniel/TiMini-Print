@@ -51,8 +51,7 @@ class GuiPaperModeChoiceTests(unittest.TestCase):
             protocol_family=ProtocolFamily.LUCK_NORMAL_A4,
             protocol_variant=base.protocol_variant,
             image_pipeline=get_protocol_definition(ProtocolFamily.LUCK_NORMAL_A4).behavior.default_image_pipeline,
-            runtime_variant=base.runtime_variant,
-            runtime_density_profile=base.runtime_density_profile,
+            runtime_settings=base.runtime_settings,
             transport_target=base.transport_target,
             detection_rule_key=base.detection_rule_key,
         )

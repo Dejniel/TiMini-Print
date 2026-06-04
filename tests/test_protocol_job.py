@@ -142,7 +142,7 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(bytes([0xA3]), data)
 
     def test_build_legacy_job_requires_speed(self) -> None:
-        with self.assertRaisesRegex(ValueError, "requires speed tuning"):
+        with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             self.builders._build_job(
                 pixels=[1, 0, 1, 0, 1, 0, 1, 0],
                 width=8,

@@ -8,6 +8,13 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 from tests.helpers import build_capture_reporter
+from timiniprint.devices.profiles import (
+    LevelProfile,
+    ModeLevelProfile,
+    PrinterRuntimeDefaults,
+    RuntimeCapabilities,
+    RuntimeSettings,
+)
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.runtime.v5g import DensityLevels, V5GRuntimeController
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
@@ -95,30 +102,40 @@ def _v5c_state(session):
     return _to_namespace(session.debug_snapshot())
 
 
-def _make_level_profile(levels: DensityLevels):
-    return SimpleNamespace(low=levels.low, middle=levels.middle, high=levels.high)
+def _make_level_profile(levels: DensityLevels) -> LevelProfile:
+    return LevelProfile(low=levels.low, middle=levels.middle, high=levels.high)
 
 
 def _make_v5g_controller(
     *,
     helper_kind: str,
-    density_profile_key: str | None,
+    runtime_defaults_key: str | None,
     image_levels: DensityLevels,
     text_levels: DensityLevels,
-    **_unused,
+    applies_d2_status: bool = False,
+    applies_didian_status: bool = False,
 ) -> V5GRuntimeController:
-    density_profile = SimpleNamespace(
-        profile_key=density_profile_key or "test",
-        density=SimpleNamespace(
-            image=_make_level_profile(image_levels),
-            text=_make_level_profile(text_levels),
+    runtime_settings = RuntimeSettings(
+        variant=helper_kind,
+        defaults=PrinterRuntimeDefaults(
+            key=runtime_defaults_key or "test",
+            profile_key="test",
+            variant=helper_kind,
+            density=ModeLevelProfile(
+                image=_make_level_profile(image_levels),
+                text=_make_level_profile(text_levels),
+            ),
+            capabilities=RuntimeCapabilities(
+                d2_status=applies_d2_status,
+                didian_status=applies_didian_status,
+            ),
+        ),
+        capabilities=RuntimeCapabilities(
+            d2_status=applies_d2_status,
+            didian_status=applies_didian_status,
         ),
     )
-    return V5GRuntimeController(
-        helper_kind=helper_kind,
-        density_profile_key=density_profile_key,
-        density_profile=density_profile,
-    )
+    return V5GRuntimeController(runtime_settings=runtime_settings)
 
 
 def _enable_notification_waits(session: _BleakTransportSession) -> None:
@@ -549,7 +566,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.debug_update(temperature_c=60)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
-            density_profile_key="mx06",
+            runtime_defaults_key="mx06",
             image_levels=DensityLevels(low=150, middle=180, high=200),
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=True,
@@ -589,7 +606,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.debug_update(temperature_c=54)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
-            density_profile_key="mx06",
+            runtime_defaults_key="mx06",
             image_levels=DensityLevels(low=150, middle=180, high=200),
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=True,
@@ -629,7 +646,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.debug_update(temperature_c=50)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
-            density_profile_key="mx06",
+            runtime_defaults_key="mx06",
             image_levels=DensityLevels(low=150, middle=180, high=200),
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=True,
@@ -671,7 +688,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.debug_update(temperature_c=60)
         runtime_controller = _make_v5g_controller(
             helper_kind="pd01",
-            density_profile_key="mx11",
+            runtime_defaults_key="mx11",
             image_levels=DensityLevels(low=100, middle=130, high=150),
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=False,
@@ -715,7 +732,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         )
         runtime_controller = _make_v5g_controller(
             helper_kind="mx06",
-            density_profile_key="mx06",
+            runtime_defaults_key="mx06",
             image_levels=DensityLevels(low=150, middle=180, high=200),
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=True,
@@ -759,7 +776,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         )
         runtime_controller = _make_v5g_controller(
             helper_kind="mx06",
-            density_profile_key="mx06",
+            runtime_defaults_key="mx06",
             image_levels=DensityLevels(low=150, middle=180, high=200),
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=True,
@@ -800,7 +817,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_char_uuid = cmd.uuid
         runtime_controller = _make_v5g_controller(
             helper_kind="d2",
-            density_profile_key="mx08",
+            runtime_defaults_key="mx08",
             image_levels=DensityLevels(low=60, middle=90, high=110),
             text_levels=DensityLevels(low=50, middle=70, high=100),
             applies_d2_status=True,

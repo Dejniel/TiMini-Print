@@ -72,6 +72,40 @@ class StreamProfile:
 
 
 @dataclass(frozen=True)
+class RuntimeCapabilities:
+    d2_status: bool = False
+    didian_status: bool = False
+
+
+@dataclass(frozen=True)
+class PrinterRuntimeDefaults:
+    key: str
+    profile_key: str
+    variant: str | None
+    density: ModeLevelProfile
+    capabilities: RuntimeCapabilities = field(default_factory=RuntimeCapabilities)
+
+    def select_density(self, *, is_text: bool, blackening: int) -> int:
+        return self.density.select(is_text=is_text, blackening=blackening)
+
+
+@dataclass(frozen=True)
+class RuntimeSettings:
+    variant: str | None = None
+    defaults: PrinterRuntimeDefaults | None = None
+    capabilities: RuntimeCapabilities = field(default_factory=RuntimeCapabilities)
+
+    @property
+    def defaults_key(self) -> str | None:
+        return None if self.defaults is None else self.defaults.key
+
+    def select_density(self, *, is_text: bool, blackening: int) -> int | None:
+        if self.defaults is None:
+            return None
+        return self.defaults.select_density(is_text=is_text, blackening=blackening)
+
+
+@dataclass(frozen=True)
 class PrinterProfile:
     profile_key: str
     size: int
@@ -126,7 +160,7 @@ class DetectionRule:
     mac_suffixes: tuple[str, ...] = ()
     image_pipeline: ImagePipelineConfig | None = None
     runtime_variant: str | None = None
-    runtime_density_profile_key: str | None = None
+    runtime_defaults_key: str | None = None
     _folded_prefixes: tuple[str, ...] = field(init=False, repr=False)
     _folded_exact_names: tuple[str, ...] = field(init=False, repr=False)
 
@@ -175,6 +209,9 @@ __all__ = [
     "LevelProfile",
     "ModeLevelProfile",
     "PrinterProfile",
+    "PrinterRuntimeDefaults",
+    "RuntimeCapabilities",
+    "RuntimeSettings",
     "SpeedProfile",
     "StreamProfile",
 ]

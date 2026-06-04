@@ -130,7 +130,7 @@ def _build_request(
 
 def _require_speed(request: PrintJobRequest) -> int:
     if request.speed is None:
-        raise ValueError(f"{request.protocol_family.value} requires speed tuning")
+        raise ValueError(f"{request.protocol_family.value} requires speed defaults")
     return request.speed
 
 

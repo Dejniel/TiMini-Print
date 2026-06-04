@@ -117,35 +117,39 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(target.ble_endpoint.transport, BluetoothEndpointTransport.BLE)
         self.assertEqual(target.transport_badge, "[ble]")
 
-    def test_device_config_roundtrip_preserves_detected_bluetooth_metadata(self) -> None:
+    def test_config_roundtrip_preserves_detected_bluetooth_metadata(self) -> None:
         auto = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(auto)
 
-        config = self.catalog.serialize_device_config(auto)
+        config = self.catalog.serialize_config(auto)
         manual = self.catalog.device_from_config(config)
 
         self.assertEqual(manual.profile_key, auto.profile_key)
         self.assertEqual(manual.protocol_family, auto.protocol_family)
         self.assertEqual(manual.image_pipeline, auto.image_pipeline)
-        self.assertEqual(manual.runtime_variant, auto.runtime_variant)
+        self.assertIsNotNone(manual.runtime_settings)
+        self.assertIsNotNone(auto.runtime_settings)
+        self.assertEqual(manual.runtime_settings.variant, auto.runtime_settings.variant)
+        self.assertEqual(manual.runtime_settings.defaults_key, auto.runtime_settings.defaults_key)
         self.assertEqual(
-            None if manual.runtime_density_profile is None else manual.runtime_density_profile.profile_key,
-            None if auto.runtime_density_profile is None else auto.runtime_density_profile.profile_key,
+            manual.runtime_settings.capabilities,
+            auto.runtime_settings.capabilities,
         )
         self.assertEqual(manual.transport_badge, auto.transport_badge)
 
-    def test_device_config_roundtrip_preserves_mac59_family_switch(self) -> None:
+    def test_config_roundtrip_preserves_mac59_family_switch(self) -> None:
         auto = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
         self.assertIsNotNone(auto)
 
         manual = self.catalog.device_from_config(
-            self.catalog.serialize_device_config(auto)
+            self.catalog.serialize_config(auto)
         )
 
         self.assertEqual(auto.protocol_family, ProtocolFamily.V5X)
         self.assertEqual(manual.protocol_family, auto.protocol_family)
         self.assertEqual(manual.image_pipeline, auto.image_pipeline)
-        self.assertEqual(manual.runtime_variant, auto.runtime_variant)
+        self.assertIsNone(manual.runtime_settings)
+        self.assertIsNone(auto.runtime_settings)
 
     def test_connector_prefers_classic_for_spp_profiles(self) -> None:
         classic = DeviceInfo(name="X6H-ABCD", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.CLASSIC)

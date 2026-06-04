@@ -77,12 +77,28 @@ def _find_rule_reachability_error(catalog: PrinterCatalog, rule: dict[str, Any])
 def generate_report(
     profile_path: Path | None = None,
     rule_path: Path | None = None,
+    runtime_defaults_path: Path | None = None,
 ) -> dict[str, Any]:
-    profile_path = profile_path or (REPO_ROOT / "timiniprint/data/printer_profiles.json")
-    rule_path = rule_path or (REPO_ROOT / "timiniprint/data/printer_detection_rules.json")
-    catalog = PrinterCatalog.load(profile_path=profile_path, rule_path=rule_path)
+    default_profile_path = REPO_ROOT / "timiniprint/data/printer_profiles.json"
+    default_rule_path = REPO_ROOT / "timiniprint/data/printer_detection_rules.json"
+    default_runtime_defaults_path = REPO_ROOT / "timiniprint/data/printer_runtime_defaults.json"
+    profile_path = profile_path or default_profile_path
+    rule_path = rule_path or default_rule_path
     profiles_raw = json.loads(profile_path.read_text(encoding="utf-8"))
     rules_raw = json.loads(rule_path.read_text(encoding="utf-8"))
+    if runtime_defaults_path is not None or (
+        profile_path == default_profile_path and rule_path == default_rule_path
+    ):
+        catalog = PrinterCatalog.load(
+            profile_path=profile_path,
+            rule_path=rule_path,
+            runtime_defaults_path=runtime_defaults_path or default_runtime_defaults_path,
+        )
+    else:
+        catalog = PrinterCatalog(
+            [PrinterCatalog._parse_profile(entry) for entry in profiles_raw],
+            [PrinterCatalog._parse_rule(entry) for entry in rules_raw],
+        )
 
     referenced_profiles = {rule["profile_key"] for rule in rules_raw}
     all_profiles = {profile["profile_key"] for profile in profiles_raw}
