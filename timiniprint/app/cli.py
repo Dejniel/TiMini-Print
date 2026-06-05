@@ -21,6 +21,7 @@ from ..protocol import ImageEncoding, PaperMode, PrinterProtocol, ProtocolJob
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 from ..transport.bluetooth.types import DeviceTransport
 from ..transport.serial import SerialConnector
+from ..update_check import check_for_updates, should_check_for_updates
 from .diagnostics import emit_startup_warnings
 
 _TRANSPORT_UNSET = object()
@@ -99,6 +100,24 @@ def list_profiles() -> int:
     for profile in catalog.profiles:
         print(profile.profile_key)
     return 0
+
+
+def emit_update_warning(reporter: reporting.Reporter) -> None:
+    if not should_check_for_updates(source_builds=False):
+        return
+    try:
+        result = check_for_updates()
+    except Exception:
+        return
+    if result is None:
+        return
+    reporter.warning(
+        short=f"Update available: {result.latest_version}",
+        detail=(
+            f"Update available: {result.latest_version} "
+            f"(current: {result.current_version}). {result.release_url}"
+        ),
+    )
 
 
 def _load_printer_config(path: str) -> Mapping[str, object]:
@@ -698,6 +717,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     reporter = _build_cli_reporter(args.verbose)
     emit_startup_warnings(reporter)
+    emit_update_warning(reporter)
     if args.list_profiles:
         return list_profiles()
     if args.scan:

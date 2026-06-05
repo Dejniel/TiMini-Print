@@ -20,6 +20,7 @@ from timiniprint.protocol import ImageEncoding, ProtocolJob
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.packet import make_packet
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
+from timiniprint.update_check import UpdateCheckResult
 
 
 class AppCliFlowsTests(unittest.TestCase):
@@ -64,6 +65,7 @@ class AppCliFlowsTests(unittest.TestCase):
         args = self._args(list_profiles=True)
         with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
             "timiniprint.app.cli.emit_startup_warnings"
+        ), patch("timiniprint.app.cli.emit_update_warning"
         ), patch("timiniprint.app.cli.list_profiles", return_value=0) as list_profiles:
             self.assertEqual(cli.main(["--list-profiles"]), 0)
         list_profiles.assert_called_once()
@@ -71,9 +73,27 @@ class AppCliFlowsTests(unittest.TestCase):
         args2 = self._args(scan=True)
         with patch("timiniprint.app.cli.parse_args", return_value=args2), patch(
             "timiniprint.app.cli.emit_startup_warnings"
+        ), patch("timiniprint.app.cli.emit_update_warning"
         ), patch("timiniprint.app.cli.scan_devices", return_value=0) as scan_devices:
             self.assertEqual(cli.main(["--scan"]), 0)
         scan_devices.assert_called_once()
+
+    def test_emit_update_warning_reports_available_release(self) -> None:
+        reporter, sink = build_capture_reporter()
+
+        with patch("timiniprint.app.cli.should_check_for_updates", return_value=True), patch(
+            "timiniprint.app.cli.check_for_updates",
+            return_value=UpdateCheckResult(
+                current_version="0.5",
+                latest_version="v0.6",
+                release_url="https://example.test/releases/v0.6",
+            ),
+        ):
+            cli.emit_update_warning(reporter)
+
+        self.assertEqual(len(sink.messages), 1)
+        self.assertEqual(sink.messages[0].short, "Update available: v0.6")
+        self.assertIn("https://example.test/releases/v0.6", sink.messages[0].detail)
 
     def test_main_conflicting_args_returns_2(self) -> None:
         args = self._args(path="a.pdf", text="txt")

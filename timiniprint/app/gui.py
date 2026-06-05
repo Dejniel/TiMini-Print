@@ -9,6 +9,7 @@ import os
 import queue
 import threading
 import tkinter as tk
+import webbrowser
 from tkinter import filedialog, ttk
 
 from .diagnostics import emit_startup_warnings
@@ -24,6 +25,7 @@ from ..protocol.families import get_protocol_behavior
 from ..rendering.converters.text import TextConverter
 from ..transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
 from ..transport.bluetooth.types import DeviceInfo, DeviceTransport
+from ..update_check import UpdateCheckResult, check_for_updates, should_check_for_updates
 
 PAPER_MOTION_INTERVAL_MS = 1000
 DEBUG_AUTO_LABEL = "Auto"
@@ -146,6 +148,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._debug_profile_choice_map: dict[str, str | None] = {}
         self._debug_image_encoding_choice_map: dict[str, ImageEncoding | None] = {}
         self._debug_paper_mode_choice_map: dict[str, PaperMode | None] = {}
+        self._update_release_url: str | None = None
         self.file_var.trace_add("write", self._on_file_path_change)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -157,6 +160,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_connected_state(False)
         self.after(100, self._process_queue)
         self.after(200, self.scan)
+        self.after(500, self._check_for_updates)
         
     def _build_ui(self) -> None:
         padding = {"padx": 10, "pady": 6}
@@ -339,11 +343,14 @@ class TiMiniPrintGUI(tk.Tk):
         self.action_frame = ttk.Frame(self)
         self.action_frame.pack(fill="x", padx=10, pady=10)
         self.print_button = ttk.Button(self.action_frame, text="Print", command=self.print_file)
+        self.update_button = ttk.Button(self.action_frame, text="Update", command=self.open_update_release)
         self.retract_button = ttk.Button(self.action_frame, text="Retract")
         self.feed_button = ttk.Button(self.action_frame, text="Feed")
         self.feed_button.pack(side="left")
         self.retract_button.pack(side="left", padx=(6, 0))
         self.print_button.pack(side="right")
+        self.update_button.pack(side="right", padx=(0, 6))
+        self.update_button.pack_forget()
         self.feed_button.bind("<ButtonPress-1>", lambda event: self._start_paper_motion("feed"))
         self.feed_button.bind("<ButtonRelease-1>", self._stop_paper_motion)
         self.feed_button.bind("<Leave>", self._stop_paper_motion)
@@ -389,8 +396,34 @@ class TiMiniPrintGUI(tk.Tk):
                 self.status_var.set(f"Error: {payload}")
             elif action == "connecting":
                 self._set_connecting_state(bool(payload))
+            elif action == "update_available":
+                self._show_update_button(payload)
         if not self._closing:
             self.after(100, self._process_queue)
+
+    def _check_for_updates(self) -> None:
+        if self._closing or not should_check_for_updates(source_builds=True):
+            return
+
+        def run_check() -> None:
+            try:
+                result = check_for_updates()
+            except Exception:
+                return
+            if result is not None and not self._closing:
+                self.queue.put(("update_available", result))
+
+        threading.Thread(target=run_check, name="timiniprint-gui-update-check", daemon=True).start()
+
+    def _show_update_button(self, result: UpdateCheckResult) -> None:
+        self._update_release_url = result.release_url
+        self.update_button.configure(text=f"Update {result.latest_version}")
+        if not self.update_button.winfo_ismapped():
+            self.update_button.pack(side="right", padx=(0, 6), before=self.print_button)
+
+    def open_update_release(self) -> None:
+        if self._update_release_url:
+            webbrowser.open(self._update_release_url)
 
     def _device_label(self, device) -> str:
         name = device.display_name or ""

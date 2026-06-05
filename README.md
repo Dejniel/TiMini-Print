@@ -104,6 +104,7 @@ python3 timiniprint_gui.py
 - `--export-printer-config KEY PATH` writes a full editable printer config JSON from a known profile/runtime defaults key
 - Manual printer config overrides are for advanced testing only; if you force the wrong profile or protocol family, printing may still fail
 - `--paper-mode tag` or `--paper-mode plain` overrides the profile's default media mode when the selected protocol supports it
+- The GUI and standalone CLI release builds check GitHub releases at startup at most once per day; set `TIMINIPRINT_NO_UPDATE_CHECK=1` to disable this
 
 # Notes
 - On first Classic connection on Windows/macOS, the system may request pairing confirmation

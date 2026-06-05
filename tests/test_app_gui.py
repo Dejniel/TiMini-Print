@@ -11,6 +11,7 @@ from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
 from timiniprint.transport.bluetooth import BluetoothDiscovery, BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
+from timiniprint.update_check import UpdateCheckResult
 
 
 class GuiPaperMotionStatusTests(unittest.TestCase):
@@ -183,6 +184,40 @@ class GuiDebugDeviceListTests(unittest.TestCase):
 
         self.assertFalse(gui._scan_busy)
         self.assertEqual(errors[0][0], reporting.ERROR_SCAN_FAILED)
+
+
+class GuiUpdateButtonTests(unittest.TestCase):
+    def test_show_update_button_sets_release_url_and_packs_button_before_print(self) -> None:
+        class FakeButton:
+            def __init__(self) -> None:
+                self.text = ""
+                self.pack_kwargs = None
+
+            def configure(self, **kwargs) -> None:
+                self.text = kwargs["text"]
+
+            def winfo_ismapped(self) -> bool:
+                return False
+
+            def pack(self, **kwargs) -> None:
+                self.pack_kwargs = kwargs
+
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.update_button = FakeButton()
+        gui.print_button = object()
+
+        gui._show_update_button(
+            UpdateCheckResult(
+                current_version="0.5",
+                latest_version="v0.6",
+                release_url="https://example.test/releases/v0.6",
+            )
+        )
+
+        self.assertEqual(gui._update_release_url, "https://example.test/releases/v0.6")
+        self.assertEqual(gui.update_button.text, "Update v0.6")
+        self.assertEqual(gui.update_button.pack_kwargs["side"], "right")
+        self.assertEqual(gui.update_button.pack_kwargs["before"], gui.print_button)
 
 
 class _InlineThread:
