@@ -81,6 +81,21 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         self.assertIn(b"\x1d\x76\x30\x00\x4e\x00\x01\x00", job.payload)
         self.assertTrue(job.payload.endswith(b"\x1b\x64\x02"))
 
+    def test_m02x_profile_builds_m02_family_raster_job(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("phomemo_m02x")
+        raster = RasterBuffer(pixels=[0] * 384, width=384, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+        )
+
+        self.assertEqual(device.profile.print_size, 384)
+        self.assertEqual(device.profile.dev_dpi, 203)
+        self.assertEqual(device.protocol_variant, "m02x")
+        self.assertIn(b"\x1d\x76\x30\x00\x30\x00\x01\x00", job.payload)
+        self.assertTrue(job.payload.endswith(b"\x1b\x64\x02"))
+
     def test_m02_detection_does_not_steal_m02s(self) -> None:
         catalog = PrinterCatalog.load()
 
@@ -101,6 +116,26 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         self.assertEqual(m02s.profile_key, "phomemo_m02s")
         self.assertEqual(m02s.protocol_variant, "m02s")
         self.assertEqual(m02s_alias.profile_key, "phomemo_m02s")
+
+    def test_m02x_detection_does_not_steal_m02_or_m02_pro(self) -> None:
+        catalog = PrinterCatalog.load()
+
+        for name in ("M02X", "M02X-ABCD", "m02x_abcd"):
+            with self.subTest(name=name):
+                device = catalog.detect_device(name)
+                self.assertIsNotNone(device)
+                assert device is not None
+                self.assertEqual(device.profile_key, "phomemo_m02x")
+                self.assertEqual(device.protocol_variant, "m02x")
+
+        m02 = catalog.detect_device("M02")
+        m02_pro = catalog.detect_device("M02 Pro")
+        self.assertIsNotNone(m02)
+        self.assertIsNotNone(m02_pro)
+        assert m02 is not None
+        assert m02_pro is not None
+        self.assertEqual(m02.profile_key, "phomemo_m02")
+        self.assertEqual(m02_pro.profile_key, "phomemo_m02_pro")
 
     def test_m02_pro_detection_does_not_steal_m02(self) -> None:
         catalog = PrinterCatalog.load()

@@ -211,10 +211,13 @@
     },
     {
       "id": "phomemo-m02x-family",
-      "status": "todo",
+      "status": "supported",
       "display_label": "M02X",
       "primary_names": [
         "M02X"
+      ],
+      "rule_keys": [
+        "rule_phomemo_m02x"
       ]
     },
     {

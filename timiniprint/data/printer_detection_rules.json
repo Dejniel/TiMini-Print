@@ -3830,6 +3830,22 @@
     "protocol_variant": "m02"
   },
   {
+    "rule_key": "rule_phomemo_m02x",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "prefixes": [
+      "M02X-",
+      "M02X_"
+    ],
+    "exact_names": [
+      "M02X"
+    ],
+    "profile_key": "phomemo_m02x",
+    "protocol_family": "phomemo_escpos",
+    "protocol_variant": "m02x"
+  },
+  {
     "rule_key": "rule_phomemo_t02",
     "origin_app_packages": [
       "com.quyin.phomemo"

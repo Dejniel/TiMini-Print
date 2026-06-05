@@ -36,7 +36,7 @@ BEHAVIOR = ProtocolBehavior(
     image_encoding_support={
         ImageEncoding.PHOMEMO_ESCPOS_RASTER: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("m02", "m02s", "m02_pro", "t02"),
+    supported_protocol_variants=("m02", "m02s", "m02x", "m02_pro", "t02"),
     supported_paper_modes=(PaperMode.PLAIN,),
     advance_paper_builder=advance_paper_cmd,
     retract_paper_builder=retract_paper_cmd,
