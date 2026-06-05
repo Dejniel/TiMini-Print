@@ -117,12 +117,12 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(target.ble_endpoint.transport, BluetoothEndpointTransport.BLE)
         self.assertEqual(target.transport_badge, "[ble]")
 
-    def test_config_roundtrip_preserves_detected_bluetooth_metadata(self) -> None:
+    def test_printer_config_roundtrip_preserves_detected_bluetooth_metadata(self) -> None:
         auto = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(auto)
 
-        config = self.catalog.serialize_config(auto)
-        manual = self.catalog.device_from_config(config)
+        printer_config = self.catalog.serialize_printer_config(auto)
+        manual = self.catalog.device_from_printer_config(printer_config)
 
         self.assertEqual(manual.profile_key, auto.profile_key)
         self.assertEqual(manual.protocol_family, auto.protocol_family)
@@ -137,12 +137,12 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         )
         self.assertEqual(manual.transport_badge, auto.transport_badge)
 
-    def test_config_roundtrip_preserves_mac59_family_switch(self) -> None:
+    def test_printer_config_roundtrip_preserves_mac59_family_switch(self) -> None:
         auto = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
         self.assertIsNotNone(auto)
 
-        manual = self.catalog.device_from_config(
-            self.catalog.serialize_config(auto)
+        manual = self.catalog.device_from_printer_config(
+            self.catalog.serialize_printer_config(auto)
         )
 
         self.assertEqual(auto.protocol_family, ProtocolFamily.V5X)

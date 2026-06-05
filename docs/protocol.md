@@ -270,7 +270,7 @@ It applies detection rules to a known device name and optional address.
 Use it when you already have values such as:
 - a BLE name from somewhere else
 - a saved MAC address
-- a stored config flow that still wants catalog-backed detection
+- a stored printer config flow that still wants catalog-backed detection
 
 Example:
 
@@ -289,7 +289,7 @@ It returns real reachable Bluetooth printers as `PrinterDevice` objects.
 
 Use it when your program needs to find printers nearby.
 
-## Save and reload an editable config
+## Save and reload an editable printer config
 
 Use this when you want to inspect or tweak the resolved runtime values instead of relying on auto-detection every time.
 
@@ -304,20 +304,20 @@ device = catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
 if device is None:
     raise RuntimeError("Printer profile not detected")
 
-# Export an editable config. profile_key remains the catalog fallback;
+# Export an editable printer config. profile_key remains the catalog fallback;
 # profile_overrides can be edited or partially deleted.
-config = catalog.serialize_config(device)
+printer_config = catalog.serialize_printer_config(device)
 Path("printer.json").write_text(
-    json.dumps(config, indent=2) + "\n",
+    json.dumps(printer_config, indent=2) + "\n",
     encoding="utf-8",
 )
 
 # Load it back later as an explicit PrinterDevice.
 loaded = json.loads(Path("printer.json").read_text(encoding="utf-8"))
-manual_device = catalog.device_from_config(loaded)
+manual_device = catalog.device_from_printer_config(loaded)
 ```
 
-This config captures:
+This printer config captures:
 - base profile key
 - full editable profile overrides
 - protocol family
@@ -431,7 +431,7 @@ Examples:
 - profile loading
 - detection rules
 - `PrinterDevice` creation
-- config serialization
+- printer config serialization
 
 ### Add it to `timiniprint.transport` when it is about actual I/O
 Examples:

@@ -360,12 +360,12 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(mxw010)
         self.assert_runtime_settings(mxw010, variant="mx10", defaults_key=None)
 
-    def test_config_roundtrip_preserves_runtime_fields(self) -> None:
+    def test_printer_config_roundtrip_preserves_runtime_fields(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
 
         self.assertIsNotNone(resolved)
-        config = self.catalog.serialize_config(resolved)
-        rebuilt = self.catalog.device_from_config(config)
+        printer_config = self.catalog.serialize_printer_config(resolved)
+        rebuilt = self.catalog.device_from_printer_config(printer_config)
 
         self.assertEqual(rebuilt.display_name, resolved.display_name)
         self.assertEqual(rebuilt.profile_key, resolved.profile_key)
@@ -381,15 +381,15 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.address, resolved.address)
         self.assertEqual(rebuilt.transport_badge, resolved.transport_badge)
 
-    def test_config_runtime_density_override_updates_runtime_defaults_only(self) -> None:
+    def test_printer_config_runtime_density_override_updates_runtime_defaults_only(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
-        config = self.catalog.serialize_config(resolved)
-        config["runtime_overrides"]["density"] = {
+        printer_config = self.catalog.serialize_printer_config(resolved)
+        printer_config["runtime_overrides"]["density"] = {
             "image": {"middle": 177},
         }
 
-        rebuilt = self.catalog.device_from_config(config)
+        rebuilt = self.catalog.device_from_printer_config(printer_config)
 
         self.assertIsNotNone(rebuilt.runtime_settings)
         self.assertIsNotNone(rebuilt.runtime_settings.defaults)
@@ -397,45 +397,45 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.runtime_settings.defaults.density.image.middle, 177)
         self.assertIsNone(rebuilt.profile.density)
 
-    def test_config_roundtrip_preserves_protocol_variant(self) -> None:
+    def test_printer_config_roundtrip_preserves_protocol_variant(self) -> None:
         resolved = self.catalog.detect_device("QIRUI_Q2_1234")
 
         self.assertIsNotNone(resolved)
         self.assertEqual(resolved.protocol_variant, "qirui_q2")
-        config = self.catalog.serialize_config(resolved)
-        rebuilt = self.catalog.device_from_config(config)
+        printer_config = self.catalog.serialize_printer_config(resolved)
+        rebuilt = self.catalog.device_from_printer_config(printer_config)
 
         self.assertEqual(rebuilt.profile_key, resolved.profile_key)
         self.assertEqual(rebuilt.protocol_family, resolved.protocol_family)
         self.assertEqual(rebuilt.protocol_variant, resolved.protocol_variant)
         self.assertEqual(rebuilt.image_pipeline, resolved.image_pipeline)
 
-    def test_config_profile_overrides_fall_back_to_base_profile(self) -> None:
+    def test_printer_config_profile_overrides_fall_back_to_base_profile(self) -> None:
         base = self.catalog.device_from_profile("gt01")
-        config = self.catalog.serialize_config(base)
-        config["profile_overrides"] = {
+        printer_config = self.catalog.serialize_printer_config(base)
+        printer_config["profile_overrides"] = {
             "stream": {
                 "delay_ms": 9,
             },
         }
 
-        rebuilt = self.catalog.device_from_config(config)
+        rebuilt = self.catalog.device_from_printer_config(printer_config)
 
         self.assertEqual(rebuilt.profile.stream.chunk_size, base.profile.stream.chunk_size)
         self.assertEqual(rebuilt.profile.stream.delay_ms, 9)
         self.assertEqual(rebuilt.protocol_family, base.protocol_family)
         self.assertEqual(rebuilt.image_pipeline, base.image_pipeline)
 
-    def test_device_from_config_rejects_unknown_protocol_variant(self) -> None:
+    def test_device_from_printer_config_rejects_unknown_protocol_variant(self) -> None:
         base = self.catalog.device_from_profile("luck_a40")
-        config = self.catalog.serialize_config(base)
-        config["profile_overrides"]["default_protocol_variant"] = "not_a_variant"
+        printer_config = self.catalog.serialize_printer_config(base)
+        printer_config["profile_overrides"]["default_protocol_variant"] = "not_a_variant"
 
         with self.assertRaisesRegex(
             RuntimeError,
             "luck_normal_a4 does not support protocol variant 'not_a_variant'",
         ):
-            self.catalog.device_from_config(config)
+            self.catalog.device_from_printer_config(printer_config)
 
     def test_luck_a49h_uses_compressed_a4_pipeline(self) -> None:
         resolved = self.catalog.detect_device("APA49H_1234")

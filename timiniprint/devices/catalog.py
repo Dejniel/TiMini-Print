@@ -11,10 +11,10 @@ from ..protocol.families import (
 )
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImagePipelineConfig
-from .config import (
-    parse_device_config,
+from .printer_config import (
+    parse_printer_config,
     runtime_settings_from_parts,
-    serialize_device_config,
+    serialize_printer_config,
 )
 from .device import (
     PrinterDevice,
@@ -289,41 +289,41 @@ class PrinterCatalog:
             transport_target=transport_target,
         )
 
-    def serialize_config(self, device: PrinterDevice) -> dict[str, Any]:
-        """Serialize a device into an editable JSON config object.
+    def serialize_printer_config(self, device: PrinterDevice) -> dict[str, Any]:
+        """Serialize a device into an editable printer config object.
 
-        The config keeps ``profile_key`` as the catalog fallback and writes the
+        The printer config keeps ``profile_key`` as the catalog fallback and writes the
         full current profile as overrides so users can tune values in-place.
         Removing an override key falls back to the catalog profile value.
         """
-        return serialize_device_config(device)
+        return serialize_printer_config(device)
 
-    def device_from_config(
+    def device_from_printer_config(
         self,
-        config: Mapping[str, object],
+        printer_config: Mapping[str, object],
         *,
         transport_target: TransportTarget | None | object = _UNSET,
         display_name: Optional[str] = None,
     ) -> PrinterDevice:
-        """Rebuild a runtime device from a serialized config."""
-        config_parts = parse_device_config(
-            config,
+        """Rebuild a runtime device from a serialized printer config."""
+        printer_config_parts = parse_printer_config(
+            printer_config,
             require_profile=self.require_profile,
             require_runtime_defaults=self.require_runtime_defaults,
         )
         resolved_transport_target = (
-            config_parts.transport_target
+            printer_config_parts.transport_target
             if transport_target is _UNSET
             else transport_target
         )
         return self._build_device(
-            display_name=display_name or config_parts.display_name,
-            profile=config_parts.profile,
-            protocol_family=config_parts.profile.default_protocol_family,
-            protocol_variant=config_parts.profile.default_protocol_variant,
-            image_pipeline=config_parts.profile.default_image_pipeline,
-            runtime_settings=config_parts.runtime_settings,
-            detection_rule_key=f"config:{config_parts.profile.profile_key}",
+            display_name=display_name or printer_config_parts.display_name,
+            profile=printer_config_parts.profile,
+            protocol_family=printer_config_parts.profile.default_protocol_family,
+            protocol_variant=printer_config_parts.profile.default_protocol_variant,
+            image_pipeline=printer_config_parts.profile.default_image_pipeline,
+            runtime_settings=printer_config_parts.runtime_settings,
+            detection_rule_key=f"printer_config:{printer_config_parts.profile.profile_key}",
             transport_target=resolved_transport_target,
         )
 
