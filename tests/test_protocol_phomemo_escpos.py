@@ -96,6 +96,69 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         self.assertIn(b"\x1d\x76\x30\x00\x30\x00\x01\x00", job.payload)
         self.assertTrue(job.payload.endswith(b"\x1b\x64\x02"))
 
+    def test_m110_profile_builds_m110_style_raster_job(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("phomemo_m110")
+        raster = RasterBuffer(
+            pixels=[
+                1, 0, 0, 0, 0, 0, 0, 0,
+                0, 1, 0, 0, 0, 0, 0, 0,
+            ],
+            width=8,
+            pixel_format=PixelFormat.BW1,
+        )
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            blackening=3,
+        )
+
+        self.assertEqual(
+            job.payload,
+            b"".join(
+                (
+                    b"\x1b\x4e\x0d\x05",
+                    b"\x1b\x4e\x04\x0a",
+                    b"\x1f\x11\x0a",
+                    b"\x1d\x76\x30\x00\x01\x00\x02\x00\x80\x40",
+                    b"\x1f\xf0\x05\x00\x1f\xf0\x03\x00",
+                )
+            ),
+        )
+
+    def test_m110_paper_modes_select_media_type(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("phomemo_m110")
+        raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
+
+        expected = {
+            PaperMode.TAG: b"\x1f\x11\x0a",
+            PaperMode.PLAIN: b"\x1f\x11\x0b",
+            PaperMode.BLACK_TAG: b"\x1f\x11\x26",
+        }
+        for paper_mode, media_command in expected.items():
+            with self.subTest(paper_mode=paper_mode):
+                job = PrinterProtocol(device).build_job(
+                    RasterSet.from_single(raster),
+                    is_text=False,
+                    paper_mode=paper_mode,
+                )
+                self.assertEqual(job.payload[8:11], media_command)
+
+    def test_m220_profile_uses_wide_m110_style_raster_job(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("phomemo_m220")
+        raster = RasterBuffer(pixels=[0] * 576, width=576, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+        )
+
+        self.assertEqual(device.profile.print_size, 576)
+        self.assertEqual(device.profile.dev_dpi, 203)
+        self.assertEqual(device.protocol_variant, "m220")
+        self.assertIn(b"\x1d\x76\x30\x00\x48\x00\x01\x00", job.payload)
+        self.assertTrue(job.payload.endswith(b"\x1f\xf0\x05\x00\x1f\xf0\x03\x00"))
+
     def test_m02_detection_does_not_steal_m02s(self) -> None:
         catalog = PrinterCatalog.load()
 
@@ -167,6 +230,23 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         self.assertNotEqual(catalog.detect_device("GT02-ABCD").profile_key, "phomemo_t02")
         self.assertNotEqual(catalog.detect_device("YT02").profile_key, "phomemo_t02")
 
+    def test_m110_detection_maps_m110_m120_and_m220(self) -> None:
+        catalog = PrinterCatalog.load()
+
+        for name in ("M110", "M110-ABCD", "M110_abcd", "M120", "M120-ABCD"):
+            with self.subTest(name=name):
+                device = catalog.detect_device(name)
+                self.assertIsNotNone(device)
+                assert device is not None
+                self.assertEqual(device.profile_key, "phomemo_m110")
+                self.assertEqual(device.protocol_variant, "m110")
+
+        m220 = catalog.detect_device("M220-ABCD")
+        self.assertIsNotNone(m220)
+        assert m220 is not None
+        self.assertEqual(m220.profile_key, "phomemo_m220")
+        self.assertEqual(m220.protocol_variant, "m220")
+
     def test_m02_supports_plain_paper_mode_and_motion(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m02")
         protocol = PrinterProtocol(device)
@@ -174,6 +254,15 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         self.assertEqual(protocol.supported_paper_modes(), (PaperMode.PLAIN,))
         self.assertEqual(protocol.build_paper_motion("feed").payload, b"\x1b\x4a\x50")
         self.assertEqual(protocol.build_paper_motion("retract").payload, b"")
+
+    def test_m110_supports_label_paper_modes(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("phomemo_m110")
+        protocol = PrinterProtocol(device)
+
+        self.assertEqual(
+            protocol.supported_paper_modes(),
+            (PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG),
+        )
 
 
 if __name__ == "__main__":

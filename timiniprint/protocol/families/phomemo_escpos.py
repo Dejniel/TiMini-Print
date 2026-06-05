@@ -7,6 +7,7 @@ from .phomemo_escpos_core import (
     advance_paper_cmd,
     build_phomemo_escpos_job,
     retract_paper_cmd,
+    supported_paper_modes,
 )
 
 _PHOMEMO_SERVICE_UUID = "0000ff00-0000-1000-8000-00805f9b34fb"
@@ -36,8 +37,9 @@ BEHAVIOR = ProtocolBehavior(
     image_encoding_support={
         ImageEncoding.PHOMEMO_ESCPOS_RASTER: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("m02", "m02s", "m02x", "m02_pro", "t02"),
+    supported_protocol_variants=("m02", "m02s", "m02x", "m02_pro", "t02", "m110", "m220"),
     supported_paper_modes=(PaperMode.PLAIN,),
+    supported_paper_modes_resolver=supported_paper_modes,
     advance_paper_builder=advance_paper_cmd,
     retract_paper_builder=retract_paper_cmd,
     job_builder=build_job,

@@ -3888,5 +3888,40 @@
     "profile_key": "phomemo_m02_pro",
     "protocol_family": "phomemo_escpos",
     "protocol_variant": "m02_pro"
+  },
+  {
+    "rule_key": "rule_phomemo_m110",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "prefixes": [
+      "M110-",
+      "M110_",
+      "M120-",
+      "M120_"
+    ],
+    "exact_names": [
+      "M110",
+      "M120"
+    ],
+    "profile_key": "phomemo_m110",
+    "protocol_family": "phomemo_escpos",
+    "protocol_variant": "m110"
+  },
+  {
+    "rule_key": "rule_phomemo_m220",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "prefixes": [
+      "M220-",
+      "M220_"
+    ],
+    "exact_names": [
+      "M220"
+    ],
+    "profile_key": "phomemo_m220",
+    "protocol_family": "phomemo_escpos",
+    "protocol_variant": "m220"
   }
 ]

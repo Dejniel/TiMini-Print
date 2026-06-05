@@ -5908,5 +5908,129 @@
       }
     },
     "a4xii": false
+  },
+  {
+    "profile_key": "phomemo_m110",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "can_change_mtu": true,
+    "has_id": false,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_variant": "m110",
+    "default_paper_mode": "tag",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "phomemo_escpos_raster"
+    },
+    "stream": {
+      "chunk_size": 128,
+      "delay_ms": 20
+    },
+    "post_print_feed_count": 0,
+    "print_defaults": {
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 6,
+          "middle": 10,
+          "high": 15
+        },
+        "text": {
+          "low": 6,
+          "middle": 10,
+          "high": 15
+        }
+      },
+      "speed": {
+        "image": 5,
+        "text": 5
+      }
+    },
+    "a4xii": false
+  },
+  {
+    "profile_key": "phomemo_m220",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "size": 2,
+    "paper_size": 576,
+    "print_size": 576,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "can_change_mtu": true,
+    "has_id": false,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_variant": "m220",
+    "default_paper_mode": "tag",
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "phomemo_escpos_raster"
+    },
+    "stream": {
+      "chunk_size": 128,
+      "delay_ms": 20
+    },
+    "post_print_feed_count": 0,
+    "print_defaults": {
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 6,
+          "middle": 10,
+          "high": 15
+        },
+        "text": {
+          "low": 6,
+          "middle": 10,
+          "high": 15
+        }
+      },
+      "speed": {
+        "image": 5,
+        "text": 5
+      }
+    },
+    "a4xii": false
   }
 ]

@@ -259,14 +259,27 @@
     },
     {
       "id": "phomemo-m110-family",
-      "status": "todo",
+      "status": "supported",
       "display_label": "M110",
       "primary_names": [
         "M110"
       ],
       "clone_names": [
-        "M120",
+        "M120"
+      ],
+      "rule_keys": [
+        "rule_phomemo_m110"
+      ]
+    },
+    {
+      "id": "phomemo-m220-family",
+      "status": "supported",
+      "display_label": "M220",
+      "primary_names": [
         "M220"
+      ],
+      "rule_keys": [
+        "rule_phomemo_m220"
       ]
     },
     {
