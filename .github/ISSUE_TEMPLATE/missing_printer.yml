@@ -19,15 +19,6 @@ body:
         If you can attach a Bluetooth/HCI dump of one small print from the original app, it will usually make adding support much faster.
 
   - type: input
-    id: printer-model
-    attributes:
-      label: Printer model from box/listing
-      description: Copy the model name from the box, product listing, label, or manual.
-      placeholder: "Example: MXTP-100"
-    validations:
-      required: true
-
-  - type: input
     id: original-app
     attributes:
       label: Original app
@@ -72,9 +63,9 @@ body:
       required: false
 
   - type: textarea
-    id: notes
+    id: description
     attributes:
-      label: Extra notes
-      description: Optional. Add photos, logs, or packet dumps if available.
+      label: Description
+      description: Optional. Describe the printer/support request in your own words. Add photos, logs, or packet dumps if available.
     validations:
       required: false

@@ -8,7 +8,7 @@ body:
       value: |
         Use this when TiMini detects your printer, but printing, scanning, connection, paper feed, image quality, or profile selection does not work correctly.
 
-        Please run the command with `-v` and paste the full output. Do not summarize it. The verbose log includes the TiMini version, platform, resolved profile, protocol, runtime defaults, and original source app package when known.
+        Please run the command with `-v` and paste the full output. Do not summarize it.
 
         Suggested smoke test:
 
@@ -17,15 +17,6 @@ body:
         ```
 
         If you can attach a Bluetooth/HCI dump of one small print from the original app, it will usually make protocol bugs much faster to fix.
-
-  - type: input
-    id: printer-model
-    attributes:
-      label: Printer model from box/listing
-      description: Copy the model name from the box, product listing, label, or manual.
-      placeholder: "Example: X9-38CC"
-    validations:
-      required: true
 
   - type: input
     id: original-app
@@ -45,32 +36,14 @@ body:
     validations:
       required: true
 
-  - type: textarea
-    id: expected
-    attributes:
-      label: What should happen?
-      description: Describe the expected behavior briefly.
-      placeholder: "The printer should print the test text/image."
-    validations:
-      required: true
-
-  - type: textarea
-    id: actual
-    attributes:
-      label: What happens instead?
-      description: Describe the actual behavior. Include photos only if they clarify the print result.
-      placeholder: "It connects, feeds paper, but prints blank output."
-    validations:
-      required: true
-
   - type: dropdown
     id: original-app-works
     attributes:
       label: Does the original app print correctly?
       options:
+        - "I have not tested"
         - "Yes"
         - "No"
-        - "I have not tested"
     validations:
       required: true
 
@@ -84,9 +57,9 @@ body:
       required: false
 
   - type: textarea
-    id: notes
+    id: description
     attributes:
-      label: Extra notes
-      description: Optional. Add hardware photos, logs from the original app, or anything else that may matter.
+      label: Description
+      description: Optional. Describe the problem in your own words. Add hardware photos, logs from the original app, or anything else that may matter.
     validations:
       required: false
