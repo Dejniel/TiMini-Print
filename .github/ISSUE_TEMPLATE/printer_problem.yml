@@ -1,0 +1,81 @@
+name: Printer problem
+description: Report a problem with a printer that TiMini already detects or partially supports.
+title: "Printer problem: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when TiMini detects your printer, but printing, scanning, connection, paper feed, image quality, or profile selection does not work correctly.
+
+        Please run the command with `-v` and paste the full output. Do not summarize it. The verbose log includes the TiMini version, platform, resolved profile, protocol, runtime defaults, and original source app package when known.
+
+        Suggested smoke test:
+
+        ```bash
+        ./TiMini-Print-Command-Line-Linux-x86_64 -v --text "I have come here to chew bubble gum and kick ass... and I’m all out of bubble gum."
+        ```
+
+  - type: input
+    id: printer-model
+    attributes:
+      label: Printer model from box/listing
+      description: Copy the model name from the box, product listing, label, or manual.
+      placeholder: "Example: X9-38CC"
+    validations:
+      required: true
+
+  - type: input
+    id: original-app
+    attributes:
+      label: Original app
+      description: Link or name of the app from the box/manual/listing. Google Play/App Store links are best.
+      placeholder: "Example: Tiny Print / https://play.google.com/store/apps/details?id=..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: verbose-log
+    attributes:
+      label: Full verbose output
+      description: Run the failing command with `-v` and paste the complete output.
+      placeholder: Paste the complete verbose output here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen?
+      description: Describe the expected behavior briefly.
+      placeholder: "The printer should print the test text/image."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happens instead?
+      description: Describe the actual behavior. Include photos only if they clarify the print result.
+      placeholder: "It connects, feeds paper, but prints blank output."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: original-app-works
+    attributes:
+      label: Does the original app print correctly?
+      options:
+        - "Yes"
+        - "No"
+        - "I have not tested"
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra notes
+      description: Optional. Add hardware photos, listing links, logs from the original app, or anything else that may matter.
+    validations:
+      required: false

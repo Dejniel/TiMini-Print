@@ -1,0 +1,69 @@
+name: Missing printer support
+description: Request support for a printer that TiMini does not detect or does not list.
+title: "Missing printer: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when your printer is not detected, is not listed, or TiMini does not have a matching profile for it.
+
+        Please include the original app link. Without the original app or verbose scan output, adding support may be impossible.
+
+        Run this scan and paste the full output below:
+
+        ```bash
+        ./TiMini-Print-Command-Line-Linux-x86_64 -v --scan
+        ```
+
+  - type: input
+    id: printer-model
+    attributes:
+      label: Printer model from box/listing
+      description: Copy the model name from the box, product listing, label, or manual.
+      placeholder: "Example: MXTP-100"
+    validations:
+      required: true
+
+  - type: input
+    id: original-app
+    attributes:
+      label: Original app
+      description: Link or name of the app from the box/manual/listing. Google Play/App Store links are best.
+      placeholder: "Example: Fun Print / https://play.google.com/store/apps/details?id=..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: scan-log
+    attributes:
+      label: Full verbose scan output
+      description: Run scan with `-v` and paste the complete output.
+      placeholder: Paste the complete verbose scan output here.
+    validations:
+      required: true
+
+  - type: textarea
+    id: original-app-behavior
+    attributes:
+      label: Original app behavior
+      description: Tell whether the original app can print, pair, scan, and which transport it appears to use if you know.
+      placeholder: "The original app prints correctly over Bluetooth."
+    validations:
+      required: true
+
+  - type: textarea
+    id: bluetooth-details
+    attributes:
+      label: Bluetooth details
+      description: Optional. If you know service UUIDs, characteristic UUIDs, advertised name, or MAC/address, paste them here.
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra notes
+      description: Optional. Add product links, photos, logs, or packet dumps if available.
+    validations:
+      required: false
