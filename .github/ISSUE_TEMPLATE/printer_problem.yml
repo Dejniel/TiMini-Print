@@ -16,6 +16,8 @@ body:
         ./TiMini-Print-Command-Line-Linux-x86_64 -v --text "I have come here to chew bubble gum and kick ass... and I’m all out of bubble gum."
         ```
 
+        If you can attach a Bluetooth/HCI dump of one small print from the original app, it will usually make protocol bugs much faster to fix.
+
   - type: input
     id: printer-model
     attributes:
@@ -29,7 +31,7 @@ body:
     id: original-app
     attributes:
       label: Original app
-      description: Link or name of the app from the box/manual/listing. Google Play/App Store links are best.
+      description: Link or name of the app from the manual, QR code, or app store. Google Play/App Store links are best.
       placeholder: "Example: Tiny Print / https://play.google.com/store/apps/details?id=..."
     validations:
       required: true
@@ -73,9 +75,18 @@ body:
       required: true
 
   - type: textarea
+    id: original-app-dump
+    attributes:
+      label: Original app Bluetooth/HCI dump
+      description: Optional. Attach the dump file or paste a link.
+      placeholder: "Attach the dump file to this issue, or paste a link here."
+    validations:
+      required: false
+
+  - type: textarea
     id: notes
     attributes:
       label: Extra notes
-      description: Optional. Add hardware photos, listing links, logs from the original app, or anything else that may matter.
+      description: Optional. Add hardware photos, logs from the original app, or anything else that may matter.
     validations:
       required: false
