@@ -5,8 +5,8 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from tests.helpers import reset_registry_cache
-from timiniprint.devices import PrinterCatalog
-from timiniprint.devices.device import BluetoothEndpointTransport, BluetoothTarget
+from timiniprint.devices import BluetoothEndpointResolver, PrinterCatalog
+from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport, BluetoothTarget
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
@@ -221,6 +221,34 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(len(devices), 1)
         self.assertEqual(devices[0].profile_key, "v5g_small_203")
         self.assertEqual(devices[0].transport_badge, "[classic]")
+
+
+class BluetoothEndpointResolverTests(unittest.TestCase):
+    def setUp(self) -> None:
+        reset_registry_cache()
+        self.resolver = BluetoothEndpointResolver(PrinterCatalog.load())
+
+    def test_resolves_raw_endpoints_without_transport_backend(self) -> None:
+        classic = BluetoothEndpoint(
+            name="X6H-ABCD",
+            address="AA:BB:CC:DD:EE:01",
+            transport=BluetoothEndpointTransport.CLASSIC,
+        )
+        ble = BluetoothEndpoint(
+            name="X6H-ABCD",
+            address="UUID-1",
+            transport=BluetoothEndpointTransport.BLE,
+        )
+
+        devices = self.resolver.devices_from_endpoints([classic, ble])
+
+        self.assertEqual(len(devices), 1)
+        device = devices[0]
+        self.assertEqual(device.profile_key, "x6h")
+        self.assertEqual(device.transport_badge, "[classic+ble]")
+        self.assertIsInstance(device.transport_target, BluetoothTarget)
+        self.assertIs(device.transport_target.classic_endpoint, classic)
+        self.assertIs(device.transport_target.ble_endpoint, ble)
 
 
 def _run(coro):

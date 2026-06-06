@@ -93,8 +93,10 @@ It takes an already known device name and optional address and maps them to a `P
 This is transport-facing discovery.
 It does scan hardware.
 It returns reachable Bluetooth printers as `PrinterDevice` objects and can also select one by name or address.
+It delegates raw endpoint resolution to `BluetoothEndpointResolver` in `timiniprint.devices`.
 
 This split keeps device knowledge out of transport while still allowing discovery to produce fully resolved runtime objects.
+Transport code owns scanning; devices code owns turning raw endpoints into logical printer devices.
 
 ## Why protocol and transport are separate
 
@@ -121,6 +123,8 @@ Owns printer description and detection.
 It contains:
 - `PrinterDevice`
 - `PrinterProfile`
+- Bluetooth endpoint and target models
+- `BluetoothEndpointResolver` for raw Bluetooth endpoint merging and catalog matching
 - detection rules
 - `PrinterCatalog`
 - config serialization
@@ -202,16 +206,19 @@ This split matters because some printer families need session state during trans
 
 Bluetooth discovery and Bluetooth connection are separate concerns.
 
-- `BluetoothDiscovery` finds and resolves printers into `PrinterDevice`
+- `BluetoothDiscovery` scans hardware and asks `BluetoothEndpointResolver` to resolve printers into `PrinterDevice`
 - `BleakBluetoothConnector` connects and sends jobs for those devices
 
 That keeps discovery logic out of protocol code and keeps transport replaceable.
+It also lets another platform-specific scanner, such as a mobile native bridge,
+reuse the same endpoint-resolution behavior without using the desktop Bluetooth backend.
 
 ## Where to put new code
 
 Use this rule of thumb:
 
 - put it in `devices` if it changes how a printer is described or detected
+- put it in `devices` if it changes how raw Bluetooth endpoints are merged into logical printer devices
 - put it in `rendering` if it changes how files become raster data
 - put it in `protocol` if it changes stateless packet building
 - put it in `printing.runtime` if it changes stateful session behavior

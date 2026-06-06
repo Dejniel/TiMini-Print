@@ -1,4 +1,5 @@
-from .device import BluetoothTarget, PrinterDevice, SerialTarget, TransportTarget
+from .bluetooth_resolver import BluetoothEndpointResolver, ResolvedBluetoothTarget
+from .device import BluetoothEndpoint, BluetoothTarget, PrinterDevice, SerialTarget, TransportTarget
 from .catalog import PrinterCatalog
 from .profiles import (
     PrinterProfile,
@@ -8,6 +9,8 @@ from .profiles import (
 )
 
 __all__ = [
+    "BluetoothEndpoint",
+    "BluetoothEndpointResolver",
     "BluetoothTarget",
     "PrinterCatalog",
     "PrinterDevice",
@@ -15,6 +18,7 @@ __all__ = [
     "PrinterRuntimeDefaults",
     "RuntimeCapabilities",
     "RuntimeSettings",
+    "ResolvedBluetoothTarget",
     "SerialTarget",
     "TransportTarget",
 ]

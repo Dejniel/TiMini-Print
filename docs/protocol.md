@@ -266,6 +266,11 @@ The repo should make it easy to reuse protocol logic without forcing one Bluetoo
 If you want probe warnings to go somewhere visible, pass your own reporter into
 `prepare_connection_runtime(..., reporter=...)`.
 
+If your platform already has its own Bluetooth scanner, such as a mobile native bridge,
+convert raw scan results to `BluetoothEndpoint` and pass them to `BluetoothEndpointResolver`.
+That reuses TiMini's catalog matching, Classic/BLE endpoint merging, and model selection
+without importing the desktop Bluetooth backend.
+
 ## Detecting by name is not the same as Bluetooth discovery
 
 There are two different operations in the codebase and they should not be confused.
