@@ -6,7 +6,7 @@ import re
 import sys
 import urllib.request
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
 
@@ -53,7 +53,7 @@ class UpdateChecker:
         check_interval: timedelta = DEFAULT_CHECK_INTERVAL,
         timeout_sec: float = DEFAULT_TIMEOUT_SEC,
     ) -> UpdateCheckResult | None:
-        now = _utc(now or datetime.now(UTC))
+        now = _utc(now or datetime.now(timezone.utc))
         try:
             settings = self.settings.load()
         except Exception:
@@ -164,5 +164,5 @@ def is_newer_version(candidate: str, current: str) -> bool:
 
 def _utc(value: datetime) -> datetime:
     if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-    return value.astimezone(UTC)
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)

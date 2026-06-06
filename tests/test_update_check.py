@@ -3,7 +3,7 @@ from __future__ import annotations
 import configparser
 import tempfile
 import unittest
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from timiniprint.update_check import (
@@ -41,7 +41,7 @@ class UpdateCheckTests(unittest.TestCase):
             result = check_for_updates(
                 current_version="0.5",
                 settings_path=settings_path,
-                now=datetime(2026, 6, 5, 12, 0, tzinfo=UTC),
+                now=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc),
                 fetch_latest_release=fetch,
             )
 
@@ -70,7 +70,7 @@ class UpdateCheckTests(unittest.TestCase):
                 fetch_latest_release=lambda _timeout: ReleaseInfo("v0.6"),
             )
 
-            result = checker.check(now=datetime(2026, 6, 5, 12, 0, tzinfo=UTC))
+            result = checker.check(now=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc))
 
             self.assertIsNotNone(result)
             self.assertEqual(result.latest_version, "v0.6")
@@ -92,7 +92,7 @@ class UpdateCheckTests(unittest.TestCase):
             result = check_for_updates(
                 current_version="0.5",
                 settings_path=settings_path,
-                now=datetime(2026, 6, 5, 12, 0, tzinfo=UTC),
+                now=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc),
                 fetch_latest_release=fetch,
             )
 
@@ -122,7 +122,7 @@ class UpdateCheckTests(unittest.TestCase):
             result = check_for_updates(
                 current_version="0.5",
                 settings_path=settings_path,
-                now=datetime(2026, 6, 5, 12, 0, tzinfo=UTC),
+                now=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc),
                 check_interval=timedelta(hours=24),
                 fetch_latest_release=fetch,
             )
@@ -148,7 +148,7 @@ class UpdateCheckTests(unittest.TestCase):
             result = check_for_updates(
                 current_version="0.5",
                 settings_path=settings_path,
-                now=datetime(2026, 6, 5, 12, 0, tzinfo=UTC),
+                now=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc),
                 fetch_latest_release=fetch,
             )
 
@@ -166,7 +166,7 @@ class UpdateCheckTests(unittest.TestCase):
             result = check_for_updates(
                 current_version="0.5",
                 settings_path=settings_path,
-                now=datetime(2026, 6, 5, 12, 0, tzinfo=UTC),
+                now=datetime(2026, 6, 5, 12, 0, tzinfo=timezone.utc),
                 fetch_latest_release=fetch,
             )
 
