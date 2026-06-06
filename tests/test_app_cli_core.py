@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import unittest
 
-from tests.helpers import install_crc8_stub
+from tests.helpers import build_capture_reporter, install_crc8_stub
 
 install_crc8_stub()
 
@@ -51,6 +51,18 @@ class AppCliCoreTests(unittest.TestCase):
         sink2 = r2._sinks[0]
         self.assertNotIn("debug", sink1._levels)
         self.assertIn("debug", sink2._levels)
+
+    def test_emit_startup_debug_includes_version_and_platform(self) -> None:
+        reporter, sink = build_capture_reporter()
+
+        cli.emit_startup_debug(reporter)
+
+        detail = sink.messages[-1].detail
+        self.assertIn("timiniprint_version=", detail)
+        self.assertIn("platform=", detail)
+        self.assertIn("machine=", detail)
+        self.assertIn("python=", detail)
+        self.assertIn("frozen=", detail)
 
 
 if __name__ == "__main__":

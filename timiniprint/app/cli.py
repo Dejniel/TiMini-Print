@@ -4,12 +4,14 @@ import argparse
 import asyncio
 import json
 import os
+import platform
+import sys
 import tempfile
 from pathlib import Path
 from typing import Mapping
 from typing import Optional, Sequence
 
-from .. import reporting
+from .. import __version__, reporting
 from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarget
 from ..printing.builder import PrintJobBuilder
 from ..printing.debug_dump import build_protocol_job_debug_dump
@@ -116,6 +118,20 @@ def emit_update_warning(reporter: reporting.Reporter) -> None:
         detail=(
             f"Update available: {result.latest_version} "
             f"(current: {result.current_version}). {result.release_url}"
+        ),
+    )
+
+
+def emit_startup_debug(reporter: reporting.Reporter) -> None:
+    reporter.debug(
+        short="Startup",
+        detail=(
+            "Startup: "
+            f"timiniprint_version={__version__} "
+            f"platform={platform.platform()} "
+            f"machine={platform.machine()} "
+            f"python={platform.python_version()} "
+            f"frozen={bool(getattr(sys, 'frozen', False))}"
         ),
     )
 
@@ -390,6 +406,7 @@ def _debug_resolved_device(
 ) -> None:
     runtime_settings = device.runtime_settings
     runtime_defaults = None if runtime_settings is None else runtime_settings.defaults
+    origin_app_packages = getattr(device.profile, "origin_app_packages", ())
     reporter.debug(
         short="Device",
         detail=(
@@ -403,6 +420,7 @@ def _debug_resolved_device(
             f"runtime={getattr(runtime_settings, 'variant', None) or '<none>'} "
             f"runtime_defaults={getattr(runtime_defaults, 'key', None) or '<none>'} "
             f"detection_rule={device.detection_rule_key or '<none>'} "
+            f"origin_app_packages={','.join(origin_app_packages) or '<none>'} "
             f"use_spp={device.profile.use_spp}"
         ),
     )
@@ -716,6 +734,7 @@ def _build_cli_reporter(verbose: bool) -> reporting.Reporter:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
     reporter = _build_cli_reporter(args.verbose)
+    emit_startup_debug(reporter)
     emit_startup_warnings(reporter)
     emit_update_warning(reporter)
     if args.list_profiles:

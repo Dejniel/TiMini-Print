@@ -433,6 +433,7 @@ class AppCliFlowsTests(unittest.TestCase):
             defaults=types.SimpleNamespace(key="mx06"),
         )
         device.detection_rule_key = "rule_mx10_v5g"
+        device.profile.origin_app_packages = ("com.fun.mxw",)
         device.profile.use_spp = False
 
         cli._debug_resolved_device(reporter, device, action="print")
@@ -444,6 +445,7 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertIn("runtime=mx10", detail)
         self.assertIn("runtime_defaults=mx06", detail)
         self.assertIn("detection_rule=rule_mx10_v5g", detail)
+        self.assertIn("origin_app_packages=com.fun.mxw", detail)
 
 
 if __name__ == "__main__":
