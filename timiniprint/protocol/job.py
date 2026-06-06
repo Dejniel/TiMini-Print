@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..printing.runtime.base import RuntimePrintCapabilities
 from ..raster import PixelFormat, RasterSet
 from ._builders import _build_job_model_from_raster_set
 from .commands import (
@@ -11,26 +10,26 @@ from .commands import (
 )
 from .families import get_protocol_behavior
 from .family import ProtocolFamily
+from .runtime import RuntimePrintCapabilities
 from .steps import ProtocolStep
 from .types import ImageEncoding, ImagePipelineConfig, PaperMode
 
 if TYPE_CHECKING:
     from ..devices.device import PrinterDevice
-    from ..printing.runtime.base import RuntimeController
 
 
 class ProtocolJob:
-    """Printable protocol payload plus optional session runtime controller."""
+    """Printable protocol payload plus optional externally supplied runtime controller."""
 
     _payload: bytes | None
-    runtime_controller: RuntimeController | None
+    runtime_controller: object | None
     payload_segments: tuple[bytes, ...]
     steps: tuple[ProtocolStep, ...]
 
     def __init__(
         self,
         payload: bytes | None = None,
-        runtime_controller: RuntimeController | None = None,
+        runtime_controller: object | None = None,
         payload_segments: tuple[bytes, ...] = (),
         steps: tuple[ProtocolStep, ...] = (),
     ) -> None:
@@ -57,12 +56,6 @@ class PrinterProtocol:
     def __init__(self, device: PrinterDevice) -> None:
         self.device = device
 
-    def create_runtime_controller(self) -> RuntimeController | None:
-        """Create the session runtime controller required by this device, if any."""
-        from ..printing.runtime.factory import runtime_controller_for_device
-
-        return runtime_controller_for_device(self.device)
-
     def build_job(
         self,
         raster_set: RasterSet,
@@ -78,7 +71,7 @@ class PrinterProtocol:
         page_index: int = 1,
         page_count: int = 1,
         runtime_capabilities: RuntimePrintCapabilities | None = None,
-        runtime_controller: RuntimeController | None = None,
+        runtime_controller: object | None = None,
     ) -> ProtocolJob:
         """Build a printable job from raster input for this device."""
         resolved_pipeline = self.resolve_image_pipeline(
@@ -128,7 +121,7 @@ class PrinterProtocol:
         )
         return ProtocolJob(
             payload=payload,
-            runtime_controller=runtime_controller or self.create_runtime_controller(),
+            runtime_controller=runtime_controller,
             steps=steps,
         )
 

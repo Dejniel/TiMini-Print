@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .base import RuntimeController, RuntimePrintCapabilities, RuntimeSessionApi
+from ...protocol.runtime import RuntimePrintCapabilities
+from .base import RuntimeController, RuntimeSessionApi
 
 LUCK_MODEL_QUERY_PACKET = bytes([0x10, 0xFF, 0x20, 0xF0])
 LUCK_VERSION_QUERY_PACKET = bytes([0x10, 0xFF, 0x20, 0xF1])

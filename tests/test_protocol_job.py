@@ -311,7 +311,7 @@ class ProtocolJobTests(unittest.TestCase):
         )
 
     def test_build_luck_normal_h_gray_job_uses_runtime_gray_level_override(self) -> None:
-        from timiniprint.printing.runtime.base import RuntimePrintCapabilities
+        from timiniprint.protocol import RuntimePrintCapabilities
 
         raster_set = self._raster_set(
             self._bw_raster([1, 1], width=2),
@@ -869,7 +869,7 @@ class ProtocolJobTests(unittest.TestCase):
 
     def test_printer_protocol_can_downgrade_luck_gray_pipeline_after_runtime_probe(self) -> None:
         from timiniprint.devices import PrinterCatalog
-        from timiniprint.printing.runtime.base import RuntimePrintCapabilities
+        from timiniprint.protocol import RuntimePrintCapabilities
         from timiniprint.protocol import PrinterProtocol
 
         device = PrinterCatalog.load().device_from_profile("luck_ppa2l")

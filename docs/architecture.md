@@ -58,14 +58,15 @@ A protocol builder bound to one `PrinterDevice`.
 It turns raster input into a `ProtocolJob`.
 
 Important: `PrinterProtocol` is not a transport object.
-It builds jobs; it does not connect or send.
+It builds jobs; it does not connect, send, or create runtime controllers.
+Stateful runtime controllers are attached by the `printing` layer.
 
 ### `ProtocolJob`
 A unit of work that transport can send.
 It contains:
 - `payload`
 - optional `steps`
-- `runtime_controller`
+- optional `runtime_controller` supplied by the printing/runtime layer
 
 `payload` is the stream-only representation.
 `steps` is the named protocol operation plan for families that need request/response control flow during a print job.
@@ -145,6 +146,7 @@ It contains:
 - family-specific stateless logic
 - `PrinterProtocol`
 - `ProtocolJob`
+- protocol-facing runtime capability data that can affect payload selection
 - internal low-level builders in `_builders`
 
 ### `timiniprint.printing`
@@ -178,6 +180,7 @@ The intended flow is:
 The important practical rule is:
 - rendering should not depend on protocol builders
 - protocol should not depend on transport
+- protocol should not depend on printing runtime controllers
 - devices should describe printers, not perform I/O
 
 ## Stateful runtime behavior
@@ -190,6 +193,7 @@ There are two kinds of logic in the codebase:
 Examples:
 - packet formats belong in `timiniprint.protocol.families.*`
 - named print-job operation plans belong in `ProtocolJob.steps`
+- session-derived protocol inputs, such as print capabilities discovered at runtime, can be passed into protocol builders as data
 - temperature/status-driven session behavior belongs in `timiniprint.printing.runtime.*`
 
 This split matters because some printer families need session state during transport, but packet construction still needs to stay reusable outside the built-in app flow.

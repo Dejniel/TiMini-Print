@@ -11,7 +11,7 @@ from ..steps import ProtocolStep
 from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 
 if TYPE_CHECKING:
-    from ...printing.runtime.base import RuntimePrintCapabilities
+    from ..runtime import RuntimePrintCapabilities
 
 ManualMotionBuilder = Callable[[int, ProtocolFamily, str | None], bytes]
 FamilyJobBuilder = Callable[["PrintJobRequest"], bytes | tuple[ProtocolStep, ...]]

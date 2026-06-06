@@ -5,6 +5,7 @@ from typing import Optional, TYPE_CHECKING
 
 from .. import reporting
 from ..printing.runtime.base import PreparedRuntimeContext
+from ..printing.runtime.factory import runtime_controller_for_device
 from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
@@ -107,7 +108,7 @@ class PrintJobBuilder:
         job = ProtocolJob(
             runtime_controller=(
                 self.runtime_context.runtime_controller
-                or self.protocol.create_runtime_controller()
+                or runtime_controller_for_device(self.device)
             ),
             payload_segments=tuple(payload_parts),
             steps=tuple(steps),

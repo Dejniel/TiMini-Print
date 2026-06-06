@@ -51,13 +51,15 @@ It handles:
 ### `PrinterProtocol`
 `PrinterProtocol(device)` is the lower-level protocol entry point.
 Use it only when you already have raster data and want to build a printable job directly.
+It does not create runtime controllers; callers that need stateful runtime behavior
+must pass runtime capabilities/controller data from the printing layer.
 
 ### `ProtocolJob`
 A `ProtocolJob` is what transport sends.
 It contains:
 - `payload: bytes`
 - optional `steps`, a named send/query plan for protocols that need replies during a print job
-- `runtime_controller`, for families that need session behavior during transport
+- optional `runtime_controller`, supplied by the printing/runtime layer for families that need session behavior during transport
 
 ### Connectors
 Connectors handle actual I/O.
@@ -107,6 +109,7 @@ finally:
 What this does:
 - `BluetoothDiscovery` finds reachable printers and returns `PrinterDevice` objects
 - `PrintJobBuilder` turns the file into a `ProtocolJob`
+- `prepare_connection_runtime` and `PrintJobBuilder` attach runtime controller state when the selected family needs it
 - `BleakBluetoothConnector` uses `device.transport_target` and `device.profile.stream`
 - the caller does not manually pass `chunk_size`, `delay_ms`, or `runtime_controller`
 
@@ -114,6 +117,10 @@ Use this path when:
 - you want the repo file pipeline
 - you are printing normal files, not prebuilt raster data
 - you are fine using the repo Bluetooth transport
+
+If you build a job directly with `PrinterProtocol`, you are using the stateless
+protocol layer only. That path can still accept runtime capabilities, but it will
+not create a runtime controller for you.
 
 ## Choosing a specific Bluetooth printer
 

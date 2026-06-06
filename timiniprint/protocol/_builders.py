@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from ..raster import PixelFormat, RasterBuffer, RasterSet
-from ..printing.runtime.base import RuntimePrintCapabilities
 from .commands import (
     blackening_cmd,
     dev_state_cmd,
@@ -13,6 +12,7 @@ from .commands import (
 from .encoding import build_line_packets
 from .families import PrintJobRequest, get_protocol_behavior
 from .family import ProtocolFamily
+from .runtime import RuntimePrintCapabilities
 from .steps import ProtocolStep
 from .types import ImagePipelineConfig, PaperMode
 

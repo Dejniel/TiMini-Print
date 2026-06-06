@@ -4,13 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Optional, Protocol
 
-
-@dataclass(frozen=True)
-class RuntimePrintCapabilities:
-    """Session-derived print capabilities that affect payload construction."""
-
-    supports_gray: bool | None = None
-    gray_level_override: int | None = None
+from ...protocol.runtime import RuntimePrintCapabilities
 
 
 @dataclass(frozen=True)
