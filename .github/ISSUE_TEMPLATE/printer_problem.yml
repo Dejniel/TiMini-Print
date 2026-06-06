@@ -8,9 +8,7 @@ body:
       value: |
         Use this when TiMini detects your printer, but printing, scanning, connection, paper feed, image quality, or profile selection does not work correctly.
 
-        Please run the command with `-v` and paste the full output. Do not summarize it.
-
-        Suggested smoke test:
+        Run this test command and paste the full output. Do not summarize it.
 
         ```bash
         ./TiMini-Print-Command-Line-Linux-x86_64 -v --text "I have come here to chew bubble gum and kick ass... and I’m all out of bubble gum."
