@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from ... import reporting
-from ...devices import BluetoothTarget, PrinterDevice, ordered_connection_endpoints
+from ...devices import BluetoothTarget, PrinterDevice, bluetooth_connection_plan
 from ...devices.device import BluetoothEndpointTransport
 from ...protocol import ProtocolJob
 from .backend import SppBackend
@@ -126,14 +126,15 @@ class BleakBluetoothConnector:
         target = device.transport_target
         if not isinstance(target, BluetoothTarget):
             raise RuntimeError("BleakBluetoothConnector requires a PrinterDevice with BluetoothTarget")
+        plan = bluetooth_connection_plan(device)
         attempts = [
-            self._to_device_info(endpoint, device)
-            for endpoint in ordered_connection_endpoints(device)
+            self._to_device_info(attempt.endpoint, device)
+            for attempt in plan.attempts
         ]
         backend = SppBackend(reporter=self._reporter)
         await backend.connect_attempts(
             attempts,
-            pairing_hint=target.paired is False,
+            pairing_hint=plan.pairing_hint,
         )
         return BleakBluetoothConnection(backend, device, self._reporter)
 

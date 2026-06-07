@@ -1,6 +1,9 @@
 from .bluetooth_resolver import BluetoothEndpointResolver, ResolvedBluetoothTarget
 from .bluetooth_policy import (
+    BluetoothConnectionAttempt,
+    BluetoothConnectionPlan,
     BluetoothTransportPolicy,
+    bluetooth_connection_plan,
     ordered_connection_endpoints,
     should_retry_ble_scan,
 )
@@ -16,6 +19,8 @@ from .profiles import (
 __all__ = [
     "BluetoothEndpoint",
     "BluetoothEndpointResolver",
+    "BluetoothConnectionAttempt",
+    "BluetoothConnectionPlan",
     "BluetoothTarget",
     "BluetoothTransportPolicy",
     "PrinterCatalog",
@@ -27,6 +32,7 @@ __all__ = [
     "ResolvedBluetoothTarget",
     "SerialTarget",
     "TransportTarget",
+    "bluetooth_connection_plan",
     "ordered_connection_endpoints",
     "should_retry_ble_scan",
 ]

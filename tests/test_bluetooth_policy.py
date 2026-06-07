@@ -4,7 +4,11 @@ import unittest
 
 from tests.helpers import reset_registry_cache
 from timiniprint.devices import BluetoothTransportPolicy, PrinterCatalog
-from timiniprint.devices.bluetooth_policy import ordered_connection_endpoints, should_retry_ble_scan
+from timiniprint.devices.bluetooth_policy import (
+    bluetooth_connection_plan,
+    ordered_connection_endpoints,
+    should_retry_ble_scan,
+)
 from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 
 
@@ -105,6 +109,82 @@ class BluetoothTransportPolicyTests(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "BluetoothTarget"):
             ordered_connection_endpoints(device)
+
+    def test_connection_plan_carries_order_and_pairing_hint(self) -> None:
+        device = self.policy.devices_from_endpoints(
+            [
+                BluetoothEndpoint(
+                    name="X6H-ABCD",
+                    address="AA:BB:CC:DD:EE:01",
+                    paired=False,
+                    transport=BluetoothEndpointTransport.CLASSIC,
+                ),
+                BluetoothEndpoint(
+                    name="X6H-ABCD",
+                    address="BLE-UUID-1",
+                    paired=False,
+                    transport=BluetoothEndpointTransport.BLE,
+                ),
+            ]
+        )[0]
+
+        plan = bluetooth_connection_plan(device)
+
+        self.assertTrue(plan.pairing_hint)
+        self.assertEqual(plan.describe(), "classic(AA:BB:CC:DD:EE:01), ble(BLE-UUID-1)")
+        self.assertEqual([attempt.index for attempt in plan.attempts], [1, 2])
+        self.assertEqual([attempt.total for attempt in plan.attempts], [2, 2])
+        self.assertFalse(plan.attempts[0].is_fallback)
+        self.assertTrue(plan.attempts[1].is_fallback)
+
+    def test_connection_plan_does_not_hint_pairing_for_unknown_pair_state(self) -> None:
+        device = self.policy.devices_from_endpoints(
+            [
+                BluetoothEndpoint(
+                    name="X6H-ABCD",
+                    address="AA:BB:CC:DD:EE:01",
+                    paired=None,
+                    transport=BluetoothEndpointTransport.CLASSIC,
+                )
+            ]
+        )[0]
+
+        plan = self.policy.connection_plan(device)
+
+        self.assertFalse(plan.pairing_hint)
+        self.assertFalse(plan.attempts[0].pairing_hint)
+
+    def test_connection_plan_formats_fallback_failures(self) -> None:
+        device = self.policy.devices_from_endpoints(
+            [
+                BluetoothEndpoint(
+                    name="X6H-ABCD",
+                    address="AA:BB:CC:DD:EE:01",
+                    paired=False,
+                    transport=BluetoothEndpointTransport.CLASSIC,
+                ),
+                BluetoothEndpoint(
+                    name="X6H-ABCD",
+                    address="BLE-UUID-1",
+                    paired=False,
+                    transport=BluetoothEndpointTransport.BLE,
+                ),
+            ]
+        )[0]
+        plan = bluetooth_connection_plan(device)
+
+        message = plan.failure_message(
+            [
+                (plan.attempts[0], RuntimeError("classic down")),
+                (plan.attempts[1], RuntimeError("ble down")),
+            ]
+        )
+
+        self.assertEqual(
+            message,
+            "Bluetooth connection failed "
+            "(classic error: classic down; ble fallback error: ble down)",
+        )
 
 
 if __name__ == "__main__":
