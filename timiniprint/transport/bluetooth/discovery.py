@@ -7,6 +7,7 @@ from ... import reporting
 from ...devices import (
     BluetoothEndpointResolver,
     BluetoothTarget,
+    BluetoothTransportPolicy,
     PrinterCatalog,
     PrinterDevice,
     ResolvedBluetoothTarget,
@@ -35,6 +36,7 @@ class BluetoothDiscovery:
     ) -> None:
         self._catalog = catalog
         self._resolver = BluetoothEndpointResolver(catalog)
+        self._policy = BluetoothTransportPolicy(catalog)
         self._reporter = reporter
 
     async def _scan_endpoints(
@@ -50,13 +52,7 @@ class BluetoothDiscovery:
             include_ble=include_ble,
         )
         if include_classic and include_ble:
-            resolved_targets = self._transport_targets_from_scan(devices)
-            needs_retry = any(
-                item.transport_target.classic_endpoint is not None
-                and item.transport_target.ble_endpoint is None
-                for item in resolved_targets
-            )
-            if needs_retry:
+            if self._policy.should_retry_ble_scan(self._endpoints_from_scan(devices)):
                 ble_devices, _failures = await SppBackend.scan_with_failures(
                     timeout=timeout,
                     include_classic=False,
@@ -78,13 +74,7 @@ class BluetoothDiscovery:
             include_ble=include_ble,
         )
         if include_classic and include_ble:
-            resolved_targets = self._transport_targets_from_scan(devices)
-            needs_retry = any(
-                item.transport_target.classic_endpoint is not None
-                and item.transport_target.ble_endpoint is None
-                for item in resolved_targets
-            )
-            if needs_retry:
+            if self._policy.should_retry_ble_scan(self._endpoints_from_scan(devices)):
                 ble_devices, _failures = SppBackend.scan_with_failures_blocking(
                     timeout=timeout,
                     include_classic=False,
@@ -144,14 +134,14 @@ class BluetoothDiscovery:
 
     def devices_from_scan(self, devices: Iterable[DeviceInfo]) -> List[PrinterDevice]:
         """Resolve raw scan endpoints into logical printer devices."""
-        return self._resolver.devices_from_endpoints(self._endpoints_from_scan(devices))
+        return self._policy.devices_from_endpoints(self._endpoints_from_scan(devices))
 
     def _transport_targets_from_scan(
         self,
         devices: Iterable[DeviceInfo],
     ) -> List[ResolvedBluetoothTarget]:
         """Resolve raw scan endpoints into logical Bluetooth transport targets."""
-        return self._resolver.transport_targets_from_endpoints(self._endpoints_from_scan(devices))
+        return self._policy.transport_targets_from_endpoints(self._endpoints_from_scan(devices))
 
     async def resolve_device(
         self,
