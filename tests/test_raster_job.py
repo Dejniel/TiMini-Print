@@ -1,0 +1,80 @@
+from __future__ import annotations
+
+import subprocess
+import sys
+import unittest
+from unittest.mock import patch
+
+from timiniprint.devices import PrinterCatalog
+from timiniprint.printing.raster_job import build_raster_job
+from timiniprint.printing.runtime.base import PreparedRuntimeContext
+from timiniprint.printing.settings import PrintSettings
+from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
+
+
+class RasterJobTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.device = PrinterCatalog.load().device_from_profile("d1")
+        self.raster = RasterSet.from_single(
+            RasterBuffer(
+                pixels=[0] * 8,
+                width=8,
+                pixel_format=PixelFormat.BW1,
+            )
+        )
+
+    def test_build_raster_job_uses_print_settings_defaults(self) -> None:
+        with patch(
+            "timiniprint.protocol.job._build_job_model_from_raster_set",
+            return_value=(b"A", ()),
+        ) as build_job_mock:
+            job = build_raster_job(self.device, self.raster, is_text=True)
+
+        self.assertEqual(job.payload, b"A")
+        self.assertEqual(build_job_mock.call_args.kwargs["feed_padding"], 12)
+        self.assertEqual(build_job_mock.call_args.kwargs["blackening"], 3)
+        self.assertTrue(build_job_mock.call_args.kwargs["is_text"])
+
+    def test_build_raster_job_accepts_settings_and_runtime_context(self) -> None:
+        controller = object()
+        context = PreparedRuntimeContext(runtime_controller=controller)
+        settings = PrintSettings(feed_padding=7, blackening=5)
+
+        with patch(
+            "timiniprint.protocol.job._build_job_model_from_raster_set",
+            return_value=(b"B", ()),
+        ) as build_job_mock:
+            job = build_raster_job(
+                self.device,
+                self.raster,
+                is_text=False,
+                settings=settings,
+                runtime_context=context,
+            )
+
+        self.assertIs(job.runtime_controller, controller)
+        self.assertEqual(build_job_mock.call_args.kwargs["feed_padding"], 7)
+        self.assertEqual(build_job_mock.call_args.kwargs["blackening"], 5)
+        self.assertFalse(build_job_mock.call_args.kwargs["is_text"])
+
+    def test_raster_job_import_does_not_load_rendering_layer(self) -> None:
+        script = """
+import sys
+import timiniprint.printing.raster_job
+loaded = sorted(
+    name for name in sys.modules
+    if name == "PIL" or name.startswith("PIL.") or name.startswith("timiniprint.rendering")
+)
+if loaded:
+    raise SystemExit("\\n".join(loaded))
+"""
+        subprocess.run(
+            [sys.executable, "-c", script],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

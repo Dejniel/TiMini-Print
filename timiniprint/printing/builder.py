@@ -5,7 +5,6 @@ from typing import Optional, TYPE_CHECKING
 
 from .. import reporting
 from ..printing.runtime.base import PreparedRuntimeContext
-from ..printing.runtime.factory import runtime_controller_for_device
 from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
@@ -13,6 +12,7 @@ from ..rendering.converters import Page, PageLoader
 from ..rendering.renderer import apply_page_transforms, image_to_raster_set
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
+from .raster_job import build_raster_page_job, combine_raster_page_jobs
 from .settings import PrintSettings
 
 if TYPE_CHECKING:
@@ -59,8 +59,7 @@ class PrintJobBuilder:
         )
         required_formats = pipeline.formats[:1]
         gamma_handle, gamma_value = self._resolve_gray_preprocessing()
-        payload_parts: list[bytes] = []
-        steps = []
+        page_jobs: list[ProtocolJob] = []
         page_count = len(pages)
         for page_index, page in enumerate(pages, start=1):
             is_text = self._select_text_mode(page)
@@ -89,29 +88,20 @@ class PrintJobBuilder:
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
             )
-            page_job = self.protocol.build_job(
+            page_job = build_raster_page_job(
+                self.device,
                 raster_set,
                 is_text=is_text,
-                blackening=self.settings.blackening,
-                feed_padding=self.settings.feed_padding,
-                paper_mode=self.settings.paper_mode,
-                lsb_first=self._lsb_first(),
-                image_encoding_override=self.settings.image_encoding_override,
-                pixel_format_override=self.settings.pixel_format_override,
+                settings=self.settings,
+                runtime_context=self.runtime_context,
                 page_index=page_index,
                 page_count=page_count,
-                runtime_capabilities=self.runtime_context.capabilities,
-                runtime_controller=self.runtime_context.runtime_controller,
             )
-            payload_parts.append(page_job.payload)
-            steps.extend(page_job.steps)
-        job = ProtocolJob(
-            runtime_controller=(
-                self.runtime_context.runtime_controller
-                or runtime_controller_for_device(self.device)
-            ),
-            payload_segments=tuple(payload_parts),
-            steps=tuple(steps),
+            page_jobs.append(page_job)
+        job = combine_raster_page_jobs(
+            self.device,
+            page_jobs,
+            runtime_context=self.runtime_context,
         )
         report_protocol_job_build(
             self._reporter,
@@ -137,9 +127,6 @@ class PrintJobBuilder:
 
     def _use_dither(self, page: Page) -> bool:
         return self.settings.dither and page.dither
-
-    def _lsb_first(self) -> bool | None:
-        return self.settings.lsb_first
 
     def _select_text_mode(self, page: Page) -> bool:
         if self.settings.text_mode is not None:
