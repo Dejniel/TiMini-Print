@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Sequence
+from typing import List, Optional, Protocol, Sequence
 
 from PIL import Image
 
@@ -9,75 +9,55 @@ from .base import Page, RasterConverter
 DEFAULT_RENDER_DPI = 200
 
 
-class PdfConverter(RasterConverter):
-    def __init__(
-        self,
-        page_selection: Optional[str] = None,
-        page_gap_px: int = 0,
-        trim_side_margins: bool = True,
-        trim_top_bottom_margins: bool = True,
-        render_dpi: int = DEFAULT_RENDER_DPI,
-    ) -> None:
-        super().__init__(
-            trim_side_margins=trim_side_margins,
-            trim_top_bottom_margins=trim_top_bottom_margins,
-        )
-        self._page_selection = page_selection
-        self._page_gap_px = max(0, int(page_gap_px or 0))
-        self._render_dpi = render_dpi
+class PdfDocument(Protocol):
+    @property
+    def page_count(self) -> int: ...
 
-    def load(self, path: str, width: int) -> List[Page]:
-        pages = self._load_pdf_pages(path)
-        out: List[Page] = []
-        last_index = len(pages) - 1
-        for idx, page in enumerate(pages):
-            img = self._normalize_image(page)
-            img = self._maybe_trim_margins(img)
-            img = self._resize_to_width(img, width)
-            if self._page_gap_px > 0 and idx < last_index:
-                img = self._append_page_gap(img, self._page_gap_px)
-            out.append(Page(img, dither=True, is_text=False))
-        return out
+    def render_page(self, index: int, scale: float) -> Image.Image: ...
 
-    def _load_pdf_pages(self, path: str) -> List[Image.Image]:
+    def close(self) -> None: ...
+
+
+class PdfRenderer(Protocol):
+    def open(self, path: str) -> PdfDocument: ...
+
+
+class Pypdfium2PdfRenderer:
+    def open(self, path: str) -> PdfDocument:
         import pypdfium2 as pdfium
 
-        doc = pdfium.PdfDocument(path)
-        pages: List[Image.Image] = []
+        return Pypdfium2PdfDocument(pdfium.PdfDocument(path))
+
+
+class Pypdfium2PdfDocument:
+    def __init__(self, document) -> None:
+        self._document = document
+
+    @property
+    def page_count(self) -> int:
+        return len(self._document)
+
+    def render_page(self, index: int, scale: float) -> Image.Image:
+        page = self._get_page(index)
         try:
-            total_pages = len(doc)
-            if total_pages <= 0:
-                raise RuntimeError("PDF has no pages")
-            page_indexes = self._select_page_indexes(total_pages)
-            scale = self._render_dpi / 72.0
-            for index in page_indexes:
-                page = self._get_pdf_page(doc, index)
-                try:
-                    pages.append(self._render_page_to_pil(page, scale))
-                finally:
-                    self._close_pdf_page(page)
+            return self._render_page_to_pil(page, scale)
         finally:
-            self._close_pdf_document(doc)
-        if not pages:
-            raise RuntimeError("PDF render failed (no pages)")
-        return pages
+            self._close_page(page)
 
-    @staticmethod
-    def _get_pdf_page(doc, index: int):
-        try:
-            return doc[index]
-        except Exception:
-            return doc.get_page(index)
-
-    @staticmethod
-    def _close_pdf_page(page) -> None:
-        close = getattr(page, "close", None)
+    def close(self) -> None:
+        close = getattr(self._document, "close", None)
         if callable(close):
             close()
 
+    def _get_page(self, index: int):
+        try:
+            return self._document[index]
+        except Exception:
+            return self._document.get_page(index)
+
     @staticmethod
-    def _close_pdf_document(doc) -> None:
-        close = getattr(doc, "close", None)
+    def _close_page(page) -> None:
+        close = getattr(page, "close", None)
         if callable(close):
             close()
 
@@ -95,7 +75,57 @@ class PdfConverter(RasterConverter):
         to_pil = getattr(bitmap, "to_pil", None)
         if callable(to_pil):
             return to_pil()
-        raise RuntimeError("pypdfium2 render did not return a PIL image")
+        raise RuntimeError("PDF render did not return a PIL image")
+
+
+class PdfConverter(RasterConverter):
+    def __init__(
+        self,
+        page_selection: Optional[str] = None,
+        page_gap_px: int = 0,
+        trim_side_margins: bool = True,
+        trim_top_bottom_margins: bool = True,
+        render_dpi: int = DEFAULT_RENDER_DPI,
+        pdf_renderer: PdfRenderer | None = None,
+    ) -> None:
+        super().__init__(
+            trim_side_margins=trim_side_margins,
+            trim_top_bottom_margins=trim_top_bottom_margins,
+        )
+        self._page_selection = page_selection
+        self._page_gap_px = max(0, int(page_gap_px or 0))
+        self._render_dpi = render_dpi
+        self._pdf_renderer = pdf_renderer or Pypdfium2PdfRenderer()
+
+    def load(self, path: str, width: int) -> List[Page]:
+        pages = self._load_pdf_pages(path)
+        out: List[Page] = []
+        last_index = len(pages) - 1
+        for idx, page in enumerate(pages):
+            img = self._normalize_image(page)
+            img = self._maybe_trim_margins(img)
+            img = self._resize_to_width(img, width)
+            if self._page_gap_px > 0 and idx < last_index:
+                img = self._append_page_gap(img, self._page_gap_px)
+            out.append(Page(img, dither=True, is_text=False))
+        return out
+
+    def _load_pdf_pages(self, path: str) -> List[Image.Image]:
+        doc = self._pdf_renderer.open(path)
+        pages: List[Image.Image] = []
+        try:
+            total_pages = doc.page_count
+            if total_pages <= 0:
+                raise RuntimeError("PDF has no pages")
+            page_indexes = self._select_page_indexes(total_pages)
+            scale = self._render_dpi / 72.0
+            for index in page_indexes:
+                pages.append(doc.render_page(index, scale))
+        finally:
+            doc.close()
+        if not pages:
+            raise RuntimeError("PDF render failed (no pages)")
+        return pages
 
     def _select_page_indexes(self, total_pages: int) -> Sequence[int]:
         selection = (self._page_selection or "").strip()

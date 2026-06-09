@@ -8,7 +8,7 @@ from ..printing.runtime.base import PreparedRuntimeContext
 from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
-from ..rendering.converters import Page, PageLoader
+from ..rendering.converters import Page, PageLoader, PdfRenderer
 from ..rendering.renderer import apply_page_transforms, image_to_raster_set
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
@@ -27,6 +27,7 @@ class PrintJobBuilder:
         device: PrinterDevice,
         settings: Optional[PrintSettings] = None,
         page_loader: Optional[PageLoader] = None,
+        pdf_renderer: PdfRenderer | None = None,
         runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
         reporter: reporting.Reporter | None = None,
     ) -> None:
@@ -43,6 +44,7 @@ class PrintJobBuilder:
             trim_top_bottom_margins=self.settings.trim_top_bottom_margins,
             pdf_pages=self.settings.pdf_pages,
             pdf_page_gap_px=pdf_page_gap_px,
+            pdf_renderer=pdf_renderer,
         )
         self.protocol = PrinterProtocol(device)
 

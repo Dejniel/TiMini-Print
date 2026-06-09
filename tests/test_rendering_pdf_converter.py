@@ -37,6 +37,32 @@ class _FakePdfDocument:
         self.closed = True
 
 
+class _CustomPdfDocument:
+    page_count = 3
+
+    def __init__(self) -> None:
+        self.rendered: list[tuple[int, float]] = []
+        self.closed = False
+
+    def render_page(self, index: int, scale: float):
+        self.rendered.append((index, scale))
+        return Image.new("L", (10, 10), 180)
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _CustomPdfRenderer:
+    def __init__(self) -> None:
+        self.documents: list[_CustomPdfDocument] = []
+
+    def open(self, path: str):
+        self.path = path
+        document = _CustomPdfDocument()
+        self.documents.append(document)
+        return document
+
+
 class RenderingPdfConverterTests(unittest.TestCase):
     def test_select_page_indexes_valid_and_invalid(self) -> None:
         c = PdfConverter(page_selection="1,3-4")
@@ -63,6 +89,17 @@ class RenderingPdfConverterTests(unittest.TestCase):
         self.assertEqual(len(pages), 1)
         self.assertEqual(pages[0].image.width, 8)
         self.assertFalse(pages[0].is_text)
+
+    def test_load_pdf_pages_accepts_custom_renderer(self) -> None:
+        renderer = _CustomPdfRenderer()
+        c = PdfConverter(page_selection="2-3", pdf_renderer=renderer)
+        pages = c.load("mobile.pdf", width=8)
+
+        self.assertEqual(renderer.path, "mobile.pdf")
+        self.assertEqual(len(pages), 2)
+        self.assertEqual([page.image.width for page in pages], [8, 8])
+        self.assertEqual(renderer.documents[0].rendered, [(1, 200 / 72.0), (2, 200 / 72.0)])
+        self.assertTrue(renderer.documents[0].closed)
 
     def test_load_pdf_pages_raises_when_no_pages(self) -> None:
         fake = types.ModuleType("pypdfium2")

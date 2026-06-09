@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Set
 
 from .base import Page, PageConverter
 from .image import ImageConverter
-from .pdf import PdfConverter
+from .pdf import PdfConverter, PdfRenderer
 from .text import TextConverter
 
 SUPPORTED_EXTENSIONS: Set[str] = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pdf", ".txt"}
@@ -22,6 +22,7 @@ class PageLoader:
         trim_top_bottom_margins: bool = True,
         pdf_pages: Optional[str] = None,
         pdf_page_gap_px: int = 0,
+        pdf_renderer: PdfRenderer | None = None,
     ) -> None:
         if converters is None:
             converters = {}
@@ -36,6 +37,7 @@ class PageLoader:
                 page_gap_px=pdf_page_gap_px,
                 trim_side_margins=trim_side_margins,
                 trim_top_bottom_margins=trim_top_bottom_margins,
+                pdf_renderer=pdf_renderer,
             )
             converters[".txt"] = TextConverter(
                 font_path=text_font,
@@ -60,4 +62,4 @@ def load_pages(path: str, width: int) -> List[Page]:
     return PageLoader().load(path, width)
 
 
-__all__ = ["Page", "PageLoader", "SUPPORTED_EXTENSIONS", "load_pages"]
+__all__ = ["Page", "PageLoader", "PdfRenderer", "SUPPORTED_EXTENSIONS", "load_pages"]
