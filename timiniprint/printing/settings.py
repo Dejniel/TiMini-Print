@@ -1,19 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Optional
 
 from ..protocol import ImageEncoding, PaperMode
-from ..raster import PixelFormat
-
-
-class DitherMode(str, Enum):
-    NONE = "none"
-    FLOYD_STEINBERG = "floyd_steinberg"
-    BAYER_4 = "bayer_4"
-    BAYER_8 = "bayer_8"
-    ATKINSON = "atkinson"
+from ..raster import DitherMode, PixelFormat
 
 
 DEFAULT_BLACKENING = 3

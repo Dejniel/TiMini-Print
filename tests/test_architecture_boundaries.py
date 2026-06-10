@@ -80,6 +80,16 @@ class ArchitectureBoundaryTests(unittest.TestCase):
             ["timiniprint.protocol"],
         )
 
+    def test_rendering_does_not_import_printing_or_transport_layers(self) -> None:
+        self._assert_no_forbidden_imports(
+            PACKAGE_ROOT / "rendering",
+            [
+                "timiniprint.printing",
+                "timiniprint.transport",
+                "timiniprint.app",
+            ],
+        )
+
     def test_protocol_stays_independent_from_higher_layers(self) -> None:
         self._assert_no_forbidden_imports(
             PACKAGE_ROOT / "protocol",

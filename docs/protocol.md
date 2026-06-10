@@ -77,6 +77,7 @@ This is the best first contact with the API.
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.builder import PrintJobBuilder
 from timiniprint.printing.runtime.prepare import prepare_connection_runtime
+from timiniprint.printing.send import send_prepared_job
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 
@@ -101,7 +102,7 @@ try:
         ),
         runtime_context=runtime_context,
     ).build_from_file("example.png")
-    await connection.send(job)
+    await send_prepared_job(device, connection, job)
 finally:
     await connection.disconnect()
 ```
@@ -111,6 +112,7 @@ What this does:
 - `PrintJobBuilder` turns the file into a `ProtocolJob`
 - `prepare_connection_runtime` and `PrintJobBuilder` attach runtime controller state when the selected family needs it
 - `BleakBluetoothConnector` uses `device.transport_target` and `device.profile.stream`
+- `send_prepared_job` executes named protocol steps when needed and waits for runtime completion
 - the caller does not manually pass `chunk_size`, `delay_ms`, or `runtime_controller`
 
 Use this path when:
@@ -152,6 +154,7 @@ Use this when Bluetooth discovery is not involved and you already know what prin
 from timiniprint.devices import PrinterCatalog, SerialTarget
 from timiniprint.printing.builder import PrintJobBuilder
 from timiniprint.printing.runtime.prepare import prepare_connection_runtime
+from timiniprint.printing.send import send_prepared_job
 from timiniprint.transport.serial import SerialConnector
 
 catalog = PrinterCatalog.load()
@@ -166,7 +169,7 @@ connection = await SerialConnector().connect(device)
 try:
     runtime_context = await prepare_connection_runtime(device, connection)
     job = PrintJobBuilder(device, runtime_context=runtime_context).build_from_file("example.pdf")
-    await connection.send(job)
+    await send_prepared_job(device, connection, job)
 finally:
     await connection.disconnect()
 ```
@@ -200,6 +203,7 @@ A minimal sketch looks like this:
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.builder import PrintJobBuilder
 from timiniprint.printing.runtime.prepare import prepare_connection_runtime
+from timiniprint.printing.send import send_prepared_job
 
 
 class MyConnection:
@@ -256,7 +260,7 @@ connection = await MyConnector().connect(device)
 try:
     runtime_context = await prepare_connection_runtime(device, connection)
     job = PrintJobBuilder(device, runtime_context=runtime_context).build_from_file("example.png")
-    await connection.send(job)
+    await send_prepared_job(device, connection, job)
 finally:
     await connection.disconnect()
 ```

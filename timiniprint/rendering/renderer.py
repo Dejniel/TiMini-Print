@@ -9,8 +9,7 @@ from PIL import ImageOps
 from PIL import ImageStat
 
 from .converters.base import Page
-from .dither import Ditherer
-from ..printing.settings import DitherMode
+from .dither import Ditherer, DitherMode
 from ..raster import PixelFormat, RasterBuffer, RasterSet
 
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..printing.settings import DitherMode
+from ..raster import DitherMode
 
 if TYPE_CHECKING:
     from PIL import Image

@@ -11,6 +11,14 @@ class PixelFormat(str, Enum):
     GRAY8 = "gray8"
 
 
+class DitherMode(str, Enum):
+    NONE = "none"
+    FLOYD_STEINBERG = "floyd_steinberg"
+    BAYER_4 = "bayer_4"
+    BAYER_8 = "bayer_8"
+    ATKINSON = "atkinson"
+
+
 @dataclass(frozen=True)
 class RasterBuffer:
     pixels: Sequence[int]

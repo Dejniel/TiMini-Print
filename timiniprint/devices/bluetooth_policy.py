@@ -46,6 +46,7 @@ class BluetoothConnectionPlan:
             for attempt in self.attempts
         )
 
+    # TODO: Unused outside tests/mobile experiments; wire into callers or remove before upstreaming.
     def failure_message(
         self,
         failures: Iterable[tuple[BluetoothConnectionAttempt, Exception]],
@@ -94,6 +95,7 @@ class BluetoothTransportPolicy:
 
     @staticmethod
     def ordered_connection_endpoints(device: PrinterDevice) -> list[BluetoothEndpoint]:
+        # TODO: Unused convenience helper; prefer bluetooth_connection_plan unless mobile code needs this shape.
         return ordered_connection_endpoints(device)
 
     @staticmethod
@@ -101,6 +103,7 @@ class BluetoothTransportPolicy:
         return bluetooth_connection_plan(device)
 
 
+# TODO: Unused convenience helper; prefer BluetoothTransportPolicy unless mobile code needs this shape.
 def should_retry_ble_scan(
     catalog: PrinterCatalog,
     endpoints: Iterable[BluetoothEndpoint],
@@ -108,6 +111,7 @@ def should_retry_ble_scan(
     return BluetoothTransportPolicy(catalog).should_retry_ble_scan(endpoints)
 
 
+# TODO: Unused convenience helper; prefer bluetooth_connection_plan unless mobile code needs this shape.
 def ordered_connection_endpoints(device: PrinterDevice) -> list[BluetoothEndpoint]:
     target = device.transport_target
     if not isinstance(target, BluetoothTarget):

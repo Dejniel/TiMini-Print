@@ -5,7 +5,7 @@ import unittest
 from PIL import Image
 
 from timiniprint.rendering.dither import Ditherer
-from timiniprint.printing.settings import DitherMode
+from timiniprint.rendering.dither import DitherMode
 
 
 class RenderingDitherTests(unittest.TestCase):

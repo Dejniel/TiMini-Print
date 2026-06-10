@@ -5,7 +5,7 @@ import unittest
 
 from PIL import Image
 
-from timiniprint.printing.settings import DitherMode
+from timiniprint.rendering.dither import DitherMode
 from timiniprint.raster import PixelFormat
 from timiniprint.rendering.renderer import PrintImageRenderer
 
