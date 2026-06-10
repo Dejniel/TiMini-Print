@@ -48,6 +48,10 @@ It handles:
 - rasterization
 - protocol job building
 
+Use `build_from_file(...)` when you want one combined `ProtocolJob`.
+Use `iter_page_jobs(...)` when memory matters and you want to render and build one page at a time.
+The streaming path yields page metadata with each job: `page_index`, `page_count`, and `job`.
+
 ### `PrinterProtocol`
 `PrinterProtocol(device)` is the lower-level protocol entry point.
 Use it only when you already have raster data and want to build a printable job directly.

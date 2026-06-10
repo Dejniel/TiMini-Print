@@ -139,6 +139,7 @@ Owns file and page processing.
 
 It contains:
 - file loading
+- page sources for one-page-at-a-time rendering
 - page transforms
 - rasterization
 
@@ -159,6 +160,7 @@ Owns the higher-level file pipeline and stateful runtime logic.
 It contains:
 - `PrintJobBuilder`
 - `PrintSettings`
+- streaming page-job assembly for memory-sensitive callers
 - runtime controllers in `printing.runtime`
 
 ### `timiniprint.transport`

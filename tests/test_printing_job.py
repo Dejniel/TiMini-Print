@@ -120,29 +120,6 @@ class PrintingJobTests(unittest.TestCase):
         self.assertEqual([page.page_count for page in pages], [2, 2])
         combine_mock.assert_not_called()
 
-    def test_iter_from_file_yields_page_jobs_without_metadata(self) -> None:
-        img = Image.new("1", (8, 1), 1)
-        builder = self.job_mod.PrintJobBuilder(
-            self.device,
-            page_loader=_FakeLoader([Page(img, dither=False, is_text=False), Page(img, dither=True, is_text=True)]),
-        )
-        raster_set = RasterSet(
-            rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 8, width=8, pixel_format=PixelFormat.BW1)}
-        )
-        with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / "a.txt"
-            path.write_text("x", encoding="utf-8")
-            with patch(
-                "timiniprint.printing.builder.PrintImageRenderer.raster_set",
-                return_value=raster_set,
-            ), patch(
-                "timiniprint.protocol.job._build_job_model_from_raster_set",
-                side_effect=[(b"A", ()), (b"B", ())],
-            ):
-                jobs = list(builder.iter_from_file(str(path)))
-
-        self.assertEqual([job.payload for job in jobs], [b"A", b"B"])
-
     def test_build_from_file_applies_debug_row_markers_before_protocol_build(self) -> None:
         img = Image.new("1", (16, 12), 1)
         loader = _FakeLoader([Page(img, dither=False, is_text=False)])

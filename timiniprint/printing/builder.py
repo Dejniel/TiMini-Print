@@ -85,11 +85,6 @@ class PrintJobBuilder:
         """Load, rasterize, and yield printable protocol jobs one page at a time."""
         yield from self._iter_page_jobs(path, self._resolve_image_pipeline())
 
-    def iter_from_file(self, path: str) -> Iterator[ProtocolJob]:
-        """Load, rasterize, and yield page jobs without pagination metadata."""
-        for prepared in self.iter_page_jobs(path):
-            yield prepared.job
-
     def _iter_page_jobs(self, path: str, pipeline: ImagePipelineConfig) -> Iterator[PreparedPageJob]:
         self._validate_input_path(path)
         width = self._normalized_width(self.device.profile.width)
