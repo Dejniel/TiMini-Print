@@ -42,7 +42,7 @@ class RenderingTextConverterTests(unittest.TestCase):
         self.assertGreaterEqual(cut, 0)
 
     def test_load_returns_single_text_page(self) -> None:
-        conv = TextConverter(font_path=None)
+        conv = TextConverter(font_path=None, page_height_to_width=3)
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.txt"
             path.write_text("hello\tworld", encoding="utf-8")
@@ -51,6 +51,22 @@ class RenderingTextConverterTests(unittest.TestCase):
         self.assertEqual(len(pages), 1)
         self.assertTrue(pages[0].is_text)
         self.assertFalse(pages[0].dither)
+
+    def test_load_splits_long_text_into_line_pages(self) -> None:
+        conv = TextConverter(font_path=None)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "long.txt"
+            path.write_text("\n".join(str(index) for index in range(13)), encoding="utf-8")
+            with patch.object(TextConverter, "_fit_truetype_font", return_value=ImageFont.load_default()), patch.object(
+                TextConverter,
+                "_font_line_height",
+                return_value=10,
+            ):
+                pages = conv.load(str(path), 20)
+
+        self.assertEqual(len(pages), 3)
+        self.assertEqual([page.image.height for page in pages], [60, 60, 10])
+        self.assertTrue(all(page.is_text and not page.dither for page in pages))
 
 
 if __name__ == "__main__":

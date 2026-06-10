@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Iterator, List, Optional, Sequence
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .base import ListPageSource, Page, PageConverter, PageSource
+from .base import Page, PageConverter, PageSource
 from ..fonts import find_monospace_bold_font, load_font
 
 COLUMNS_PER_WIDTH = 35 / 384
 REFERENCE_PATTERN = "M.I"
+DEFAULT_TEXT_PAGE_HEIGHT_TO_WIDTH = 3
 
 
 class TextConverter(PageConverter):
@@ -17,25 +18,41 @@ class TextConverter(PageConverter):
         font_path: Optional[str] = None,
         columns: Optional[int] = None,
         wrap_lines: bool = True,
+        page_height_to_width: int = DEFAULT_TEXT_PAGE_HEIGHT_TO_WIDTH,
     ) -> None:
         self._font_path = font_path
         self._columns_override = columns
         self._word_wrap = wrap_lines
+        self._page_height_to_width = max(1, int(page_height_to_width))
 
     def open(self, path: str, width: int) -> PageSource:
         with open(path, "r", encoding="utf-8", errors="replace") as handle:
             text = handle.read()
         text = text.replace("\t", "    ")
-        img = self._render_text_image(text, width)
-        return ListPageSource([Page(img, dither=False, is_text=True)])
+        return self._render_text_pages(text, width)
 
-    def _render_text_image(self, text: str, width: int) -> Image.Image:
-        font_path = self._font_path or find_monospace_bold_font()
-        columns = self._columns_for_width(width)
-        reference_text = self._reference_text(columns)
-        font = self._fit_truetype_font(font_path, width, reference_text)
-        lines = self._wrap_text_lines(text, width, font)
+    def _render_text_pages(self, text: str, width: int) -> PageSource:
+        font = self._fit_truetype_font(
+            self._font_path or find_monospace_bold_font(),
+            width,
+            self._reference_text(self._columns_for_width(width)),
+        )
         line_height = self._font_line_height(font)
+        return _TextPageSource(
+            lines=self._wrap_text_lines(text, width, font),
+            width=width,
+            font=font,
+            line_height=line_height,
+            lines_per_page=self._lines_per_page(width, line_height),
+        )
+
+    @staticmethod
+    def _render_text_page(
+        width: int,
+        lines: Sequence[str],
+        font: ImageFont.FreeTypeFont,
+        line_height: int,
+    ) -> Image.Image:
         height = max(1, line_height * len(lines))
         img = Image.new("1", (width, height), 1)
         draw = ImageDraw.Draw(img)
@@ -44,6 +61,9 @@ class TextConverter(PageConverter):
             draw.text((0, y), line, font=font, fill=0)
             y += line_height
         return img
+
+    def _lines_per_page(self, width: int, line_height: int) -> int:
+        return max(1, int((width * self._page_height_to_width) // max(1, line_height)))
 
     @staticmethod
     def default_columns_for_width(width: int) -> int:
@@ -164,3 +184,49 @@ class TextConverter(PageConverter):
             bbox = font.getbbox("Ag")
             return bbox[3] - bbox[1]
         return font.getsize("Ag")[1]
+
+
+class _TextPageSource(PageSource):
+    def __init__(
+        self,
+        lines: Sequence[str],
+        width: int,
+        font: ImageFont.FreeTypeFont,
+        line_height: int,
+        lines_per_page: int,
+    ) -> None:
+        self._lines = list(lines)
+        self._width = width
+        self._font = font
+        self._line_height = max(1, line_height)
+        self._lines_per_page = max(1, lines_per_page)
+
+    @property
+    def page_count(self) -> int:
+        return max(1, (len(self._lines) + self._lines_per_page - 1) // self._lines_per_page)
+
+    def __iter__(self) -> Iterator[Page]:
+        if not self._lines:
+            yield Page(
+                TextConverter._render_text_page(
+                    self._width,
+                    [],
+                    self._font,
+                    self._line_height,
+                ),
+                dither=False,
+                is_text=True,
+            )
+            return
+        for start in range(0, len(self._lines), self._lines_per_page):
+            lines = self._lines[start : start + self._lines_per_page]
+            yield Page(
+                TextConverter._render_text_page(
+                    self._width,
+                    lines,
+                    self._font,
+                    self._line_height,
+                ),
+                dither=False,
+                is_text=True,
+            )
