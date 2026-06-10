@@ -77,12 +77,14 @@ class DocumentRenderer:
         image_renderer: PrintImageRenderer | None = None,
         text_font_resolver: TextFontResolver | None = None,
         text_loader: TextLoader | None = None,
+        text_page_height_to_width: float | None = None,
     ) -> None:
         self.image_loader = image_loader
         self.pdf_renderer = pdf_renderer
         self.image_renderer = image_renderer or PrintImageRenderer()
         self.text_font_resolver = text_font_resolver or (lambda key: key)
         self.text_loader = text_loader or _load_text
+        self.text_page_height_to_width = text_page_height_to_width
 
     def plan_text(
         self,
@@ -210,6 +212,7 @@ class DocumentRenderer:
                 font_path=self.text_font_resolver(settings.text_font),
                 columns=settings.text_columns,
                 wrap_lines=settings.text_wrap,
+                page_height_to_width=self.text_page_height_to_width,
             ).open_text(self._text_content(document), width)
         if kind == "image":
             return ImageConverter(

@@ -9,7 +9,7 @@ from ..fonts import find_monospace_bold_font, load_font
 
 COLUMNS_PER_WIDTH = 35 / 384
 REFERENCE_PATTERN = "M.I"
-DEFAULT_TEXT_PAGE_HEIGHT_TO_WIDTH = 3
+DEFAULT_TEXT_PAGE_HEIGHT_TO_WIDTH = 1.5
 
 
 class TextConverter(PageConverter):
@@ -18,12 +18,19 @@ class TextConverter(PageConverter):
         font_path: Optional[str] = None,
         columns: Optional[int] = None,
         wrap_lines: bool = True,
-        page_height_to_width: int = DEFAULT_TEXT_PAGE_HEIGHT_TO_WIDTH,
+        page_height_to_width: float | None = None,
     ) -> None:
         self._font_path = font_path
         self._columns_override = columns
         self._word_wrap = wrap_lines
-        self._page_height_to_width = max(1, int(page_height_to_width))
+        self._page_height_to_width = max(
+            0.1,
+            float(
+                DEFAULT_TEXT_PAGE_HEIGHT_TO_WIDTH
+                if page_height_to_width is None
+                else page_height_to_width
+            ),
+        )
 
     def open(self, path: str, width: int) -> PageSource:
         with open(path, "r", encoding="utf-8", errors="replace") as handle:
