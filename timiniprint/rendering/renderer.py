@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import List, Sequence
+from io import BytesIO
+from typing import Sequence
 
 from PIL import Image
 from PIL import ImageFilter
@@ -11,7 +12,7 @@ from .converters.base import Page
 from ..raster import PixelFormat, RasterBuffer, RasterSet
 
 
-def apply_page_transforms(pages: Sequence[Page], rotate_90_clockwise: bool = False) -> List[Page]:
+def apply_page_transforms(pages: Sequence[Page], rotate_90_clockwise: bool = False) -> list[Page]:
     if not rotate_90_clockwise:
         return list(pages)
     return [
@@ -22,18 +23,6 @@ def apply_page_transforms(pages: Sequence[Page], rotate_90_clockwise: bool = Fal
         )
         for page in pages
     ]
-
-
-def image_to_bw_pixels(img: Image.Image, dither: bool) -> List[int]:
-    if dither:
-        img = img.convert("1")
-        data = list(img.getdata())
-        return [1 if p == 0 else 0 for p in data]
-    img = img.convert("L")
-    data = list(img.getdata())
-    avg = sum(data) / len(data) if data else 0
-    threshold = int(max(0, min(255, avg - 13)))
-    return [1 if p <= threshold else 0 for p in data]
 
 
 def _auto_gray_gamma(gray: Image.Image) -> float:
@@ -80,70 +69,91 @@ def _preprocess_gray_image(img: Image.Image, gamma_value: float | None = None) -
     return equalized.filter(ImageFilter.Kernel((3, 3), [0, -1, 0, -1, 5, -1, 0, -1, 0], scale=1))
 
 
-def _gray_values_to_raster(
-    gray_values: List[int],
-    width: int,
-    pixel_format: PixelFormat,
-) -> RasterBuffer:
-    if pixel_format == PixelFormat.GRAY8:
-        return RasterBuffer(pixels=gray_values, width=width, pixel_format=pixel_format)
-    if pixel_format == PixelFormat.GRAY4:
-        pixels = [15 - min(15, (value + 15) // 16) for value in gray_values]
-        return RasterBuffer(pixels=pixels, width=width, pixel_format=pixel_format)
-    raise ValueError(f"Unsupported grayscale raster format: {pixel_format.value}")
+def _threshold_bw_image(img: Image.Image) -> Image.Image:
+    gray = img.convert("L")
+    data = list(gray.getdata())
+    avg = sum(data) / len(data) if data else 0
+    threshold = int(max(0, min(255, avg - 13)))
+    out = Image.new("1", gray.size)
+    out.putdata([0 if p <= threshold else 255 for p in data])
+    return out
 
 
-def _image_to_gray_values(
-    img: Image.Image,
-    *,
-    gamma_handle: bool = False,
-    gamma_value: float | None = None,
-) -> List[int]:
-    gray_image = _preprocess_gray_image(img, gamma_value) if gamma_handle else img.convert("L")
-    return list(gray_image.getdata())
+def _quantize_gray4_print_image(img: Image.Image) -> Image.Image:
+    gray = img.convert("L")
+    out = Image.new("L", gray.size)
+    out.putdata([min(15, (value + 15) // 16) * 16 for value in gray.getdata()])
+    return out
 
 
-def image_to_gray_raster(
-    img: Image.Image,
-    pixel_format: PixelFormat,
-    *,
-    gamma_handle: bool = False,
-    gamma_value: float | None = None,
-) -> RasterBuffer:
-    return _gray_values_to_raster(
-        _image_to_gray_values(
-            img,
-            gamma_handle=gamma_handle,
-            gamma_value=gamma_value,
-        ),
-        img.width,
-        pixel_format,
-    )
-
-
-def image_to_raster(
+def prepare_print_image(
     img: Image.Image,
     pixel_format: PixelFormat,
     *,
     dither: bool,
     gamma_handle: bool = False,
     gamma_value: float | None = None,
-) -> RasterBuffer:
+) -> Image.Image:
+    """Apply print raster preprocessing, before protocol-specific encoding."""
+    if pixel_format == PixelFormat.BW1:
+        return img.convert("1") if dither else _threshold_bw_image(img)
+
+    gray = _preprocess_gray_image(img, gamma_value) if gamma_handle else img.convert("L")
+    if pixel_format == PixelFormat.GRAY8:
+        return gray
+    if pixel_format == PixelFormat.GRAY4:
+        return _quantize_gray4_print_image(gray)
+    raise ValueError(f"Unsupported raster format: {pixel_format.value}")
+
+
+def encode_print_image(img: Image.Image, pixel_format: PixelFormat) -> RasterBuffer:
     if pixel_format == PixelFormat.BW1:
         return RasterBuffer(
-            pixels=image_to_bw_pixels(img, dither=dither),
+            pixels=[1 if p <= 127 else 0 for p in img.convert("L").getdata()],
             width=img.width,
             pixel_format=PixelFormat.BW1,
         )
-    return image_to_gray_raster(
+    if pixel_format == PixelFormat.GRAY8:
+        return RasterBuffer(
+            pixels=list(img.convert("L").getdata()),
+            width=img.width,
+            pixel_format=pixel_format,
+        )
+    if pixel_format == PixelFormat.GRAY4:
+        return RasterBuffer(
+            pixels=[
+                15 - min(15, (value + 15) // 16)
+                for value in img.convert("L").getdata()
+            ],
+            width=img.width,
+            pixel_format=pixel_format,
+        )
+    raise ValueError(f"Unsupported raster format: {pixel_format.value}")
+
+
+def render_preview_png(
+    img: Image.Image,
+    pixel_format: PixelFormat,
+    *,
+    dither: bool,
+    gamma_handle: bool = False,
+    gamma_value: float | None = None,
+) -> bytes:
+    preview = prepare_print_image(
         img,
         pixel_format,
+        dither=dither,
         gamma_handle=gamma_handle,
         gamma_value=gamma_value,
     )
+    if pixel_format == PixelFormat.GRAY4:
+        preview = preview.point([min(255, round(value * 17 / 16)) for value in range(256)])
+    out = BytesIO()
+    preview.convert("L").save(out, format="PNG")
+    return out.getvalue()
 
 
-def image_to_raster_set(
+def render_raster_set(
     img: Image.Image,
     pixel_formats: Sequence[PixelFormat],
     *,
@@ -154,28 +164,20 @@ def image_to_raster_set(
     if not pixel_formats:
         raise ValueError("At least one raster format must be requested")
 
-    unique_formats = []
+    rasters = {}
     seen = set()
     for pixel_format in pixel_formats:
-        if pixel_format not in seen:
-            unique_formats.append(pixel_format)
-            seen.add(pixel_format)
-
-    rasters = {}
-    gray_values: List[int] | None = None
-    for pixel_format in unique_formats:
-        if pixel_format == PixelFormat.BW1:
-            rasters[pixel_format] = image_to_raster(
+        if pixel_format in seen:
+            continue
+        seen.add(pixel_format)
+        rasters[pixel_format] = encode_print_image(
+            prepare_print_image(
                 img,
                 pixel_format,
                 dither=dither,
-            )
-            continue
-        if gray_values is None:
-            gray_values = _image_to_gray_values(
-                img,
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
-            )
-        rasters[pixel_format] = _gray_values_to_raster(gray_values, img.width, pixel_format)
+            ),
+            pixel_format,
+        )
     return RasterSet(rasters=rasters)

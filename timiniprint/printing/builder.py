@@ -9,7 +9,7 @@ from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
 from ..rendering.converters import Page, PageLoader, PdfRenderer
-from ..rendering.renderer import apply_page_transforms, image_to_raster_set
+from ..rendering.renderer import apply_page_transforms, render_raster_set
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
 from .raster_job import build_raster_page_job, combine_raster_page_jobs
@@ -65,7 +65,7 @@ class PrintJobBuilder:
         page_count = len(pages)
         for page_index, page in enumerate(pages, start=1):
             is_text = self._select_text_mode(page)
-            raster_set = image_to_raster_set(
+            raster_set = render_raster_set(
                 page.image,
                 required_formats,
                 dither=self._use_dither(page),
