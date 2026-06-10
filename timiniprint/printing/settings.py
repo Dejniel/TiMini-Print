@@ -5,6 +5,7 @@ from typing import Optional
 
 from ..protocol import ImageEncoding, PaperMode
 from ..raster import PixelFormat
+from ..rendering.dither import DitherMode
 
 DEFAULT_BLACKENING = 3
 DEFAULT_FEED_PADDING = 12
@@ -12,7 +13,7 @@ DEFAULT_FEED_PADDING = 12
 
 @dataclass
 class PrintSettings:
-    dither: bool = True
+    dither_mode: DitherMode = DitherMode.FLOYD_STEINBERG
     lsb_first: Optional[bool] = None
     text_mode: Optional[bool] = None
     rotate_90_clockwise: bool = False

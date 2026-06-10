@@ -9,6 +9,7 @@ from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
 from ..rendering.converters import Page, PageLoader, PdfRenderer
+from ..rendering.dither import DitherMode
 from ..rendering.renderer import apply_page_transforms, render_raster_set
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
@@ -68,7 +69,7 @@ class PrintJobBuilder:
             raster_set = render_raster_set(
                 page.image,
                 required_formats,
-                dither=self._use_dither(page),
+                dither_mode=self._dither_mode(page),
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
             )
@@ -86,7 +87,7 @@ class PrintJobBuilder:
                 page=page,
                 raster_set=raster_set,
                 is_text=is_text,
-                dither=self._use_dither(page),
+                dither_mode=self._dither_mode(page),
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
             )
@@ -127,8 +128,8 @@ class PrintJobBuilder:
             return self.settings.v5x_gamma_handle, self.settings.v5x_gamma_value
         return False, None
 
-    def _use_dither(self, page: Page) -> bool:
-        return self.settings.dither and page.dither
+    def _dither_mode(self, page: Page) -> DitherMode:
+        return self.settings.dither_mode if page.dither else DitherMode.NONE
 
     def _select_text_mode(self, page: Page) -> bool:
         if self.settings.text_mode is not None:

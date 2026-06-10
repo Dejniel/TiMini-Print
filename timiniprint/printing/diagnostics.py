@@ -5,6 +5,7 @@ from ..devices import PrinterDevice
 from ..protocol import ImagePipelineConfig, ProtocolJob
 from ..raster import PixelFormat, RasterBuffer, RasterSet
 from ..rendering.converters import Page
+from ..rendering.dither import DitherMode
 from .debug_dump import build_protocol_packet_summary
 from .settings import PrintSettings
 
@@ -19,7 +20,7 @@ def report_raster_build(
     page: Page,
     raster_set: RasterSet,
     is_text: bool,
-    dither: bool,
+    dither_mode: DitherMode,
     gamma_handle: bool,
     gamma_value: float | None,
 ) -> None:
@@ -41,7 +42,7 @@ def report_raster_build(
             source=f"{page.image.width}x{page.image.height}",
             **_raster_stats(raster),
             is_text=is_text,
-            dither=dither,
+            dither=dither_mode.value,
             gamma_handle=gamma_handle,
             gamma_value="<auto>" if gamma_value is None else gamma_value,
             speed=device.profile.select_speed(is_text=is_text),

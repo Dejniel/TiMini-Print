@@ -9,6 +9,7 @@ from PIL import ImageOps
 from PIL import ImageStat
 
 from .converters.base import Page
+from .dither import DitherMode, render_bw_image
 from ..raster import PixelFormat, RasterBuffer, RasterSet
 
 
@@ -69,16 +70,6 @@ def _preprocess_gray_image(img: Image.Image, gamma_value: float | None = None) -
     return equalized.filter(ImageFilter.Kernel((3, 3), [0, -1, 0, -1, 5, -1, 0, -1, 0], scale=1))
 
 
-def _threshold_bw_image(img: Image.Image) -> Image.Image:
-    gray = img.convert("L")
-    data = list(gray.getdata())
-    avg = sum(data) / len(data) if data else 0
-    threshold = int(max(0, min(255, avg - 13)))
-    out = Image.new("1", gray.size)
-    out.putdata([0 if p <= threshold else 255 for p in data])
-    return out
-
-
 def _quantize_gray4_print_image(img: Image.Image) -> Image.Image:
     gray = img.convert("L")
     out = Image.new("L", gray.size)
@@ -90,13 +81,13 @@ def prepare_print_image(
     img: Image.Image,
     pixel_format: PixelFormat,
     *,
-    dither: bool,
+    dither_mode: DitherMode,
     gamma_handle: bool = False,
     gamma_value: float | None = None,
 ) -> Image.Image:
     """Apply print raster preprocessing, before protocol-specific encoding."""
     if pixel_format == PixelFormat.BW1:
-        return img.convert("1") if dither else _threshold_bw_image(img)
+        return render_bw_image(img, dither_mode)
 
     gray = _preprocess_gray_image(img, gamma_value) if gamma_handle else img.convert("L")
     if pixel_format == PixelFormat.GRAY8:
@@ -135,14 +126,14 @@ def render_preview_png(
     img: Image.Image,
     pixel_format: PixelFormat,
     *,
-    dither: bool,
+    dither_mode: DitherMode,
     gamma_handle: bool = False,
     gamma_value: float | None = None,
 ) -> bytes:
     preview = prepare_print_image(
         img,
         pixel_format,
-        dither=dither,
+        dither_mode=dither_mode,
         gamma_handle=gamma_handle,
         gamma_value=gamma_value,
     )
@@ -157,7 +148,7 @@ def render_raster_set(
     img: Image.Image,
     pixel_formats: Sequence[PixelFormat],
     *,
-    dither: bool,
+    dither_mode: DitherMode,
     gamma_handle: bool = False,
     gamma_value: float | None = None,
 ) -> RasterSet:
@@ -171,12 +162,12 @@ def render_raster_set(
             continue
         seen.add(pixel_format)
         rasters[pixel_format] = encode_print_image(
-            prepare_print_image(
-                img,
-                pixel_format,
-                dither=dither,
-                gamma_handle=gamma_handle,
-                gamma_value=gamma_value,
+                prepare_print_image(
+                    img,
+                    pixel_format,
+                    dither_mode=dither_mode,
+                    gamma_handle=gamma_handle,
+                    gamma_value=gamma_value,
             ),
             pixel_format,
         )

@@ -6,6 +6,7 @@ import unittest
 from PIL import Image
 
 from timiniprint.raster import PixelFormat
+from timiniprint.rendering.dither import DitherMode
 from timiniprint.rendering.renderer import (
     encode_print_image,
     prepare_print_image,
@@ -19,7 +20,7 @@ class RenderingRendererTests(unittest.TestCase):
         img = Image.new("1", (2, 1), 1)
         img.putpixel((0, 0), 0)
         raster = encode_print_image(
-            prepare_print_image(img, PixelFormat.BW1, dither=True),
+            prepare_print_image(img, PixelFormat.BW1, dither_mode=DitherMode.FLOYD_STEINBERG),
             PixelFormat.BW1,
         )
         self.assertEqual(list(raster.pixels), [1, 0])
@@ -28,7 +29,7 @@ class RenderingRendererTests(unittest.TestCase):
         img = Image.new("L", (4, 1))
         img.putdata([0, 100, 220, 255])
         raster = encode_print_image(
-            prepare_print_image(img, PixelFormat.BW1, dither=False),
+            prepare_print_image(img, PixelFormat.BW1, dither_mode=DitherMode.NONE),
             PixelFormat.BW1,
         )
         self.assertEqual(len(raster.pixels), 4)
@@ -41,7 +42,7 @@ class RenderingRendererTests(unittest.TestCase):
         raster_set = render_raster_set(
             img,
             (PixelFormat.GRAY4, PixelFormat.GRAY8, PixelFormat.BW1),
-            dither=False,
+            dither_mode=DitherMode.NONE,
             gamma_handle=False,
         )
 
@@ -57,7 +58,7 @@ class RenderingRendererTests(unittest.TestCase):
         prepared = prepare_print_image(
             img,
             PixelFormat.GRAY4,
-            dither=False,
+            dither_mode=DitherMode.NONE,
             gamma_handle=False,
         )
 
@@ -73,7 +74,7 @@ class RenderingRendererTests(unittest.TestCase):
                 render_preview_png(
                     img,
                     PixelFormat.BW1,
-                    dither=False,
+                    dither_mode=DitherMode.NONE,
                 )
             )
         )
@@ -89,7 +90,7 @@ class RenderingRendererTests(unittest.TestCase):
                 render_preview_png(
                     img,
                     PixelFormat.GRAY4,
-                    dither=False,
+                    dither_mode=DitherMode.NONE,
                     gamma_handle=False,
                 )
             )
