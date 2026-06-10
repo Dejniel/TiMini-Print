@@ -8,7 +8,6 @@ from PIL import ImageFilter
 from PIL import ImageOps
 from PIL import ImageStat
 
-from .converters.base import Page
 from .dither import Ditherer, DitherMode
 from ..raster import PixelFormat, RasterBuffer, RasterSet
 
@@ -16,25 +15,6 @@ from ..raster import PixelFormat, RasterBuffer, RasterSet
 class PrintImageRenderer:
     def __init__(self) -> None:
         self.ditherers = {mode: Ditherer(mode) for mode in DitherMode}
-
-    def apply_page_transforms(
-        self,
-        pages: Sequence[Page],
-        rotate_90_clockwise: bool = False,
-    ) -> list[Page]:
-        return [
-            self.transform_page(page, rotate_90_clockwise=rotate_90_clockwise)
-            for page in pages
-        ]
-
-    def transform_page(self, page: Page, rotate_90_clockwise: bool = False) -> Page:
-        if not rotate_90_clockwise:
-            return page
-        return Page(
-            image=page.image.transpose(Image.Transpose.ROTATE_270),
-            dither=page.dither,
-            is_text=page.is_text,
-        )
 
     def prepare(
         self,

@@ -40,25 +40,27 @@ class _FakePdfDocument:
 class _CustomPdfDocument:
     page_count = 3
 
-    def __init__(self) -> None:
+    def __init__(self, size: tuple[int, int] = (10, 10)) -> None:
         self.rendered: list[tuple[int, float]] = []
         self.closed = False
+        self._size = size
 
     def render_page(self, index: int, scale: float):
         self.rendered.append((index, scale))
-        return Image.new("L", (10, 10), 180)
+        return Image.new("L", self._size, 180)
 
     def close(self) -> None:
         self.closed = True
 
 
 class _CustomPdfRenderer:
-    def __init__(self) -> None:
+    def __init__(self, size: tuple[int, int] = (10, 10)) -> None:
         self.documents: list[_CustomPdfDocument] = []
+        self._size = size
 
     def open(self, path: str):
         self.path = path
-        document = _CustomPdfDocument()
+        document = _CustomPdfDocument(self._size)
         self.documents.append(document)
         return document
 
@@ -116,6 +118,17 @@ class RenderingPdfConverterTests(unittest.TestCase):
         self.assertEqual(renderer.documents[0].rendered, [(0, 200 / 72.0)])
         source.close()
         self.assertTrue(renderer.documents[0].closed)
+
+    def test_rotate_happens_before_resize_to_print_width(self) -> None:
+        c = PdfConverter(
+            page_selection="1",
+            pdf_renderer=_CustomPdfRenderer(size=(800, 200)),
+            rotate_90_clockwise=True,
+        )
+
+        pages = c.load("mobile.pdf", width=384)
+
+        self.assertEqual(pages[0].image.size, (384, 1536))
 
     def test_load_pdf_pages_raises_when_no_pages(self) -> None:
         fake = types.ModuleType("pypdfium2")

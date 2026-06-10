@@ -157,20 +157,21 @@ class PrintingJobTests(unittest.TestCase):
         self.assertGreater(sum(marked.pixels[160:176]), 2)
 
     def test_build_from_file_can_rotate_pages_clockwise_for_any_file_type(self) -> None:
-        img = Image.new("1", (8, 16), 1)
-        loader = _FakeLoader([Page(img, dither=False, is_text=False)])
         builder = self.job_mod.PrintJobBuilder(
             self.device,
-            settings=self.job_mod.PrintSettings(rotate_90_clockwise=True),
-            page_loader=loader,
+            settings=self.job_mod.PrintSettings(
+                rotate_90_clockwise=True,
+                trim_side_margins=False,
+                trim_top_bottom_margins=False,
+            ),
         )
         raster_set = RasterSet(
-            rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 8, width=8, pixel_format=PixelFormat.BW1)}
+            rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 384, width=384, pixel_format=PixelFormat.BW1)}
         )
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
-            path.write_bytes(b"x")
+            Image.new("RGB", (800, 200), "black").save(path)
             with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
@@ -179,7 +180,7 @@ class PrintingJobTests(unittest.TestCase):
 
         self.assertEqual(out.payload, b"A")
         rotated = render_mock.call_args.args[0]
-        self.assertEqual(rotated.size, (16, 8))
+        self.assertEqual(rotated.size, (384, 1536))
 
     def test_mode_energy_speed_selection(self) -> None:
         settings = self.job_mod.PrintSettings(text_mode=None, lsb_first=None)

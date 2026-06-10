@@ -27,6 +27,17 @@ class RenderingImageConverterTests(unittest.TestCase):
         self.assertEqual(normalize_mock.call_count, 1)
         self.assertEqual(trim_mock.call_count, 1)
 
+    def test_rotate_happens_before_resize_to_print_width(self) -> None:
+        source = Image.new("RGB", (800, 200), "black")
+        converter = ImageConverter(
+            image_loader=Mock(return_value=source),
+            rotate_90_clockwise=True,
+        )
+
+        pages = converter.load("landscape.png", 384)
+
+        self.assertEqual(pages[0].image.size, (384, 1536))
+
 
 if __name__ == "__main__":
     unittest.main()

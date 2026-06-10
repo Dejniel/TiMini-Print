@@ -87,10 +87,12 @@ class PdfConverter(RasterConverter):
         trim_top_bottom_margins: bool = True,
         render_dpi: int = DEFAULT_RENDER_DPI,
         pdf_renderer: PdfRenderer | None = None,
+        rotate_90_clockwise: bool = False,
     ) -> None:
         super().__init__(
             trim_side_margins=trim_side_margins,
             trim_top_bottom_margins=trim_top_bottom_margins,
+            rotate_90_clockwise=rotate_90_clockwise,
         )
         self._page_selection = page_selection
         self._page_gap_px = max(0, int(page_gap_px or 0))
@@ -197,6 +199,7 @@ class PdfPageSource(PageSource):
         img = self._document.render_page(self._page_indexes[index], self._render_dpi / 72.0)
         img = self._converter._normalize_image(img)
         img = self._converter._maybe_trim_margins(img)
+        img = self._converter._rotate_image(img)
         img = self._converter._resize_to_width(img, self._width)
         if self._page_gap_px > 0 and index < len(self._page_indexes) - 1:
             img = self._converter._append_page_gap(img, self._page_gap_px)

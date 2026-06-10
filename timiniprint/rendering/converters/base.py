@@ -72,9 +72,11 @@ class RasterConverter(PageConverter):
         self,
         trim_side_margins: bool = True,
         trim_top_bottom_margins: bool = True,
+        rotate_90_clockwise: bool = False,
     ) -> None:
         self._trim_side_margins = trim_side_margins
         self._trim_top_bottom_margins = trim_top_bottom_margins
+        self._rotate_90_clockwise = rotate_90_clockwise
 
     @staticmethod
     def load_image(path: str) -> Image.Image:
@@ -99,6 +101,11 @@ class RasterConverter(PageConverter):
         ratio = width / float(img.width)
         height = max(1, int(img.height * ratio))
         return img.resize((width, height), Image.LANCZOS)
+
+    def _rotate_image(self, img: Image.Image) -> Image.Image:
+        if not self._rotate_90_clockwise:
+            return img
+        return img.transpose(Image.Transpose.ROTATE_270)
 
     def _maybe_trim_margins(self, img: Image.Image) -> Image.Image:
         if not (self._trim_side_margins or self._trim_top_bottom_margins):

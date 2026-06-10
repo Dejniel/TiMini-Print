@@ -65,6 +65,39 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(image_renderer.preview_calls, 1)
         self.assertEqual(image_renderer.raster_calls, 1)
 
+    def test_rotated_image_uses_full_print_width(self) -> None:
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: Image.new("RGB", (800, 200), "black"),
+        )
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            rotate_90_clockwise=True,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), self.device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], self.device, settings)
+        rendered = renderer.print_page(plan, plan.pages[0], self.device, settings)
+
+        self.assertEqual((preview.width, preview.height), (384, 1536))
+        self.assertEqual((rendered.raster_set.width, rendered.raster_set.height), (384, 1536))
+
+    def test_rotated_text_uses_full_print_width(self) -> None:
+        renderer = DocumentRenderer()
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            rotate_90_clockwise=True,
+            text_columns=35,
+        )
+        plan = renderer.plan_text("hello\nworld", self.device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], self.device, settings)
+        rendered = renderer.print_page(plan, plan.pages[0], self.device, settings)
+
+        self.assertEqual(preview.width, 384)
+        self.assertEqual(rendered.raster_set.width, 384)
+
     def test_pdf_plan_keeps_source_page_count_and_selected_pages(self) -> None:
         renderer = DocumentRenderer(pdf_renderer=_FakePdfRenderer(page_count=4))
         settings = PrintSettings(pdf_pages="2-3")
@@ -106,9 +139,6 @@ class _RecordingImageRenderer:
     def __init__(self) -> None:
         self.preview_calls = 0
         self.raster_calls = 0
-
-    def transform_page(self, page, rotate_90_clockwise=False):
-        return page
 
     def preview_image(self, img, pixel_format, *, dither_mode, gamma_handle=False, gamma_value=None):
         self.preview_calls += 1

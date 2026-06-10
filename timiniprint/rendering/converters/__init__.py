@@ -20,6 +20,7 @@ class PageLoader:
         text_columns: Optional[int] = None,
         text_wrap: bool = True,
         text_page_height_to_width: float | None = None,
+        rotate_90_clockwise: bool = False,
         trim_side_margins: bool = True,
         trim_top_bottom_margins: bool = True,
         pdf_pages: Optional[str] = None,
@@ -33,6 +34,7 @@ class PageLoader:
                 image_loader=image_loader,
                 trim_side_margins=trim_side_margins,
                 trim_top_bottom_margins=trim_top_bottom_margins,
+                rotate_90_clockwise=rotate_90_clockwise,
             )
             for ext in IMAGE_EXTENSIONS:
                 converters[ext] = image_converter
@@ -42,12 +44,14 @@ class PageLoader:
                 trim_side_margins=trim_side_margins,
                 trim_top_bottom_margins=trim_top_bottom_margins,
                 pdf_renderer=pdf_renderer,
+                rotate_90_clockwise=rotate_90_clockwise,
             )
             converters[".txt"] = TextConverter(
                 font_path=text_font,
                 columns=text_columns,
                 wrap_lines=text_wrap,
                 page_height_to_width=text_page_height_to_width,
+                rotate_90_clockwise=rotate_90_clockwise,
             )
         self._converters = converters
 

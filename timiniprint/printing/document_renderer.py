@@ -194,10 +194,7 @@ class DocumentRenderer:
         with self._open_source(plan.document, plan.kind, device, settings) as source:
             if page.index < 0 or page.index >= source.page_count:
                 raise IndexError(f"Document page out of range: {page.number}")
-            return self.image_renderer.transform_page(
-                source.page(page.index),
-                rotate_90_clockwise=settings.rotate_90_clockwise,
-            )
+            return source.page(page.index)
 
     def _open_source(
         self,
@@ -213,12 +210,14 @@ class DocumentRenderer:
                 columns=settings.text_columns,
                 wrap_lines=settings.text_wrap,
                 page_height_to_width=self.text_page_height_to_width,
+                rotate_90_clockwise=settings.rotate_90_clockwise,
             ).open_text(self._text_content(document), width)
         if kind == "image":
             return ImageConverter(
                 image_loader=self.image_loader,
                 trim_side_margins=settings.trim_side_margins,
                 trim_top_bottom_margins=settings.trim_top_bottom_margins,
+                rotate_90_clockwise=settings.rotate_90_clockwise,
             ).open(document.source, width)
         if kind == "pdf":
             return PdfConverter(
@@ -227,6 +226,7 @@ class DocumentRenderer:
                 trim_side_margins=settings.trim_side_margins,
                 trim_top_bottom_margins=settings.trim_top_bottom_margins,
                 pdf_renderer=self.pdf_renderer,
+                rotate_90_clockwise=settings.rotate_90_clockwise,
             ).open(document.source, width)
         raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
 

@@ -49,6 +49,7 @@ class PrintJobBuilder:
             text_font=self.settings.text_font,
             text_columns=self.settings.text_columns,
             text_wrap=self.settings.text_wrap,
+            rotate_90_clockwise=self.settings.rotate_90_clockwise,
             trim_side_margins=self.settings.trim_side_margins,
             trim_top_bottom_margins=self.settings.trim_top_bottom_margins,
             pdf_pages=self.settings.pdf_pages,
@@ -96,10 +97,6 @@ class PrintJobBuilder:
         with self.page_loader.open(path, width) as pages:
             page_count = pages.page_count
             for page_index, page in enumerate(pages, start=1):
-                page = self.image_renderer.transform_page(
-                    page,
-                    rotate_90_clockwise=self.settings.rotate_90_clockwise,
-                )
                 is_text = self._select_text_mode(page)
                 raster_set = self.image_renderer.raster_set(
                     page.image,

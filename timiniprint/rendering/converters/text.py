@@ -19,10 +19,12 @@ class TextConverter(PageConverter):
         columns: Optional[int] = None,
         wrap_lines: bool = True,
         page_height_to_width: float | None = None,
+        rotate_90_clockwise: bool = False,
     ) -> None:
         self._font_path = font_path
         self._columns_override = columns
         self._word_wrap = wrap_lines
+        self._rotate_90_clockwise = rotate_90_clockwise
         self._page_height_to_width = max(
             0.1,
             float(
@@ -40,18 +42,21 @@ class TextConverter(PageConverter):
         return self._render_text_pages(text.replace("\t", "    "), width)
 
     def _render_text_pages(self, text: str, width: int) -> PageSource:
+        render_width = self._render_width(width)
         font = self._fit_truetype_font(
             self._font_path or find_monospace_bold_font(),
-            width,
-            self._reference_text(self._columns_for_width(width)),
+            render_width,
+            self._reference_text(self._columns_for_width(render_width)),
         )
         line_height = self._font_line_height(font)
         return _TextPageSource(
-            lines=self._wrap_text_lines(text, width, font),
-            width=width,
+            lines=self._wrap_text_lines(text, render_width, font),
+            width=render_width,
+            output_width=width,
             font=font,
             line_height=line_height,
             lines_per_page=self._lines_per_page(width, line_height),
+            rotate_90_clockwise=self._rotate_90_clockwise,
         )
 
     @staticmethod
@@ -60,8 +65,9 @@ class TextConverter(PageConverter):
         lines: Sequence[str],
         font: ImageFont.FreeTypeFont,
         line_height: int,
+        min_height: int = 1,
     ) -> Image.Image:
-        height = max(1, line_height * len(lines))
+        height = max(1, min_height, line_height * len(lines))
         img = Image.new("1", (width, height), 1)
         draw = ImageDraw.Draw(img)
         y = 0
@@ -71,7 +77,14 @@ class TextConverter(PageConverter):
         return img
 
     def _lines_per_page(self, width: int, line_height: int) -> int:
+        if self._rotate_90_clockwise:
+            return max(1, width // max(1, line_height))
         return max(1, int((width * self._page_height_to_width) // max(1, line_height)))
+
+    def _render_width(self, width: int) -> int:
+        if self._rotate_90_clockwise:
+            return max(1, int(round(width * self._page_height_to_width)))
+        return width
 
     @staticmethod
     def default_columns_for_width(width: int) -> int:
@@ -199,15 +212,19 @@ class _TextPageSource(PageSource):
         self,
         lines: Sequence[str],
         width: int,
+        output_width: int,
         font: ImageFont.FreeTypeFont,
         line_height: int,
         lines_per_page: int,
+        rotate_90_clockwise: bool = False,
     ) -> None:
         self._lines = list(lines)
         self._width = width
+        self._output_width = max(1, output_width)
         self._font = font
         self._line_height = max(1, line_height)
         self._lines_per_page = max(1, lines_per_page)
+        self._rotate_90_clockwise = rotate_90_clockwise
 
     @property
     def page_count(self) -> int:
@@ -217,26 +234,19 @@ class _TextPageSource(PageSource):
         if not self._lines:
             if index != 0:
                 raise IndexError(index)
-            return Page(
-                TextConverter._render_text_page(
-                    self._width,
-                    [],
-                    self._font,
-                    self._line_height,
-                ),
-                dither=False,
-                is_text=True,
-            )
-        if index < 0 or index >= self.page_count:
-            raise IndexError(index)
-        start = index * self._lines_per_page
-        return Page(
-            TextConverter._render_text_page(
-                self._width,
-                self._lines[start : start + self._lines_per_page],
-                self._font,
-                self._line_height,
-            ),
-            dither=False,
-            is_text=True,
+            lines: Sequence[str] = []
+        else:
+            if index < 0 or index >= self.page_count:
+                raise IndexError(index)
+            start = index * self._lines_per_page
+            lines = self._lines[start : start + self._lines_per_page]
+        img = TextConverter._render_text_page(
+            self._width,
+            lines,
+            self._font,
+            self._line_height,
+            min_height=self._output_width if self._rotate_90_clockwise else 1,
         )
+        if self._rotate_90_clockwise:
+            img = img.transpose(Image.Transpose.ROTATE_270)
+        return Page(img, dither=False, is_text=True)

@@ -88,6 +88,26 @@ class RenderingTextConverterTests(unittest.TestCase):
         self.assertEqual(len(pages), 3)
         self.assertEqual([page.image.height for page in pages], [60, 60, 10])
 
+    def test_rotated_text_pages_keep_output_width_and_page_ratio(self) -> None:
+        conv = TextConverter(
+            font_path=None,
+            page_height_to_width=1.5,
+            rotate_90_clockwise=True,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rotated.txt"
+            path.write_text("\n".join(str(index) for index in range(5)), encoding="utf-8")
+            with patch.object(TextConverter, "_fit_truetype_font", return_value=ImageFont.load_default()), patch.object(
+                TextConverter,
+                "_font_line_height",
+                return_value=10,
+            ):
+                pages = conv.load(str(path), 20)
+
+        self.assertEqual(len(pages), 3)
+        self.assertEqual([page.image.size for page in pages], [(20, 30), (20, 30), (20, 30)])
+        self.assertTrue(all(page.is_text and not page.dither for page in pages))
+
 
 if __name__ == "__main__":
     unittest.main()
