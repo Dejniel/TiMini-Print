@@ -5,15 +5,18 @@ import unittest
 from PIL import Image
 
 from timiniprint.rendering.converters.base import Page
-from timiniprint.rendering.renderer import apply_page_transforms
+from timiniprint.rendering.renderer import PrintImageRenderer
 
 
 class RenderingTransformTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.renderer = PrintImageRenderer()
+
     def test_apply_page_transforms_rotates_clockwise(self) -> None:
         image = Image.new("1", (8, 16), 1)
         page = Page(image=image, dither=False, is_text=False)
 
-        transformed = apply_page_transforms(
+        transformed = self.renderer.apply_page_transforms(
             [page],
             rotate_90_clockwise=True,
         )
@@ -27,7 +30,7 @@ class RenderingTransformTests(unittest.TestCase):
         image = Image.new("1", (8, 16), 1)
         page = Page(image=image, dither=True, is_text=True)
 
-        transformed = apply_page_transforms(
+        transformed = self.renderer.apply_page_transforms(
             [page],
         )
 

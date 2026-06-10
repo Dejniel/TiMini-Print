@@ -82,7 +82,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.txt"
             path.write_text("x", encoding="utf-8")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set), patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set), patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set", side_effect=[(b"A", ()), (b"B", ())]
             ) as build_job_mock:
                 out = builder.build_from_file(str(path))
@@ -116,7 +116,7 @@ class PrintingJobTests(unittest.TestCase):
             path = Path(tmp) / "a.txt"
             path.write_text("x", encoding="utf-8")
             with patch(
-                "timiniprint.printing.builder.render_raster_set",
+                "timiniprint.printing.builder.PrintImageRenderer.raster_set",
                 return_value=raster_set,
             ), patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
@@ -145,7 +145,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ):
@@ -181,7 +181,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.txt"
             path.write_text("x", encoding="utf-8")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=RasterSet(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=RasterSet(
                 rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 8, width=8, pixel_format=PixelFormat.BW1)}
             )), patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
@@ -220,7 +220,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.txt"
             path.write_text("x", encoding="utf-8")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=RasterSet(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=RasterSet(
                 rasters={PixelFormat.BW1: RasterBuffer(pixels=[1] * 8, width=8, pixel_format=PixelFormat.BW1)}
             )), patch("timiniprint.protocol.job._build_job_model_from_raster_set", return_value=(b"A", ())):
                 job = builder.build_from_file(str(path))
@@ -250,7 +250,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ) as build_job_mock:
@@ -293,7 +293,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ) as build_job_mock:
@@ -333,7 +333,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ):
@@ -364,7 +364,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ):
@@ -390,7 +390,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ) as build_job_mock:
@@ -416,7 +416,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set), patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set), patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ) as build_job_mock:
@@ -443,7 +443,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ) as build_job_mock:
@@ -478,7 +478,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ):
@@ -512,7 +512,7 @@ class PrintingJobTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.png"
             path.write_bytes(b"x")
-            with patch("timiniprint.printing.builder.render_raster_set", return_value=raster_set) as render_mock, patch(
+            with patch("timiniprint.printing.builder.PrintImageRenderer.raster_set", return_value=raster_set) as render_mock, patch(
                 "timiniprint.protocol.job._build_job_model_from_raster_set",
                 return_value=(b"A", ()),
             ):

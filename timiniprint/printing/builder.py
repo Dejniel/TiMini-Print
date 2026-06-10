@@ -9,12 +9,11 @@ from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImageEncoding
 from ..rendering.converters import Page, PageLoader, PdfRenderer
-from ..rendering.dither import DitherMode
-from ..rendering.renderer import apply_page_transforms, render_raster_set
+from ..rendering.renderer import PrintImageRenderer
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
 from .raster_job import build_raster_page_job, combine_raster_page_jobs
-from .settings import PrintSettings
+from .settings import DitherMode, PrintSettings
 
 if TYPE_CHECKING:
     from ..devices import PrinterDevice
@@ -29,6 +28,7 @@ class PrintJobBuilder:
         settings: Optional[PrintSettings] = None,
         page_loader: Optional[PageLoader] = None,
         pdf_renderer: PdfRenderer | None = None,
+        image_renderer: PrintImageRenderer | None = None,
         runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
         reporter: reporting.Reporter | None = None,
     ) -> None:
@@ -36,6 +36,7 @@ class PrintJobBuilder:
         self.settings = settings or PrintSettings()
         self.runtime_context = runtime_context
         self._reporter = reporter
+        self.image_renderer = image_renderer or PrintImageRenderer()
         pdf_page_gap_px = self._mm_to_px(self.settings.pdf_page_gap_mm, self.device.profile.dev_dpi)
         self.page_loader = page_loader or PageLoader(
             text_font=self.settings.text_font,
@@ -54,7 +55,10 @@ class PrintJobBuilder:
         self._validate_input_path(path)
         width = self._normalized_width(self.device.profile.width)
         pages = self.page_loader.load(path, width)
-        pages = apply_page_transforms(pages, rotate_90_clockwise=self.settings.rotate_90_clockwise)
+        pages = self.image_renderer.apply_page_transforms(
+            pages,
+            rotate_90_clockwise=self.settings.rotate_90_clockwise,
+        )
         pipeline = self.protocol.resolve_image_pipeline(
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
@@ -66,7 +70,7 @@ class PrintJobBuilder:
         page_count = len(pages)
         for page_index, page in enumerate(pages, start=1):
             is_text = self._select_text_mode(page)
-            raster_set = render_raster_set(
+            raster_set = self.image_renderer.raster_set(
                 page.image,
                 required_formats,
                 dither_mode=self._dither_mode(page),

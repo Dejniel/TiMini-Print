@@ -5,7 +5,7 @@ from ..devices import PrinterDevice
 from ..protocol import ImagePipelineConfig, ProtocolJob
 from ..raster import PixelFormat, RasterBuffer, RasterSet
 from ..rendering.converters import Page
-from ..rendering.dither import DitherMode
+from .settings import DitherMode
 from .debug_dump import build_protocol_packet_summary
 from .settings import PrintSettings
 
