@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, List, Optional, Sequence
+from typing import List, Optional, Sequence
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -27,9 +27,10 @@ class TextConverter(PageConverter):
 
     def open(self, path: str, width: int) -> PageSource:
         with open(path, "r", encoding="utf-8", errors="replace") as handle:
-            text = handle.read()
-        text = text.replace("\t", "    ")
-        return self._render_text_pages(text, width)
+            return self.open_text(handle.read(), width)
+
+    def open_text(self, text: str, width: int) -> PageSource:
+        return self._render_text_pages(text.replace("\t", "    "), width)
 
     def _render_text_pages(self, text: str, width: int) -> PageSource:
         font = self._fit_truetype_font(
@@ -205,9 +206,11 @@ class _TextPageSource(PageSource):
     def page_count(self) -> int:
         return max(1, (len(self._lines) + self._lines_per_page - 1) // self._lines_per_page)
 
-    def __iter__(self) -> Iterator[Page]:
+    def page(self, index: int) -> Page:
         if not self._lines:
-            yield Page(
+            if index != 0:
+                raise IndexError(index)
+            return Page(
                 TextConverter._render_text_page(
                     self._width,
                     [],
@@ -217,16 +220,16 @@ class _TextPageSource(PageSource):
                 dither=False,
                 is_text=True,
             )
-            return
-        for start in range(0, len(self._lines), self._lines_per_page):
-            lines = self._lines[start : start + self._lines_per_page]
-            yield Page(
-                TextConverter._render_text_page(
-                    self._width,
-                    lines,
-                    self._font,
-                    self._line_height,
-                ),
-                dither=False,
-                is_text=True,
-            )
+        if index < 0 or index >= self.page_count:
+            raise IndexError(index)
+        start = index * self._lines_per_page
+        return Page(
+            TextConverter._render_text_page(
+                self._width,
+                self._lines[start : start + self._lines_per_page],
+                self._font,
+                self._line_height,
+            ),
+            dither=False,
+            is_text=True,
+        )

@@ -66,13 +66,13 @@ class _CustomPdfRenderer:
 class RenderingPdfConverterTests(unittest.TestCase):
     def test_select_page_indexes_valid_and_invalid(self) -> None:
         c = PdfConverter(page_selection="1,3-4")
-        self.assertEqual(list(c._select_page_indexes(5)), [0, 2, 3])
+        self.assertEqual(list(c.select_page_indexes(5)), [0, 2, 3])
         with self.assertRaises(ValueError):
-            PdfConverter(page_selection="x")._select_page_indexes(5)
+            PdfConverter(page_selection="x").select_page_indexes(5)
         with self.assertRaises(ValueError):
-            PdfConverter(page_selection="4-2")._select_page_indexes(5)
+            PdfConverter(page_selection="4-2").select_page_indexes(5)
         with self.assertRaises(ValueError):
-            PdfConverter(page_selection="9")._select_page_indexes(5)
+            PdfConverter(page_selection="9").select_page_indexes(5)
 
     def test_append_page_gap(self) -> None:
         img = Image.new("L", (10, 10), 255)

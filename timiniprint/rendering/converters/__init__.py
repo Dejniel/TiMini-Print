@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-import os
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-from .base import Page, PageConverter, PageSource
+from .base import ImageLoader, Page, PageConverter, PageSource
 from .image import ImageConverter
 from .pdf import PdfConverter, PdfRenderer
 from .text import TextConverter
+from ..formats import IMAGE_EXTENSIONS, SUPPORTED_DOCUMENT_EXTENSIONS
 
-SUPPORTED_EXTENSIONS: Set[str] = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".pdf", ".txt"}
+SUPPORTED_EXTENSIONS: Set[str] = SUPPORTED_DOCUMENT_EXTENSIONS
 
 
 class PageLoader:
@@ -23,14 +24,16 @@ class PageLoader:
         pdf_pages: Optional[str] = None,
         pdf_page_gap_px: int = 0,
         pdf_renderer: PdfRenderer | None = None,
+        image_loader: ImageLoader | None = None,
     ) -> None:
         if converters is None:
             converters = {}
             image_converter = ImageConverter(
+                image_loader=image_loader,
                 trim_side_margins=trim_side_margins,
                 trim_top_bottom_margins=trim_top_bottom_margins,
             )
-            for ext in (".png", ".jpg", ".jpeg", ".gif", ".bmp"):
+            for ext in IMAGE_EXTENSIONS:
                 converters[ext] = image_converter
             converters[".pdf"] = PdfConverter(
                 page_selection=pdf_pages,
@@ -51,7 +54,7 @@ class PageLoader:
         return set(self._converters.keys())
 
     def open(self, path: str, width: int) -> PageSource:
-        ext = os.path.splitext(path)[1].lower()
+        ext = Path(path).suffix.lower()
         converter = self._converters.get(ext)
         if not converter:
             raise ValueError(f"Unsupported file extension: {ext}")

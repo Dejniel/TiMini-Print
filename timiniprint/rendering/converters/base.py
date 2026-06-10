@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Iterator, List
+from typing import Callable, Iterable, Iterator, List
 
 from PIL import Image, ImageOps
+
+ImageLoader = Callable[[str], Image.Image]
 
 
 @dataclass(frozen=True)
@@ -14,14 +16,25 @@ class Page:
 
 
 class PageSource:
-    """One-shot iterable page source. Close it after use, preferably with `with`."""
+    """Random-access page source. Close it after use, preferably with `with`."""
 
     @property
     def page_count(self) -> int:
         raise NotImplementedError
 
-    def __iter__(self) -> Iterator[Page]:
+    @property
+    def source_page_count(self) -> int:
+        return self.page_count
+
+    def source_index(self, index: int) -> int | None:
+        return index
+
+    def page(self, index: int) -> Page:
         raise NotImplementedError
+
+    def __iter__(self) -> Iterator[Page]:
+        for index in range(self.page_count):
+            yield self.page(index)
 
     def close(self) -> None:
         pass
@@ -41,8 +54,8 @@ class ListPageSource(PageSource):
     def page_count(self) -> int:
         return len(self._pages)
 
-    def __iter__(self) -> Iterator[Page]:
-        return iter(self._pages)
+    def page(self, index: int) -> Page:
+        return self._pages[index]
 
 
 class PageConverter:
@@ -64,13 +77,17 @@ class RasterConverter(PageConverter):
         self._trim_top_bottom_margins = trim_top_bottom_margins
 
     @staticmethod
-    def _load_image(path: str) -> Image.Image:
+    def load_image(path: str) -> Image.Image:
         with Image.open(path) as img:
             img = ImageOps.exif_transpose(img)
             return img.copy()
 
     @staticmethod
     def _normalize_image(img: Image.Image) -> Image.Image:
+        if img.mode in ("RGBA", "LA"):
+            background = Image.new("RGB", img.size, "white")
+            background.paste(img, mask=img.getchannel("A"))
+            return background
         if img.mode not in ("RGB", "L"):
             return img.convert("RGB")
         return img

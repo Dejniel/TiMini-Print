@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from ..protocol import ImageEncoding, PaperMode
+from ..protocol.family import ProtocolFamily
 from ..raster import DitherMode, PixelFormat
 
 
@@ -34,3 +35,15 @@ class PrintSettings:
     v5x_gamma_value: Optional[float] = None
     v5c_gamma_handle: bool = True
     v5c_gamma_value: Optional[float] = None
+
+
+def resolve_gray_preprocessing(
+    settings: PrintSettings,
+    protocol_family: ProtocolFamily,
+    encoding: ImageEncoding,
+) -> tuple[bool, Optional[float]]:
+    if protocol_family == ProtocolFamily.V5C and encoding == ImageEncoding.V5C_A5:
+        return settings.v5c_gamma_handle, settings.v5c_gamma_value
+    if protocol_family == ProtocolFamily.V5X and encoding == ImageEncoding.V5X_GRAY:
+        return settings.v5x_gamma_handle, settings.v5x_gamma_value
+    return False, None

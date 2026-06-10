@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, List, Optional, Protocol, Sequence
+from typing import List, Optional, Protocol, Sequence
 
 from PIL import Image
 
@@ -105,7 +105,7 @@ class PdfConverter(RasterConverter):
                 raise RuntimeError("PDF has no pages")
             return PdfPageSource(
                 document=doc,
-                page_indexes=self._select_page_indexes(total_pages),
+                page_indexes=self.select_page_indexes(total_pages),
                 width=width,
                 page_gap_px=self._page_gap_px,
                 render_dpi=self._render_dpi,
@@ -115,7 +115,7 @@ class PdfConverter(RasterConverter):
             doc.close()
             raise
 
-    def _select_page_indexes(self, total_pages: int) -> Sequence[int]:
+    def select_page_indexes(self, total_pages: int) -> Sequence[int]:
         selection = (self._page_selection or "").strip()
         if not selection:
             return list(range(total_pages))
@@ -186,20 +186,21 @@ class PdfPageSource(PageSource):
     def page_count(self) -> int:
         return len(self._page_indexes)
 
-    def __iter__(self) -> Iterator[Page]:
-        try:
-            scale = self._render_dpi / 72.0
-            last_position = len(self._page_indexes) - 1
-            for position, index in enumerate(self._page_indexes):
-                img = self._document.render_page(index, scale)
-                img = self._converter._normalize_image(img)
-                img = self._converter._maybe_trim_margins(img)
-                img = self._converter._resize_to_width(img, self._width)
-                if self._page_gap_px > 0 and position < last_position:
-                    img = self._converter._append_page_gap(img, self._page_gap_px)
-                yield Page(img, dither=True, is_text=False)
-        finally:
-            self.close()
+    @property
+    def source_page_count(self) -> int:
+        return self._document.page_count
+
+    def source_index(self, index: int) -> int | None:
+        return self._page_indexes[index]
+
+    def page(self, index: int) -> Page:
+        img = self._document.render_page(self._page_indexes[index], self._render_dpi / 72.0)
+        img = self._converter._normalize_image(img)
+        img = self._converter._maybe_trim_margins(img)
+        img = self._converter._resize_to_width(img, self._width)
+        if self._page_gap_px > 0 and index < len(self._page_indexes) - 1:
+            img = self._converter._append_page_gap(img, self._page_gap_px)
+        return Page(img, dither=True, is_text=False)
 
     def close(self) -> None:
         if not self._closed:

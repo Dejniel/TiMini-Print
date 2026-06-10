@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from PIL import Image
 
@@ -10,9 +10,10 @@ from timiniprint.rendering.converters.image import ImageConverter
 
 class RenderingImageConverterTests(unittest.TestCase):
     def test_load_pipeline_and_page_flags(self) -> None:
-        converter = ImageConverter()
         source = Image.new("RGB", (10, 10))
-        with patch.object(ImageConverter, "_load_image", return_value=source) as load_mock, patch.object(
+        load_mock = Mock(return_value=source)
+        converter = ImageConverter(image_loader=load_mock)
+        with patch.object(
             ImageConverter, "_normalize_image", wraps=ImageConverter._normalize_image
         ) as normalize_mock, patch.object(
             ImageConverter, "_maybe_trim_margins", wraps=converter._maybe_trim_margins

@@ -6,15 +6,14 @@ from typing import Iterator, Optional, TYPE_CHECKING
 
 from .. import reporting
 from ..printing.runtime.base import PreparedRuntimeContext
-from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
-from ..protocol.types import ImageEncoding, ImagePipelineConfig
+from ..protocol.types import ImagePipelineConfig
 from ..rendering.converters import Page, PageLoader, PdfRenderer
 from ..rendering.renderer import PrintImageRenderer
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
 from .raster_job import build_raster_page_job, combine_raster_page_jobs
-from .settings import DitherMode, PrintSettings
+from .settings import DitherMode, PrintSettings, resolve_gray_preprocessing
 
 if TYPE_CHECKING:
     from ..devices import PrinterDevice
@@ -89,7 +88,11 @@ class PrintJobBuilder:
         self._validate_input_path(path)
         width = self._normalized_width(self.device.profile.width)
         required_formats = pipeline.formats[:1]
-        gamma_handle, gamma_value = self._resolve_gray_preprocessing(pipeline)
+        gamma_handle, gamma_value = resolve_gray_preprocessing(
+            self.settings,
+            self.device.protocol_family,
+            pipeline.encoding,
+        )
         with self.page_loader.open(path, width) as pages:
             page_count = pages.page_count
             for page_index, page in enumerate(pages, start=1):
@@ -140,13 +143,6 @@ class PrintJobBuilder:
             pixel_format_override=self.settings.pixel_format_override,
             runtime_capabilities=self.runtime_context.capabilities,
         )
-
-    def _resolve_gray_preprocessing(self, pipeline: ImagePipelineConfig) -> tuple[bool, Optional[float]]:
-        if self.device.protocol_family == ProtocolFamily.V5C and pipeline.encoding == ImageEncoding.V5C_A5:
-            return self.settings.v5c_gamma_handle, self.settings.v5c_gamma_value
-        if self.device.protocol_family == ProtocolFamily.V5X and pipeline.encoding == ImageEncoding.V5X_GRAY:
-            return self.settings.v5x_gamma_handle, self.settings.v5x_gamma_value
-        return False, None
 
     def _dither_mode(self, page: Page) -> DitherMode:
         return self.settings.dither_mode if page.dither else DitherMode.NONE

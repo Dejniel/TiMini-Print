@@ -86,6 +86,25 @@ class PrintImageRenderer:
         gamma_handle: bool = False,
         gamma_value: float | None = None,
     ) -> bytes:
+        out = BytesIO()
+        self.preview_image(
+            img,
+            pixel_format,
+            dither_mode=dither_mode,
+            gamma_handle=gamma_handle,
+            gamma_value=gamma_value,
+        ).convert("L").save(out, format="PNG")
+        return out.getvalue()
+
+    def preview_image(
+        self,
+        img: Image.Image,
+        pixel_format: PixelFormat,
+        *,
+        dither_mode: DitherMode,
+        gamma_handle: bool = False,
+        gamma_value: float | None = None,
+    ) -> Image.Image:
         preview = self.prepare(
             img,
             pixel_format,
@@ -95,8 +114,12 @@ class PrintImageRenderer:
         )
         if pixel_format == PixelFormat.GRAY4:
             preview = preview.point([min(255, round(value * 17 / 16)) for value in range(256)])
+        return preview
+
+    @staticmethod
+    def image_png(img: Image.Image) -> bytes:
         out = BytesIO()
-        preview.convert("L").save(out, format="PNG")
+        img.convert("L").save(out, format="PNG")
         return out.getvalue()
 
     def raster_set(
