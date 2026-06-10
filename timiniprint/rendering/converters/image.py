@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-from typing import List
-
-from .base import Page, RasterConverter
+from .base import ListPageSource, Page, PageSource, RasterConverter
 
 
 class ImageConverter(RasterConverter):
-    def load(self, path: str, width: int) -> List[Page]:
+    def open(self, path: str, width: int) -> PageSource:
         img = self._load_image(path)
         img = self._normalize_image(img)
         img = self._maybe_trim_margins(img)
         img = self._resize_to_width(img, width)
-        return [Page(img, dither=True, is_text=False)]
+        return ListPageSource([Page(img, dither=True, is_text=False)])

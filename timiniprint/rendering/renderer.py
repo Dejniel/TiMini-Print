@@ -22,16 +22,19 @@ class PrintImageRenderer:
         pages: Sequence[Page],
         rotate_90_clockwise: bool = False,
     ) -> list[Page]:
-        if not rotate_90_clockwise:
-            return list(pages)
         return [
-            Page(
-                image=page.image.transpose(Image.Transpose.ROTATE_270),
-                dither=page.dither,
-                is_text=page.is_text,
-            )
+            self.transform_page(page, rotate_90_clockwise=rotate_90_clockwise)
             for page in pages
         ]
+
+    def transform_page(self, page: Page, rotate_90_clockwise: bool = False) -> Page:
+        if not rotate_90_clockwise:
+            return page
+        return Page(
+            image=page.image.transpose(Image.Transpose.ROTATE_270),
+            dither=page.dither,
+            is_text=page.is_text,
+        )
 
     def prepare(
         self,

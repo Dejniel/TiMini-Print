@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Dict, List, Optional, Set
 
-from .base import Page, PageConverter
+from .base import Page, PageConverter, PageSource
 from .image import ImageConverter
 from .pdf import PdfConverter, PdfRenderer
 from .text import TextConverter
@@ -50,16 +50,20 @@ class PageLoader:
     def supported_extensions(self) -> Set[str]:
         return set(self._converters.keys())
 
-    def load(self, path: str, width: int) -> List[Page]:
+    def open(self, path: str, width: int) -> PageSource:
         ext = os.path.splitext(path)[1].lower()
         converter = self._converters.get(ext)
         if not converter:
             raise ValueError(f"Unsupported file extension: {ext}")
-        return converter.load(path, width)
+        return converter.open(path, width)
+
+    def load(self, path: str, width: int) -> List[Page]:
+        with self.open(path, width) as source:
+            return list(source)
 
 
 def load_pages(path: str, width: int) -> List[Page]:
     return PageLoader().load(path, width)
 
 
-__all__ = ["Page", "PageLoader", "PdfRenderer", "SUPPORTED_EXTENSIONS", "load_pages"]
+__all__ = ["Page", "PageLoader", "PageSource", "PdfRenderer", "SUPPORTED_EXTENSIONS", "load_pages"]

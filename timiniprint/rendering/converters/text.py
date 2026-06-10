@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .base import Page, PageConverter
+from .base import ListPageSource, Page, PageConverter, PageSource
 from ..fonts import find_monospace_bold_font, load_font
 
 COLUMNS_PER_WIDTH = 35 / 384
@@ -22,12 +22,12 @@ class TextConverter(PageConverter):
         self._columns_override = columns
         self._word_wrap = wrap_lines
 
-    def load(self, path: str, width: int) -> List[Page]:
+    def open(self, path: str, width: int) -> PageSource:
         with open(path, "r", encoding="utf-8", errors="replace") as handle:
             text = handle.read()
         text = text.replace("\t", "    ")
         img = self._render_text_image(text, width)
-        return [Page(img, dither=False, is_text=True)]
+        return ListPageSource([Page(img, dither=False, is_text=True)])
 
     def _render_text_image(self, text: str, width: int) -> Image.Image:
         font_path = self._font_path or find_monospace_bold_font()

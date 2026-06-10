@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import os
-from typing import Optional, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import Iterator, Optional, TYPE_CHECKING
 
 from .. import reporting
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..protocol.family import ProtocolFamily
 from ..protocol.job import PrinterProtocol, ProtocolJob
-from ..protocol.types import ImageEncoding
+from ..protocol.types import ImageEncoding, ImagePipelineConfig
 from ..rendering.converters import Page, PageLoader, PdfRenderer
 from ..rendering.renderer import PrintImageRenderer
 from .debug_markers import apply_debug_row_markers
@@ -17,6 +18,13 @@ from .settings import DitherMode, PrintSettings
 
 if TYPE_CHECKING:
     from ..devices import PrinterDevice
+
+
+@dataclass(frozen=True)
+class PreparedPageJob:
+    page_index: int
+    page_count: int
+    job: ProtocolJob
 
 
 class PrintJobBuilder:
@@ -52,59 +60,12 @@ class PrintJobBuilder:
 
     def build_from_file(self, path: str) -> ProtocolJob:
         """Load a file, rasterize it, and build one printable protocol job."""
-        self._validate_input_path(path)
-        width = self._normalized_width(self.device.profile.width)
-        pages = self.page_loader.load(path, width)
-        pages = self.image_renderer.apply_page_transforms(
-            pages,
-            rotate_90_clockwise=self.settings.rotate_90_clockwise,
-        )
-        pipeline = self.protocol.resolve_image_pipeline(
-            image_encoding_override=self.settings.image_encoding_override,
-            pixel_format_override=self.settings.pixel_format_override,
-            runtime_capabilities=self.runtime_context.capabilities,
-        )
-        required_formats = pipeline.formats[:1]
-        gamma_handle, gamma_value = self._resolve_gray_preprocessing()
+        pipeline = self._resolve_image_pipeline()
+        page_count = 0
         page_jobs: list[ProtocolJob] = []
-        page_count = len(pages)
-        for page_index, page in enumerate(pages, start=1):
-            is_text = self._select_text_mode(page)
-            raster_set = self.image_renderer.raster_set(
-                page.image,
-                required_formats,
-                dither_mode=self._dither_mode(page),
-                gamma_handle=gamma_handle,
-                gamma_value=gamma_value,
-            )
-            if self.settings.debug_row_markers_interval is not None:
-                raster_set = apply_debug_row_markers(
-                    raster_set,
-                    self.settings.debug_row_markers_interval,
-                )
-            report_raster_build(
-                self._reporter,
-                device=self.device,
-                settings=self.settings,
-                page_index=page_index,
-                page_count=page_count,
-                page=page,
-                raster_set=raster_set,
-                is_text=is_text,
-                dither_mode=self._dither_mode(page),
-                gamma_handle=gamma_handle,
-                gamma_value=gamma_value,
-            )
-            page_job = build_raster_page_job(
-                self.device,
-                raster_set,
-                is_text=is_text,
-                settings=self.settings,
-                runtime_context=self.runtime_context,
-                page_index=page_index,
-                page_count=page_count,
-            )
-            page_jobs.append(page_job)
+        for prepared in self._iter_page_jobs(path, pipeline):
+            page_count = prepared.page_count
+            page_jobs.append(prepared.job)
         job = combine_raster_page_jobs(
             self.device,
             page_jobs,
@@ -120,12 +81,72 @@ class PrintJobBuilder:
         )
         return job
 
-    def _resolve_gray_preprocessing(self) -> tuple[bool, Optional[float]]:
-        pipeline = self.protocol.resolve_image_pipeline(
+    def iter_page_jobs(self, path: str) -> Iterator[PreparedPageJob]:
+        """Load, rasterize, and yield printable protocol jobs one page at a time."""
+        yield from self._iter_page_jobs(path, self._resolve_image_pipeline())
+
+    def iter_from_file(self, path: str) -> Iterator[ProtocolJob]:
+        """Load, rasterize, and yield page jobs without pagination metadata."""
+        for prepared in self.iter_page_jobs(path):
+            yield prepared.job
+
+    def _iter_page_jobs(self, path: str, pipeline: ImagePipelineConfig) -> Iterator[PreparedPageJob]:
+        self._validate_input_path(path)
+        width = self._normalized_width(self.device.profile.width)
+        required_formats = pipeline.formats[:1]
+        gamma_handle, gamma_value = self._resolve_gray_preprocessing(pipeline)
+        with self.page_loader.open(path, width) as pages:
+            page_count = pages.page_count
+            for page_index, page in enumerate(pages, start=1):
+                page = self.image_renderer.transform_page(
+                    page,
+                    rotate_90_clockwise=self.settings.rotate_90_clockwise,
+                )
+                is_text = self._select_text_mode(page)
+                raster_set = self.image_renderer.raster_set(
+                    page.image,
+                    required_formats,
+                    dither_mode=self._dither_mode(page),
+                    gamma_handle=gamma_handle,
+                    gamma_value=gamma_value,
+                )
+                if self.settings.debug_row_markers_interval is not None:
+                    raster_set = apply_debug_row_markers(
+                        raster_set,
+                        self.settings.debug_row_markers_interval,
+                    )
+                report_raster_build(
+                    self._reporter,
+                    device=self.device,
+                    settings=self.settings,
+                    page_index=page_index,
+                    page_count=page_count,
+                    page=page,
+                    raster_set=raster_set,
+                    is_text=is_text,
+                    dither_mode=self._dither_mode(page),
+                    gamma_handle=gamma_handle,
+                    gamma_value=gamma_value,
+                )
+                page_job = build_raster_page_job(
+                    self.device,
+                    raster_set,
+                    is_text=is_text,
+                    settings=self.settings,
+                    runtime_context=self.runtime_context,
+                    page_index=page_index,
+                    page_count=page_count,
+                )
+                yield PreparedPageJob(page_index=page_index, page_count=page_count, job=page_job)
+
+    def _resolve_image_pipeline(self) -> ImagePipelineConfig:
+        return self.protocol.resolve_image_pipeline(
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
             runtime_capabilities=self.runtime_context.capabilities,
         )
+
+    def _resolve_gray_preprocessing(self, pipeline: ImagePipelineConfig) -> tuple[bool, Optional[float]]:
         if self.device.protocol_family == ProtocolFamily.V5C and pipeline.encoding == ImageEncoding.V5C_A5:
             return self.settings.v5c_gamma_handle, self.settings.v5c_gamma_value
         if self.device.protocol_family == ProtocolFamily.V5X and pipeline.encoding == ImageEncoding.V5X_GRAY:

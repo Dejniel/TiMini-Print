@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import List, Optional, Protocol, Sequence
+from typing import Iterator, List, Optional, Protocol, Sequence
 
 from PIL import Image
 
-from .base import Page, RasterConverter
+from .base import Page, PageSource, RasterConverter
 
 DEFAULT_RENDER_DPI = 200
 
@@ -97,35 +97,23 @@ class PdfConverter(RasterConverter):
         self._render_dpi = render_dpi
         self._pdf_renderer = pdf_renderer or Pypdfium2PdfRenderer()
 
-    def load(self, path: str, width: int) -> List[Page]:
-        pages = self._load_pdf_pages(path)
-        out: List[Page] = []
-        last_index = len(pages) - 1
-        for idx, page in enumerate(pages):
-            img = self._normalize_image(page)
-            img = self._maybe_trim_margins(img)
-            img = self._resize_to_width(img, width)
-            if self._page_gap_px > 0 and idx < last_index:
-                img = self._append_page_gap(img, self._page_gap_px)
-            out.append(Page(img, dither=True, is_text=False))
-        return out
-
-    def _load_pdf_pages(self, path: str) -> List[Image.Image]:
+    def open(self, path: str, width: int) -> PageSource:
         doc = self._pdf_renderer.open(path)
-        pages: List[Image.Image] = []
         try:
             total_pages = doc.page_count
             if total_pages <= 0:
                 raise RuntimeError("PDF has no pages")
-            page_indexes = self._select_page_indexes(total_pages)
-            scale = self._render_dpi / 72.0
-            for index in page_indexes:
-                pages.append(doc.render_page(index, scale))
-        finally:
+            return PdfPageSource(
+                document=doc,
+                page_indexes=self._select_page_indexes(total_pages),
+                width=width,
+                page_gap_px=self._page_gap_px,
+                render_dpi=self._render_dpi,
+                converter=self,
+            )
+        except Exception:
             doc.close()
-        if not pages:
-            raise RuntimeError("PDF render failed (no pages)")
-        return pages
+            raise
 
     def _select_page_indexes(self, total_pages: int) -> Sequence[int]:
         selection = (self._page_selection or "").strip()
@@ -172,3 +160,48 @@ class PdfConverter(RasterConverter):
         out = Image.new(img.mode, (img.width, img.height + gap), fill)
         out.paste(img, (0, 0))
         return out
+
+
+class PdfPageSource(PageSource):
+    """One-shot PDF page source. Iteration renders pages lazily and closes the document."""
+
+    def __init__(
+        self,
+        document: PdfDocument,
+        page_indexes: Sequence[int],
+        width: int,
+        page_gap_px: int,
+        render_dpi: int,
+        converter: PdfConverter,
+    ) -> None:
+        self._document = document
+        self._page_indexes = list(page_indexes)
+        self._width = width
+        self._page_gap_px = page_gap_px
+        self._render_dpi = render_dpi
+        self._converter = converter
+        self._closed = False
+
+    @property
+    def page_count(self) -> int:
+        return len(self._page_indexes)
+
+    def __iter__(self) -> Iterator[Page]:
+        try:
+            scale = self._render_dpi / 72.0
+            last_position = len(self._page_indexes) - 1
+            for position, index in enumerate(self._page_indexes):
+                img = self._document.render_page(index, scale)
+                img = self._converter._normalize_image(img)
+                img = self._converter._maybe_trim_margins(img)
+                img = self._converter._resize_to_width(img, self._width)
+                if self._page_gap_px > 0 and position < last_position:
+                    img = self._converter._append_page_gap(img, self._page_gap_px)
+                yield Page(img, dither=True, is_text=False)
+        finally:
+            self.close()
+
+    def close(self) -> None:
+        if not self._closed:
+            self._document.close()
+            self._closed = True

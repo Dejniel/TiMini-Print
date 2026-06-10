@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import Iterable, Iterator, List
 
 from PIL import Image, ImageOps
 
@@ -13,9 +13,45 @@ class Page:
     is_text: bool
 
 
-class PageConverter:
-    def load(self, path: str, width: int) -> List[Page]:
+class PageSource:
+    """One-shot iterable page source. Close it after use, preferably with `with`."""
+
+    @property
+    def page_count(self) -> int:
         raise NotImplementedError
+
+    def __iter__(self) -> Iterator[Page]:
+        raise NotImplementedError
+
+    def close(self) -> None:
+        pass
+
+    def __enter__(self) -> "PageSource":
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        self.close()
+
+
+class ListPageSource(PageSource):
+    def __init__(self, pages: Iterable[Page]) -> None:
+        self._pages = list(pages)
+
+    @property
+    def page_count(self) -> int:
+        return len(self._pages)
+
+    def __iter__(self) -> Iterator[Page]:
+        return iter(self._pages)
+
+
+class PageConverter:
+    def open(self, path: str, width: int) -> PageSource:
+        raise NotImplementedError
+
+    def load(self, path: str, width: int) -> List[Page]:
+        with self.open(path, width) as source:
+            return list(source)
 
 
 class RasterConverter(PageConverter):

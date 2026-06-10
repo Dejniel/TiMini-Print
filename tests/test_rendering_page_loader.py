@@ -5,16 +5,18 @@ import unittest
 from PIL import Image
 
 from timiniprint.rendering.converters import Page, PageLoader
-from timiniprint.rendering.converters.base import PageConverter
+from timiniprint.rendering.converters.base import ListPageSource, PageConverter
 
 
 class _DummyConverter(PageConverter):
     def __init__(self, name: str) -> None:
         self._name = name
 
-    def load(self, path: str, width: int):
+    def open(self, path: str, width: int):
         _ = path, width
-        return [Page(Image.new("L", (4, 4), 255), dither=self._name == "img", is_text=self._name == "txt")]
+        return ListPageSource([
+            Page(Image.new("L", (4, 4), 255), dither=self._name == "img", is_text=self._name == "txt")
+        ])
 
 
 class _PdfDocument:

@@ -101,6 +101,22 @@ class RenderingPdfConverterTests(unittest.TestCase):
         self.assertEqual(renderer.documents[0].rendered, [(1, 200 / 72.0), (2, 200 / 72.0)])
         self.assertTrue(renderer.documents[0].closed)
 
+    def test_open_pdf_pages_renders_lazily(self) -> None:
+        renderer = _CustomPdfRenderer()
+        c = PdfConverter(page_selection="1-2", pdf_renderer=renderer)
+        source = c.open("mobile.pdf", width=8)
+
+        self.assertEqual(source.page_count, 2)
+        self.assertEqual(renderer.documents[0].rendered, [])
+
+        page_iter = iter(source)
+        first = next(page_iter)
+
+        self.assertEqual(first.image.width, 8)
+        self.assertEqual(renderer.documents[0].rendered, [(0, 200 / 72.0)])
+        source.close()
+        self.assertTrue(renderer.documents[0].closed)
+
     def test_load_pdf_pages_raises_when_no_pages(self) -> None:
         fake = types.ModuleType("pypdfium2")
         class _EmptyDoc(_FakePdfDocument):
@@ -111,7 +127,7 @@ class RenderingPdfConverterTests(unittest.TestCase):
         sys.modules["pypdfium2"] = fake
         c = PdfConverter()
         with self.assertRaises(RuntimeError):
-            c._load_pdf_pages("dummy.pdf")
+            c.load("dummy.pdf", width=8)
 
 
 if __name__ == "__main__":
