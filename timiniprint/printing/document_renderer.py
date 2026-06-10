@@ -263,4 +263,3 @@ def _text_document(text: str) -> RenderDocument:
 def _load_text(path: str) -> str:
     with open(path, "r", encoding="utf-8-sig", errors="replace") as handle:
         return handle.read()
-
