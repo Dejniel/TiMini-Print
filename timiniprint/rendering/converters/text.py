@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Sequence
+from typing import Optional, Sequence
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -10,6 +10,94 @@ from ..fonts import find_monospace_bold_font, load_font
 COLUMNS_PER_WIDTH = 35 / 384
 REFERENCE_PATTERN = "M.I"
 DEFAULT_TEXT_PAGE_HEIGHT_TO_WIDTH = 1.5
+
+
+class _CharWidthFontMetrics:
+    def __init__(self, font: ImageFont.FreeTypeFont) -> None:
+        self.font = font
+        self.line_height = self.measure_line_height(font)
+        self._char_width_cache: dict[str, float] = {}
+
+    def char_width(self, char: str) -> float:
+        if char not in self._char_width_cache:
+            self._char_width_cache[char] = self.measure_char_width(self.font, char)
+        return self._char_width_cache[char]
+
+    def text_width(self, text: str) -> float:
+        return sum(self.char_width(char) for char in text)
+
+    @staticmethod
+    def measure_char_width(font: ImageFont.FreeTypeFont, char: str) -> float:
+        if hasattr(font, "getlength"):
+            return font.getlength(char)
+        if hasattr(font, "getbbox"):
+            bbox = font.getbbox(char)
+            return bbox[2] - bbox[0]
+        return font.getsize(char)[0]
+
+    @staticmethod
+    def measure_line_height(font: ImageFont.FreeTypeFont) -> int:
+        if hasattr(font, "getmetrics"):
+            ascent, descent = font.getmetrics()
+            return ascent + descent
+        if hasattr(font, "getbbox"):
+            bbox = font.getbbox("Ag")
+            return bbox[3] - bbox[1]
+        return font.getsize("Ag")[1]
+
+
+class _PixelWidthTextWrapper:
+    def __init__(
+        self,
+        metrics: _CharWidthFontMetrics,
+        max_width: int,
+        word_wrap: bool,
+    ) -> None:
+        self._metrics = metrics
+        self._max_width = max(1, max_width)
+        self._word_wrap = word_wrap
+
+    def wrapped_lines(self, text: str) -> list[str]:
+        if text == "":
+            return [""]
+        lines: list[str] = []
+        raw_lines = text.splitlines()
+        if text.endswith("\n"):
+            raw_lines.append("")
+        for raw_line in raw_lines:
+            if raw_line == "":
+                lines.append("")
+                continue
+            lines.extend(self.wrap_line(raw_line))
+        return lines
+
+    def wrap_line(self, line: str) -> list[str]:
+        lines: list[str] = []
+        start = 0
+        while start < len(line):
+            end, split_at = self._fit_segment(line, start)
+            if end >= len(line):
+                lines.append(line[start:])
+                break
+            if self._word_wrap and split_at is not None:
+                lines.append(line[start:split_at])
+                start = split_at + 1
+            else:
+                lines.append(line[start:end])
+                start = end
+        return lines
+
+    def _fit_segment(self, line: str, start: int) -> tuple[int, int | None]:
+        width = 0.0
+        split_at: int | None = None
+        for index in range(start, len(line)):
+            if line[index] == " " and index > start:
+                split_at = index
+            next_width = width + self._metrics.char_width(line[index])
+            if next_width > self._max_width:
+                return (index if index > start else start + 1), split_at
+            width = next_width
+        return len(line), split_at
 
 
 class TextConverter(PageConverter):
@@ -39,28 +127,32 @@ class TextConverter(PageConverter):
             return self.open_text(handle.read(), width)
 
     def open_text(self, text: str, width: int) -> PageSource:
-        return self._render_text_pages(text.replace("\t", "    "), width)
+        return self._open_text_source(text.replace("\t", "    "), width)
 
-    def _render_text_pages(self, text: str, width: int) -> PageSource:
+    def _open_text_source(self, text: str, width: int) -> PageSource:
         render_width = self._render_width(width)
         font = self._fit_truetype_font(
             self._font_path or find_monospace_bold_font(),
             render_width,
             self._reference_text(self._columns_for_width(render_width)),
         )
-        line_height = self._font_line_height(font)
+        metrics = _CharWidthFontMetrics(font)
+        lines = _PixelWidthTextWrapper(
+            metrics,
+            render_width,
+            self._word_wrap,
+        ).wrapped_lines(text)
         return _TextPageSource(
-            lines=self._wrap_text_lines(text, render_width, font),
+            lines=lines,
+            lines_per_page=self._lines_per_page(width, metrics.line_height),
             width=render_width,
             output_width=width,
-            font=font,
-            line_height=line_height,
-            lines_per_page=self._lines_per_page(width, line_height),
+            metrics=metrics,
             rotate_90_clockwise=self._rotate_90_clockwise,
         )
 
     @staticmethod
-    def _render_text_page(
+    def _paint_text_page_image(
         width: int,
         lines: Sequence[str],
         font: ImageFont.FreeTypeFont,
@@ -112,7 +204,7 @@ class TextConverter(PageConverter):
         while low <= high:
             size = (low + high) // 2
             font = load_font(path, size)
-            if TextConverter._text_width(font, sample) <= width:
+            if _CharWidthFontMetrics(font).text_width(sample) <= width:
                 best = font
                 low = size + 1
             else:
@@ -121,109 +213,22 @@ class TextConverter(PageConverter):
             return load_font(path, 6)
         return best
 
-    def _wrap_text_lines(self, text: str, width: int, font: ImageFont.FreeTypeFont) -> List[str]:
-        if text == "":
-            return [""]
-        lines: List[str] = []
-        raw_lines = text.splitlines()
-        if text.endswith("\n"):
-            raw_lines.append("")
-        for raw_line in raw_lines:
-            if raw_line == "":
-                lines.append("")
-                continue
-            lines.extend(self._wrap_line_by_width(raw_line, width, font, word_wrap=self._word_wrap))
-        return lines
-
-    def _wrap_line_by_width(
-        self,
-        line: str,
-        width: int,
-        font: ImageFont.FreeTypeFont,
-        word_wrap: bool = True,
-    ) -> List[str]:
-        if self._text_width(font, line) <= width:
-            return [line]
-        lines: List[str] = []
-        remaining = line
-        while remaining:
-            if self._text_width(font, remaining) <= width:
-                lines.append(remaining)
-                break
-            cut = self._fit_substring_length(remaining, width, font)
-            if cut <= 0:
-                lines.append(remaining[:1])
-                remaining = remaining[1:]
-                continue
-            slice_text = remaining[:cut]
-            if word_wrap:
-                split_at = slice_text.rfind(" ")
-                if split_at > 0:
-                    lines.append(slice_text[:split_at])
-                    remaining = remaining[split_at + 1 :]
-                    continue
-            lines.append(slice_text)
-            remaining = remaining[cut:]
-        return lines
-
-    def _fit_substring_length(
-        self,
-        text: str,
-        width: int,
-        font: ImageFont.FreeTypeFont,
-    ) -> int:
-        low = 0
-        high = len(text)
-        best = 0
-        while low <= high:
-            mid = (low + high) // 2
-            if mid == 0:
-                low = 1
-                continue
-            if self._text_width(font, text[:mid]) <= width:
-                best = mid
-                low = mid + 1
-            else:
-                high = mid - 1
-        return best
-
-    @staticmethod
-    def _text_width(font: ImageFont.FreeTypeFont, text: str) -> int:
-        if hasattr(font, "getlength"):
-            return int(font.getlength(text))
-        if hasattr(font, "getbbox"):
-            bbox = font.getbbox(text)
-            return bbox[2] - bbox[0]
-        return font.getsize(text)[0]
-
-    @staticmethod
-    def _font_line_height(font: ImageFont.FreeTypeFont) -> int:
-        if hasattr(font, "getmetrics"):
-            ascent, descent = font.getmetrics()
-            return ascent + descent
-        if hasattr(font, "getbbox"):
-            bbox = font.getbbox("Ag")
-            return bbox[3] - bbox[1]
-        return font.getsize("Ag")[1]
-
 
 class _TextPageSource(PageSource):
     def __init__(
         self,
         lines: Sequence[str],
+        lines_per_page: int,
         width: int,
         output_width: int,
-        font: ImageFont.FreeTypeFont,
-        line_height: int,
-        lines_per_page: int,
+        metrics: _CharWidthFontMetrics,
         rotate_90_clockwise: bool = False,
     ) -> None:
         self._lines = list(lines)
+        self._lines_per_page = max(1, lines_per_page)
         self._width = width
         self._output_width = max(1, output_width)
-        self._font = font
-        self._line_height = max(1, line_height)
-        self._lines_per_page = max(1, lines_per_page)
+        self._metrics = metrics
         self._rotate_90_clockwise = rotate_90_clockwise
 
     @property
@@ -234,17 +239,17 @@ class _TextPageSource(PageSource):
         if not self._lines:
             if index != 0:
                 raise IndexError(index)
-            lines: Sequence[str] = []
+            lines: Sequence[str] = ()
         else:
             if index < 0 or index >= self.page_count:
                 raise IndexError(index)
             start = index * self._lines_per_page
             lines = self._lines[start : start + self._lines_per_page]
-        img = TextConverter._render_text_page(
+        img = TextConverter._paint_text_page_image(
             self._width,
             lines,
-            self._font,
-            self._line_height,
+            self._metrics.font,
+            self._metrics.line_height,
             min_height=self._output_width if self._rotate_90_clockwise else 1,
         )
         if self._rotate_90_clockwise:
