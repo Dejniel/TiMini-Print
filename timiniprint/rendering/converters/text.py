@@ -131,23 +131,26 @@ class TextConverter(PageConverter):
 
     def _open_text_source(self, text: str, width: int) -> PageSource:
         render_width = self._render_width(width)
+        margin = min(12, width // 64) if self._rotate_90_clockwise else 0
+        usable_width = max(1, render_width - 2 * margin)
         font = self._fit_truetype_font(
             self._font_path or find_monospace_bold_font(),
-            render_width,
-            self._reference_text(self._columns_for_width(render_width)),
+            usable_width,
+            self._reference_text(self._columns_for_width(usable_width)),
         )
         metrics = _CharWidthFontMetrics(font)
         lines = _PixelWidthTextWrapper(
             metrics,
-            render_width,
+            usable_width,
             self._word_wrap,
         ).wrapped_lines(text)
         return _TextPageSource(
             lines=lines,
-            lines_per_page=self._lines_per_page(width, metrics.line_height),
+            lines_per_page=self._lines_per_page(width, metrics.line_height, margin),
             width=render_width,
             output_width=width,
             metrics=metrics,
+            margin=margin,
             rotate_90_clockwise=self._rotate_90_clockwise,
         )
 
@@ -158,19 +161,20 @@ class TextConverter(PageConverter):
         font: ImageFont.FreeTypeFont,
         line_height: int,
         min_height: int = 1,
+        margin: int = 0,
     ) -> Image.Image:
-        height = max(1, min_height, line_height * len(lines))
+        height = max(1, min_height, line_height * len(lines) + 2 * margin)
         img = Image.new("1", (width, height), 1)
         draw = ImageDraw.Draw(img)
-        y = 0
+        y = margin
         for line in lines:
-            draw.text((0, y), line, font=font, fill=0)
+            draw.text((margin, y), line, font=font, fill=0)
             y += line_height
         return img
 
-    def _lines_per_page(self, width: int, line_height: int) -> int:
+    def _lines_per_page(self, width: int, line_height: int, margin: int = 0) -> int:
         if self._rotate_90_clockwise:
-            return max(1, width // max(1, line_height))
+            return max(1, (width - 2 * margin) // max(1, line_height))
         return max(1, int((width * self._page_height_to_width) // max(1, line_height)))
 
     def _render_width(self, width: int) -> int:
@@ -222,6 +226,7 @@ class _TextPageSource(PageSource):
         width: int,
         output_width: int,
         metrics: _CharWidthFontMetrics,
+        margin: int = 0,
         rotate_90_clockwise: bool = False,
     ) -> None:
         self._lines = list(lines)
@@ -229,6 +234,7 @@ class _TextPageSource(PageSource):
         self._width = width
         self._output_width = max(1, output_width)
         self._metrics = metrics
+        self._margin = max(0, margin)
         self._rotate_90_clockwise = rotate_90_clockwise
 
     @property
@@ -251,6 +257,7 @@ class _TextPageSource(PageSource):
             self._metrics.font,
             self._metrics.line_height,
             min_height=self._output_width if self._rotate_90_clockwise else 1,
+            margin=self._margin,
         )
         if self._rotate_90_clockwise:
             img = img.transpose(Image.Transpose.ROTATE_270)

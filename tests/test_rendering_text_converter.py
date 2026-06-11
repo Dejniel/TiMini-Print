@@ -130,6 +130,22 @@ class RenderingTextConverterTests(unittest.TestCase):
         self.assertEqual([page.image.size for page in pages], [(20, 30), (20, 30), (20, 30)])
         self.assertTrue(all(page.is_text and not page.dither for page in pages))
 
+    def test_rotated_text_applies_margin_before_rotation(self) -> None:
+        conv = TextConverter(
+            font_path=None,
+            columns=35,
+            rotate_90_clockwise=True,
+        )
+
+        with patch.object(TextConverter, "_fit_truetype_font", return_value=ImageFont.load_default()):
+            page = conv.open_text("encoding='UTF-8' standalone='yes'", 384).page(0)
+
+        bbox = page.image.convert("L").point(lambda pixel: 255 if pixel < 245 else 0).getbbox()
+        self.assertEqual(page.image.width, 384)
+        self.assertIsNotNone(bbox)
+        self.assertGreater(bbox[1], 0)
+        self.assertGreater(page.image.height - bbox[3], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
