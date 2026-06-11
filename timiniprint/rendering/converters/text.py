@@ -16,6 +16,7 @@ class _CharWidthFontMetrics:
     def __init__(self, font: ImageFont.FreeTypeFont) -> None:
         self.font = font
         self.line_height = self.measure_line_height(font)
+        self._draw = ImageDraw.Draw(Image.new("1", (1, 1)))
         self._char_width_cache: dict[str, float] = {}
 
     def char_width(self, char: str) -> float:
@@ -25,6 +26,11 @@ class _CharWidthFontMetrics:
 
     def text_width(self, text: str) -> float:
         return sum(self.char_width(char) for char in text)
+
+    def rendered_text_right_edge(self, text: str) -> int:
+        if not text:
+            return 0
+        return max(0, self._draw.textbbox((0, 0), text, font=self.font)[2])
 
     @staticmethod
     def measure_char_width(font: ImageFont.FreeTypeFont, char: str) -> float:
@@ -252,7 +258,7 @@ class _TextPageSource(PageSource):
             start = index * self._lines_per_page
             lines = self._lines[start : start + self._lines_per_page]
         img = TextConverter._paint_text_page_image(
-            self._width,
+            self._page_image_width(lines),
             lines,
             self._metrics.font,
             self._metrics.line_height,
@@ -262,3 +268,9 @@ class _TextPageSource(PageSource):
         if self._rotate_90_clockwise:
             img = img.transpose(Image.Transpose.ROTATE_270)
         return Page(img, dither=False, is_text=True)
+
+    def _page_image_width(self, lines: Sequence[str]) -> int:
+        if not self._rotate_90_clockwise:
+            return self._width
+        content_width = max((self._metrics.rendered_text_right_edge(line) for line in lines), default=0)
+        return min(self._width, max(1, content_width + 2 * self._margin))

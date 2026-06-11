@@ -98,6 +98,23 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(preview.width, 384)
         self.assertEqual(rendered.raster_set.width, 384)
 
+    def test_rotated_short_text_does_not_use_full_page_length(self) -> None:
+        renderer = DocumentRenderer()
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            rotate_90_clockwise=True,
+            text_columns=35,
+        )
+        plan = renderer.plan_text("A", self.device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], self.device, settings)
+        rendered = renderer.print_page(plan, plan.pages[0], self.device, settings)
+
+        self.assertEqual(preview.width, 384)
+        self.assertLess(preview.height, 384)
+        self.assertEqual(rendered.raster_set.width, 384)
+        self.assertLess(rendered.raster_set.height, 384)
+
     def test_pdf_plan_keeps_source_page_count_and_selected_pages(self) -> None:
         renderer = DocumentRenderer(pdf_renderer=_FakePdfRenderer(page_count=4))
         settings = PrintSettings(pdf_pages="2-3")

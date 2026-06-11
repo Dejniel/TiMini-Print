@@ -110,7 +110,7 @@ class RenderingTextConverterTests(unittest.TestCase):
         self.assertEqual(len(pages), 3)
         self.assertEqual([page.image.height for page in pages], [60, 60, 10])
 
-    def test_rotated_text_pages_keep_output_width_and_page_ratio(self) -> None:
+    def test_rotated_text_pages_keep_output_width_and_shrink_to_page_content(self) -> None:
         conv = TextConverter(
             font_path=None,
             page_height_to_width=1.5,
@@ -127,7 +127,8 @@ class RenderingTextConverterTests(unittest.TestCase):
                 pages = conv.load(str(path), 20)
 
         self.assertEqual(len(pages), 3)
-        self.assertEqual([page.image.size for page in pages], [(20, 30), (20, 30), (20, 30)])
+        self.assertEqual([page.image.width for page in pages], [20, 20, 20])
+        self.assertTrue(all(1 <= page.image.height < 30 for page in pages))
         self.assertTrue(all(page.is_text and not page.dither for page in pages))
 
     def test_rotated_text_applies_margin_before_rotation(self) -> None:
