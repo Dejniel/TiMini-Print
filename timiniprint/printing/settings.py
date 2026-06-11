@@ -14,7 +14,7 @@ DEFAULT_FEED_PADDING = 12
 
 @dataclass
 class PrintSettings:
-    dither_mode: DitherMode = DitherMode.FLOYD_STEINBERG
+    dither_mode: DitherMode = DitherMode.ATKINSON
     lsb_first: Optional[bool] = None
     text_mode: Optional[bool] = None
     rotate_90_clockwise: bool = False
