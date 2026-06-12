@@ -165,7 +165,7 @@ class PdfConverter(RasterConverter):
 
 
 class PdfPageSource(PageSource):
-    """One-shot PDF page source. Iteration renders pages lazily and closes the document."""
+    """Random-access PDF page source. Pages render lazily and the document closes via close/context manager."""
 
     def __init__(
         self,
