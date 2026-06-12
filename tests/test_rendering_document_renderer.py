@@ -7,6 +7,7 @@ from PIL import Image
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.document_renderer import DocumentRenderer, RenderDocument
 from timiniprint.printing.settings import PrintSettings
+from timiniprint.protocol import ImageEncoding, RuntimePrintCapabilities
 from timiniprint.raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
 from timiniprint.rendering.formats import document_kind
 
@@ -64,6 +65,34 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(rendered.raster_set.width, 384)
         self.assertEqual(image_renderer.preview_calls, 1)
         self.assertEqual(image_renderer.raster_calls, 1)
+
+    def test_print_render_uses_runtime_capabilities(self) -> None:
+        image_renderer = _RecordingImageRenderer()
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image(),
+            image_renderer=image_renderer,
+        )
+        device = PrinterCatalog.load().detect_device("PPA2L_TEST")
+        self.assertIsNotNone(device)
+        settings = PrintSettings(
+            image_encoding_override=ImageEncoding.LUCK_NORMAL_GRAY,
+            pixel_format_override=PixelFormat.GRAY4,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        renderer.preview_page(plan, plan.pages[0], device, settings)
+        renderer.print_page(
+            plan,
+            plan.pages[0],
+            device,
+            settings,
+            runtime_capabilities=RuntimePrintCapabilities(supports_gray=False),
+        )
+
+        self.assertEqual(image_renderer.preview_formats, [PixelFormat.GRAY4])
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.BW1,)])
 
     def test_rotated_image_uses_full_print_width(self) -> None:
         renderer = DocumentRenderer(
@@ -156,13 +185,17 @@ class _RecordingImageRenderer:
     def __init__(self) -> None:
         self.preview_calls = 0
         self.raster_calls = 0
+        self.preview_formats = []
+        self.raster_formats = []
 
     def preview_image(self, img, pixel_format, *, dither_mode, gamma_handle=False, gamma_value=None):
         self.preview_calls += 1
+        self.preview_formats.append(pixel_format)
         return img.convert("L")
 
     def raster_set(self, img, pixel_formats, *, dither_mode, gamma_handle=False, gamma_value=None):
         self.raster_calls += 1
+        self.raster_formats.append(pixel_formats)
         return RasterSet.from_single(
             RasterBuffer(
                 pixels=[1 for _ in range(img.width * img.height)],

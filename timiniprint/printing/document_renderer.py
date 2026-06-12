@@ -5,6 +5,7 @@ from typing import Callable
 
 from ..devices.device import PrinterDevice
 from ..protocol.job import PrinterProtocol
+from ..protocol.runtime import RuntimePrintCapabilities
 from ..raster import DitherMode, PixelFormat, RasterSet
 from ..rendering.converters import Page
 from ..rendering.converters.base import ImageLoader, PageSource
@@ -166,12 +167,14 @@ class DocumentRenderer:
         page: DocumentPage,
         device: PrinterDevice,
         settings: PrintSettings,
+        runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> RenderedPage:
         vendor_page = self._open_vendor_page(plan, page, device, settings)
         pixel_format, dither_mode, gamma_handle, gamma_value = self._render_options(
             vendor_page,
             device,
             settings,
+            runtime_capabilities=runtime_capabilities,
         )
         return RenderedPage(
             self.image_renderer.raster_set(
@@ -235,10 +238,13 @@ class DocumentRenderer:
         page: Page,
         device: PrinterDevice,
         settings: PrintSettings,
+        *,
+        runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> tuple[PixelFormat, DitherMode, bool, float | None]:
         pipeline = PrinterProtocol(device).resolve_image_pipeline(
             image_encoding_override=settings.image_encoding_override,
             pixel_format_override=settings.pixel_format_override,
+            runtime_capabilities=runtime_capabilities,
         )
         gamma_handle, gamma_value = resolve_gray_preprocessing(
             settings,
