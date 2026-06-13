@@ -27,6 +27,9 @@ It describes printer capabilities and print defaults.
 For some TinyPrint A4-style models these differ because the original app renders
 to `paper_size` and the protocol recipe adds left-side padding before packing
 the wire payload.
+TinyPrint size-8 paper handling is modeled as `paper_mode`: `plain` keeps the
+roll-paper feed recipe, while `a4_sheet` applies the original A4-sheet feed
+recipe for that protocol variant.
 
 A `PrinterProfile` is not enough to print by itself.
 It does not say:

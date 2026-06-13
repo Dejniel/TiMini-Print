@@ -5236,7 +5236,8 @@
     "a4xii": false,
     "default_protocol_variant": "tinyprint_eight",
     "add_mor_pix": true,
-    "add_more_pix_num": 32
+    "add_more_pix_num": 32,
+    "a4_sheet_max_height": 2460
   },
   {
     "profile_key": "xw001",

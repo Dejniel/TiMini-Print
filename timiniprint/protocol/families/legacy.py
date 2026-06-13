@@ -4,13 +4,14 @@ from ...raster import PixelFormat
 from ..encoding import pack_line, rle_encode_line
 from ..family import ProtocolFamily
 from ..packet import make_packet
-from ..types import ImageEncoding, ImagePipelineConfig
+from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 from .base import PrintJobRequest, ProtocolBehavior
 
 
 TINYPRINT_EIGHT = "tinyprint_eight"
 TINYPRINT_NEW = "tinyprint_new"
 TINYPRINT_NEW_EIGHT = "tinyprint_new_eight"
+TINYPRINT_EIGHT_PAPER_MODES = (PaperMode.PLAIN, PaperMode.A4_SHEET)
 
 
 def _speed(request: PrintJobRequest) -> int:
@@ -46,6 +47,12 @@ def _tinyprint_paper_le_check_black(amount: int, family: ProtocolFamily | str) -
     cmd = 0xA0 if amount < 0 else 0xA1
     payload = abs(amount).to_bytes(2, "little", signed=False) + b"\x11"
     return make_packet(cmd, payload, family)
+
+
+def _tinyprint_supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]:
+    if protocol_variant in {TINYPRINT_EIGHT, TINYPRINT_NEW_EIGHT}:
+        return TINYPRINT_EIGHT_PAPER_MODES
+    return ()
 
 
 def _left_padded_pixels(request: PrintJobRequest) -> tuple[list[int], int]:
@@ -92,7 +99,14 @@ def _legacy_line_packets(
 
 
 def _tinyprint_eight_tail_feed(request: PrintJobRequest) -> int:
-    if not request.lsb_first:
+    if request.paper_mode == PaperMode.A4_SHEET:
+        if request.a4xii:
+            return 500
+        max_height = request.a4_sheet_max_height
+        if max_height is None or max_height <= 0:
+            max_height = 3800 if request.dev_dpi == 300 else 2400
+        return max(0, max_height - request.require_raster(PixelFormat.BW1).height)
+    if request.a4xii or not request.lsb_first:
         return 100
     dots_per_paper = 72 if request.dev_dpi == 300 else 48
     return max(0, request.post_print_feed_count + 1) * dots_per_paper
@@ -165,7 +179,19 @@ def _esc_star_24dot_payload(request: PrintJobRequest) -> bytes:
 
 
 def _build_tinyprint_new_job(request: PrintJobRequest, *, eight: bool) -> bytes:
-    final_feed = request.feed_padding if eight and request.feed_padding > 0 else None
+    final_feed = None
+    if eight and request.paper_mode == PaperMode.A4_SHEET:
+        max_height = request.a4_sheet_max_height
+        if max_height is None or max_height <= 0:
+            max_height = 3800 if request.dev_dpi == 300 else 2400
+        height = request.require_raster(PixelFormat.BW1).height
+        final_feed = max(0, max_height - height) // 24
+    elif eight:
+        if request.one_length > 0:
+            final_feed = request.one_length
+        elif request.feed_padding > 0:
+            final_feed = request.feed_padding
+
     if final_feed is None:
         final_feed = 4 if request.dev_dpi == 300 else 3
 
@@ -196,6 +222,7 @@ BEHAVIOR = ProtocolBehavior(
         TINYPRINT_NEW,
         TINYPRINT_NEW_EIGHT,
     ),
+    supported_paper_modes_resolver=_tinyprint_supported_paper_modes,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.LEGACY_RAW,

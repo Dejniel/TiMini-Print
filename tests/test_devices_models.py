@@ -7,6 +7,7 @@ from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.model_codec import model_from_json, model_to_json
 from timiniprint.devices.profiles import DetectionRule
 from timiniprint.devices.profiles import PrinterProfile, PrinterRuntimeDefaults
+from timiniprint.protocol import PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding, PaperMode
 
@@ -287,18 +288,28 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x9.protocol_variant, "tinyprint_eight")
         self.assertEqual(x9.profile.width, 1600)
         self.assertEqual(x9.profile.left_padding_pixels, 32)
+        self.assertEqual(x9.profile.a4_sheet_max_height, 2460)
+        self.assertEqual(
+            PrinterProtocol(x9).supported_paper_modes(),
+            (PaperMode.PLAIN, PaperMode.A4_SHEET),
+        )
 
         jxm800 = self.catalog.detect_device("GG-D2100-1234")
         self.assertIsNotNone(jxm800)
         self.assertEqual(jxm800.profile_key, "jxm800")
         self.assertEqual(jxm800.protocol_family, ProtocolFamily.LEGACY_PREFIXED)
         self.assertEqual(jxm800.protocol_variant, "tinyprint_new_eight")
+        self.assertEqual(
+            PrinterProtocol(jxm800).supported_paper_modes(),
+            (PaperMode.PLAIN, PaperMode.A4_SHEET),
+        )
 
         ly10 = self.catalog.detect_device("LY10-1234")
         self.assertIsNotNone(ly10)
         self.assertEqual(ly10.profile_key, "ly10")
         self.assertEqual(ly10.protocol_family, ProtocolFamily.LEGACY_PREFIXED)
         self.assertEqual(ly10.protocol_variant, "tinyprint_new")
+        self.assertEqual(PrinterProtocol(ly10).supported_paper_modes(), ())
 
     def test_origin_app_packages_keep_conflicting_names_explicit(self) -> None:
         rules = {rule.rule_key: rule for rule in self.catalog.rules}

@@ -182,6 +182,50 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x90, 0x00, 0x11]), data)
         self.assertNotIn(bytes([0xA1, 0x00, 0x02, 0x00, 0x30, 0x00]), data)
 
+    def test_tinyprint_eight_a4_sheet_uses_max_height_minus_raster_height(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0] * 2,
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LEGACY,
+            protocol_variant="tinyprint_eight",
+            feed_padding=12,
+            dev_dpi=203,
+            post_print_feed_count=2,
+            a4_sheet_max_height=20,
+            image_pipeline=self.legacy_raw,
+            paper_mode=self.types.PaperMode.A4_SHEET,
+        )
+
+        self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x12, 0x00, 0x11]), data)
+
+    def test_tinyprint_eight_a4xii_a4_sheet_uses_fixed_feed(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=False,
+            protocol_family=ProtocolFamily.LEGACY,
+            protocol_variant="tinyprint_eight",
+            feed_padding=12,
+            dev_dpi=203,
+            post_print_feed_count=2,
+            a4xii=True,
+            image_pipeline=self.legacy_raw,
+            paper_mode=self.types.PaperMode.A4_SHEET,
+        )
+
+        self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0xF4, 0x01, 0x11]), data)
+
     def test_tinyprint_new_variant_uses_esc_star_flow(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
@@ -205,6 +249,48 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(bytes([0x1B, 0x4A, 0x00, 0x0A]), data)
         self.assertTrue(data.endswith(bytes([0x00, 0xFF])))
         self.assertIn(bytes([0x1B, 0x64, 0x03, 0x12, 0x51, 0x78, 0xA3]), data)
+
+    def test_tinyprint_new_eight_variant_uses_profile_one_length(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=8,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LEGACY_PREFIXED,
+            protocol_variant="tinyprint_new_eight",
+            feed_padding=12,
+            dev_dpi=203,
+            one_length=8,
+            image_pipeline=self.legacy_raw,
+        )
+
+        self.assertIn(bytes([0x1B, 0x64, 0x08, 0x12, 0x51, 0x78, 0xA3]), data)
+
+    def test_tinyprint_new_eight_a4_sheet_uses_max_height_bands(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0] * 24,
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=8,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LEGACY_PREFIXED,
+            protocol_variant="tinyprint_new_eight",
+            feed_padding=12,
+            dev_dpi=203,
+            one_length=8,
+            a4_sheet_max_height=72,
+            image_pipeline=self.legacy_raw,
+            paper_mode=self.types.PaperMode.A4_SHEET,
+        )
+
+        self.assertIn(bytes([0x1B, 0x64, 0x02, 0x12, 0x51, 0x78, 0xA3]), data)
 
     def test_build_from_raster_validates(self) -> None:
         raster = self.raster.RasterBuffer(pixels=[1, 0, 1], width=2)

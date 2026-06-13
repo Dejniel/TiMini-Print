@@ -96,6 +96,9 @@ class PrintJobRequest:
     density: int | None = None
     post_print_feed_count: int = 2
     left_padding_pixels: int = 0
+    one_length: int = 0
+    a4xii: bool = False
+    a4_sheet_max_height: int | None = None
     paper_mode: PaperMode | None = None
     page_index: int = 1
     page_count: int = 1

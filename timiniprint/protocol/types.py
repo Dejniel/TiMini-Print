@@ -27,6 +27,7 @@ class ImageEncoding(str, Enum):
 
 class PaperMode(str, Enum):
     PLAIN = "plain"
+    A4_SHEET = "a4_sheet"
     TAG = "tag"
     BLACK_TAG = "black_tag"
     FOLDER = "folder"
@@ -37,6 +38,7 @@ class PaperMode(str, Enum):
     def label(self) -> str:
         labels = {
             PaperMode.PLAIN: "Plain roll",
+            PaperMode.A4_SHEET: "A4 sheet",
             PaperMode.TAG: "Tag",
             PaperMode.BLACK_TAG: "Black tag",
             PaperMode.FOLDER: "Folder",

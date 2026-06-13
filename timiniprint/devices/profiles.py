@@ -142,6 +142,7 @@ class PrinterProfile:
     a4xii: bool = False
     add_mor_pix: Optional[bool] = None
     add_more_pix_num: Optional[int] = None
+    a4_sheet_max_height: Optional[int] = None
     origin_app_packages: tuple[str, ...] = ()
 
     @property
