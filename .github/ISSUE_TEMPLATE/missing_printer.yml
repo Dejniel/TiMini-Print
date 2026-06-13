@@ -37,23 +37,6 @@ body:
       required: true
 
   - type: textarea
-    id: original-app-behavior
-    attributes:
-      label: Original app behavior
-      description: Tell whether the original app can print, pair, scan, and which transport it appears to use if you know.
-      placeholder: "The original app prints correctly over Bluetooth."
-    validations:
-      required: true
-
-  - type: textarea
-    id: bluetooth-details
-    attributes:
-      label: Bluetooth details
-      description: Optional. If you know service UUIDs, characteristic UUIDs, advertised name, or MAC/address, paste them here.
-    validations:
-      required: false
-
-  - type: textarea
     id: original-app-dump
     attributes:
       label: Original app Bluetooth/HCI dump
