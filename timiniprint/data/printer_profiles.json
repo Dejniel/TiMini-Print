@@ -14,12 +14,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -61,12 +61,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -108,12 +108,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 183,
@@ -139,8 +139,8 @@
       }
     },
     "a4xii": true,
-    "add_mor_pix": false,
-    "default_protocol_variant": "tinyprint_eight"
+    "render_to_paper_width": false,
+    "default_protocol_variant": "line_eight"
   },
   {
     "profile_key": "luck_a2",
@@ -389,12 +389,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -1421,12 +1421,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 183,
@@ -1452,8 +1452,8 @@
       }
     },
     "a4xii": true,
-    "add_mor_pix": false,
-    "default_protocol_variant": "tinyprint_eight"
+    "render_to_paper_width": false,
+    "default_protocol_variant": "line_eight"
   },
   {
     "profile_key": "a43",
@@ -1470,12 +1470,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 300,
@@ -1501,9 +1501,9 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true,
-    "add_more_pix_num": 32
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 32
   },
   {
     "profile_key": "a4300",
@@ -1520,12 +1520,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -1551,8 +1551,8 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": false
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": false
   },
   {
     "profile_key": "ai01",
@@ -1616,12 +1616,12 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 103,
@@ -1721,12 +1721,12 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 183,
@@ -1768,12 +1768,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -1815,12 +1815,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -1862,12 +1862,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -1909,12 +1909,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -1956,12 +1956,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -2003,12 +2003,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -2050,12 +2050,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 183,
@@ -2097,12 +2097,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 63,
@@ -2144,12 +2144,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 83,
@@ -2191,12 +2191,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -2238,12 +2238,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 83,
@@ -2285,12 +2285,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 83,
@@ -2332,12 +2332,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -2379,12 +2379,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -2426,12 +2426,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 83,
@@ -2473,12 +2473,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -2520,12 +2520,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -2567,12 +2567,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -2614,12 +2614,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -2661,12 +2661,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -2692,7 +2692,7 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight"
+    "default_protocol_variant": "line_eight"
   },
   {
     "profile_key": "gt09",
@@ -2709,12 +2709,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 383,
@@ -2740,8 +2740,8 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true
   },
   {
     "profile_key": "gw09",
@@ -2758,12 +2758,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -2789,7 +2789,7 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight"
+    "default_protocol_variant": "line_eight"
   },
   {
     "profile_key": "hd1",
@@ -2806,12 +2806,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -2854,12 +2854,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -2901,12 +2901,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy_prefixed",
+    "default_protocol_family": "tiny_prefixed",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -2932,8 +2932,8 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_new_eight",
-    "add_mor_pix": true
+    "default_protocol_variant": "esc_star_eight",
+    "render_to_paper_width": true
   },
   {
     "profile_key": "label_printer",
@@ -2950,12 +2950,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 180,
@@ -2997,12 +2997,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 83,
@@ -3045,12 +3045,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -3093,12 +3093,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -3140,12 +3140,12 @@
     "can_print_label": false,
     "label_value": "16",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 83,
@@ -3187,12 +3187,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 153,
@@ -3234,12 +3234,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy_prefixed",
+    "default_protocol_family": "tiny_prefixed",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -3265,7 +3265,7 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_new"
+    "default_protocol_variant": "esc_star"
   },
   {
     "profile_key": "ly11",
@@ -3282,12 +3282,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy_prefixed",
+    "default_protocol_family": "tiny_prefixed",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -3313,7 +3313,7 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_new"
+    "default_protocol_variant": "esc_star"
   },
   {
     "profile_key": "m01",
@@ -3331,12 +3331,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -3378,12 +3378,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 83,
@@ -3425,12 +3425,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -3472,12 +3472,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -3503,9 +3503,9 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true,
-    "add_more_pix_num": 32
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 32
   },
   {
     "profile_key": "mx02",
@@ -3672,12 +3672,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -3719,12 +3719,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -3750,9 +3750,9 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true,
-    "add_more_pix_num": 24
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 24
   },
   {
     "profile_key": "p5",
@@ -3769,12 +3769,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 280,
@@ -3816,12 +3816,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -3863,12 +3863,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -3910,12 +3910,12 @@
     "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 80,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -3957,12 +3957,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -4004,12 +4004,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -4051,12 +4051,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -4082,9 +4082,9 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true,
-    "add_more_pix_num": 32
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 32
   },
   {
     "profile_key": "pr893",
@@ -4101,12 +4101,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -4132,9 +4132,9 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true,
-    "add_more_pix_num": 48
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 48
   },
   {
     "profile_key": "professional_printer",
@@ -4151,12 +4151,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -4182,9 +4182,9 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_professional",
-    "add_mor_pix": true,
-    "add_more_pix_num": 32
+    "default_protocol_variant": "professional",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 32
   },
   {
     "profile_key": "pt001",
@@ -4201,12 +4201,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 32,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -4249,12 +4249,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -4296,12 +4296,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -4343,12 +4343,12 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -4390,12 +4390,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -4437,12 +4437,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -4634,12 +4634,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -4681,12 +4681,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -4728,12 +4728,12 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -4775,12 +4775,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -4822,12 +4822,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -4869,12 +4869,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -4916,12 +4916,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -4963,12 +4963,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -5010,12 +5010,12 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -5057,12 +5057,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 183,
@@ -5088,8 +5088,8 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true
   },
   {
     "profile_key": "x9",
@@ -5106,12 +5106,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -5137,9 +5137,9 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true,
-    "add_more_pix_num": 32,
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 32,
     "a4_sheet_max_height": 2460
   },
   {
@@ -5158,12 +5158,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_raw"
+      "encoding": "tiny_raw"
     },
     "stream": {
       "chunk_size": 180,
@@ -5206,12 +5206,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 180,
@@ -5298,12 +5298,12 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 123,
@@ -5345,12 +5345,12 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "legacy",
+    "default_protocol_family": "tiny",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "legacy_rle"
+      "encoding": "tiny_rle"
     },
     "stream": {
       "chunk_size": 512,
@@ -5376,12 +5376,12 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "tinyprint_eight",
-    "add_mor_pix": true,
-    "add_more_pix_num": 36
+    "default_protocol_variant": "line_eight",
+    "render_to_paper_width": true,
+    "left_padding_pixels": 36
   },
   {
-    "profile_key": "tspl_p1",
+    "profile_key": "eleph_tspl_p1",
     "origin_app_packages": [
       "com.sandu.JxPrinter",
       "com.fyhd.toprint"
@@ -5396,14 +5396,14 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_protocol_family": "tspl",
+    "default_protocol_family": "eleph_tspl",
     "default_protocol_variant": "p1",
     "default_paper_mode": "tag",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "tspl_bitmap"
+      "encoding": "eleph_tspl_bitmap"
     },
     "stream": {
       "chunk_size": 180,
@@ -5443,7 +5443,7 @@
     "a4xii": false
   },
   {
-    "profile_key": "hprt_esc_toprint_zl1",
+    "profile_key": "eleph_hprt_esc_zl1",
     "origin_app_packages": [
       "com.sandu.JxPrinter",
       "com.fyhd.toprint"
@@ -5458,14 +5458,14 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_protocol_family": "hprt_esc",
-    "default_protocol_variant": "toprint_zl1",
+    "default_protocol_family": "eleph_hprt_esc",
+    "default_protocol_variant": "zl1",
     "default_paper_mode": "tag",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "hprt_esc_raster"
+      "encoding": "eleph_hprt_esc_raster"
     },
     "stream": {
       "chunk_size": 180,
@@ -5571,14 +5571,14 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_family": "phomemo_esc",
     "default_protocol_variant": "m02",
     "default_paper_mode": "plain",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "phomemo_escpos_raster"
+      "encoding": "phomemo_esc_raster"
     },
     "stream": {
       "chunk_size": 128,
@@ -5628,14 +5628,14 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_family": "phomemo_esc",
     "default_protocol_variant": "m02s",
     "default_paper_mode": "plain",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "phomemo_escpos_raster"
+      "encoding": "phomemo_esc_raster"
     },
     "stream": {
       "chunk_size": 128,
@@ -5685,14 +5685,14 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_family": "phomemo_esc",
     "default_protocol_variant": "m02x",
     "default_paper_mode": "plain",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "phomemo_escpos_raster"
+      "encoding": "phomemo_esc_raster"
     },
     "stream": {
       "chunk_size": 128,
@@ -5742,14 +5742,14 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_family": "phomemo_esc",
     "default_protocol_variant": "t02",
     "default_paper_mode": "plain",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "phomemo_escpos_raster"
+      "encoding": "phomemo_esc_raster"
     },
     "stream": {
       "chunk_size": 128,
@@ -5799,14 +5799,14 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_family": "phomemo_esc",
     "default_protocol_variant": "m02_pro",
     "default_paper_mode": "plain",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "phomemo_escpos_raster"
+      "encoding": "phomemo_esc_raster"
     },
     "stream": {
       "chunk_size": 128,
@@ -5856,14 +5856,14 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_family": "phomemo_esc",
     "default_protocol_variant": "m110",
     "default_paper_mode": "tag",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "phomemo_escpos_raster"
+      "encoding": "phomemo_esc_raster"
     },
     "stream": {
       "chunk_size": 128,
@@ -5917,14 +5917,14 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_escpos",
+    "default_protocol_family": "phomemo_esc",
     "default_protocol_variant": "m220",
     "default_paper_mode": "tag",
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "phomemo_escpos_raster"
+      "encoding": "phomemo_esc_raster"
     },
     "stream": {
       "chunk_size": 128,

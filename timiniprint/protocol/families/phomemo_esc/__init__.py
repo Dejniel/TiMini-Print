@@ -1,11 +1,13 @@
+"""Phomemo ESC command dialect."""
+
 from __future__ import annotations
 
-from ...raster import PixelFormat
-from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
-from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
-from .phomemo_escpos_core import (
+from ....raster import PixelFormat
+from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
+from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from .core import (
     advance_paper_cmd,
-    build_phomemo_escpos_job,
+    build_phomemo_esc_job,
     retract_paper_cmd,
     supported_paper_modes,
 )
@@ -17,7 +19,7 @@ _STANDARD_WRITE_DELAY_MS = 20
 
 
 def build_job(request: PrintJobRequest) -> bytes:
-    return build_phomemo_escpos_job(request)
+    return build_phomemo_esc_job(request)
 
 
 TRANSPORT = BleTransportProfile(
@@ -32,10 +34,10 @@ BEHAVIOR = ProtocolBehavior(
     transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
-        encoding=ImageEncoding.PHOMEMO_ESCPOS_RASTER,
+        encoding=ImageEncoding.PHOMEMO_ESC_RASTER,
     ),
     image_encoding_support={
-        ImageEncoding.PHOMEMO_ESCPOS_RASTER: (PixelFormat.BW1,),
+        ImageEncoding.PHOMEMO_ESC_RASTER: (PixelFormat.BW1,),
     },
     supported_protocol_variants=("m02", "m02s", "m02x", "m02_pro", "t02", "m110", "m220"),
     supported_paper_modes=(PaperMode.PLAIN,),

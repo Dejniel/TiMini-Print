@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ...protocol.families.niimbot_core import (
+from ...protocol.families.niimbot.core import (
     NiimbotResponse,
     connect_packet,
     model_id_from_reply,

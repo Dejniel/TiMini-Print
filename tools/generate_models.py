@@ -146,14 +146,14 @@ def main() -> None:
             "label_value": str(args[23]),
             "back_paper_num": int(args[24]),
             "a4xii": False,
-            "add_mor_pix": None,
+            "render_to_paper_width": None,
         }
         if not bool(args[7]):
             model["ble_mtu_request"] = 23
 
         # A4XII models are the only ones using the signature that ends with two booleans.
         if len(args) == 29 and isinstance(args[-1], bool) and isinstance(args[-2], bool):
-            model["add_mor_pix"] = args[-2]
+            model["render_to_paper_width"] = args[-2]
             model["a4xii"] = args[-1]
 
         models.append(model)

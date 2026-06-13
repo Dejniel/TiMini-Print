@@ -12,33 +12,33 @@ from .base import (
     split_prefixed_bulk_stream,
 )
 from .dck import BEHAVIOR as DCK_BEHAVIOR
-from .hprt_esc import BEHAVIOR as HPRT_ESC_BEHAVIOR
-from .legacy import BEHAVIOR as LEGACY_BEHAVIOR
-from .luck_normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
-from .luck_normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
+from .eleph_hprt_esc import BEHAVIOR as ELEPH_HPRT_ESC_BEHAVIOR
+from .tiny import BEHAVIOR as TINY_BEHAVIOR
+from .luck.normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
+from .luck.normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
 from .niimbot import BEHAVIOR as NIIMBOT_BEHAVIOR
-from .phomemo_escpos import BEHAVIOR as PHOMEMO_ESCPOS_BEHAVIOR
-from .tspl import BEHAVIOR as TSPL_BEHAVIOR
+from .phomemo_esc import BEHAVIOR as PHOMEMO_ESC_BEHAVIOR
+from .eleph_tspl import BEHAVIOR as ELEPH_TSPL_BEHAVIOR
 from .v5g import BEHAVIOR as V5G_BEHAVIOR
 from .v5c import BEHAVIOR as V5C_BEHAVIOR
 from .v5x import BEHAVIOR as V5X_BEHAVIOR
 
 _DEFINITIONS = {
-    ProtocolFamily.LEGACY: ProtocolDefinition(
+    ProtocolFamily.TINY: ProtocolDefinition(
         spec=ProtocolSpec(
             packet_prefix=bytes([0x51, 0x78]),
-            command_set=ProtocolCommandSet.LEGACY,
+            command_set=ProtocolCommandSet.TINY,
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
-        behavior=LEGACY_BEHAVIOR,
+        behavior=TINY_BEHAVIOR,
     ),
-    ProtocolFamily.LEGACY_PREFIXED: ProtocolDefinition(
+    ProtocolFamily.TINY_PREFIXED: ProtocolDefinition(
         spec=ProtocolSpec(
             packet_prefix=bytes([0x12, 0x51, 0x78]),
-            command_set=ProtocolCommandSet.LEGACY,
+            command_set=ProtocolCommandSet.TINY,
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
-        behavior=LEGACY_BEHAVIOR,
+        behavior=TINY_BEHAVIOR,
     ),
     ProtocolFamily.LUCK_NORMAL: ProtocolDefinition(
         spec=ProtocolSpec(
@@ -88,13 +88,13 @@ _DEFINITIONS = {
         ),
         behavior=DCK_BEHAVIOR,
     ),
-    ProtocolFamily.HPRT_ESC: ProtocolDefinition(
+    ProtocolFamily.ELEPH_HPRT_ESC: ProtocolDefinition(
         spec=ProtocolSpec(
             packet_prefix=None,
-            command_set=ProtocolCommandSet.HPRT_ESC,
+            command_set=ProtocolCommandSet.ELEPH_HPRT_ESC,
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
-        behavior=HPRT_ESC_BEHAVIOR,
+        behavior=ELEPH_HPRT_ESC_BEHAVIOR,
     ),
     ProtocolFamily.NIIMBOT: ProtocolDefinition(
         spec=ProtocolSpec(
@@ -104,21 +104,21 @@ _DEFINITIONS = {
         ),
         behavior=NIIMBOT_BEHAVIOR,
     ),
-    ProtocolFamily.TSPL: ProtocolDefinition(
+    ProtocolFamily.ELEPH_TSPL: ProtocolDefinition(
         spec=ProtocolSpec(
             packet_prefix=None,
-            command_set=ProtocolCommandSet.TSPL,
+            command_set=ProtocolCommandSet.ELEPH_TSPL,
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
-        behavior=TSPL_BEHAVIOR,
+        behavior=ELEPH_TSPL_BEHAVIOR,
     ),
-    ProtocolFamily.PHOMEMO_ESCPOS: ProtocolDefinition(
+    ProtocolFamily.PHOMEMO_ESC: ProtocolDefinition(
         spec=ProtocolSpec(
             packet_prefix=None,
-            command_set=ProtocolCommandSet.PHOMEMO_ESCPOS,
+            command_set=ProtocolCommandSet.PHOMEMO_ESC,
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
-        behavior=PHOMEMO_ESCPOS_BEHAVIOR,
+        behavior=PHOMEMO_ESC_BEHAVIOR,
     ),
 }
 

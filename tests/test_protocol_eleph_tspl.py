@@ -10,8 +10,8 @@ from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
 class TsplProtocolTests(unittest.TestCase):
-    def test_p1_profile_builds_tspl_bitmap_job(self) -> None:
-        device = PrinterCatalog.load().device_from_profile("tspl_p1")
+    def test_p1_profile_builds_eleph_bitmap_job(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("eleph_tspl_p1")
         raster = RasterBuffer(
             pixels=[
                 1, 0, 0, 0, 0, 0, 0, 0,
@@ -39,7 +39,7 @@ class TsplProtocolTests(unittest.TestCase):
         self.assertTrue(job.payload.endswith(b"PRINT 1,1\r\n"))
 
     def test_p1_profile_uses_source_backed_command_order(self) -> None:
-        device = PrinterCatalog.load().device_from_profile("tspl_p1")
+        device = PrinterCatalog.load().device_from_profile("eleph_tspl_p1")
         profile = replace(
             device.profile,
             print_defaults=replace(
@@ -73,7 +73,7 @@ class TsplProtocolTests(unittest.TestCase):
         self.assertEqual(positions, sorted(positions))
 
     def test_p1_plain_mode_uses_continuous_media_setup_and_recipe(self) -> None:
-        device = PrinterCatalog.load().device_from_profile("tspl_p1")
+        device = PrinterCatalog.load().device_from_profile("eleph_tspl_p1")
         profile = replace(
             device.profile,
             print_defaults=replace(
@@ -95,7 +95,7 @@ class TsplProtocolTests(unittest.TestCase):
         self.assertIn(b"GAP 0 mm,0 mm\r\n", job.payload)
         self.assertNotIn(b"SPEED ", job.payload)
 
-    def test_catalog_detects_eleph_p1_as_tspl_without_stealing_old_p1(self) -> None:
+    def test_catalog_detects_eleph_p1_without_stealing_tiny_p1(self) -> None:
         catalog = PrinterCatalog.load()
 
         eleph = catalog.detect_device("P1_F30E")
@@ -103,14 +103,14 @@ class TsplProtocolTests(unittest.TestCase):
 
         self.assertIsNotNone(eleph)
         assert eleph is not None
-        self.assertEqual(eleph.profile_key, "tspl_p1")
-        self.assertEqual(eleph.protocol_family.value, "tspl")
+        self.assertEqual(eleph.profile_key, "eleph_tspl_p1")
+        self.assertEqual(eleph.protocol_family.value, "eleph_tspl")
         self.assertEqual(eleph.protocol_variant, "p1")
 
         self.assertIsNotNone(old)
         assert old is not None
-        self.assertNotEqual(old.profile_key, "tspl_p1")
-        self.assertEqual(old.protocol_family.value, "legacy")
+        self.assertNotEqual(old.profile_key, "eleph_tspl_p1")
+        self.assertEqual(old.protocol_family.value, "tiny")
 
 
 if __name__ == "__main__":

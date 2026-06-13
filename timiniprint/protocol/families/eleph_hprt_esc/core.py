@@ -1,12 +1,18 @@
+"""Eleph/ToPrint HPRT ESC commands.
+
+This is a source-app dialect built from ESC-shaped printer commands, not a
+generic ESC/POS implementation.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ...raster import PixelFormat, RasterBuffer
-from ..steps import ProtocolStep
-from ..types import PaperMode
-from .base import PrintJobRequest
-from .bitmap import pack_bw1_rows, packed_row_width_bytes
+from ....raster import PixelFormat, RasterBuffer
+from ...steps import ProtocolStep
+from ...types import PaperMode
+from ..base import PrintJobRequest
+from ..bitmap import pack_bw1_rows, packed_row_width_bytes
 
 
 _MEDIA_TYPE_CMD = bytes([0x10, 0xFF, 0x10, 0x03])
@@ -28,20 +34,20 @@ _MEDIA_HOLE_PAPER = 0x03
 
 
 @dataclass(frozen=True)
-class HprtEscPaperRecipe:
+class ElephHprtEscPaperRecipe:
     media_paper_type: int
 
 
 @dataclass(frozen=True)
-class HprtEscRecipe:
+class ElephHprtEscRecipe:
     protocol_variant: str
-    paper_recipes: dict[PaperMode, HprtEscPaperRecipe]
+    paper_recipes: dict[PaperMode, ElephHprtEscPaperRecipe]
     default_paper_mode: PaperMode = PaperMode.TAG
     default_thickness: int = 1
 
     def build_job(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
         if request.protocol_variant not in (None, self.protocol_variant):
-            raise ValueError(f"Unsupported HPRT ESC protocol variant: {request.protocol_variant}")
+            raise ValueError(f"Unsupported Eleph HPRT ESC protocol variant: {request.protocol_variant}")
         raster = request.require_raster(PixelFormat.BW1)
         recipe = self._paper_recipe(request.paper_mode)
         thickness = _thickness(request.density, default=self.default_thickness)
@@ -57,18 +63,18 @@ class HprtEscRecipe:
             ),
         )
 
-    def _paper_recipe(self, paper_mode: PaperMode | None) -> HprtEscPaperRecipe:
+    def _paper_recipe(self, paper_mode: PaperMode | None) -> ElephHprtEscPaperRecipe:
         resolved_mode = self.default_paper_mode if paper_mode is None else paper_mode
         return self.paper_recipes[resolved_mode]
 
 
-def build_toprint_zl1_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    return HprtEscRecipe(
-        protocol_variant="toprint_zl1",
+def build_zl1_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+    return ElephHprtEscRecipe(
+        protocol_variant="zl1",
         paper_recipes={
-            PaperMode.TAG: HprtEscPaperRecipe(_MEDIA_NO_DRY_ADHESIVE),
-            PaperMode.PLAIN: HprtEscPaperRecipe(_MEDIA_CONTINUOUS_REEL),
-            PaperMode.BLACK_TAG: HprtEscPaperRecipe(_MEDIA_HOLE_PAPER),
+            PaperMode.TAG: ElephHprtEscPaperRecipe(_MEDIA_NO_DRY_ADHESIVE),
+            PaperMode.PLAIN: ElephHprtEscPaperRecipe(_MEDIA_CONTINUOUS_REEL),
+            PaperMode.BLACK_TAG: ElephHprtEscPaperRecipe(_MEDIA_HOLE_PAPER),
         },
     ).build_job(request)
 

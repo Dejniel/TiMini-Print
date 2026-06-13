@@ -9,7 +9,7 @@ from timiniprint.protocol.types import ImageEncoding
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
-class PhomemoEscposProtocolTests(unittest.TestCase):
+class PhomemoEscProtocolTests(unittest.TestCase):
     def test_m02_profile_builds_raster_job(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m02")
         raster = RasterBuffer(
@@ -61,7 +61,7 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
             is_text=False,
         )
 
-        self.assertEqual(device.protocol_family, ProtocolFamily.PHOMEMO_ESCPOS)
+        self.assertEqual(device.protocol_family, ProtocolFamily.PHOMEMO_ESC)
         self.assertEqual(device.protocol_variant, "t02")
         self.assertIn(b"\x1d\x76\x30\x00\x01\x00\x01\x00\x00", job.payload)
         self.assertTrue(job.payload.endswith(b"\x1b\x64\x04"))
@@ -173,9 +173,9 @@ class PhomemoEscposProtocolTests(unittest.TestCase):
         assert m02s is not None
         assert m02s_alias is not None
         self.assertEqual(m02.profile_key, "phomemo_m02")
-        self.assertEqual(m02.protocol_family, ProtocolFamily.PHOMEMO_ESCPOS)
+        self.assertEqual(m02.protocol_family, ProtocolFamily.PHOMEMO_ESC)
         self.assertEqual(m02.protocol_variant, "m02")
-        self.assertEqual(m02.image_pipeline.encoding, ImageEncoding.PHOMEMO_ESCPOS_RASTER)
+        self.assertEqual(m02.image_pipeline.encoding, ImageEncoding.PHOMEMO_ESC_RASTER)
         self.assertEqual(m02s.profile_key, "phomemo_m02s")
         self.assertEqual(m02s.protocol_variant, "m02s")
         self.assertEqual(m02s_alias.profile_key, "phomemo_m02s")

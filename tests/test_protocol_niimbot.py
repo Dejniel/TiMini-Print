@@ -4,7 +4,7 @@ import unittest
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol import PrinterProtocol
-from timiniprint.protocol.families.niimbot_core import (
+from timiniprint.protocol.families.niimbot.core import (
     NiimbotRequest,
     NiimbotResponse,
     frame,

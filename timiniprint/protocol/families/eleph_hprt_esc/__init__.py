@@ -1,12 +1,14 @@
+"""Eleph/ToPrint HPRT ESC command dialect."""
+
 from __future__ import annotations
 
-from ...raster import PixelFormat
-from ..steps import ProtocolStep
-from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
-from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
-from .hprt_esc_core import (
+from ....raster import PixelFormat
+from ...steps import ProtocolStep
+from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
+from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from .core import (
     advance_paper_cmd,
-    build_toprint_zl1_job,
+    build_zl1_job,
     retract_paper_cmd,
 )
 
@@ -15,7 +17,7 @@ _STANDARD_WRITE_DELAY_MS = 10
 
 
 def build_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    return build_toprint_zl1_job(request)
+    return build_zl1_job(request)
 
 
 TRANSPORT = BleTransportProfile(
@@ -28,12 +30,12 @@ BEHAVIOR = ProtocolBehavior(
     transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
-        encoding=ImageEncoding.HPRT_ESC_RASTER,
+        encoding=ImageEncoding.ELEPH_HPRT_ESC_RASTER,
     ),
     image_encoding_support={
-        ImageEncoding.HPRT_ESC_RASTER: (PixelFormat.BW1,),
+        ImageEncoding.ELEPH_HPRT_ESC_RASTER: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("toprint_zl1",),
+    supported_protocol_variants=("zl1",),
     supported_paper_modes=(PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG),
     advance_paper_builder=advance_paper_cmd,
     retract_paper_builder=retract_paper_cmd,

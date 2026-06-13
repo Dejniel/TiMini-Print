@@ -1,9 +1,11 @@
+"""Eleph/ToPrint P1 TSPL-shaped command dialect."""
+
 from __future__ import annotations
 
-from ...raster import PixelFormat
-from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
-from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
-from .tspl_core import (
+from ....raster import PixelFormat
+from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
+from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from .core import (
     advance_paper_cmd,
     build_p1_job,
     retract_paper_cmd,
@@ -31,10 +33,10 @@ BEHAVIOR = ProtocolBehavior(
     transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
-        encoding=ImageEncoding.TSPL_BITMAP,
+        encoding=ImageEncoding.ELEPH_TSPL_BITMAP,
     ),
     image_encoding_support={
-        ImageEncoding.TSPL_BITMAP: (PixelFormat.BW1,),
+        ImageEncoding.ELEPH_TSPL_BITMAP: (PixelFormat.BW1,),
     },
     supported_protocol_variants=("p1",),
     supported_paper_modes=(PaperMode.TAG, PaperMode.PLAIN),

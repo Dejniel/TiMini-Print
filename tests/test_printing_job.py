@@ -431,7 +431,7 @@ class PrintingJobTests(unittest.TestCase):
     def test_build_from_file_can_override_image_encoding(self) -> None:
         img = Image.new("1", (8, 1), 1)
         loader = _FakeLoader([Page(img, dither=False, is_text=False)])
-        settings = self.job_mod.PrintSettings(image_encoding_override=ImageEncoding.LEGACY_RLE)
+        settings = self.job_mod.PrintSettings(image_encoding_override=ImageEncoding.TINY_RLE)
         builder = self.job_mod.PrintJobBuilder(
             self.device,
             settings=settings,
@@ -451,7 +451,7 @@ class PrintingJobTests(unittest.TestCase):
 
         self.assertEqual(
             build_job_mock.call_args.kwargs["image_pipeline"].encoding,
-            ImageEncoding.LEGACY_RLE,
+            ImageEncoding.TINY_RLE,
         )
 
     def test_build_from_file_uses_v5x_default_bw1_pipeline(self) -> None:

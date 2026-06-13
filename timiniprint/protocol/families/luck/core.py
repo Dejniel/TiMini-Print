@@ -4,13 +4,13 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import Mapping
 
-from ...raster import PixelFormat, RasterBuffer
-from ..compression import compress_zlib_wbits_10
-from ..encoding import pack_line
-from ..family import ProtocolFamily
-from ..steps import ProtocolReplyExpectation, ProtocolStep
-from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
-from .base import PrintJobRequest
+from ....raster import PixelFormat, RasterBuffer
+from ...compression import compress_zlib_wbits_10
+from ...encoding import pack_line
+from ...family import ProtocolFamily
+from ...steps import ProtocolReplyExpectation, ProtocolStep
+from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
+from ..base import PrintJobRequest
 
 LUCK_PRINT_QUERY_TIMEOUT_SEC = 3.0
 

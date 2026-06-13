@@ -31,7 +31,7 @@ A `PrinterDevice` is the one object that both protocol code and transport code a
 
 When rendering your own raster data, use `device.profile.width` as the target
 width. Do not assume it is always identical to `device.profile.print_size`.
-Some TinyPrint legacy variants render to a narrower source width and add
+Some TinyPrint variants render to a narrower source width and add
 protocol-level padding when building the job.
 For TinyPrint size-8 variants, `paper_mode=PaperMode.A4_SHEET` selects the
 original app's A4-sheet feed recipe. `PaperMode.PLAIN` keeps roll-paper feed

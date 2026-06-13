@@ -154,7 +154,7 @@
       "primary_names": [
         "P1-"
       ],
-      "original_app_name": "legacy"
+      "original_app_name": "Tiny"
     },
     {
       "id": "eleph-label-p1",
@@ -163,12 +163,12 @@
       "primary_names": [
         "P1_"
       ],
-      "original_app_name": "TSPL"
+      "original_app_name": "Eleph"
     },
     {
-      "id": "toprint-hprt-esc-zl1",
+      "id": "eleph-hprt-esc-zl1",
       "status": "supported",
-      "display_label": "P11 (HPRT ESC)",
+      "display_label": "P11 (Eleph HPRT ESC)",
       "primary_names": [
         "P11_"
       ],
@@ -180,7 +180,7 @@
       ],
       "preserve_suffixes": true,
       "rule_keys": [
-        "rule_hprt_esc_toprint_zl1"
+        "rule_eleph_hprt_esc_zl1"
       ]
     },
     {

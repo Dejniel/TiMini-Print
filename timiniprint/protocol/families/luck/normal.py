@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from ...raster import PixelFormat
-from ..family import ProtocolFamily
-from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
-from .base import ProtocolBehavior
-from .luck_normal_core import (
+from ....raster import PixelFormat
+from ...family import ProtocolFamily
+from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
+from ..base import ProtocolBehavior
+from .core import (
     LUCK_NORMAL_IMAGE_SUPPORT,
     LUCK_NORMAL_MODE2_DIALECT,
     LuckNormalFamilyRecipe,

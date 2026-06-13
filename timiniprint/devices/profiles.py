@@ -140,8 +140,8 @@ class PrinterProfile:
     default_paper_mode: PaperMode | None = None
     post_print_feed_count: int = 2
     a4xii: bool = False
-    add_mor_pix: Optional[bool] = None
-    add_more_pix_num: Optional[int] = None
+    render_to_paper_width: Optional[bool] = None
+    left_padding_pixels: Optional[int] = None
     a4_sheet_max_height: Optional[int] = None
     origin_app_packages: tuple[str, ...] = ()
 
@@ -151,16 +151,16 @@ class PrinterProfile:
 
     @property
     def width(self) -> int:
-        if self.add_mor_pix is True:
+        if self.render_to_paper_width is True:
             return self.paper_size
         return self.print_size
 
     @property
-    def left_padding_pixels(self) -> int:
-        if self.add_mor_pix is not True:
+    def effective_left_padding_pixels(self) -> int:
+        if self.render_to_paper_width is not True:
             return 0
-        if self.add_more_pix_num is not None and self.add_more_pix_num >= 0:
-            return self.add_more_pix_num
+        if self.left_padding_pixels is not None and self.left_padding_pixels >= 0:
+            return self.left_padding_pixels
         return 64
 
     @property

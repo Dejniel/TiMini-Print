@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from ...raster import PixelFormat
-from ..steps import ProtocolStep
-from ..types import ImageEncoding, ImagePipelineConfig
-from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
-from .niimbot_core import build_d110_job
+from ....raster import PixelFormat
+from ...steps import ProtocolStep
+from ...types import ImageEncoding, ImagePipelineConfig
+from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from .core import build_d110_job
 
 _NIIMBOT_SERVICE_UUID = "e7810a71-73ae-499d-8c15-faa9aef0c3f2"
 _PACKET_INTERVAL_MS = 10

@@ -61,8 +61,8 @@ class CatalogAuditTests(unittest.TestCase):
                 "can_print_label": False,
                 "label_value": "",
                 "back_paper_num": 0,
-                "default_protocol_family": "legacy",
-                "default_image_pipeline": {"formats": ["bw1"], "encoding": "legacy_raw"},
+                "default_protocol_family": "tiny",
+                "default_image_pipeline": {"formats": ["bw1"], "encoding": "tiny_raw"},
                 "stream": {"chunk_size": 180, "delay_ms": 4},
                 "post_print_feed_count": 2,
                 "print_defaults": {
@@ -86,8 +86,8 @@ class CatalogAuditTests(unittest.TestCase):
                 "can_print_label": False,
                 "label_value": "",
                 "back_paper_num": 0,
-                "default_protocol_family": "legacy",
-                "default_image_pipeline": {"formats": ["bw1"], "encoding": "legacy_raw"},
+                "default_protocol_family": "tiny",
+                "default_image_pipeline": {"formats": ["bw1"], "encoding": "tiny_raw"},
                 "stream": {"chunk_size": 180, "delay_ms": 4},
                 "post_print_feed_count": 2,
                 "print_defaults": {
@@ -104,13 +104,13 @@ class CatalogAuditTests(unittest.TestCase):
                 "rule_key": "generic",
                 "prefixes": ["FOO"],
                 "profile_key": "base",
-                "protocol_family": "legacy",
+                "protocol_family": "tiny",
             },
             {
                 "rule_key": "specific",
                 "prefixes": ["FOOBAR"],
                 "profile_key": "specific",
-                "protocol_family": "legacy",
+                "protocol_family": "tiny",
             },
         ]
 

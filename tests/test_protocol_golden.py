@@ -26,17 +26,17 @@ class ProtocolGoldenTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY,
+            protocol_family=ProtocolFamily.TINY,
             feed_padding=12,
             dev_dpi=203,
             image_pipeline=self.types.ImagePipelineConfig(
                 formats=(self.raster.PixelFormat.BW1,),
-                encoding=self.types.ImageEncoding.LEGACY_RAW,
+                encoding=self.types.ImageEncoding.TINY_RAW,
             ),
         )
         self.assertEqual(data.hex(), self.golden["image_old"])
 
-    def test_golden_prefixed_legacy_format(self) -> None:
+    def test_golden_prefixed_tiny_format(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 1, 0, 0, 1, 1, 0, 0],
             width=8,
@@ -46,12 +46,12 @@ class ProtocolGoldenTests(unittest.TestCase):
             density=None,
             blackening=4,
             lsb_first=False,
-            protocol_family=ProtocolFamily.LEGACY_PREFIXED,
+            protocol_family=ProtocolFamily.TINY_PREFIXED,
             feed_padding=7,
             dev_dpi=300,
             image_pipeline=self.types.ImagePipelineConfig(
                 formats=(self.raster.PixelFormat.BW1,),
-                encoding=self.types.ImageEncoding.LEGACY_RAW,
+                encoding=self.types.ImageEncoding.TINY_RAW,
             ),
         )
         self.assertEqual(data.hex(), self.golden["text_new"])
@@ -66,12 +66,12 @@ class ProtocolGoldenTests(unittest.TestCase):
             density=None,
             blackening=2,
             lsb_first=False,
-            protocol_family=ProtocolFamily.LEGACY,
+            protocol_family=ProtocolFamily.TINY,
             feed_padding=6,
             dev_dpi=203,
             image_pipeline=self.types.ImagePipelineConfig(
                 formats=(self.raster.PixelFormat.BW1,),
-                encoding=self.types.ImageEncoding.LEGACY_RLE,
+                encoding=self.types.ImageEncoding.TINY_RLE,
             ),
         )
         self.assertEqual(data.hex(), self.golden["compress_fallback_raw"])

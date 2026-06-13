@@ -7,8 +7,8 @@ from ..raster import PixelFormat
 
 
 class ImageEncoding(str, Enum):
-    LEGACY_RAW = "legacy_raw"
-    LEGACY_RLE = "legacy_rle"
+    TINY_RAW = "tiny_raw"
+    TINY_RLE = "tiny_rle"
     LUCK_NORMAL_RAW = "luck_normal_raw"
     LUCK_NORMAL_COMPRESSED = "luck_normal_compressed"
     LUCK_NORMAL_GRAY = "luck_normal_gray"
@@ -19,10 +19,10 @@ class ImageEncoding(str, Enum):
     V5C_A4 = "v5c_a4"
     V5C_A5 = "v5c_a5"
     DCK_DEFAULT = "dck_default"
-    HPRT_ESC_RASTER = "hprt_esc_raster"
+    ELEPH_HPRT_ESC_RASTER = "eleph_hprt_esc_raster"
     NIIMBOT_D110 = "niimbot_d110"
-    TSPL_BITMAP = "tspl_bitmap"
-    PHOMEMO_ESCPOS_RASTER = "phomemo_escpos_raster"
+    ELEPH_TSPL_BITMAP = "eleph_tspl_bitmap"
+    PHOMEMO_ESC_RASTER = "phomemo_esc_raster"
 
 
 class PaperMode(str, Enum):

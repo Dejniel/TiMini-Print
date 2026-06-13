@@ -59,7 +59,7 @@ class ProtocolBehavior:
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(
             formats=(PixelFormat.BW1,),
-            encoding=ImageEncoding.LEGACY_RAW,
+            encoding=ImageEncoding.TINY_RAW,
         )
     )
     image_encoding_support: Mapping[ImageEncoding, tuple[PixelFormat, ...]] = field(

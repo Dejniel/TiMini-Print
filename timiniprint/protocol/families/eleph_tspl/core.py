@@ -1,11 +1,17 @@
+"""Eleph/ToPrint P1 commands.
+
+This is TSPL-shaped command text plus app-specific setup commands, not a
+generic TSPL implementation.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ...raster import PixelFormat, RasterBuffer
-from ..types import PaperMode
-from .base import PrintJobRequest
-from .bitmap import pack_bw1_rows, packed_row_width_bytes
+from ....raster import PixelFormat, RasterBuffer
+from ...types import PaperMode
+from ..base import PrintJobRequest
+from ..bitmap import pack_bw1_rows, packed_row_width_bytes
 
 
 _LINE_END = b"\r\n"
@@ -15,7 +21,7 @@ _P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE = 0x02
 
 
 @dataclass(frozen=True)
-class TsplMediaSetup:
+class ElephTsplMediaSetup:
     command: bytes
 
     def build(self, paper_type: int) -> bytes:
@@ -23,7 +29,7 @@ class TsplMediaSetup:
 
 
 @dataclass(frozen=True)
-class TsplPaperRecipe:
+class ElephTsplPaperRecipe:
     media_paper_type: int
     gap_mm: float
     height_extra_mm: float = 0.0
@@ -31,20 +37,20 @@ class TsplPaperRecipe:
 
 
 @dataclass(frozen=True)
-class TsplRecipe:
+class ElephTsplRecipe:
     protocol_variant: str
-    paper_recipes: dict[PaperMode, TsplPaperRecipe]
+    paper_recipes: dict[PaperMode, ElephTsplPaperRecipe]
     default_paper_mode: PaperMode = PaperMode.TAG
     default_density: int = 8
     default_direction: int = 0
     default_mirror: int | None = None
-    media_setup: TsplMediaSetup | None = None
+    media_setup: ElephTsplMediaSetup | None = None
     include_ribbon_off: bool = False
     include_reference_origin: bool = False
 
     def build_job(self, request: PrintJobRequest) -> bytes:
         if request.protocol_variant not in (None, self.protocol_variant):
-            raise ValueError(f"Unsupported TSPL protocol variant: {request.protocol_variant}")
+            raise ValueError(f"Unsupported Eleph TSPL-style protocol variant: {request.protocol_variant}")
         raster = request.require_raster(PixelFormat.BW1)
         raster.validate()
         width_bytes = _width_bytes(raster)
@@ -80,20 +86,20 @@ class TsplRecipe:
         job += _command("PRINT", "1,1")
         return bytes(job)
 
-    def _paper_recipe(self, paper_mode: PaperMode | None) -> TsplPaperRecipe:
+    def _paper_recipe(self, paper_mode: PaperMode | None) -> ElephTsplPaperRecipe:
         resolved_mode = self.default_paper_mode if paper_mode is None else paper_mode
         return self.paper_recipes[resolved_mode]
 
 
 def build_p1_job(request: PrintJobRequest) -> bytes:
-    return TsplRecipe(
+    return ElephTsplRecipe(
         protocol_variant="p1",
         paper_recipes={
-            PaperMode.TAG: TsplPaperRecipe(
+            PaperMode.TAG: ElephTsplPaperRecipe(
                 media_paper_type=_P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE,
                 gap_mm=3.0,
             ),
-            PaperMode.PLAIN: TsplPaperRecipe(
+            PaperMode.PLAIN: ElephTsplPaperRecipe(
                 media_paper_type=_P1_ESC_PAPER_TYPE_CONTINUOUS_REEL,
                 gap_mm=0.0,
                 height_extra_mm=5.0,
@@ -102,7 +108,7 @@ def build_p1_job(request: PrintJobRequest) -> bytes:
         },
         default_density=9,
         default_mirror=0,
-        media_setup=TsplMediaSetup(command=_P1_ESC_PAPER_TYPE_COMMAND),
+        media_setup=ElephTsplMediaSetup(command=_P1_ESC_PAPER_TYPE_COMMAND),
         include_ribbon_off=True,
         include_reference_origin=True,
     ).build_job(request)
@@ -118,13 +124,13 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
 
 def _bitmap_payload(raster: RasterBuffer) -> bytes:
     if raster.width % 8 != 0:
-        raise ValueError("TSPL bitmap jobs require width divisible by 8")
+        raise ValueError("Eleph TSPL-style bitmap jobs require width divisible by 8")
     return pack_bw1_rows(raster, lsb_first=False)
 
 
 def _width_bytes(raster: RasterBuffer) -> int:
     if raster.width % 8 != 0:
-        raise ValueError("TSPL bitmap jobs require width divisible by 8")
+        raise ValueError("Eleph TSPL-style bitmap jobs require width divisible by 8")
     return packed_row_width_bytes(raster.width)
 
 

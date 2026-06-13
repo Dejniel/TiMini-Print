@@ -167,7 +167,7 @@ class AppCliFlowsTests(unittest.TestCase):
         device.profile_key = "x6h"
         device.address = "AA"
         device.transport_badge = "[classic]"
-        device.protocol_family = "legacy"
+        device.protocol_family = "tiny"
         connection = MagicMock()
         connection.send = AsyncMock()
         connection.disconnect = AsyncMock()

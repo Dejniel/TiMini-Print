@@ -27,10 +27,10 @@ def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) ->
         "can_print_label": False,
         "label_value": "",
         "back_paper_num": 0,
-        "default_protocol_family": "legacy",
+        "default_protocol_family": "tiny",
         "default_image_pipeline": {
             "formats": ["bw1"],
-            "encoding": "legacy_raw",
+            "encoding": "tiny_raw",
         },
         "stream": {
             "chunk_size": 180,
@@ -194,7 +194,7 @@ class DevicesModelsTests(unittest.TestCase):
             prefixes=("DEMO",),
             exact_names=(),
             profile_key=profile.profile_key,
-            protocol_family=ProtocolFamily.LEGACY,
+            protocol_family=ProtocolFamily.TINY,
         )
 
         with self.assertRaisesRegex(ValueError, "requires speed defaults"):
@@ -248,26 +248,26 @@ class DevicesModelsTests(unittest.TestCase):
         resolved = self.catalog.detect_device("X6H-1234")
         self.assertIsNotNone(resolved)
         self.assertEqual(resolved.profile_key, "x6h")
-        self.assertEqual(resolved.protocol_family, ProtocolFamily.LEGACY)
-        self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LEGACY_RLE)
+        self.assertEqual(resolved.protocol_family, ProtocolFamily.TINY)
+        self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.TINY_RLE)
 
         dl_x7pro = self.catalog.detect_device("DL_X7Pro-1234")
         self.assertIsNotNone(dl_x7pro)
         self.assertEqual(dl_x7pro.profile_key, "dl_x7pro")
-        self.assertEqual(dl_x7pro.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(dl_x7pro.protocol_family, ProtocolFamily.TINY)
         self.assertEqual(dl_x7pro.profile.print_size, 1280)
         self.assertEqual(dl_x7pro.profile.dev_dpi, 300)
 
         p4 = self.catalog.detect_device("P4-1234")
         self.assertIsNotNone(p4)
         self.assertEqual(p4.profile_key, "p4")
-        self.assertEqual(p4.protocol_family, ProtocolFamily.LEGACY)
-        self.assertEqual(p4.protocol_variant, "tinyprint_eight")
+        self.assertEqual(p4.protocol_family, ProtocolFamily.TINY)
+        self.assertEqual(p4.protocol_variant, "line_eight")
         self.assertEqual(p4.profile.paper_size, 1600)
         self.assertEqual(p4.profile.print_size, 1728)
         self.assertEqual(p4.profile.width, 1600)
 
-    def test_tinyprint_legacy_profiles_keep_source_defaults(self) -> None:
+    def test_tiny_profiles_keep_source_defaults(self) -> None:
         d1 = self.catalog.require_profile("d1")
         self.assertEqual(d1.energy.image.low, 5000)
         self.assertEqual(d1.energy.image.middle, 5000)
@@ -305,13 +305,14 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertFalse(x16.profile.can_print_label)
         self.assertEqual(x16.profile.energy.image.middle, 5000)
 
-    def test_tinyprint_special_protocol_variants_are_modeled(self) -> None:
+    def test_tiny_special_protocol_variants_are_modeled(self) -> None:
         x9 = self.catalog.detect_device("X9-38CC")
         self.assertIsNotNone(x9)
         self.assertEqual(x9.profile_key, "x9")
-        self.assertEqual(x9.protocol_variant, "tinyprint_eight")
+        self.assertEqual(x9.protocol_variant, "line_eight")
         self.assertEqual(x9.profile.width, 1600)
         self.assertEqual(x9.profile.left_padding_pixels, 32)
+        self.assertEqual(x9.profile.effective_left_padding_pixels, 32)
         self.assertEqual(x9.profile.a4_sheet_max_height, 2460)
         self.assertEqual(
             PrinterProtocol(x9).supported_paper_modes(),
@@ -321,8 +322,8 @@ class DevicesModelsTests(unittest.TestCase):
         jxm800 = self.catalog.detect_device("GG-D2100-1234")
         self.assertIsNotNone(jxm800)
         self.assertEqual(jxm800.profile_key, "jxm800")
-        self.assertEqual(jxm800.protocol_family, ProtocolFamily.LEGACY_PREFIXED)
-        self.assertEqual(jxm800.protocol_variant, "tinyprint_new_eight")
+        self.assertEqual(jxm800.protocol_family, ProtocolFamily.TINY_PREFIXED)
+        self.assertEqual(jxm800.protocol_variant, "esc_star_eight")
         self.assertEqual(
             PrinterProtocol(jxm800).supported_paper_modes(),
             (PaperMode.PLAIN, PaperMode.A4_SHEET),
@@ -331,14 +332,14 @@ class DevicesModelsTests(unittest.TestCase):
         ly10 = self.catalog.detect_device("LY10-1234")
         self.assertIsNotNone(ly10)
         self.assertEqual(ly10.profile_key, "ly10")
-        self.assertEqual(ly10.protocol_family, ProtocolFamily.LEGACY_PREFIXED)
-        self.assertEqual(ly10.protocol_variant, "tinyprint_new")
+        self.assertEqual(ly10.protocol_family, ProtocolFamily.TINY_PREFIXED)
+        self.assertEqual(ly10.protocol_variant, "esc_star")
         self.assertEqual(PrinterProtocol(ly10).supported_paper_modes(), ())
 
         professional = self.catalog.detect_device("CTP100LG-1234")
         self.assertIsNotNone(professional)
         self.assertEqual(professional.profile_key, "professional_printer")
-        self.assertEqual(professional.protocol_variant, "tinyprint_professional")
+        self.assertEqual(professional.protocol_variant, "professional")
         self.assertEqual(
             PrinterProtocol(professional).supported_paper_modes(),
             (PaperMode.PLAIN, PaperMode.A4_SHEET),
@@ -348,12 +349,12 @@ class DevicesModelsTests(unittest.TestCase):
         rules = {rule.rule_key: rule for rule in self.catalog.rules}
 
         tiny_p1 = rules["profile_p1"]
-        toprint_p1 = rules["rule_tspl_p1"]
+        eleph_p1 = rules["rule_eleph_tspl_p1"]
         dck_d1 = rules["alias_c21"]
 
         self.assertEqual(tiny_p1.origin_app_packages[0], "com.frogtosea.tinyPrint")
-        self.assertEqual(toprint_p1.origin_app_packages[0], "com.sandu.JxPrinter")
-        self.assertEqual(toprint_p1.origin_app_packages[1], "com.fyhd.toprint")
+        self.assertEqual(eleph_p1.origin_app_packages[0], "com.sandu.JxPrinter")
+        self.assertEqual(eleph_p1.origin_app_packages[1], "com.fyhd.toprint")
         self.assertEqual(dck_d1.origin_app_packages[0], "com.fun.mxw")
         self.assertEqual(dck_d1.origin_app_packages[1], "com.bleem.liugm")
         self.assertEqual(self.catalog.require_profile("d1").origin_app_packages[0], "com.frogtosea.tinyPrint")
@@ -525,7 +526,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x6_mac59.profile_key, "v5g_small_203")
         self.assertEqual(x6_mac59.protocol_family, ProtocolFamily.V5X)
         self.assertEqual(x6h.profile_key, "x6h")
-        self.assertEqual(x6h.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(x6h.protocol_family, ProtocolFamily.TINY)
 
     def test_v5x_exact_name_rules_do_not_shadow_other_x_series_profiles(self) -> None:
         x1 = self.catalog.detect_device("X1")
@@ -542,9 +543,9 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x2.profile_key, "v5x")
         self.assertEqual(x2.protocol_family, ProtocolFamily.V5X)
         self.assertEqual(x103h.profile_key, "x6h")
-        self.assertEqual(x103h.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(x103h.protocol_family, ProtocolFamily.TINY)
         self.assertEqual(x2h.profile_key, "x6h")
-        self.assertEqual(x2h.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(x2h.protocol_family, ProtocolFamily.TINY)
 
     def test_case_sensitive_direct_rules_keep_mixed_case_profiles_distinct(self) -> None:
         expected = {
@@ -567,12 +568,12 @@ class DevicesModelsTests(unittest.TestCase):
                 resolved = self.catalog.detect_device(name)
                 self.assertIsNotNone(resolved)
                 self.assertEqual(resolved.profile_key, profile_key)
-                self.assertEqual(resolved.protocol_family, ProtocolFamily.LEGACY)
+                self.assertEqual(resolved.protocol_family, ProtocolFamily.TINY)
 
-    def test_tinyprint_spacing_and_alias_corner_cases_still_resolve(self) -> None:
+    def test_tiny_spacing_and_alias_corner_cases_still_resolve(self) -> None:
         expected = {
-            " X101H-ABCD": ("x101h", ProtocolFamily.LEGACY),
-            "X101H-ABCD": ("x101h", ProtocolFamily.LEGACY),
+            " X101H-ABCD": ("x101h", ProtocolFamily.TINY),
+            "X101H-ABCD": ("x101h", ProtocolFamily.TINY),
             "K06-ABCD": ("v5g_small_203", ProtocolFamily.V5G),
             "X2-ABCD": ("v5x", ProtocolFamily.V5X),
         }
@@ -589,7 +590,7 @@ class DevicesModelsTests(unittest.TestCase):
 
         self.assertIsNotNone(resolved)
         self.assertEqual(resolved.profile_key, "fc02")
-        self.assertEqual(resolved.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(resolved.protocol_family, ProtocolFamily.TINY)
 
     def test_ai01_resolves_to_v5x_family(self) -> None:
         ai01 = self.catalog.detect_device("AI01-ABCD")

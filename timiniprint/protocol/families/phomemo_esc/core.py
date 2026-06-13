@@ -1,11 +1,17 @@
+"""Phomemo ESC commands.
+
+This reuses ESC/POS-shaped raster commands where the source apps do, but it is
+modeled as a Phomemo family rather than a generic ESC/POS implementation.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ...raster import PixelFormat
-from ..types import PaperMode
-from .base import PrintJobRequest
-from .bitmap import build_gs_v0_blocks
+from ....raster import PixelFormat
+from ...types import PaperMode
+from ..base import PrintJobRequest
+from ..bitmap import build_gs_v0_blocks
 
 _INIT = b"\x1b\x40"
 _JUSTIFY = b"\x1b\x61"
@@ -29,7 +35,7 @@ _M110_PAPER_MEDIA = {
 
 
 @dataclass(frozen=True)
-class PhomemoEscposRecipe:
+class PhomemoEscRecipe:
     protocol_variant: str
     default_density: int = 4
     justification: int = 1
@@ -38,7 +44,7 @@ class PhomemoEscposRecipe:
     def build_job(self, request: PrintJobRequest) -> bytes:
         if request.protocol_variant not in (None, self.protocol_variant):
             raise ValueError(
-                f"Unsupported Phomemo ESC/POS protocol variant: {request.protocol_variant}"
+                f"Unsupported Phomemo ESC protocol variant: {request.protocol_variant}"
             )
         raster = request.require_raster(PixelFormat.BW1)
         raster.validate()
@@ -69,7 +75,7 @@ class PhomemoM110Recipe:
     def build_job(self, request: PrintJobRequest) -> bytes:
         if request.protocol_variant not in (None, self.protocol_variant):
             raise ValueError(
-                f"Unsupported Phomemo ESC/POS protocol variant: {request.protocol_variant}"
+                f"Unsupported Phomemo ESC protocol variant: {request.protocol_variant}"
             )
         raster = request.require_raster(PixelFormat.BW1)
         raster.validate()
@@ -92,7 +98,7 @@ class PhomemoM110Recipe:
         return bytes(payload)
 
 
-def build_phomemo_escpos_job(request: PrintJobRequest) -> bytes:
+def build_phomemo_esc_job(request: PrintJobRequest) -> bytes:
     return _recipe_for_variant(request.protocol_variant).build_job(request)
 
 
@@ -111,13 +117,13 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
     return b""
 
 
-def _recipe_for_variant(protocol_variant: str | None) -> PhomemoEscposRecipe | PhomemoM110Recipe:
+def _recipe_for_variant(protocol_variant: str | None) -> PhomemoEscRecipe | PhomemoM110Recipe:
     variant = protocol_variant or "m02"
     if variant in _M02_VARIANTS:
-        return PhomemoEscposRecipe(protocol_variant=variant)
+        return PhomemoEscRecipe(protocol_variant=variant)
     if variant in _M110_VARIANTS:
         return PhomemoM110Recipe(protocol_variant=variant)
-    raise ValueError(f"Unsupported Phomemo ESC/POS protocol variant: {protocol_variant}")
+    raise ValueError(f"Unsupported Phomemo ESC protocol variant: {protocol_variant}")
 
 
 def _density(value: int | None, *, default: int) -> int:

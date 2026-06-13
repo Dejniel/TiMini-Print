@@ -113,7 +113,7 @@ class PrinterProtocol:
             dev_dpi=self.device.profile.dev_dpi,
             can_print_label=self.device.profile.can_print_label,
             post_print_feed_count=self.device.profile.post_print_feed_count,
-            left_padding_pixels=self.device.profile.left_padding_pixels,
+            left_padding_pixels=self.device.profile.effective_left_padding_pixels,
             one_length=self.device.profile.one_length,
             a4xii=self.device.profile.a4xii,
             a4_sheet_max_height=self.device.profile.a4_sheet_max_height,

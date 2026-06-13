@@ -21,13 +21,13 @@ class ProtocolJobTests(unittest.TestCase):
         cls.builders = importlib.import_module("timiniprint.protocol._builders")
         cls.types = importlib.import_module("timiniprint.protocol.types")
         cls.raster = importlib.import_module("timiniprint.raster")
-        cls.legacy_raw = cls.types.ImagePipelineConfig(
+        cls.tiny_raw = cls.types.ImagePipelineConfig(
             formats=(cls.raster.PixelFormat.BW1,),
-            encoding=cls.types.ImageEncoding.LEGACY_RAW,
+            encoding=cls.types.ImageEncoding.TINY_RAW,
         )
-        cls.legacy_rle = cls.types.ImagePipelineConfig(
+        cls.tiny_rle = cls.types.ImagePipelineConfig(
             formats=(cls.raster.PixelFormat.BW1,),
-            encoding=cls.types.ImageEncoding.LEGACY_RLE,
+            encoding=cls.types.ImageEncoding.TINY_RLE,
         )
         cls.luck_normal_raw = cls.types.ImagePipelineConfig(
             formats=(cls.raster.PixelFormat.BW1, cls.raster.PixelFormat.GRAY4, cls.raster.PixelFormat.GRAY8),
@@ -116,8 +116,8 @@ class ProtocolJobTests(unittest.TestCase):
             speed=10,
             energy=5000,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY,
-            image_pipeline=self.legacy_raw,
+            protocol_family=ProtocolFamily.TINY,
+            image_pipeline=self.tiny_raw,
         )
         self.assertIn(bytes([0xAF]), payload)
         self.assertIn(bytes([0xBE]), payload)
@@ -134,15 +134,15 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY,
+            protocol_family=ProtocolFamily.TINY,
             feed_padding=12,
             dev_dpi=203,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
         )
         self.assertGreaterEqual(data.count(bytes([0xA1])), 2)
         self.assertIn(bytes([0xA3]), data)
 
-    def test_build_legacy_job_requires_speed(self) -> None:
+    def test_build_tiny_job_requires_speed(self) -> None:
         with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             self.builders._build_job(
                 pixels=[1, 0, 1, 0, 1, 0, 1, 0],
@@ -153,13 +153,13 @@ class ProtocolJobTests(unittest.TestCase):
                 density=None,
                 blackening=3,
                 lsb_first=True,
-                protocol_family=ProtocolFamily.LEGACY,
+                protocol_family=ProtocolFamily.TINY,
                 feed_padding=12,
                 dev_dpi=203,
-                image_pipeline=self.legacy_raw,
+                image_pipeline=self.tiny_raw,
             )
 
-    def test_tinyprint_eight_variant_uses_size8_tail_and_padding(self) -> None:
+    def test_line_eight_variant_uses_size8_tail_and_padding(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
@@ -169,20 +169,20 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY,
-            protocol_variant="tinyprint_eight",
+            protocol_family=ProtocolFamily.TINY,
+            protocol_variant="line_eight",
             feed_padding=12,
             dev_dpi=203,
             post_print_feed_count=2,
             left_padding_pixels=8,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
         )
 
         self.assertIn(bytes([0x51, 0x78, 0xA2, 0x00, 0x02, 0x00]), data)
         self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x90, 0x00, 0x11]), data)
         self.assertNotIn(bytes([0xA1, 0x00, 0x02, 0x00, 0x30, 0x00]), data)
 
-    def test_tinyprint_eight_a4_sheet_uses_max_height_minus_raster_height(self) -> None:
+    def test_line_eight_a4_sheet_uses_max_height_minus_raster_height(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0] * 2,
             width=8,
@@ -192,19 +192,19 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY,
-            protocol_variant="tinyprint_eight",
+            protocol_family=ProtocolFamily.TINY,
+            protocol_variant="line_eight",
             feed_padding=12,
             dev_dpi=203,
             post_print_feed_count=2,
             a4_sheet_max_height=20,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
             paper_mode=self.types.PaperMode.A4_SHEET,
         )
 
         self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x12, 0x00, 0x11]), data)
 
-    def test_tinyprint_eight_a4xii_a4_sheet_uses_fixed_feed(self) -> None:
+    def test_line_eight_a4xii_a4_sheet_uses_fixed_feed(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
@@ -214,19 +214,19 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=False,
-            protocol_family=ProtocolFamily.LEGACY,
-            protocol_variant="tinyprint_eight",
+            protocol_family=ProtocolFamily.TINY,
+            protocol_variant="line_eight",
             feed_padding=12,
             dev_dpi=203,
             post_print_feed_count=2,
             a4xii=True,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
             paper_mode=self.types.PaperMode.A4_SHEET,
         )
 
         self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0xF4, 0x01, 0x11]), data)
 
-    def test_tinyprint_professional_variant_uses_raw_fallback_flow(self) -> None:
+    def test_professional_variant_uses_raw_fallback_flow(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0] * 201,
             width=8,
@@ -236,13 +236,13 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY,
-            protocol_variant="tinyprint_professional",
+            protocol_family=ProtocolFamily.TINY,
+            protocol_variant="professional",
             feed_padding=12,
             dev_dpi=203,
             post_print_feed_count=2,
             left_padding_pixels=8,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
         )
 
         stop_print = bytes([0x51, 0x78, 0xA6, 0x00, 0x01, 0x00, 0x05, 0x1B, 0xFF])
@@ -250,7 +250,7 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertTrue(data.startswith(stop_print))
         self.assertEqual(data.count(speed_10), 1)
 
-    def test_tinyprint_new_variant_uses_esc_star_flow(self) -> None:
+    def test_esc_star_variant_uses_esc_star_flow(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
@@ -260,11 +260,11 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY_PREFIXED,
-            protocol_variant="tinyprint_new",
+            protocol_family=ProtocolFamily.TINY_PREFIXED,
+            protocol_variant="esc_star",
             feed_padding=12,
             dev_dpi=203,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
         )
 
         self.assertTrue(data.startswith(bytes([0x1B, 0x40, 0x12, 0x23, 0x08])))
@@ -274,7 +274,7 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertTrue(data.endswith(bytes([0x00, 0xFF])))
         self.assertIn(bytes([0x1B, 0x64, 0x03, 0x12, 0x51, 0x78, 0xA3]), data)
 
-    def test_tinyprint_new_eight_variant_uses_profile_one_length(self) -> None:
+    def test_esc_star_eight_variant_uses_profile_one_length(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
@@ -284,17 +284,17 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY_PREFIXED,
-            protocol_variant="tinyprint_new_eight",
+            protocol_family=ProtocolFamily.TINY_PREFIXED,
+            protocol_variant="esc_star_eight",
             feed_padding=12,
             dev_dpi=203,
             one_length=8,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
         )
 
         self.assertIn(bytes([0x1B, 0x64, 0x08, 0x12, 0x51, 0x78, 0xA3]), data)
 
-    def test_tinyprint_new_eight_a4_sheet_uses_max_height_bands(self) -> None:
+    def test_esc_star_eight_a4_sheet_uses_max_height_bands(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0] * 24,
             width=8,
@@ -304,13 +304,13 @@ class ProtocolJobTests(unittest.TestCase):
             density=None,
             blackening=3,
             lsb_first=True,
-            protocol_family=ProtocolFamily.LEGACY_PREFIXED,
-            protocol_variant="tinyprint_new_eight",
+            protocol_family=ProtocolFamily.TINY_PREFIXED,
+            protocol_variant="esc_star_eight",
             feed_padding=12,
             dev_dpi=203,
             one_length=8,
             a4_sheet_max_height=72,
-            image_pipeline=self.legacy_raw,
+            image_pipeline=self.tiny_raw,
             paper_mode=self.types.PaperMode.A4_SHEET,
         )
 
@@ -327,10 +327,10 @@ class ProtocolJobTests(unittest.TestCase):
                 density=None,
                 blackening=3,
                 lsb_first=True,
-                protocol_family=ProtocolFamily.LEGACY,
+                protocol_family=ProtocolFamily.TINY,
                 feed_padding=12,
                 dev_dpi=203,
-                image_pipeline=self.legacy_raw,
+                image_pipeline=self.tiny_raw,
             )
 
     def test_build_luck_normal_job_uses_raw_bitmap_recipe(self) -> None:
@@ -973,7 +973,7 @@ class ProtocolJobTests(unittest.TestCase):
         )
 
     def test_luck_normal_a4_supported_paper_modes_can_vary_by_variant(self) -> None:
-        families = importlib.import_module("timiniprint.protocol.families.luck_normal_a4")
+        families = importlib.import_module("timiniprint.protocol.families.luck.normal_a4")
 
         d80_modes = families.BEHAVIOR.supported_paper_modes_resolver("d80")
         d80h_modes = families.BEHAVIOR.supported_paper_modes_resolver("d80h")
@@ -982,7 +982,7 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(self.types.PaperMode.TATTOO, d80h_modes)
 
     def test_luck_normal_supported_paper_modes_can_vary_by_variant(self) -> None:
-        families = importlib.import_module("timiniprint.protocol.families.luck_normal")
+        families = importlib.import_module("timiniprint.protocol.families.luck.normal")
 
         default_modes = families.BEHAVIOR.supported_paper_modes
         lujiang_modes = families.BEHAVIOR.supported_paper_modes_resolver("lujiang_normal")
@@ -1097,7 +1097,7 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertEqual(compressed_body[:2], bytes([0x28, 0x91]))
         self.assertEqual(zlib.decompress(compressed_body, wbits=10), bytes([0xAA]))
 
-    def test_legacy_rejects_paper_mode(self) -> None:
+    def test_tiny_rejects_paper_mode(self) -> None:
         with self.assertRaisesRegex(ValueError, "does not support paper mode tag"):
             self.builders._build_job(
                 pixels=[1, 0, 1, 0, 1, 0, 1, 0],
@@ -1108,10 +1108,10 @@ class ProtocolJobTests(unittest.TestCase):
                 density=None,
                 blackening=3,
                 lsb_first=True,
-                protocol_family=ProtocolFamily.LEGACY,
+                protocol_family=ProtocolFamily.TINY,
                 feed_padding=12,
                 dev_dpi=203,
-                image_pipeline=self.legacy_raw,
+                image_pipeline=self.tiny_raw,
                 paper_mode=self.types.PaperMode.TAG,
             )
 

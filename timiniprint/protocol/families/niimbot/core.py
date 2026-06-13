@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from enum import IntEnum
 from typing import Callable, Iterable
 
-from ...raster import PixelFormat, RasterBuffer
-from ..encoding import pack_line
-from ..steps import ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
-from .base import PrintJobRequest
+from ....raster import PixelFormat, RasterBuffer
+from ...encoding import pack_line
+from ...steps import ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
+from ..base import PrintJobRequest
 
 
 class NiimbotRequest(IntEnum):

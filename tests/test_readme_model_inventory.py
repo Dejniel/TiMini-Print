@@ -67,9 +67,9 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertRegex(supported, r"(?<![A-Z0-9_-])DP_A4(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])DL_X7Pro(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])")
-        self.assertIn("P1 (TSPL)", supported)
-        self.assertIn("P1 (legacy)", supported)
-        self.assertIn("- P11 (HPRT ESC) and clones: P2_, P3_, P5_, YHK_", supported)
+        self.assertIn("P1 (Eleph)", supported)
+        self.assertIn("P1 (Tiny)", supported)
+        self.assertIn("- P11 (Eleph HPRT ESC) and clones: P2_, P3_, P5_, YHK_", supported)
         self.assertIn("- M02 and clones: M02S", supported)
         self.assertRegex(supported, r"(?<![A-Z0-9_-])M02 Pro(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])M02X(?![A-Z0-9_-])")
@@ -136,8 +136,8 @@ class ReadmeModelInventoryTests(unittest.TestCase):
             ]
         )
         rendered = re.sub(
-            r"^- P11 \(HPRT ESC\) and clones: P2_, P3_, P5_, YHK_$",
-            "- P11 (HPRT ESC) and clones: P2, P3, P5, YHK",
+            r"^- P11 \(Eleph HPRT ESC\) and clones: P2_, P3_, P5_, YHK_$",
+            "- P11 (Eleph HPRT ESC) and clones: P2, P3, P5, YHK",
             rendered,
             flags=re.M,
         )

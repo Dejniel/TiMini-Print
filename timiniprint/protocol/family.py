@@ -5,16 +5,16 @@ from enum import Enum
 
 
 class ProtocolCommandSet(str, Enum):
-    LEGACY = "legacy"
+    TINY = "tiny"
     LUCK_NORMAL = "luck_normal"
     V5G = "v5g"
     V5X = "v5x"
     V5C = "v5c"
     DCK = "dck"
-    HPRT_ESC = "hprt_esc"
+    ELEPH_HPRT_ESC = "eleph_hprt_esc"
     NIIMBOT = "niimbot"
-    TSPL = "tspl"
-    PHOMEMO_ESCPOS = "phomemo_escpos"
+    ELEPH_TSPL = "eleph_tspl"
+    PHOMEMO_ESC = "phomemo_esc"
 
 
 class ProtocolTransportStyle(str, Enum):
@@ -31,25 +31,25 @@ class ProtocolSpec:
 
 
 class ProtocolFamily(str, Enum):
-    LEGACY = "legacy"
-    LEGACY_PREFIXED = "legacy_prefixed"
+    TINY = "tiny"
+    TINY_PREFIXED = "tiny_prefixed"
     LUCK_NORMAL = "luck_normal"
     LUCK_NORMAL_A4 = "luck_normal_a4"
     V5G = "v5g"
     V5X = "v5x"
     V5C = "v5c"
     DCK = "dck"
-    HPRT_ESC = "hprt_esc"
+    ELEPH_HPRT_ESC = "eleph_hprt_esc"
     NIIMBOT = "niimbot"
-    TSPL = "tspl"
-    PHOMEMO_ESCPOS = "phomemo_escpos"
+    ELEPH_TSPL = "eleph_tspl"
+    PHOMEMO_ESC = "phomemo_esc"
 
     @classmethod
     def from_value(cls, value: "ProtocolFamily | str | None") -> "ProtocolFamily":
         if isinstance(value, cls):
             return value
         if not value:
-            return cls.LEGACY
+            return cls.TINY
         return cls(str(value).strip().lower())
 
     @property

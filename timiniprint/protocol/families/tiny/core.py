@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-from ...raster import PixelFormat
-from ..encoding import pack_line, rle_encode_line
-from ..family import ProtocolFamily
-from ..packet import make_packet
-from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
-from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from ....raster import PixelFormat
+from ...encoding import pack_line, rle_encode_line
+from ...family import ProtocolFamily
+from ...packet import make_packet
+from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
+from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
 
 
-TINYPRINT_EIGHT = "tinyprint_eight"
-TINYPRINT_NEW = "tinyprint_new"
-TINYPRINT_NEW_EIGHT = "tinyprint_new_eight"
-TINYPRINT_PROFESSIONAL = "tinyprint_professional"
-TINYPRINT_EIGHT_PAPER_MODES = (PaperMode.PLAIN, PaperMode.A4_SHEET)
+VARIANT_LINE_EIGHT = "line_eight"
+VARIANT_ESC_STAR = "esc_star"
+VARIANT_ESC_STAR_EIGHT = "esc_star_eight"
+VARIANT_PROFESSIONAL = "professional"
+EIGHT_PAPER_MODES = (PaperMode.PLAIN, PaperMode.A4_SHEET)
 _BLE_STANDARD_CHUNK_CAP = 512
 
 
@@ -22,42 +22,42 @@ def _speed(request: PrintJobRequest) -> int:
     return request.speed
 
 
-def _tinyprint_blackening_cmd(level: int, family: ProtocolFamily | str) -> bytes:
+def _blackening_cmd(level: int, family: ProtocolFamily | str) -> bytes:
     level = max(1, min(5, level))
     return make_packet(0xA4, bytes([0x30 + level]), family)
 
 
-def _tinyprint_energy_cmd(energy: int, family: ProtocolFamily | str) -> bytes:
+def _energy_cmd(energy: int, family: ProtocolFamily | str) -> bytes:
     if energy <= 0:
         return b""
     return make_packet(0xAF, energy.to_bytes(2, "little"), family)
 
 
-def _tinyprint_print_mode_cmd(is_text: bool, family: ProtocolFamily | str) -> bytes:
+def _print_mode_cmd(is_text: bool, family: ProtocolFamily | str) -> bytes:
     return make_packet(0xBE, bytes([1 if is_text else 0]), family)
 
 
-def _tinyprint_speed_cmd(speed: int, family: ProtocolFamily | str) -> bytes:
+def _speed_cmd(speed: int, family: ProtocolFamily | str) -> bytes:
     return make_packet(0xBD, bytes([speed & 0xFF]), family)
 
 
-def _tinyprint_dev_state_cmd(family: ProtocolFamily | str) -> bytes:
+def _dev_state_cmd(family: ProtocolFamily | str) -> bytes:
     return make_packet(0xA3, b"\x00", family)
 
 
-def _tinyprint_stop_print_cmd(family: ProtocolFamily | str) -> bytes:
+def _stop_print_cmd(family: ProtocolFamily | str) -> bytes:
     return make_packet(0xA6, b"\x05", family)
 
 
-def _tinyprint_paper_le_check_black(amount: int, family: ProtocolFamily | str) -> bytes:
+def _paper_feed_check_black_cmd(amount: int, family: ProtocolFamily | str) -> bytes:
     cmd = 0xA0 if amount < 0 else 0xA1
     payload = abs(amount).to_bytes(2, "little", signed=False) + b"\x11"
     return make_packet(cmd, payload, family)
 
 
-def _tinyprint_supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]:
-    if protocol_variant in {TINYPRINT_EIGHT, TINYPRINT_NEW_EIGHT, TINYPRINT_PROFESSIONAL}:
-        return TINYPRINT_EIGHT_PAPER_MODES
+def _supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]:
+    if protocol_variant in {VARIANT_LINE_EIGHT, VARIANT_ESC_STAR_EIGHT, VARIANT_PROFESSIONAL}:
+        return EIGHT_PAPER_MODES
     return ()
 
 
@@ -76,7 +76,7 @@ def _left_padded_pixels(request: PrintJobRequest) -> tuple[list[int], int]:
     return out, raster.width + padding
 
 
-def _legacy_line_packets(
+def _line_packets(
     pixels: list[int],
     width: int,
     speed: int,
@@ -90,22 +90,22 @@ def _legacy_line_packets(
     out = bytearray()
     for row in range(height):
         line = pixels[row * width : (row + 1) * width]
-        if encoding == ImageEncoding.LEGACY_RLE:
+        if encoding == ImageEncoding.TINY_RLE:
             rle = rle_encode_line(line)
             if len(rle) <= width_bytes:
                 out += make_packet(0xBF, bytes(rle), family)
             else:
                 out += make_packet(0xA2, pack_line(line, lsb_first), family)
-        elif encoding == ImageEncoding.LEGACY_RAW:
+        elif encoding == ImageEncoding.TINY_RAW:
             out += make_packet(0xA2, pack_line(line, lsb_first), family)
         else:
-            raise ValueError(f"Unsupported legacy image encoding: {encoding.value}")
+            raise ValueError(f"Unsupported tiny image encoding: {encoding.value}")
         if periodic_speed and (row + 1) % 200 == 0:
-            out += _tinyprint_speed_cmd(speed, family)
+            out += _speed_cmd(speed, family)
     return bytes(out)
 
 
-def _tinyprint_eight_tail_feed(request: PrintJobRequest) -> int:
+def _line_eight_tail_feed(request: PrintJobRequest) -> int:
     if request.paper_mode == PaperMode.A4_SHEET:
         if request.a4xii:
             return 500
@@ -119,15 +119,15 @@ def _tinyprint_eight_tail_feed(request: PrintJobRequest) -> int:
     return max(0, request.post_print_feed_count + 1) * dots_per_paper
 
 
-def _build_tinyprint_eight_job(request: PrintJobRequest) -> bytes:
+def _build_line_eight_job(request: PrintJobRequest) -> bytes:
     pixels, width = _left_padded_pixels(request)
     speed = _speed(request)
     payload = bytearray()
-    payload += _tinyprint_blackening_cmd(request.blackening, request.protocol_family)
-    payload += _tinyprint_energy_cmd(request.energy, request.protocol_family)
-    payload += _tinyprint_print_mode_cmd(request.is_text, request.protocol_family)
-    payload += _tinyprint_speed_cmd(speed, request.protocol_family)
-    payload += _legacy_line_packets(
+    payload += _blackening_cmd(request.blackening, request.protocol_family)
+    payload += _energy_cmd(request.energy, request.protocol_family)
+    payload += _print_mode_cmd(request.is_text, request.protocol_family)
+    payload += _speed_cmd(speed, request.protocol_family)
+    payload += _line_packets(
         pixels=pixels,
         width=width,
         speed=speed,
@@ -135,26 +135,26 @@ def _build_tinyprint_eight_job(request: PrintJobRequest) -> bytes:
         lsb_first=request.lsb_first,
         family=request.protocol_family,
     )
-    payload += _tinyprint_paper_le_check_black(
-        _tinyprint_eight_tail_feed(request),
+    payload += _paper_feed_check_black_cmd(
+        _line_eight_tail_feed(request),
         request.protocol_family,
     )
-    payload += _tinyprint_dev_state_cmd(request.protocol_family)
+    payload += _dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
 
-def _build_tinyprint_professional_job(request: PrintJobRequest) -> bytes:
+def _build_professional_raw_fallback_job(request: PrintJobRequest) -> bytes:
     # TODO: Add the source-compatible LZO/0xCE payload path. This variant is a
     # Professional Printer raw/RLE fallback that keeps the separate command flow.
     pixels, width = _left_padded_pixels(request)
     speed = _speed(request)
     payload = bytearray()
-    payload += _tinyprint_stop_print_cmd(request.protocol_family)
-    payload += _tinyprint_blackening_cmd(request.blackening, request.protocol_family)
-    payload += _tinyprint_energy_cmd(request.energy, request.protocol_family)
-    payload += _tinyprint_print_mode_cmd(request.is_text, request.protocol_family)
-    payload += _tinyprint_speed_cmd(speed, request.protocol_family)
-    payload += _legacy_line_packets(
+    payload += _stop_print_cmd(request.protocol_family)
+    payload += _blackening_cmd(request.blackening, request.protocol_family)
+    payload += _energy_cmd(request.energy, request.protocol_family)
+    payload += _print_mode_cmd(request.is_text, request.protocol_family)
+    payload += _speed_cmd(speed, request.protocol_family)
+    payload += _line_packets(
         pixels=pixels,
         width=width,
         speed=speed,
@@ -163,21 +163,21 @@ def _build_tinyprint_professional_job(request: PrintJobRequest) -> bytes:
         family=request.protocol_family,
         periodic_speed=False,
     )
-    payload += _tinyprint_paper_le_check_black(
-        _tinyprint_eight_tail_feed(request),
+    payload += _paper_feed_check_black_cmd(
+        _line_eight_tail_feed(request),
         request.protocol_family,
     )
-    payload += _tinyprint_dev_state_cmd(request.protocol_family)
+    payload += _dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
 
-def _tinyprint_new_energy_byte(energy: int) -> int:
+def _esc_star_energy_byte(energy: int) -> int:
     if energy <= 0:
         return 0
     return energy.to_bytes(max(1, (energy.bit_length() + 7) // 8), "big")[0]
 
 
-def _tinyprint_new_mode_cmd(is_text: bool, family: ProtocolFamily | str) -> bytes:
+def _esc_star_mode_cmd(is_text: bool, family: ProtocolFamily | str) -> bytes:
     return make_packet(
         0xBE,
         bytes([1 if is_text else 0]),
@@ -185,7 +185,7 @@ def _tinyprint_new_mode_cmd(is_text: bool, family: ProtocolFamily | str) -> byte
     )
 
 
-def _tinyprint_new_dev_state_cmd(family: ProtocolFamily | str) -> bytes:
+def _esc_star_dev_state_cmd(family: ProtocolFamily | str) -> bytes:
     return make_packet(0xA3, b"\x00", family)
 
 
@@ -211,7 +211,7 @@ def _esc_star_24dot_payload(request: PrintJobRequest) -> bytes:
     return bytes(out)
 
 
-def _build_tinyprint_new_job(request: PrintJobRequest, *, eight: bool) -> bytes:
+def _build_esc_star_job(request: PrintJobRequest, *, eight: bool) -> bytes:
     final_feed = None
     if eight and request.paper_mode == PaperMode.A4_SHEET:
         max_height = request.a4_sheet_max_height
@@ -230,23 +230,23 @@ def _build_tinyprint_new_job(request: PrintJobRequest, *, eight: bool) -> bytes:
 
     payload = bytearray()
     payload += b"\x1B\x40\x12\x23"
-    payload.append(_tinyprint_new_energy_byte(request.energy))
-    payload += _tinyprint_new_mode_cmd(request.is_text, request.protocol_family)
+    payload.append(_esc_star_energy_byte(request.energy))
+    payload += _esc_star_mode_cmd(request.is_text, request.protocol_family)
     payload += _esc_star_24dot_payload(request)
     payload += b"\x1B\x64" + bytes([final_feed & 0xFF])
-    payload += _tinyprint_new_dev_state_cmd(request.protocol_family)
+    payload += _esc_star_dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
 
-def _build_tinyprint_variant_job(request: PrintJobRequest) -> bytes | None:
-    if request.protocol_variant == TINYPRINT_EIGHT:
-        return _build_tinyprint_eight_job(request)
-    if request.protocol_variant == TINYPRINT_NEW:
-        return _build_tinyprint_new_job(request, eight=False)
-    if request.protocol_variant == TINYPRINT_NEW_EIGHT:
-        return _build_tinyprint_new_job(request, eight=True)
-    if request.protocol_variant == TINYPRINT_PROFESSIONAL:
-        return _build_tinyprint_professional_job(request)
+def _build_variant_job(request: PrintJobRequest) -> bytes | None:
+    if request.protocol_variant == VARIANT_LINE_EIGHT:
+        return _build_line_eight_job(request)
+    if request.protocol_variant == VARIANT_ESC_STAR:
+        return _build_esc_star_job(request, eight=False)
+    if request.protocol_variant == VARIANT_ESC_STAR_EIGHT:
+        return _build_esc_star_job(request, eight=True)
+    if request.protocol_variant == VARIANT_PROFESSIONAL:
+        return _build_professional_raw_fallback_job(request)
     return None
 
 
@@ -256,19 +256,19 @@ BEHAVIOR = ProtocolBehavior(
         standard_chunk_cap=_BLE_STANDARD_CHUNK_CAP,
     ),
     supported_protocol_variants=(
-        TINYPRINT_EIGHT,
-        TINYPRINT_NEW,
-        TINYPRINT_NEW_EIGHT,
-        TINYPRINT_PROFESSIONAL,
+        VARIANT_LINE_EIGHT,
+        VARIANT_ESC_STAR,
+        VARIANT_ESC_STAR_EIGHT,
+        VARIANT_PROFESSIONAL,
     ),
-    supported_paper_modes_resolver=_tinyprint_supported_paper_modes,
+    supported_paper_modes_resolver=_supported_paper_modes,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
-        encoding=ImageEncoding.LEGACY_RAW,
+        encoding=ImageEncoding.TINY_RAW,
     ),
     image_encoding_support={
-        ImageEncoding.LEGACY_RAW: (PixelFormat.BW1,),
-        ImageEncoding.LEGACY_RLE: (PixelFormat.BW1,),
+        ImageEncoding.TINY_RAW: (PixelFormat.BW1,),
+        ImageEncoding.TINY_RLE: (PixelFormat.BW1,),
     },
-    job_builder=_build_tinyprint_variant_job,
+    job_builder=_build_variant_job,
 )
