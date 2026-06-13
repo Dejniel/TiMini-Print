@@ -151,4 +151,9 @@ class BleakBluetoothConnector:
             paired=endpoint.paired,
             transport=transport,
             protocol_family=device.protocol_family,
+            ble_mtu_request=(
+                device.profile.ble_mtu_request
+                if transport is DeviceTransport.BLE
+                else None
+            ),
         )

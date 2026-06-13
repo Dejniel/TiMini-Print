@@ -128,7 +128,6 @@ def main() -> None:
             "print_size": int(args[4]),
             "one_length": int(args[5]),
             "head_name": args[6],
-            "can_change_mtu": bool(args[7]),
             "dev_dpi": int(args[8]),
             "img_print_speed": int(args[9]),
             "text_print_speed": int(args[10]),
@@ -149,6 +148,8 @@ def main() -> None:
             "a4xii": False,
             "add_mor_pix": None,
         }
+        if not bool(args[7]):
+            model["ble_mtu_request"] = 23
 
         # A4XII models are the only ones using the signature that ends with two booleans.
         if len(args) == 29 and isinstance(args[-1], bool) and isinstance(args[-2], bool):

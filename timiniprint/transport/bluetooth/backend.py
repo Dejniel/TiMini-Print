@@ -311,6 +311,7 @@ class SppBackend:
                     pairing_hint,
                     protocol_family=device.protocol_family,
                     reporter=self._reporter,
+                    ble_mtu_request=device.ble_mtu_request,
                 )
                 set_timeout = getattr(sock, "settimeout", None)
                 if callable(set_timeout):

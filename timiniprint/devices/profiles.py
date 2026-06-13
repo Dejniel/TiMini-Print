@@ -126,7 +126,6 @@ class PrinterProfile:
     print_size: int
     one_length: int
     dev_dpi: int
-    can_change_mtu: bool
     has_id: bool
     use_spp: bool
     can_print_label: bool
@@ -136,6 +135,7 @@ class PrinterProfile:
     default_image_pipeline: ImagePipelineConfig
     stream: StreamProfile
     print_defaults: PrintDefaults
+    ble_mtu_request: int = 512
     default_protocol_variant: str | None = None
     default_paper_mode: PaperMode | None = None
     post_print_feed_count: int = 2
@@ -144,6 +144,10 @@ class PrinterProfile:
     add_more_pix_num: Optional[int] = None
     a4_sheet_max_height: Optional[int] = None
     origin_app_packages: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.ble_mtu_request < 23:
+            raise ValueError("ble_mtu_request must be at least 23")
 
     @property
     def width(self) -> int:

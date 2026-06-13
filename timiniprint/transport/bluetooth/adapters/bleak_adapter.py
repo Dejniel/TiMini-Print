@@ -40,6 +40,7 @@ class _BleakSocket:
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
         device_cache: Optional[Dict[str, Any]] = None,
+        ble_mtu_request: Optional[int] = None,
     ) -> None:
         self._client: Any = None
         self._address: Optional[str] = None
@@ -49,6 +50,7 @@ class _BleakSocket:
         self._timeout = 30.0
         self._pairing_hint = pairing_hint is True and not IS_MACOS
         self._protocol_family = protocol_family
+        self._ble_mtu_request = ble_mtu_request
         self._reporter = reporter
         self._device_cache = device_cache if device_cache is not None else {}
         self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
@@ -119,9 +121,13 @@ class _BleakSocket:
             detail = str(exc).strip() or repr(exc) or exc.__class__.__name__
             raise RuntimeError(f"Failed to connect to BLE device {address}: {detail}") from exc
 
-        if hasattr(self._client, "mtu_size") and self._client.mtu_size:
-            negotiated_mtu = self._client.mtu_size - 3
-            self._mtu_size = min(negotiated_mtu, 512)
+        if (
+            self._ble_mtu_request is not None
+            and hasattr(self._client, "mtu_size")
+            and self._client.mtu_size
+        ):
+            negotiated_mtu = min(self._client.mtu_size, self._ble_mtu_request)
+            self._mtu_size = max(1, min(negotiated_mtu - 3, 512))
 
         if self._pairing_hint:
             await self._pair_if_supported()
@@ -431,12 +437,14 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
         pairing_hint: Optional[bool] = None,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         return _BleakSocket(
             pairing_hint=pairing_hint,
             protocol_family=protocol_family,
             reporter=reporter,
             device_cache=self._device_cache,
+            ble_mtu_request=ble_mtu_request,
         )
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:

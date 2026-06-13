@@ -21,6 +21,11 @@ class DeviceInfo:
     paired: Optional[bool] = None
     transport: DeviceTransport = DeviceTransport.CLASSIC
     protocol_family: Optional[ProtocolFamily] = None
+    ble_mtu_request: Optional[int] = None
+
+    def __post_init__(self) -> None:
+        if self.ble_mtu_request is not None and self.ble_mtu_request < 23:
+            raise ValueError("ble_mtu_request must be at least 23")
 
     def merge(self, other: "DeviceInfo") -> "DeviceInfo":
         if self.address != other.address or self.transport != other.transport:
@@ -36,12 +41,14 @@ class DeviceInfo:
         else:
             paired = None
         protocol_family = self.protocol_family or other.protocol_family
+        ble_mtu_request = self.ble_mtu_request or other.ble_mtu_request
         return DeviceInfo(
             name=name,
             address=self.address,
             paired=paired,
             transport=self.transport,
             protocol_family=protocol_family,
+            ble_mtu_request=ble_mtu_request,
         )
 
     @staticmethod

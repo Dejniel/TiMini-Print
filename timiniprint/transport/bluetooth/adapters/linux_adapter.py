@@ -23,7 +23,9 @@ class _LinuxClassicAdapter(_ClassicBluetoothAdapter):
         pairing_hint: Optional[bool] = None,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
+        _ = ble_mtu_request
         if not hasattr(socket, "AF_BLUETOOTH") or not hasattr(socket, "BTPROTO_RFCOMM"):
             raise RuntimeError(
                 "RFCOMM sockets are not supported on this system. Use --serial or run on Linux."

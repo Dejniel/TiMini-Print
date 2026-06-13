@@ -87,11 +87,13 @@ class _LinuxAttAdapter(_BleBluetoothAdapter):
         pairing_hint: Optional[bool] = None,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         _ = pairing_hint
         return _LinuxAttSocket(
             protocol_family=protocol_family,
             reporter=reporter,
+            ble_mtu_request=ble_mtu_request,
         )
 
     def ensure_paired(self, address: str, pairing_hint: Optional[bool] = None) -> None:
@@ -141,9 +143,11 @@ class _LinuxAttSocket:
         *,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: Optional[int] = None,
     ) -> None:
         self._protocol_family = ProtocolFamily.from_value(protocol_family)
         self._reporter = reporter
+        self._ble_mtu_request = ble_mtu_request
         self._client: _LinuxAttClient | None = None
         self._connected = False
         self._mtu_size = _ATT_DEFAULT_MTU - 3
@@ -158,7 +162,10 @@ class _LinuxAttSocket:
             self._client.settimeout(timeout)
 
     def connect(self, address: str) -> None:
-        self._client = _LinuxAttClient(reporter=self._reporter)
+        self._client = _LinuxAttClient(
+            reporter=self._reporter,
+            ble_mtu_request=self._ble_mtu_request,
+        )
         try:
             self._loop = asyncio.new_event_loop()
             self._client.settimeout(self._timeout)
@@ -369,8 +376,10 @@ class _LinuxAttClient:
         self,
         *,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: int | None = None,
     ) -> None:
         self._reporter = reporter
+        self._ble_mtu_request = ble_mtu_request
         self._sock: socket.socket | None = None
         self._timeout = 30.0
         self._mtu = _ATT_DEFAULT_MTU
@@ -401,7 +410,8 @@ class _LinuxAttClient:
         for address_type in (_BDADDR_LE_PUBLIC, _BDADDR_LE_RANDOM):
             try:
                 self._sock = _open_att_socket(address, address_type, timeout=self._timeout)
-                self._exchange_mtu()
+                if self._ble_mtu_request is not None and self._ble_mtu_request > _ATT_DEFAULT_MTU:
+                    self._exchange_mtu()
                 self.services = self._discover_services()
                 self._update_characteristic_mtu()
                 self._reporter.debug(
@@ -490,8 +500,12 @@ class _LinuxAttClient:
             pass
 
     def _exchange_mtu(self) -> None:
+        requested_mtu = max(
+            _ATT_DEFAULT_MTU,
+            min(_ATT_CLIENT_MTU, self._ble_mtu_request or _ATT_CLIENT_MTU),
+        )
         response = self._request(
-            bytes([_ATT_OP_MTU_REQ]) + struct.pack("<H", _ATT_CLIENT_MTU),
+            bytes([_ATT_OP_MTU_REQ]) + struct.pack("<H", requested_mtu),
             expected_opcodes={_ATT_OP_MTU_RESP},
             request_opcode=_ATT_OP_MTU_REQ,
             timeout=self._timeout,

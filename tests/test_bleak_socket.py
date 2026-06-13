@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import types
 import unittest
 from unittest.mock import patch
 
@@ -30,12 +31,17 @@ class _Svc:
 
 
 class _Client:
-    def __init__(self, services):
+    def __init__(self, services, *, mtu_size=None):
         self.services = services
+        self.mtu_size = mtu_size
         self.calls = []
+        self.connected = False
         self.disconnected = False
         self.notify_callbacks = {}
         self.stop_notify_calls = []
+
+    async def connect(self):
+        self.connected = True
 
     async def write_gatt_char(self, char, chunk, response=True):
         self.calls.append((char.uuid, bytes(chunk), response))
@@ -90,6 +96,42 @@ class BleakSocketTests(unittest.TestCase):
         s = _BleakSocket()
 
         self.assertEqual(s._mtu_size, 20)
+
+    def test_connect_caps_reported_ble_mtu_to_standard_request(self) -> None:
+        client = _Client(
+            [
+                _Svc(
+                    "0000ae30-0000-1000-8000-00805f9b34fb",
+                    [_Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])],
+                )
+            ],
+            mtu_size=247,
+        )
+        s = _BleakSocket(device_cache={"AA": object()}, ble_mtu_request=23)
+        fake_bleak = types.SimpleNamespace(BleakClient=lambda _target: client)
+
+        with patch.dict("sys.modules", {"bleak": fake_bleak}):
+            asyncio.run(s._connect_async("AA"))
+
+        self.assertEqual(s._mtu_size, 20)
+
+    def test_connect_uses_reported_ble_mtu_when_profile_requests_it(self) -> None:
+        client = _Client(
+            [
+                _Svc(
+                    "0000ae30-0000-1000-8000-00805f9b34fb",
+                    [_Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])],
+                )
+            ],
+            mtu_size=247,
+        )
+        s = _BleakSocket(device_cache={"AA": object()}, ble_mtu_request=512)
+        fake_bleak = types.SimpleNamespace(BleakClient=lambda _target: client)
+
+        with patch.dict("sys.modules", {"bleak": fake_bleak}):
+            asyncio.run(s._connect_async("AA"))
+
+        self.assertEqual(s._mtu_size, 244)
 
     def test_send_async_v5x_routes_commands_and_bulk_data(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5X)

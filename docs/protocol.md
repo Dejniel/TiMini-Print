@@ -123,7 +123,7 @@ What this does:
 - `BluetoothDiscovery` finds reachable printers and returns `PrinterDevice` objects
 - `PrintJobBuilder` turns the file into a `ProtocolJob`
 - `prepare_connection_runtime` and `PrintJobBuilder` attach runtime controller state when the selected family needs it
-- `BleakBluetoothConnector` uses `device.transport_target` and `device.profile.stream`
+- `BleakBluetoothConnector` uses `device.transport_target`, `device.profile.stream`, and BLE MTU hints from the profile
 - `send_prepared_job` executes named protocol steps when needed and waits for runtime completion
 - the caller does not manually pass `chunk_size`, `delay_ms`, or `runtime_controller`
 
@@ -241,8 +241,11 @@ class MyConnection:
         # Use the stream settings resolved for this device.
         chunk_size = self._device.profile.stream.chunk_size
         delay_ms = self._device.profile.stream.delay_ms
+        ble_mtu_request = self._device.profile.ble_mtu_request
 
         # Your transport implementation is responsible for writing job.payload.
+        # Bluetooth LE transports may use ble_mtu_request as a request/cap hint;
+        # Classic/serial transports should ignore it.
         # If the target family needs session logic, job.runtime_controller must be
         # honored during the write loop.
         await send_payload_over_my_link(
@@ -250,6 +253,7 @@ class MyConnection:
             payload=job.payload,
             chunk_size=chunk_size,
             delay_ms=delay_ms,
+            ble_mtu_request=ble_mtu_request,
             runtime_controller=job.runtime_controller,
         )
 

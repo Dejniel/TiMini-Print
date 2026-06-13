@@ -5,13 +5,15 @@ from ..encoding import pack_line, rle_encode_line
 from ..family import ProtocolFamily
 from ..packet import make_packet
 from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
-from .base import PrintJobRequest, ProtocolBehavior
+from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
 
 
 TINYPRINT_EIGHT = "tinyprint_eight"
 TINYPRINT_NEW = "tinyprint_new"
 TINYPRINT_NEW_EIGHT = "tinyprint_new_eight"
+TINYPRINT_PROFESSIONAL = "tinyprint_professional"
 TINYPRINT_EIGHT_PAPER_MODES = (PaperMode.PLAIN, PaperMode.A4_SHEET)
+_BLE_STANDARD_CHUNK_CAP = 512
 
 
 def _speed(request: PrintJobRequest) -> int:
@@ -43,6 +45,10 @@ def _tinyprint_dev_state_cmd(family: ProtocolFamily | str) -> bytes:
     return make_packet(0xA3, b"\x00", family)
 
 
+def _tinyprint_stop_print_cmd(family: ProtocolFamily | str) -> bytes:
+    return make_packet(0xA6, b"\x05", family)
+
+
 def _tinyprint_paper_le_check_black(amount: int, family: ProtocolFamily | str) -> bytes:
     cmd = 0xA0 if amount < 0 else 0xA1
     payload = abs(amount).to_bytes(2, "little", signed=False) + b"\x11"
@@ -50,7 +56,7 @@ def _tinyprint_paper_le_check_black(amount: int, family: ProtocolFamily | str) -
 
 
 def _tinyprint_supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]:
-    if protocol_variant in {TINYPRINT_EIGHT, TINYPRINT_NEW_EIGHT}:
+    if protocol_variant in {TINYPRINT_EIGHT, TINYPRINT_NEW_EIGHT, TINYPRINT_PROFESSIONAL}:
         return TINYPRINT_EIGHT_PAPER_MODES
     return ()
 
@@ -77,6 +83,7 @@ def _legacy_line_packets(
     encoding: ImageEncoding,
     lsb_first: bool,
     family: ProtocolFamily | str,
+    periodic_speed: bool = True,
 ) -> bytes:
     height = len(pixels) // width
     width_bytes = (width + 7) // 8
@@ -93,7 +100,7 @@ def _legacy_line_packets(
             out += make_packet(0xA2, pack_line(line, lsb_first), family)
         else:
             raise ValueError(f"Unsupported legacy image encoding: {encoding.value}")
-        if (row + 1) % 200 == 0:
+        if periodic_speed and (row + 1) % 200 == 0:
             out += _tinyprint_speed_cmd(speed, family)
     return bytes(out)
 
@@ -112,8 +119,6 @@ def _tinyprint_eight_tail_feed(request: PrintJobRequest) -> int:
     return max(0, request.post_print_feed_count + 1) * dots_per_paper
 
 
-# TODO: Add dedicated LZO/CorePrint/Professional variants only when a supported
-# model needs that payload/choreography. This path intentionally keeps raw lines.
 def _build_tinyprint_eight_job(request: PrintJobRequest) -> bytes:
     pixels, width = _left_padded_pixels(request)
     speed = _speed(request)
@@ -129,6 +134,34 @@ def _build_tinyprint_eight_job(request: PrintJobRequest) -> bytes:
         encoding=request.image_pipeline.encoding,
         lsb_first=request.lsb_first,
         family=request.protocol_family,
+    )
+    payload += _tinyprint_paper_le_check_black(
+        _tinyprint_eight_tail_feed(request),
+        request.protocol_family,
+    )
+    payload += _tinyprint_dev_state_cmd(request.protocol_family)
+    return bytes(payload)
+
+
+def _build_tinyprint_professional_job(request: PrintJobRequest) -> bytes:
+    # TODO: Add the source-compatible LZO/0xCE payload path. This variant is a
+    # Professional Printer raw/RLE fallback that keeps the separate command flow.
+    pixels, width = _left_padded_pixels(request)
+    speed = _speed(request)
+    payload = bytearray()
+    payload += _tinyprint_stop_print_cmd(request.protocol_family)
+    payload += _tinyprint_blackening_cmd(request.blackening, request.protocol_family)
+    payload += _tinyprint_energy_cmd(request.energy, request.protocol_family)
+    payload += _tinyprint_print_mode_cmd(request.is_text, request.protocol_family)
+    payload += _tinyprint_speed_cmd(speed, request.protocol_family)
+    payload += _legacy_line_packets(
+        pixels=pixels,
+        width=width,
+        speed=speed,
+        encoding=request.image_pipeline.encoding,
+        lsb_first=request.lsb_first,
+        family=request.protocol_family,
+        periodic_speed=False,
     )
     payload += _tinyprint_paper_le_check_black(
         _tinyprint_eight_tail_feed(request),
@@ -212,15 +245,21 @@ def _build_tinyprint_variant_job(request: PrintJobRequest) -> bytes | None:
         return _build_tinyprint_new_job(request, eight=False)
     if request.protocol_variant == TINYPRINT_NEW_EIGHT:
         return _build_tinyprint_new_job(request, eight=True)
+    if request.protocol_variant == TINYPRINT_PROFESSIONAL:
+        return _build_tinyprint_professional_job(request)
     return None
 
 
 BEHAVIOR = ProtocolBehavior(
     requires_speed=True,
+    transport=BleTransportProfile(
+        standard_chunk_cap=_BLE_STANDARD_CHUNK_CAP,
+    ),
     supported_protocol_variants=(
         TINYPRINT_EIGHT,
         TINYPRINT_NEW,
         TINYPRINT_NEW_EIGHT,
+        TINYPRINT_PROFESSIONAL,
     ),
     supported_paper_modes_resolver=_tinyprint_supported_paper_modes,
     default_image_pipeline=ImagePipelineConfig(

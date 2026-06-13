@@ -22,7 +22,6 @@ def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) ->
         "print_size": 384,
         "one_length": 8,
         "dev_dpi": 203,
-        "can_change_mtu": False,
         "has_id": False,
         "use_spp": False,
         "can_print_label": False,
@@ -145,8 +144,33 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(payload["profile_key"], "demo")
         self.assertEqual(payload["default_protocol_variant"], None)
         self.assertEqual(payload["default_paper_mode"], None)
+        self.assertEqual(payload["ble_mtu_request"], 512)
         self.assertEqual(payload["print_defaults"]["speed"]["image"], 10)
         self.assertEqual(payload["origin_app_packages"][0], "com.example.demo")
+
+    def test_profile_ble_mtu_request_defaults_to_512(self) -> None:
+        profile = model_from_json(PrinterProfile, _profile_payload())
+        self.assertEqual(profile.ble_mtu_request, 512)
+
+    def test_profile_ble_mtu_request_allows_standard_ble_mtu(self) -> None:
+        payload = _profile_payload()
+        payload["ble_mtu_request"] = 23
+        profile = model_from_json(PrinterProfile, payload)
+        self.assertEqual(profile.ble_mtu_request, 23)
+
+    def test_model_codec_rejects_null_ble_mtu_request(self) -> None:
+        payload = _profile_payload()
+        payload["ble_mtu_request"] = None
+
+        with self.assertRaisesRegex(ValueError, "ble_mtu_request"):
+            model_from_json(PrinterProfile, payload)
+
+    def test_model_codec_rejects_invalid_ble_mtu_request(self) -> None:
+        payload = _profile_payload()
+        payload["ble_mtu_request"] = 22
+
+        with self.assertRaisesRegex(ValueError, "ble_mtu_request"):
+            model_from_json(PrinterProfile, payload)
 
     def test_ppa2l_profiles_default_to_tag_mode(self) -> None:
         ppa2l = self.catalog.require_profile("luck_ppa2l")
@@ -310,6 +334,15 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(ly10.protocol_family, ProtocolFamily.LEGACY_PREFIXED)
         self.assertEqual(ly10.protocol_variant, "tinyprint_new")
         self.assertEqual(PrinterProtocol(ly10).supported_paper_modes(), ())
+
+        professional = self.catalog.detect_device("CTP100LG-1234")
+        self.assertIsNotNone(professional)
+        self.assertEqual(professional.profile_key, "professional_printer")
+        self.assertEqual(professional.protocol_variant, "tinyprint_professional")
+        self.assertEqual(
+            PrinterProtocol(professional).supported_paper_modes(),
+            (PaperMode.PLAIN, PaperMode.A4_SHEET),
+        )
 
     def test_origin_app_packages_keep_conflicting_names_explicit(self) -> None:
         rules = {rule.rule_key: rule for rule in self.catalog.rules}

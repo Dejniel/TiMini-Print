@@ -226,6 +226,30 @@ class ProtocolJobTests(unittest.TestCase):
 
         self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0xF4, 0x01, 0x11]), data)
 
+    def test_tinyprint_professional_variant_uses_raw_fallback_flow(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0] * 201,
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LEGACY,
+            protocol_variant="tinyprint_professional",
+            feed_padding=12,
+            dev_dpi=203,
+            post_print_feed_count=2,
+            left_padding_pixels=8,
+            image_pipeline=self.legacy_raw,
+        )
+
+        stop_print = bytes([0x51, 0x78, 0xA6, 0x00, 0x01, 0x00, 0x05, 0x1B, 0xFF])
+        speed_10 = bytes([0x51, 0x78, 0xBD, 0x00, 0x01, 0x00, 0x0A, 0x36, 0xFF])
+        self.assertTrue(data.startswith(stop_print))
+        self.assertEqual(data.count(speed_10), 1)
+
     def test_tinyprint_new_variant_uses_esc_star_flow(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],

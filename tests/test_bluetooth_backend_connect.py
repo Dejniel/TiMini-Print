@@ -4,11 +4,14 @@ import unittest
 from unittest.mock import call, patch
 
 from timiniprint import reporting
+from timiniprint.devices import PrinterCatalog
+from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from timiniprint.transport.bluetooth.backend import (
     SppBackend,
     _MACOS_FALLBACK_COOLDOWN_SEC,
     _resolve_rfcomm_channels,
 )
+from timiniprint.transport.bluetooth.connector import BleakBluetoothConnector
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 
 
@@ -88,6 +91,7 @@ class _Adapter:
         self._channels = channels
         self._fail = fail
         self._pair_error = pair_error
+        self.ble_mtu_request = None
 
     def resolve_rfcomm_channels(self, _address):
         return self._channels
@@ -96,9 +100,10 @@ class _Adapter:
         if self._pair_error:
             raise self._pair_error
 
-    def create_socket(self, _pairing_hint=None, protocol_family=None, reporter=None):
+    def create_socket(self, _pairing_hint=None, protocol_family=None, reporter=None, ble_mtu_request=None):
         _ = protocol_family
         _ = reporter
+        self.ble_mtu_request = ble_mtu_request
         return _Socket(fail=self._fail)
 
 
@@ -123,6 +128,40 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         with patch("timiniprint.transport.bluetooth.backend._select_adapter", return_value=_Adapter([1], fail=False)):
             backend._connect_attempts_blocking([dev], pairing_hint=False)
         self.assertTrue(backend.is_connected())
+
+    def test_connect_attempts_passes_ble_mtu_request_to_adapter(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        dev = DeviceInfo(
+            "X",
+            "UUID",
+            transport=DeviceTransport.BLE,
+            ble_mtu_request=512,
+        )
+        adapter = _Adapter([1], fail=False)
+        with patch("timiniprint.transport.bluetooth.backend._select_adapter", return_value=adapter):
+            backend._connect_attempts_blocking([dev], pairing_hint=False)
+
+        self.assertEqual(adapter.ble_mtu_request, 512)
+
+    def test_connector_maps_profile_ble_mtu_request_only_for_ble_endpoint(self) -> None:
+        device = PrinterCatalog.load().detect_device("X9-38CC")
+        self.assertIsNotNone(device)
+        ble = BluetoothEndpoint(
+            name="X9-38CC",
+            address="UUID-1",
+            transport=BluetoothEndpointTransport.BLE,
+        )
+        classic = BluetoothEndpoint(
+            name="X9-38CC",
+            address="AA:BB:CC:DD:EE:FF",
+            transport=BluetoothEndpointTransport.CLASSIC,
+        )
+
+        ble_info = BleakBluetoothConnector._to_device_info(ble, device)
+        classic_info = BleakBluetoothConnector._to_device_info(classic, device)
+
+        self.assertEqual(ble_info.ble_mtu_request, 512)
+        self.assertIsNone(classic_info.ble_mtu_request)
 
     def test_connect_attempts_fallback_and_final_error(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)

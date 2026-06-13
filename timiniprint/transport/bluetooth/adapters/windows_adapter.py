@@ -32,8 +32,10 @@ class _WindowsClassicAdapter(_ClassicBluetoothAdapter):
         pairing_hint: Optional[bool] = None,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         _ = protocol_family
+        _ = ble_mtu_request
         return self._winrt.create_socket()
 
     def resolve_rfcomm_channels(self, address: str) -> List[int]:

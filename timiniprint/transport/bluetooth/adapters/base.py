@@ -18,6 +18,7 @@ class _BaseBluetoothAdapter:
         pairing_hint: Optional[bool] = None,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         raise NotImplementedError
 

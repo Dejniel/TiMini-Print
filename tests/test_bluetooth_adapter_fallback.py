@@ -52,8 +52,8 @@ class _FakeAdapter:
         self.scan_calls.append(timeout)
         return [DeviceInfo("MXW01", "AA:BB:CC:DD:EE:FF", transport=DeviceTransport.BLE)]
 
-    def create_socket(self, pairing_hint=None, protocol_family=None, reporter=None):
-        _ = pairing_hint, protocol_family, reporter
+    def create_socket(self, pairing_hint=None, protocol_family=None, reporter=None, ble_mtu_request=None):
+        _ = pairing_hint, protocol_family, reporter, ble_mtu_request
         return self.socket
 
 

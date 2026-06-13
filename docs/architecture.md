@@ -105,6 +105,10 @@ It returns reachable Bluetooth printers as `PrinterDevice` objects and can also 
 It delegates raw endpoint resolution to `BluetoothEndpointResolver` in `timiniprint.devices`.
 
 This split keeps device knowledge out of transport while still allowing discovery to produce fully resolved runtime objects.
+BLE MTU requests are profile/device hints: `devices` decides whether a model
+should request a custom MTU, while `transport` decides whether the current backend can apply that request.
+Missing `ble_mtu_request` means the default `512` request; explicit `23`
+means standard BLE MTU and keeps the conservative default write payload.
 Transport code owns scanning; devices code owns turning raw endpoints into logical printer devices.
 
 ## Why protocol and transport are separate

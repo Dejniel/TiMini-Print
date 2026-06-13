@@ -24,17 +24,20 @@ class _FallbackAdapter(_BleBluetoothAdapter):
         pairing_hint: Optional[bool] = None,
         protocol_family: Optional[ProtocolFamily] = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         return _FallbackSocket(
             primary=self._primary.create_socket(
                 pairing_hint=pairing_hint,
                 protocol_family=protocol_family,
                 reporter=reporter,
+                ble_mtu_request=ble_mtu_request,
             ),
             fallback=self._fallback.create_socket(
                 pairing_hint=pairing_hint,
                 protocol_family=protocol_family,
                 reporter=reporter,
+                ble_mtu_request=ble_mtu_request,
             ),
             primary_name="linux-att",
             fallback_name="bleak",

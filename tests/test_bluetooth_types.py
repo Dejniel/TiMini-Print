@@ -19,6 +19,16 @@ class BluetoothTypesTests(unittest.TestCase):
         self.assertEqual(c.name, "Longer")
         self.assertTrue(c.paired)
 
+    def test_merge_preserves_ble_mtu_request(self) -> None:
+        a = DeviceInfo("A", "AA", transport=DeviceTransport.BLE)
+        b = DeviceInfo("Longer", "AA", transport=DeviceTransport.BLE, ble_mtu_request=512)
+        c = a.merge(b)
+        self.assertEqual(c.ble_mtu_request, 512)
+
+    def test_rejects_invalid_ble_mtu_request(self) -> None:
+        with self.assertRaisesRegex(ValueError, "ble_mtu_request"):
+            DeviceInfo("A", "AA", transport=DeviceTransport.BLE, ble_mtu_request=22)
+
     def test_dedupe_by_address_and_transport(self) -> None:
         d = [
             DeviceInfo("A", "AA", transport=DeviceTransport.CLASSIC),
