@@ -22,6 +22,12 @@ That is why the public model is built from:
 Static catalog data.
 It describes printer capabilities and print defaults.
 
+`print_size` is the source catalog value.
+`profile.width` is the raster width the rendering layer should produce.
+For some TinyPrint A4-style models these differ because the original app renders
+to `paper_size` and the protocol recipe adds left-side padding before packing
+the wire payload.
+
 A `PrinterProfile` is not enough to print by itself.
 It does not say:
 - which protocol family is active right now

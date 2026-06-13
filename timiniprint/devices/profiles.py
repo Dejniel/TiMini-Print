@@ -141,11 +141,22 @@ class PrinterProfile:
     post_print_feed_count: int = 2
     a4xii: bool = False
     add_mor_pix: Optional[bool] = None
+    add_more_pix_num: Optional[int] = None
     origin_app_packages: tuple[str, ...] = ()
 
     @property
     def width(self) -> int:
+        if self.add_mor_pix is True:
+            return self.paper_size
         return self.print_size
+
+    @property
+    def left_padding_pixels(self) -> int:
+        if self.add_mor_pix is not True:
+            return 0
+        if self.add_more_pix_num is not None and self.add_more_pix_num >= 0:
+            return self.add_more_pix_num
+        return 64
 
     @property
     def speed(self) -> SpeedProfile | None:

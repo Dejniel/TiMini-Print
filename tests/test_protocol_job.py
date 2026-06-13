@@ -159,6 +159,53 @@ class ProtocolJobTests(unittest.TestCase):
                 image_pipeline=self.legacy_raw,
             )
 
+    def test_tinyprint_eight_variant_uses_size8_tail_and_padding(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LEGACY,
+            protocol_variant="tinyprint_eight",
+            feed_padding=12,
+            dev_dpi=203,
+            post_print_feed_count=2,
+            left_padding_pixels=8,
+            image_pipeline=self.legacy_raw,
+        )
+
+        self.assertIn(bytes([0x51, 0x78, 0xA2, 0x00, 0x02, 0x00]), data)
+        self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x90, 0x00, 0x11]), data)
+        self.assertNotIn(bytes([0xA1, 0x00, 0x02, 0x00, 0x30, 0x00]), data)
+
+    def test_tinyprint_new_variant_uses_esc_star_flow(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=False,
+            speed=10,
+            energy=8,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LEGACY_PREFIXED,
+            protocol_variant="tinyprint_new",
+            feed_padding=12,
+            dev_dpi=203,
+            image_pipeline=self.legacy_raw,
+        )
+
+        self.assertTrue(data.startswith(bytes([0x1B, 0x40, 0x12, 0x23, 0x08])))
+        self.assertIn(bytes([0x12, 0x51, 0x78, 0xBE, 0x00, 0x01, 0x00, 0x00]), data)
+        self.assertIn(bytes([0x1B, 0x2A, 0x21, 0x08, 0x00]), data)
+        self.assertIn(bytes([0x1B, 0x4A, 0x00, 0x0A]), data)
+        self.assertTrue(data.endswith(bytes([0x00, 0xFF])))
+        self.assertIn(bytes([0x1B, 0x64, 0x03, 0x12, 0x51, 0x78, 0xA3]), data)
+
     def test_build_from_raster_validates(self) -> None:
         raster = self.raster.RasterBuffer(pixels=[1, 0, 1], width=2)
         with self.assertRaisesRegex(ValueError, "multiple of width"):

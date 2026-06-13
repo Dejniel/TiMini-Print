@@ -142,7 +142,8 @@
       }
     },
     "a4xii": true,
-    "add_mor_pix": false
+    "add_mor_pix": false,
+    "default_protocol_variant": "tinyprint_eight"
   },
   {
     "profile_key": "luck_a2",
@@ -1477,7 +1478,8 @@
       }
     },
     "a4xii": true,
-    "add_mor_pix": false
+    "add_mor_pix": false,
+    "default_protocol_variant": "tinyprint_eight"
   },
   {
     "profile_key": "a43",
@@ -1525,7 +1527,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 32
   },
   {
     "profile_key": "a4300",
@@ -1573,7 +1578,9 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": false
   },
   {
     "profile_key": "ai01",
@@ -2735,7 +2742,8 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight"
   },
   {
     "profile_key": "gt09",
@@ -2783,7 +2791,9 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true
   },
   {
     "profile_key": "gw09",
@@ -2831,7 +2841,8 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight"
   },
   {
     "profile_key": "hd1",
@@ -2975,7 +2986,9 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_new_eight",
+    "add_mor_pix": true
   },
   {
     "profile_key": "label_printer",
@@ -3311,7 +3324,8 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_new"
   },
   {
     "profile_key": "ly11",
@@ -3359,7 +3373,8 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_new"
   },
   {
     "profile_key": "m01",
@@ -3551,7 +3566,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 32
   },
   {
     "profile_key": "mx02",
@@ -3800,7 +3818,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 24
   },
   {
     "profile_key": "p5",
@@ -4136,7 +4157,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 32
   },
   {
     "profile_key": "pr893",
@@ -4184,7 +4208,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 48
   },
   {
     "profile_key": "professional_printer",
@@ -4232,7 +4259,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 32
   },
   {
     "profile_key": "pt001",
@@ -5153,7 +5183,9 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true
   },
   {
     "profile_key": "x9",
@@ -5201,7 +5233,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 32
   },
   {
     "profile_key": "xw001",
@@ -5438,7 +5473,10 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "default_protocol_variant": "tinyprint_eight",
+    "add_mor_pix": true,
+    "add_more_pix_num": 36
   },
   {
     "profile_key": "tspl_p1",

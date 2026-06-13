@@ -29,6 +29,11 @@ It carries the resolved:
 
 A `PrinterDevice` is the one object that both protocol code and transport code agree on.
 
+When rendering your own raster data, use `device.profile.width` as the target
+width. Do not assume it is always identical to `device.profile.print_size`.
+Some TinyPrint legacy variants render to a narrower source width and add
+protocol-level padding when building the job.
+
 Runtime settings are separate from the static profile:
 - `variant` selects the stateful runtime algorithm, when a family needs one
 - `defaults` provides runtime density defaults such as V5G/MX dynamic density inputs

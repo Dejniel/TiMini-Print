@@ -95,6 +95,7 @@ class PrintJobRequest:
     can_print_label: bool = False
     density: int | None = None
     post_print_feed_count: int = 2
+    left_padding_pixels: int = 0
     paper_mode: PaperMode | None = None
     page_index: int = 1
     page_count: int = 1

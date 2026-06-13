@@ -237,8 +237,10 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(p4)
         self.assertEqual(p4.profile_key, "p4")
         self.assertEqual(p4.protocol_family, ProtocolFamily.LEGACY)
+        self.assertEqual(p4.protocol_variant, "tinyprint_eight")
         self.assertEqual(p4.profile.paper_size, 1600)
         self.assertEqual(p4.profile.print_size, 1728)
+        self.assertEqual(p4.profile.width, 1600)
 
     def test_tinyprint_legacy_profiles_keep_source_defaults(self) -> None:
         d1 = self.catalog.require_profile("d1")
@@ -277,6 +279,26 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x16.profile_key, "x16")
         self.assertFalse(x16.profile.can_print_label)
         self.assertEqual(x16.profile.energy.image.middle, 5000)
+
+    def test_tinyprint_special_protocol_variants_are_modeled(self) -> None:
+        x9 = self.catalog.detect_device("X9-38CC")
+        self.assertIsNotNone(x9)
+        self.assertEqual(x9.profile_key, "x9")
+        self.assertEqual(x9.protocol_variant, "tinyprint_eight")
+        self.assertEqual(x9.profile.width, 1600)
+        self.assertEqual(x9.profile.left_padding_pixels, 32)
+
+        jxm800 = self.catalog.detect_device("GG-D2100-1234")
+        self.assertIsNotNone(jxm800)
+        self.assertEqual(jxm800.profile_key, "jxm800")
+        self.assertEqual(jxm800.protocol_family, ProtocolFamily.LEGACY_PREFIXED)
+        self.assertEqual(jxm800.protocol_variant, "tinyprint_new_eight")
+
+        ly10 = self.catalog.detect_device("LY10-1234")
+        self.assertIsNotNone(ly10)
+        self.assertEqual(ly10.profile_key, "ly10")
+        self.assertEqual(ly10.protocol_family, ProtocolFamily.LEGACY_PREFIXED)
+        self.assertEqual(ly10.protocol_variant, "tinyprint_new")
 
     def test_origin_app_packages_keep_conflicting_names_explicit(self) -> None:
         rules = {rule.rule_key: rule for rule in self.catalog.rules}
