@@ -1,7 +1,6 @@
 name: Other issue
 description: Suggest a change, ask for improvement, or report something else.
-title: ""
-labels: []
+title: "Other: "
 body:
   - type: markdown
     attributes:
