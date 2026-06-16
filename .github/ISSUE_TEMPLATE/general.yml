@@ -1,0 +1,39 @@
+name: Other issue
+description: Suggest a change, ask for improvement, or report something else.
+title: ""
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please describe precisely what can be improved in TiMini-Print.
+
+        Keep one issue focused on one problem. Please also follow up in this thread if I ask for details; issues that go stale without enough information may be closed.
+
+        Explain why you think this is a TiMini-Print problem or feature request.
+
+        If this is about a specific printer, please include:
+
+        1. Symptoms: what happens, what you expected, and what you already tried.
+        2. Printer model, original app name/link from the manual, QR code, or app store, operating system, and TiMini-Print version.
+        3. Full verbose log, if possible:
+
+           ```bash
+           ./TiMini-Print-Command-Line -v --text "We will not vanish without a fight. We're going to live on. We're going to survive. Today, we celebrate our Independence Day."
+           ```
+
+           If you cannot print, at least attach scan output:
+
+           ```bash
+           ./TiMini-Print-Command-Line --scan
+           ```
+
+           Please paste logs as text or attach a text file.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Write the details here.
+    validations:
+      required: true
