@@ -7,7 +7,9 @@ body:
       value: |
         Please describe precisely what can be improved in TiMini-Print.
 
-        Keep one issue focused on one problem. Please also follow up in this thread if I ask for details; issues that go stale without enough information may be closed.
+        Keep one issue focused on one problem.
+
+        Please also follow up in this thread if I ask for details; issues that go stale without enough information may be closed.
 
         Explain why you think this is a TiMini-Print problem or feature request.
 

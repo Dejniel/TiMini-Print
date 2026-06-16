@@ -8,6 +8,10 @@ body:
       value: |
         Use this when your printer is not detected, is not listed, or TiMini does not have a matching profile for it.
 
+        Keep one issue focused on one problem.
+
+        Please also follow up in this thread if I ask for details; issues that go stale without enough information may be closed.
+
         Please include the original app link. Without the original app or verbose scan output, adding support may be impossible.
 
         Run this scan and paste the full output below:

@@ -8,6 +8,10 @@ body:
       value: |
         Use this when TiMini detects your printer, but printing, scanning, connection, paper feed, image quality, or profile selection does not work correctly.
 
+        Keep one issue focused on one problem.
+
+        Please also follow up in this thread if I ask for details; issues that go stale without enough information may be closed.
+
         Run this test command and paste the full output. Do not summarize it.
 
         ```bash
