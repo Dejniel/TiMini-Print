@@ -75,7 +75,7 @@ python3 timiniprint_gui.py
 
 - Force a specific model for an unsupported or random Bluetooth name:
   ```bash
-  ./TiMini-Print-Command-Line-Linux-x86_64 --list-profiles
+  ./TiMini-Print-Command-Line-Linux-x86_64 --list-models
   ./TiMini-Print-Command-Line-Linux-x86_64 --export-printer-config luck_a2 printer.json
   ./TiMini-Print-Command-Line-Linux-x86_64 --printer-config printer.json /path/to/file.pdf
   ```
@@ -85,9 +85,9 @@ python3 timiniprint_gui.py
   ./TiMini-Print-Command-Line-Linux-x86_64 --text "Hello from CLI"
   ```
 
-- List available printer profiles:
+- List available printer models:
   ```bash
-  ./TiMini-Print-Command-Line-Linux-x86_64 --list-profiles
+  ./TiMini-Print-Command-Line-Linux-x86_64 --list-models
   ```
 
 - Scan for supported printers:
@@ -100,8 +100,8 @@ python3 timiniprint_gui.py
 - With `--printer-config`, `--bluetooth` is optional; without it, the first Bluetooth target found is used unless the printer config has a saved Bluetooth target
 - Use `--bluetooth NAME_OR_ADDRESS --printer-config printer.json` when several Bluetooth devices are nearby and you want to choose one explicitly
 - For `--serial`, you must pass `--printer-config`
-- `--printer-config KEY` uses a known profile/runtime defaults key directly; `--printer-config PATH` loads an editable printer config JSON
-- `--export-printer-config KEY PATH` writes a full editable printer config JSON from a known profile/runtime defaults key
+- `--printer-config KEY` uses a known model key or public model name directly; `--printer-config PATH` loads an editable printer config JSON
+- `--export-printer-config KEY PATH` writes a full editable printer config JSON from a known model key or public model name
 - Manual printer config overrides are for advanced testing only; if you force the wrong profile or protocol family, printing may still fail
 - `--paper-mode tag` or `--paper-mode plain` overrides the profile's default media mode when the selected protocol supports it
 - The GUI and standalone CLI release builds check GitHub releases at startup at most once per day; set `TIMINIPRINT_NO_UPDATE_CHECK=1` to disable this
@@ -119,59 +119,90 @@ If you want to build your own integration instead of using only the bundled GUI 
 
 # Supported printer models
 <!-- BEGIN supported-models -->
-0019B-C, 0019B-D, 15P3, 58P5, A200, A33, A40, A41II, A41III, A42II, A43, A4300, AI01, AN01, APA40, APA41, APA42, APA43, APA46Y, APA49H, CMT-0510, CP01, CPLM10 (Label Printer), CTP100LG (Professional Printer), CTP500 (Mini Printer), CTP750BY (Shipping Printer), CTP800BD (Shipping Printer), D1, D100, D110, DL_GE225, DL_X2, DL_X2Pro, DL_X7, DL_X7Pro, DP_8038, DP_A4, DT1-0, DTR-R0, DY01, DY03, DY49, EMX-040256, ewtto ET-Z0504, FC02, FL01, GB01, GB02, GB02SH, GB03, GB03PH, GB03PL, GB03SH, GB03SL, GB04, GB05, GB06, GG-D2100 (JXM800), GL-VS9, GT01, GT03, GT04, GT09, GT10, GW08, GW09, HD1, HT0125, IM.04, IprintIt Printer, JRX01, JX01 (JX001), JX02 (JX002), JX03 (JX003), JX04 (JX004), JX05 (JX005), JX06 (JX006), KF-5, LGM01, LP6, LT01, LuckP_A41, LuckP_A42, Luxorp.PX10, LY01, LY02, LY03, LY05, LY11, M02 Pro, M02X, M2, M220, ML-MP-01, MPA81, MV-B530, MX02, MX03, MX07, MX08, MX09, MX11, MX12, MX13, MXW010, P1 (Eleph), P1 (Tiny), P10, P2, P4, P5, P5AI, P6, P7, P7H, PD01, Pocket Printer, PPA2L, PPA2LH, PR07, PT001, QDID, QDX01, QIRUI_Q1, QIRUI_Q2, ROSSMANN, RS9000, RT034h, S01, S101, S102, SC03, SC03H, SC03h, SC04, SC04h, SC05, SeznikEcho, SeznikNeo, TCM690464, TPA46, TPA46Pro, U1, U8, UXPORTMIP, WL01, wts07, X100, X101H, X102, X103H, X103h, X16, X2H, X2h, X5, X5H, X5h, X5HP, X6H, X6h, X6HP, X7, X7H, X7h, X7HP, X8, X8-L, X8-W, X9, XC9, XiaoWa, XOPOPPY, YK06, YTB01, ZHHC, ZP801, ZP802, ZPA4Z1
-- A2 and clones: PPA2, A2_EY48D, A2_LYiN48D_ITSR
-- A2H and clones: PPA2H, A2_LYiN48DH
-- A49 and clones: APA49
+A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, CPLM10, CTP100LG, CTP500, D100, D110, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GG-D2100, GT02, GT04, GW09, HD1, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M02X, M2, M220, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, U1, U8, X1, X101H, X16, X5, X6, X7, X8, XW002, YTB01, ZHHC, ZP802
+
+- 15P3 and clones: YK06
+- 58P5 and clones: WL01
+- A41II and clones: A42II, A200
 - A80H-HD and clones: DP_A80H
+- APA40 and clones: APA42, APA43
+- APA41 and clones: APA49, A49
 - APL86 and clones: L86, L86_Printer
 - APL86H and clones: APL86HL, L86H_Printer
 - BQ02 and clones: BQ03, BQ17
-- D80 and clones: DYD80, PeriPage_A40, DP_D80, E80, CASA-01
+- C21 and clones: D2, E2, NEWSMY
+- CMT-0510 and clones: SC03, SC04
+- CTP750BY and clones: CTP800BD
+- D80 and clones: PeriPage_A40, DYD80, DP_D80, DP-D80, E80, CASA-01
+- DL_X2Pro and clones: P5
 - DYD80H and clones: DP_D80H
-- GT02 and clones: MINI PRINTER, JL-BR22
-- GT08 and clones: PR88, XW005
-- ITP05 and clones: ITP05H, DYA46, DP_ITP05
-- ITP06 and clones: DYA49, DP_ITP06
-- M01 and clones: PR25, XW003, XW009
-- M02 and clones: M02S
+- ewtto ET-Z0504 and clones: IM.04, X103H, SC05, X102, X5HP, X6HP, P7H, X2H, X5H, X6H, X7H
+- FL01 and clones: KF-5
+- GB03 and clones: GB06
+- GB03PH and clones: GB03SH
+- GT01 and clones: GT03
+- GT08 and clones: GW08, XW005, PR88
+- GT09 and clones: GT10
+- IprintIt Printer and clones: DY01, LP6
+- ITP05 and clones: ITP05H, DYA46, DP_ITP05, TPA46, DP_A4, DP-A4, DP_8038
+- ITP06 and clones: DYA49, DP_ITP06, TPA46Pro
+- JX01 and clones: JX02, JX03, JX04, JX05, JX06
+- LGM01 and clones: X7HP
+- M02 and clones: Mr.in, Mr.in_M02
+- M02 Pro and clones: M02PRO
+- M02S and clones: Mr.in_M02S
 - M110 and clones: M120
-- MX06 and clones: MX05
+- MINIPRINTER and clones: JL-BR22
+- MV-B530 and clones: GL-VS9, QDID, X9
+- MX05 and clones: MX06, MXTP-100, CYLOBTPRINTER, EWTTOET-Z0499
 - MX10 and clones: AZ-P2108X, MXW009, KP-IM606, GV-MA211
-- MXTP-100 and clones: CYLO BT PRINTER, EWTTO ET-Z0499
-- P11 (Eleph HPRT ESC) and clones: P2_, P3_, P5_, YHK_
+- MX11 and clones: MX12
+- MX13 and clones: XOPOPPY
+- P11 and clones: P2, P3, P5, YHK
+- P5AI and clones: PR07, PR25, XW003, XW009, M01
+- Pocket Printer and clones: Luxorp.PX10, EMX-040256, SeznikEcho, TCM690464, UXPORTMIP, DL_GE225, ML-MP-01, ROSSMANN, 0019B-C, 0019B-D, DTR-R0, GB03PL, HT0125, RT034h, DT1-0, SC03h, SC04h, X103h, DY03, X100, X2h, X5h, X6h, X7h, XC9, D1, P1, P2
+- PPA2 and clones: A2, A2_EY48D, A2_LYiN48D_ITSR
+- PPA2H and clones: A2H, A2_LYiN48DH
 - PR02 and clones: XW008
 - PR20 and clones: XW001
-- PR30 and clones: XW002
-- PR35 and clones: XW004
-- PR89 and clones: XW006
 - PR893 and clones: XW007
+- SC03H and clones: FC02
+- SeznikNeo and clones: RS9000, XiaoWa, JRX01, QDX01, wts07, CP01, DY49
 - T02 and clones: T02E, Q02E, C02E
-- V5X and clones: MXW01, MXW01-1, MXW-W5, X1, X2, C17, AC695X_PRINT, JK01, PORTABLEPRINTER, INSTANTPRINTPLUS, REKA, HDMDT-00, KERUI, BH03
-- YT01 and clones: YT02, MX01, MXPC-100, URBANWORX KIDS CAMERA, BQ01, BQ05, BQ06, BQ06B, BQ07, BQ08, BQ7A, BQ7B, BQ95, BQ95B, BQ95C, BQ96, EWTTO ET-N3687, EWTTO ET-N3689, K06, X6
+- V5X and clones: X1, X2, MXW01, MXW01-1, C17, MXW-W5, AC695X_PRINT, JK01, PORTABLEPRINTER, INSTANTPRINTPLUS, REKA, HDMDT-00, KERUI, BH03
+- XW004 and clones: PR35
+- YT01 and clones: YT02, MX01, MX05, MX06, MX08, MX09, MX10, MX11, MX12, MX13, MXTP-100, MXPC-100, AZ-P2108X, PD01, URBANWORXKIDSCAMERA, CYLOBTPRINTER, XOPOPPY, BQ01, EWTTOET-Z0499, BQ05, BQ95B, BQ95C, BQ95, BQ06B, BQ06, BQ07, BQ7A, BQ7B, BQ08, BQ96, MXW009, MXW010, EWTTOET-N3689, EWTTOET-N3687, KP-IM606, GV-MA211, X6, K06
+- ZPA4Z1 and clones: ZP801, XW006, PR89, X8-L, X8-W
 <!-- END supported-models -->
 
 ## Potential future support
 These models or protocol families are not in the supported list yet, but they look implementable with [more support](#we-need-you).
 <!-- BEGIN todo-models -->
-B1, B1 Pro, B18, B18S, B21, B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro, B24, B3S, B3S_P, D101, D11, D11S, D11_H, D110_M, Hi-D110, Hi-NB-D11, JCB3S, M2_H, N1, S6, JX400R, JX400R06P, MP300, MXW-A4
-- AL200 and clones: AL2, RPP02N
+D110_M, Hi-D110, JX400R, JX400R06P, MP300, MXW-A4
+
+- AL200 and clones: RPP02N, AL2
+- B1 and clones: B1 Pro, M2_H, N1
+- B18 and clones: B18S
+- B21 and clones: B21S-C2B, B21-C2B, B21-L2B, B21_Pro, B21S
+- B3S and clones: B3S_P, JCB3S, S6_P, B24, S6
 - BAYPAGE and clones: YINTIBAO-V8S
-- C21 and clones: D2, E2, NEWSMY
-- D12 and clones: D11s, C2, C3, C16
-- D30 and clones: D35, D50, Q30, Q30S
-- D400 and clones: Y810BT, QR380A, TB41, QR_386A, ITPP941, P80S, ITPP130B
-- D82 and clones: D82S, D83, A10, FICHERO_6181
-- ITP05N and clones: ITP06N, PCPS_D80, DP_A80, DP_A80S, DP_A80W, PD_A4, GD-88
+- D101 and clones: Betty
+- D11 and clones: Hi-NB-D11, D11_Pro, D11_H, D11S, Fust, D61, D41, Dxx
+- D12 and clones: C16, C2, C3
+- D30 and clones: Q30S, D35, D50, Q30
+- D400 and clones: ITPP130B, QR_386A, ITPP941, Y810BT, QR380A, TB41, P80S
+- D82 and clones: FICHERO_6181, D82S, D83, A10
+- ITP05N and clones: PCPS_D80, DP_A80S, DP_A80W, ITP06N, DP_A80, PD_A4, GD-88
 - JXPRINTER and clones: PRINTER
-- LP100 and clones: LP220, LY100_BLE
+- LP100 and clones: LY100_BLE, LP220
 - LP100S and clones: LP220S
 - M03 and clones: M200, M250, M221, M260
 - M04S and clones: M04AS
 - M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88
 - M832 and clones: M836
-- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4
-- P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO
+- MPL11 and clones: D11s, FICHERO_5836, MULLER_6473
+- P100 and clones: YINTIBAO-V5, AEQ918N4, MP100, MP200, MP220
+- P100S and clones: YINTIBAO-V5PRO, MP100S, MP200S, MP220S
 - P12 and clones: P12 Pro, A30
 - P3S and clones: MP300S
 - PM-241-BT and clones: PM241, PM 241

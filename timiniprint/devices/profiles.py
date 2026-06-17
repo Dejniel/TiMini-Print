@@ -91,31 +91,44 @@ class RuntimeCapabilities:
 
 
 @dataclass(frozen=True)
-class PrinterRuntimeDefaults:
+class ProtocolDefault:
+    type: ProtocolFamily
+    packets_type: str | None = None
+
+
+@dataclass(frozen=True)
+class ProtocolOverride:
+    type: ProtocolFamily | None = None
+    packets_type: str | None = None
+
+
+@dataclass(frozen=True)
+class RuntimePreset:
     key: str
-    profile_key: str
-    variant: str | None
-    density: ModeLevelProfile
+    control_algorithm: str | None
+    density: ModeLevelProfile | None = None
     capabilities: RuntimeCapabilities = field(default_factory=RuntimeCapabilities)
 
     def select_density(self, *, is_text: bool, blackening: int) -> int:
+        if self.density is None:
+            raise ValueError(f"Runtime preset {self.key} does not define density")
         return self.density.select(is_text=is_text, blackening=blackening)
 
 
 @dataclass(frozen=True)
 class RuntimeSettings:
-    variant: str | None = None
-    defaults: PrinterRuntimeDefaults | None = None
+    control_algorithm: str | None = None
+    preset: RuntimePreset | None = None
     capabilities: RuntimeCapabilities = field(default_factory=RuntimeCapabilities)
 
     @property
-    def defaults_key(self) -> str | None:
-        return None if self.defaults is None else self.defaults.key
+    def preset_key(self) -> str | None:
+        return None if self.preset is None else self.preset.key
 
     def select_density(self, *, is_text: bool, blackening: int) -> int | None:
-        if self.defaults is None:
+        if self.preset is None or self.preset.density is None:
             return None
-        return self.defaults.select_density(is_text=is_text, blackening=blackening)
+        return self.preset.select_density(is_text=is_text, blackening=blackening)
 
 
 @dataclass(frozen=True)
@@ -131,19 +144,18 @@ class PrinterProfile:
     can_print_label: bool
     label_value: str
     back_paper_num: int
-    default_protocol_family: ProtocolFamily
+    protocol_default: ProtocolDefault
     default_image_pipeline: ImagePipelineConfig
     stream: StreamProfile
     print_defaults: PrintDefaults
+    runtime_presets: tuple[RuntimePreset, ...] = ()
     ble_mtu_request: int = 512
-    default_protocol_variant: str | None = None
     default_paper_mode: PaperMode | None = None
     post_print_feed_count: int = 2
     a4xii: bool = False
     render_to_paper_width: Optional[bool] = None
     left_padding_pixels: Optional[int] = None
     a4_sheet_max_height: Optional[int] = None
-    origin_app_packages: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if self.ble_mtu_request < 23:
@@ -190,26 +202,20 @@ class PrinterProfile:
 
 
 @dataclass(frozen=True)
-class DetectionRule:
-    rule_key: str
-    profile_key: str
-    protocol_family: ProtocolFamily
+class ModelDetection:
     prefixes: tuple[str, ...] = ()
     exact_names: tuple[str, ...] = ()
-    protocol_variant: str | None = None
     mac_suffixes: tuple[str, ...] = ()
-    image_pipeline: ImagePipelineConfig | None = None
-    runtime_variant: str | None = None
-    runtime_defaults_key: str | None = None
-    origin_app_packages: tuple[str, ...] = ()
     _folded_prefixes: tuple[str, ...] = field(init=False, repr=False)
+    _prefix_base_names: tuple[str, ...] = field(init=False, repr=False)
     _folded_exact_names: tuple[str, ...] = field(init=False, repr=False)
+    _folded_prefix_base_names: tuple[str, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         prefixes = tuple(DetectionNormalizer.normalize_name(prefix) for prefix in self.prefixes)
         exact_names = tuple(DetectionNormalizer.normalize_name(name) for name in self.exact_names)
         if not prefixes and not exact_names:
-            raise ValueError("Detection rule requires at least one prefix or exact_name")
+            raise ValueError("Model detection requires at least one prefix or exact_name")
         object.__setattr__(self, "prefixes", prefixes)
         object.__setattr__(self, "exact_names", exact_names)
         object.__setattr__(
@@ -222,10 +228,21 @@ class DetectionRule:
             "_folded_prefixes",
             tuple(DetectionNormalizer.fold_name(prefix) for prefix in prefixes),
         )
+        prefix_base_names = tuple(
+            prefix.rstrip("-_")
+            for prefix in prefixes
+            if prefix.endswith(("-", "_"))
+        )
+        object.__setattr__(self, "_prefix_base_names", prefix_base_names)
         object.__setattr__(
             self,
             "_folded_exact_names",
             tuple(DetectionNormalizer.fold_name(name) for name in exact_names),
+        )
+        object.__setattr__(
+            self,
+            "_folded_prefix_base_names",
+            tuple(DetectionNormalizer.fold_name(name) for name in prefix_base_names),
         )
 
     def matches(
@@ -237,13 +254,17 @@ class DetectionRule:
     ) -> bool:
         normalized_name = DetectionNormalizer.normalize_name(device_name)
         if case_sensitive:
-            matches_name = normalized_name in self.exact_names or any(
-                normalized_name.startswith(prefix) for prefix in self.prefixes
+            matches_name = (
+                normalized_name in self.exact_names
+                or normalized_name in self._prefix_base_names
+                or any(normalized_name.startswith(prefix) for prefix in self.prefixes)
             )
         else:
             folded_name = DetectionNormalizer.fold_name(device_name)
-            matches_name = folded_name in self._folded_exact_names or any(
-                folded_name.startswith(prefix) for prefix in self._folded_prefixes
+            matches_name = (
+                folded_name in self._folded_exact_names
+                or folded_name in self._folded_prefix_base_names
+                or any(folded_name.startswith(prefix) for prefix in self._folded_prefixes)
             )
         if not matches_name:
             return False
@@ -255,16 +276,98 @@ class DetectionRule:
         return any(normalized.endswith(suffix) for suffix in self.mac_suffixes)
 
 
+@dataclass(frozen=True)
+class NamedModelDetection:
+    name: str
+    detection: ModelDetection
+
+    def __post_init__(self) -> None:
+        if not self.name:
+            raise ValueError("Model detection requires name")
+
+    @staticmethod
+    def normalize_public_name(name: str) -> str:
+        return DetectionNormalizer.normalize_name(name)
+
+    @property
+    def normalized_name(self) -> str:
+        return self.normalize_public_name(self.name)
+
+
+@dataclass(frozen=True)
+class SupportedPrinterModel:
+    model_key: str
+    profile_key: str
+    detections: tuple[NamedModelDetection, ...]
+    origin_app_packages: tuple[str, ...] = ()
+    protocol_override: ProtocolOverride | None = None
+    image_pipeline: ImagePipelineConfig | None = None
+    profile_runtime_preset_key: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.model_key:
+            raise ValueError("Printer model requires model_key")
+        if not self.detections:
+            raise ValueError(f"Printer model {self.model_key} requires detections")
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return tuple(detection.name for detection in self.detections)
+
+
+@dataclass(frozen=True)
+class UnsupportedPrinterModel:
+    model_key: str
+    detections: tuple[NamedModelDetection, ...]
+    origin_app_packages: tuple[str, ...] = ()
+    model_group: str | None = None
+    notes: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.model_key:
+            raise ValueError("Unsupported printer model requires model_key")
+        if not self.detections:
+            raise ValueError(f"Unsupported printer model {self.model_key} requires detections")
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return tuple(detection.name for detection in self.detections)
+
+
+@dataclass(frozen=True)
+class SupportedModelMatch:
+    model: SupportedPrinterModel
+    profile: PrinterProfile
+    detection: NamedModelDetection
+
+
+@dataclass(frozen=True)
+class UnsupportedModelMatch:
+    model: UnsupportedPrinterModel
+    detection: NamedModelDetection
+
+
+ModelMatch = SupportedModelMatch | UnsupportedModelMatch
+
+
 __all__ = [
     "DetectionNormalizer",
-    "DetectionRule",
     "LevelProfile",
+    "ModelMatch",
+    "ModelDetection",
     "ModeLevelProfile",
+    "NamedModelDetection",
     "PrintDefaults",
     "PrinterProfile",
-    "PrinterRuntimeDefaults",
+    "ProtocolDefault",
+    "ProtocolOverride",
+    "RuntimePreset",
     "RuntimeCapabilities",
     "RuntimeSettings",
     "SpeedProfile",
     "StreamProfile",
+    "SupportedPrinterModel",
+    "SupportedModelMatch",
+    "UnsupportedPrinterModel",
+    "UnsupportedModelMatch",
 ]

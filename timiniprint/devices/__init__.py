@@ -10,10 +10,16 @@ from .bluetooth_policy import (
 from .device import BluetoothEndpoint, BluetoothTarget, PrinterDevice, SerialTarget, TransportTarget
 from .catalog import PrinterCatalog
 from .profiles import (
+    ModelDetection,
+    ModelMatch,
     PrinterProfile,
-    PrinterRuntimeDefaults,
+    RuntimePreset,
     RuntimeCapabilities,
     RuntimeSettings,
+    SupportedModelMatch,
+    SupportedPrinterModel,
+    UnsupportedModelMatch,
+    UnsupportedPrinterModel,
 )
 
 __all__ = [
@@ -23,15 +29,21 @@ __all__ = [
     "BluetoothConnectionPlan",
     "BluetoothTarget",
     "BluetoothTransportPolicy",
+    "ModelDetection",
+    "ModelMatch",
     "PrinterCatalog",
     "PrinterDevice",
     "PrinterProfile",
-    "PrinterRuntimeDefaults",
+    "RuntimePreset",
     "RuntimeCapabilities",
     "RuntimeSettings",
     "ResolvedBluetoothTarget",
     "SerialTarget",
+    "SupportedModelMatch",
+    "SupportedPrinterModel",
     "TransportTarget",
+    "UnsupportedModelMatch",
+    "UnsupportedPrinterModel",
     "bluetooth_connection_plan",
     "ordered_connection_endpoints",
     "should_retry_ble_scan",

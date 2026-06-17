@@ -82,7 +82,11 @@ def report_protocol_job_build(
             profile=device.profile_key,
             family=device.protocol_family.value,
             variant=device.protocol_variant,
-            runtime=None if device.runtime_settings is None else device.runtime_settings.variant,
+            runtime=(
+                None
+                if device.runtime_settings is None
+                else device.runtime_settings.control_algorithm
+            ),
             effective_encoding=pipeline.encoding.value,
             formats=[pixel_format.value for pixel_format in pipeline.formats],
             pages=page_count,

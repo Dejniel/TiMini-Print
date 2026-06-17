@@ -266,7 +266,7 @@ class BluetoothDiscovery:
                         name=endpoint.name or "<unknown>",
                         address=endpoint.address or "<unknown>",
                         transport=endpoint.transport.value,
-                        reason="no_supported_rule",
+                        reason="no_supported_model",
                     ),
                 )
                 continue
@@ -279,7 +279,7 @@ class BluetoothDiscovery:
                     transport=endpoint.transport.value,
                     profile=detected.profile_key,
                     family=detected.protocol_family.value,
-                    rule=detected.detection_rule_key,
+                    model=detected.model_key,
                 ),
             )
 

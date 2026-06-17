@@ -1,0 +1,4449 @@
+[
+  {
+    "model_key": "yt01_mac59",
+    "profile_key": "v5g_small_203",
+    "protocol_override": {
+      "type": "v5x"
+    },
+    "detections": [
+      {
+        "name": "YT01",
+        "detection": {
+          "prefixes": [
+            "YT01"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "YT02",
+        "detection": {
+          "prefixes": [
+            "YT02"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX01",
+        "detection": {
+          "prefixes": [
+            "MX01"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX05",
+        "detection": {
+          "prefixes": [
+            "MX05"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX06",
+        "detection": {
+          "prefixes": [
+            "MX06"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX08",
+        "detection": {
+          "prefixes": [
+            "MX08"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX09",
+        "detection": {
+          "prefixes": [
+            "MX09"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX10",
+        "detection": {
+          "prefixes": [
+            "MX10"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX11",
+        "detection": {
+          "prefixes": [
+            "MX11"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX12",
+        "detection": {
+          "prefixes": [
+            "MX12"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MX13",
+        "detection": {
+          "prefixes": [
+            "MX13"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MXTP-100",
+        "detection": {
+          "prefixes": [
+            "MXTP-100"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MXPC-100",
+        "detection": {
+          "prefixes": [
+            "MXPC-100"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "AZ-P2108X",
+        "detection": {
+          "prefixes": [
+            "AZ-P2108X"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "PD01",
+        "detection": {
+          "prefixes": [
+            "PD01"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "URBANWORXKIDSCAMERA",
+        "detection": {
+          "prefixes": [
+            "URBANWORXKIDSCAMERA"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "CYLOBTPRINTER",
+        "detection": {
+          "prefixes": [
+            "CYLOBTPRINTER"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "XOPOPPY",
+        "detection": {
+          "prefixes": [
+            "XOPOPPY"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ01",
+        "detection": {
+          "prefixes": [
+            "BQ01"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "EWTTOET-Z0499",
+        "detection": {
+          "prefixes": [
+            "EWTTOET-Z0499"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ05",
+        "detection": {
+          "prefixes": [
+            "BQ05"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ95B",
+        "detection": {
+          "prefixes": [
+            "BQ95B"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ95C",
+        "detection": {
+          "prefixes": [
+            "BQ95C"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ95",
+        "detection": {
+          "prefixes": [
+            "BQ95"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ06B",
+        "detection": {
+          "prefixes": [
+            "BQ06B"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ06",
+        "detection": {
+          "prefixes": [
+            "BQ06"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ07",
+        "detection": {
+          "prefixes": [
+            "BQ07"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ7A",
+        "detection": {
+          "prefixes": [
+            "BQ7A"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ7B",
+        "detection": {
+          "prefixes": [
+            "BQ7B"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ08",
+        "detection": {
+          "prefixes": [
+            "BQ08"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ96",
+        "detection": {
+          "prefixes": [
+            "BQ96"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MXW009",
+        "detection": {
+          "prefixes": [
+            "MXW009"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "MXW010",
+        "detection": {
+          "prefixes": [
+            "MXW010"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "EWTTOET-N3689",
+        "detection": {
+          "prefixes": [
+            "EWTTOET-N3689"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "EWTTOET-N3687",
+        "detection": {
+          "prefixes": [
+            "EWTTOET-N3687"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "KP-IM606",
+        "detection": {
+          "prefixes": [
+            "KP-IM606"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "GV-MA211",
+        "detection": {
+          "prefixes": [
+            "GV-MA211"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "X6",
+        "detection": {
+          "exact_names": [
+            "X6"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "K06",
+        "detection": {
+          "prefixes": [
+            "K06-"
+          ],
+          "exact_names": [
+            "K06"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mx02_mac59",
+    "profile_key": "mx02",
+    "protocol_override": {
+      "type": "v5x"
+    },
+    "detections": [
+      {
+        "name": "MX02",
+        "detection": {
+          "prefixes": [
+            "MX02"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mx03_mac59",
+    "profile_key": "mx03",
+    "protocol_override": {
+      "type": "v5x"
+    },
+    "detections": [
+      {
+        "name": "MX03",
+        "detection": {
+          "prefixes": [
+            "MX03"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mx07_mac59",
+    "profile_key": "mx07",
+    "protocol_override": {
+      "type": "v5x"
+    },
+    "detections": [
+      {
+        "name": "MX07",
+        "detection": {
+          "prefixes": [
+            "MX07"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "miniprinter_mac59",
+    "profile_key": "gt02_v5g",
+    "protocol_override": {
+      "type": "v5x"
+    },
+    "detections": [
+      {
+        "name": "MINIPRINTER",
+        "detection": {
+          "prefixes": [
+            "MINIPRINTER"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "JL-BR22",
+        "detection": {
+          "prefixes": [
+            "JL-BR22"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "bq02_mac59",
+    "profile_key": "bq02",
+    "protocol_override": {
+      "type": "v5x"
+    },
+    "detections": [
+      {
+        "name": "BQ02",
+        "detection": {
+          "prefixes": [
+            "BQ02"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ03",
+        "detection": {
+          "prefixes": [
+            "BQ03"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      },
+      {
+        "name": "BQ17",
+        "detection": {
+          "prefixes": [
+            "BQ17"
+          ],
+          "mac_suffixes": [
+            "59"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "iprintit",
+    "profile_key": "x5",
+    "detections": [
+      {
+        "name": "IprintIt Printer",
+        "detection": {
+          "prefixes": [
+            "IprintIt Printer-"
+          ]
+        }
+      },
+      {
+        "name": "DY01",
+        "detection": {
+          "prefixes": [
+            "DY01-"
+          ]
+        }
+      },
+      {
+        "name": "LP6",
+        "detection": {
+          "prefixes": [
+            "LP6-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "pocket_printer",
+    "profile_key": "d1",
+    "detections": [
+      {
+        "name": "Pocket Printer",
+        "detection": {
+          "prefixes": [
+            "Pocket Printer-"
+          ]
+        }
+      },
+      {
+        "name": "Luxorp.PX10",
+        "detection": {
+          "prefixes": [
+            "Luxorp.PX10-"
+          ]
+        }
+      },
+      {
+        "name": "EMX-040256",
+        "detection": {
+          "prefixes": [
+            "EMX-040256-"
+          ]
+        }
+      },
+      {
+        "name": "SeznikEcho",
+        "detection": {
+          "prefixes": [
+            "SeznikEcho-"
+          ]
+        }
+      },
+      {
+        "name": "TCM690464",
+        "detection": {
+          "prefixes": [
+            "TCM690464-"
+          ]
+        }
+      },
+      {
+        "name": "UXPORTMIP",
+        "detection": {
+          "prefixes": [
+            "UXPORTMIP-"
+          ]
+        }
+      },
+      {
+        "name": "DL_GE225",
+        "detection": {
+          "prefixes": [
+            "DL_GE225-"
+          ]
+        }
+      },
+      {
+        "name": "ML-MP-01",
+        "detection": {
+          "prefixes": [
+            "ML-MP-01-"
+          ]
+        }
+      },
+      {
+        "name": "ROSSMANN",
+        "detection": {
+          "prefixes": [
+            "ROSSMANN-"
+          ]
+        }
+      },
+      {
+        "name": "0019B-C",
+        "detection": {
+          "prefixes": [
+            "0019B-C-"
+          ]
+        }
+      },
+      {
+        "name": "0019B-D",
+        "detection": {
+          "prefixes": [
+            "0019B-D-"
+          ]
+        }
+      },
+      {
+        "name": "DTR-R0",
+        "detection": {
+          "prefixes": [
+            "DTR-R0-"
+          ]
+        }
+      },
+      {
+        "name": "GB03PL",
+        "detection": {
+          "prefixes": [
+            "GB03PL-"
+          ]
+        }
+      },
+      {
+        "name": "HT0125",
+        "detection": {
+          "prefixes": [
+            "HT0125-"
+          ]
+        }
+      },
+      {
+        "name": "RT034h",
+        "detection": {
+          "prefixes": [
+            "RT034h-"
+          ]
+        }
+      },
+      {
+        "name": "DT1-0",
+        "detection": {
+          "prefixes": [
+            "DT1-0-"
+          ]
+        }
+      },
+      {
+        "name": "SC03h",
+        "detection": {
+          "prefixes": [
+            "SC03h-"
+          ]
+        }
+      },
+      {
+        "name": "SC04h",
+        "detection": {
+          "prefixes": [
+            "SC04h-"
+          ]
+        }
+      },
+      {
+        "name": "X103h",
+        "detection": {
+          "prefixes": [
+            "X103h-"
+          ],
+          "exact_names": [
+            "X103h"
+          ]
+        }
+      },
+      {
+        "name": "DY03",
+        "detection": {
+          "prefixes": [
+            "DY03-"
+          ]
+        }
+      },
+      {
+        "name": "X100",
+        "detection": {
+          "prefixes": [
+            "X100-"
+          ],
+          "exact_names": [
+            "X100"
+          ]
+        }
+      },
+      {
+        "name": "X2h",
+        "detection": {
+          "prefixes": [
+            "X2h-"
+          ],
+          "exact_names": [
+            "X2h"
+          ]
+        }
+      },
+      {
+        "name": "X5h",
+        "detection": {
+          "prefixes": [
+            "X5h-"
+          ]
+        }
+      },
+      {
+        "name": "X6h",
+        "detection": {
+          "prefixes": [
+            "X6h-"
+          ]
+        }
+      },
+      {
+        "name": "X7h",
+        "detection": {
+          "prefixes": [
+            "X7h-"
+          ]
+        }
+      },
+      {
+        "name": "XC9",
+        "detection": {
+          "prefixes": [
+            "XC9-"
+          ]
+        }
+      },
+      {
+        "name": "D1",
+        "detection": {
+          "prefixes": [
+            "D1-"
+          ]
+        }
+      },
+      {
+        "name": "P1",
+        "detection": {
+          "prefixes": [
+            "P1-"
+          ]
+        }
+      },
+      {
+        "name": "P2",
+        "detection": {
+          "prefixes": [
+            "P2-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ewtto_et_z0504",
+    "profile_key": "x6h",
+    "detections": [
+      {
+        "name": "ewtto ET-Z0504",
+        "detection": {
+          "prefixes": [
+            "ewtto ET-Z0504-"
+          ]
+        }
+      },
+      {
+        "name": "IM.04",
+        "detection": {
+          "prefixes": [
+            "IM.04-"
+          ]
+        }
+      },
+      {
+        "name": "X103H",
+        "detection": {
+          "prefixes": [
+            "X103H-"
+          ],
+          "exact_names": [
+            "X103H"
+          ]
+        }
+      },
+      {
+        "name": "SC05",
+        "detection": {
+          "prefixes": [
+            "SC05-"
+          ]
+        }
+      },
+      {
+        "name": "X102",
+        "detection": {
+          "prefixes": [
+            "X102-"
+          ],
+          "exact_names": [
+            "X102"
+          ]
+        }
+      },
+      {
+        "name": "X5HP",
+        "detection": {
+          "prefixes": [
+            "X5HP-"
+          ]
+        }
+      },
+      {
+        "name": "X6HP",
+        "detection": {
+          "prefixes": [
+            "X6HP-"
+          ]
+        }
+      },
+      {
+        "name": "P7H",
+        "detection": {
+          "prefixes": [
+            "P7H-"
+          ]
+        }
+      },
+      {
+        "name": "X2H",
+        "detection": {
+          "prefixes": [
+            "X2H-"
+          ],
+          "exact_names": [
+            "X2H"
+          ]
+        }
+      },
+      {
+        "name": "X5H",
+        "detection": {
+          "prefixes": [
+            "X5H-"
+          ]
+        }
+      },
+      {
+        "name": "X6H",
+        "detection": {
+          "prefixes": [
+            "X6H-"
+          ]
+        }
+      },
+      {
+        "name": "X7H",
+        "detection": {
+          "prefixes": [
+            "X7H-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "seznikneo",
+    "profile_key": "cp01",
+    "detections": [
+      {
+        "name": "SeznikNeo",
+        "detection": {
+          "prefixes": [
+            "SeznikNeo-"
+          ]
+        }
+      },
+      {
+        "name": "RS9000",
+        "detection": {
+          "prefixes": [
+            "RS9000-"
+          ]
+        }
+      },
+      {
+        "name": "XiaoWa",
+        "detection": {
+          "prefixes": [
+            "XiaoWa-"
+          ]
+        }
+      },
+      {
+        "name": "JRX01",
+        "detection": {
+          "prefixes": [
+            "JRX01-"
+          ]
+        }
+      },
+      {
+        "name": "QDX01",
+        "detection": {
+          "prefixes": [
+            "QDX01-"
+          ]
+        }
+      },
+      {
+        "name": "wts07",
+        "detection": {
+          "prefixes": [
+            "wts07-"
+          ]
+        }
+      },
+      {
+        "name": "CP01",
+        "detection": {
+          "prefixes": [
+            "CP01-"
+          ]
+        }
+      },
+      {
+        "name": "DY49",
+        "detection": {
+          "prefixes": [
+            "DY49-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "cmt_0510",
+    "profile_key": "gb03",
+    "detections": [
+      {
+        "name": "CMT-0510",
+        "detection": {
+          "prefixes": [
+            "CMT-0510-"
+          ]
+        }
+      },
+      {
+        "name": "SC03",
+        "detection": {
+          "prefixes": [
+            "SC03-"
+          ]
+        }
+      },
+      {
+        "name": "SC04",
+        "detection": {
+          "prefixes": [
+            "SC04-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "dl_x2pro",
+    "profile_key": "p5",
+    "detections": [
+      {
+        "name": "DL_X2Pro",
+        "detection": {
+          "prefixes": [
+            "DL_X2Pro-"
+          ]
+        }
+      },
+      {
+        "name": "P5",
+        "detection": {
+          "prefixes": [
+            "P5-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "jxm800",
+    "profile_key": "jxm800",
+    "detections": [
+      {
+        "name": "GG-D2100",
+        "detection": {
+          "prefixes": [
+            "GG-D2100-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "professional_printer",
+    "profile_key": "professional_printer",
+    "detections": [
+      {
+        "name": "CTP100LG",
+        "detection": {
+          "prefixes": [
+            "CTP100LG"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "shipping_printer",
+    "profile_key": "shipping_printer",
+    "detections": [
+      {
+        "name": "CTP750BY",
+        "detection": {
+          "prefixes": [
+            "CTP750BY"
+          ]
+        }
+      },
+      {
+        "name": "CTP800BD",
+        "detection": {
+          "prefixes": [
+            "CTP800BD"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "mv_b530",
+    "profile_key": "x9",
+    "detections": [
+      {
+        "name": "MV-B530",
+        "detection": {
+          "prefixes": [
+            "MV-B530-"
+          ]
+        }
+      },
+      {
+        "name": "GL-VS9",
+        "detection": {
+          "prefixes": [
+            "GL-VS9-"
+          ]
+        }
+      },
+      {
+        "name": "QDID",
+        "detection": {
+          "prefixes": [
+            "QDID-"
+          ]
+        }
+      },
+      {
+        "name": "X9",
+        "detection": {
+          "prefixes": [
+            "X9-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "a41iii",
+    "profile_key": "a41iii",
+    "detections": [
+      {
+        "name": "A41III",
+        "detection": {
+          "prefixes": [
+            "A41III-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb02sh",
+    "profile_key": "gb02sh",
+    "detections": [
+      {
+        "name": "GB02SH",
+        "detection": {
+          "prefixes": [
+            "GB02SH-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb03ph",
+    "profile_key": "gb03ph",
+    "detections": [
+      {
+        "name": "GB03PH",
+        "detection": {
+          "prefixes": [
+            "GB03PH-"
+          ]
+        }
+      },
+      {
+        "name": "GB03SH",
+        "detection": {
+          "prefixes": [
+            "GB03SH-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb03sl",
+    "profile_key": "gb03sl",
+    "detections": [
+      {
+        "name": "GB03SL",
+        "detection": {
+          "prefixes": [
+            "GB03SL-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "zpa4z1",
+    "profile_key": "pr89",
+    "detections": [
+      {
+        "name": "ZPA4Z1",
+        "detection": {
+          "prefixes": [
+            "ZPA4Z1-"
+          ]
+        }
+      },
+      {
+        "name": "ZP801",
+        "detection": {
+          "prefixes": [
+            "ZP801-"
+          ]
+        }
+      },
+      {
+        "name": "XW006",
+        "detection": {
+          "prefixes": [
+            "XW006-"
+          ]
+        }
+      },
+      {
+        "name": "PR89",
+        "detection": {
+          "prefixes": [
+            "PR89-"
+          ]
+        }
+      },
+      {
+        "name": "X8-L",
+        "detection": {
+          "prefixes": [
+            "X8-L-"
+          ]
+        }
+      },
+      {
+        "name": "X8-W",
+        "detection": {
+          "prefixes": [
+            "X8-W-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "a41ii",
+    "profile_key": "a200",
+    "detections": [
+      {
+        "name": "A41II",
+        "detection": {
+          "prefixes": [
+            "A41II-"
+          ]
+        }
+      },
+      {
+        "name": "A42II",
+        "detection": {
+          "prefixes": [
+            "A42II-"
+          ]
+        }
+      },
+      {
+        "name": "A200",
+        "detection": {
+          "prefixes": [
+            "A200-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "a4300",
+    "profile_key": "a4300",
+    "detections": [
+      {
+        "name": "A4300",
+        "detection": {
+          "prefixes": [
+            "A4300-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "label_printer",
+    "profile_key": "label_printer",
+    "detections": [
+      {
+        "name": "CPLM10",
+        "detection": {
+          "prefixes": [
+            "CPLM10"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "mini_printer",
+    "profile_key": "mini_printer",
+    "detections": [
+      {
+        "name": "CTP500",
+        "detection": {
+          "prefixes": [
+            "CTP500"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "dl_x2",
+    "profile_key": "dl_x2",
+    "detections": [
+      {
+        "name": "DL_X2",
+        "detection": {
+          "prefixes": [
+            "DL_X2-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "dl_x7",
+    "profile_key": "dl_x7",
+    "detections": [
+      {
+        "name": "DL_X7",
+        "detection": {
+          "prefixes": [
+            "DL_X7-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "dl_x7pro",
+    "profile_key": "dl_x7pro",
+    "detections": [
+      {
+        "name": "DL_X7Pro",
+        "detection": {
+          "prefixes": [
+            "DL_X7Pro-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "lgm01",
+    "profile_key": "x7hp",
+    "detections": [
+      {
+        "name": "LGM01",
+        "detection": {
+          "prefixes": [
+            "LGM01-"
+          ]
+        }
+      },
+      {
+        "name": "X7HP",
+        "detection": {
+          "prefixes": [
+            "X7HP-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "mpa81",
+    "profile_key": "mpa81",
+    "detections": [
+      {
+        "name": "MPA81",
+        "detection": {
+          "prefixes": [
+            "MPA81-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "pr893",
+    "profile_key": "pr893",
+    "detections": [
+      {
+        "name": "PR893",
+        "detection": {
+          "prefixes": [
+            "PR893-"
+          ]
+        }
+      },
+      {
+        "name": "XW007",
+        "detection": {
+          "prefixes": [
+            "XW007-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "pt001",
+    "profile_key": "pt001",
+    "detections": [
+      {
+        "name": "PT001",
+        "detection": {
+          "prefixes": [
+            "PT001-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "sc03h",
+    "profile_key": "fc02",
+    "detections": [
+      {
+        "name": "SC03H",
+        "detection": {
+          "prefixes": [
+            "SC03H-"
+          ]
+        }
+      },
+      {
+        "name": "FC02",
+        "detection": {
+          "prefixes": [
+            "FC02-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "x101h_2",
+    "profile_key": "x101h",
+    "detections": [
+      {
+        "name": "X101H",
+        "detection": {
+          "prefixes": [
+            "X101H-"
+          ],
+          "exact_names": [
+            "X101H"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ytb01",
+    "profile_key": "ytb01",
+    "detections": [
+      {
+        "name": "YTB01",
+        "detection": {
+          "prefixes": [
+            "YTB01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "zp802",
+    "profile_key": "zp802",
+    "detections": [
+      {
+        "name": "ZP802",
+        "detection": {
+          "prefixes": [
+            "ZP802-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "15p3",
+    "profile_key": "15p3",
+    "detections": [
+      {
+        "name": "15P3",
+        "detection": {
+          "prefixes": [
+            "15P3-"
+          ]
+        }
+      },
+      {
+        "name": "YK06",
+        "detection": {
+          "prefixes": [
+            "YK06-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "58p5",
+    "profile_key": "58p5",
+    "detections": [
+      {
+        "name": "58P5",
+        "detection": {
+          "prefixes": [
+            "58P5-"
+          ]
+        }
+      },
+      {
+        "name": "WL01",
+        "detection": {
+          "prefixes": [
+            "WL01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ai01",
+    "profile_key": "ai01",
+    "detections": [
+      {
+        "name": "AI01",
+        "detection": {
+          "prefixes": [
+            "AI01-"
+          ],
+          "exact_names": [
+            "AI01"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "an01",
+    "profile_key": "an01",
+    "detections": [
+      {
+        "name": "AN01",
+        "detection": {
+          "prefixes": [
+            "AN01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "d100",
+    "profile_key": "d100",
+    "detections": [
+      {
+        "name": "D100",
+        "detection": {
+          "prefixes": [
+            "D100-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "fl01",
+    "profile_key": "fl01",
+    "detections": [
+      {
+        "name": "FL01",
+        "detection": {
+          "prefixes": [
+            "FL01-"
+          ]
+        }
+      },
+      {
+        "name": "KF-5",
+        "detection": {
+          "prefixes": [
+            "KF-5-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb01",
+    "profile_key": "gb01",
+    "detections": [
+      {
+        "name": "GB01",
+        "detection": {
+          "prefixes": [
+            "GB01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb02",
+    "profile_key": "gb02",
+    "detections": [
+      {
+        "name": "GB02",
+        "detection": {
+          "prefixes": [
+            "GB02-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb03",
+    "profile_key": "gb03_2",
+    "detections": [
+      {
+        "name": "GB03",
+        "detection": {
+          "prefixes": [
+            "GB03-"
+          ]
+        }
+      },
+      {
+        "name": "GB06",
+        "detection": {
+          "prefixes": [
+            "GB06-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb04",
+    "profile_key": "gb04",
+    "detections": [
+      {
+        "name": "GB04",
+        "detection": {
+          "prefixes": [
+            "GB04-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gb05",
+    "profile_key": "gb05",
+    "detections": [
+      {
+        "name": "GB05",
+        "detection": {
+          "prefixes": [
+            "GB05-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gt01",
+    "profile_key": "gt01",
+    "detections": [
+      {
+        "name": "GT01",
+        "detection": {
+          "prefixes": [
+            "GT01-"
+          ]
+        }
+      },
+      {
+        "name": "GT03",
+        "detection": {
+          "prefixes": [
+            "GT03-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gt02",
+    "profile_key": "gt02",
+    "detections": [
+      {
+        "name": "GT02",
+        "detection": {
+          "prefixes": [
+            "GT02-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gt04",
+    "profile_key": "gt04",
+    "detections": [
+      {
+        "name": "GT04",
+        "detection": {
+          "prefixes": [
+            "GT04-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gt08",
+    "profile_key": "gt08",
+    "detections": [
+      {
+        "name": "GT08",
+        "detection": {
+          "prefixes": [
+            "GT08-"
+          ]
+        }
+      },
+      {
+        "name": "GW08",
+        "detection": {
+          "prefixes": [
+            "GW08-"
+          ]
+        }
+      },
+      {
+        "name": "XW005",
+        "detection": {
+          "prefixes": [
+            "XW005-"
+          ]
+        }
+      },
+      {
+        "name": "PR88",
+        "detection": {
+          "prefixes": [
+            "PR88-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gt09",
+    "profile_key": "gt09",
+    "detections": [
+      {
+        "name": "GT09",
+        "detection": {
+          "prefixes": [
+            "GT09-"
+          ]
+        }
+      },
+      {
+        "name": "GT10",
+        "detection": {
+          "prefixes": [
+            "GT10-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "gw09",
+    "profile_key": "gw09",
+    "detections": [
+      {
+        "name": "GW09",
+        "detection": {
+          "prefixes": [
+            "GW09-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "jx001",
+    "profile_key": "jx001",
+    "detections": [
+      {
+        "name": "JX01",
+        "detection": {
+          "prefixes": [
+            "JX01-"
+          ]
+        }
+      },
+      {
+        "name": "JX02",
+        "detection": {
+          "prefixes": [
+            "JX02-"
+          ]
+        }
+      },
+      {
+        "name": "JX03",
+        "detection": {
+          "prefixes": [
+            "JX03-"
+          ]
+        }
+      },
+      {
+        "name": "JX04",
+        "detection": {
+          "prefixes": [
+            "JX04-"
+          ]
+        }
+      },
+      {
+        "name": "JX05",
+        "detection": {
+          "prefixes": [
+            "JX05-"
+          ]
+        }
+      },
+      {
+        "name": "JX06",
+        "detection": {
+          "prefixes": [
+            "JX06-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "lt01",
+    "profile_key": "lt01",
+    "detections": [
+      {
+        "name": "LT01",
+        "detection": {
+          "prefixes": [
+            "LT01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ly01",
+    "profile_key": "ly01",
+    "detections": [
+      {
+        "name": "LY01",
+        "detection": {
+          "prefixes": [
+            "LY01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ly02",
+    "profile_key": "ly02",
+    "detections": [
+      {
+        "name": "LY02",
+        "detection": {
+          "prefixes": [
+            "LY02-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ly03",
+    "profile_key": "ly03",
+    "detections": [
+      {
+        "name": "LY03",
+        "detection": {
+          "prefixes": [
+            "LY03-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ly05",
+    "profile_key": "ly05",
+    "detections": [
+      {
+        "name": "LY05",
+        "detection": {
+          "prefixes": [
+            "LY05-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ly10",
+    "profile_key": "ly10",
+    "detections": [
+      {
+        "name": "LY10",
+        "detection": {
+          "prefixes": [
+            "LY10-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "ly11",
+    "profile_key": "ly11",
+    "detections": [
+      {
+        "name": "LY11",
+        "detection": {
+          "prefixes": [
+            "LY11-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "mx02",
+    "profile_key": "mx02",
+    "detections": [
+      {
+        "name": "MX02",
+        "detection": {
+          "prefixes": [
+            "MX02-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mx03",
+    "profile_key": "mx03",
+    "detections": [
+      {
+        "name": "MX03",
+        "detection": {
+          "prefixes": [
+            "MX03-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mx05",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "MX05",
+        "detection": {
+          "prefixes": [
+            "MX05-"
+          ]
+        }
+      },
+      {
+        "name": "MX06",
+        "detection": {
+          "prefixes": [
+            "MX06-"
+          ]
+        }
+      },
+      {
+        "name": "MXTP-100",
+        "detection": {
+          "prefixes": [
+            "MXTP-100"
+          ]
+        }
+      },
+      {
+        "name": "CYLOBTPRINTER",
+        "detection": {
+          "prefixes": [
+            "CYLOBTPRINTER"
+          ]
+        }
+      },
+      {
+        "name": "EWTTOET-Z0499",
+        "detection": {
+          "prefixes": [
+            "EWTTOET-Z0499"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "mx06"
+  },
+  {
+    "model_key": "mx08",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "MX08",
+        "detection": {
+          "prefixes": [
+            "MX08-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "mx08"
+  },
+  {
+    "model_key": "mx09",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "MX09",
+        "detection": {
+          "prefixes": [
+            "MX09-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "mx09"
+  },
+  {
+    "model_key": "mx10",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "MX10",
+        "detection": {
+          "prefixes": [
+            "MX10-"
+          ]
+        }
+      },
+      {
+        "name": "AZ-P2108X",
+        "detection": {
+          "prefixes": [
+            "AZ-P2108X"
+          ]
+        }
+      },
+      {
+        "name": "MXW009",
+        "detection": {
+          "prefixes": [
+            "MXW009"
+          ]
+        }
+      },
+      {
+        "name": "KP-IM606",
+        "detection": {
+          "prefixes": [
+            "KP-IM606"
+          ]
+        }
+      },
+      {
+        "name": "GV-MA211",
+        "detection": {
+          "prefixes": [
+            "GV-MA211"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "mx10_mx06"
+  },
+  {
+    "model_key": "mx11",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "MX11",
+        "detection": {
+          "prefixes": [
+            "MX11-"
+          ]
+        }
+      },
+      {
+        "name": "MX12",
+        "detection": {
+          "prefixes": [
+            "MX12"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "mx11"
+  },
+  {
+    "model_key": "p5ai",
+    "profile_key": "m01",
+    "detections": [
+      {
+        "name": "P5AI",
+        "detection": {
+          "prefixes": [
+            "P5AI-"
+          ]
+        }
+      },
+      {
+        "name": "PR07",
+        "detection": {
+          "prefixes": [
+            "PR07-"
+          ]
+        }
+      },
+      {
+        "name": "PR25",
+        "detection": {
+          "prefixes": [
+            "PR25-"
+          ]
+        }
+      },
+      {
+        "name": "XW003",
+        "detection": {
+          "prefixes": [
+            "XW003-"
+          ]
+        }
+      },
+      {
+        "name": "XW009",
+        "detection": {
+          "prefixes": [
+            "XW009-"
+          ]
+        }
+      },
+      {
+        "name": "M01",
+        "detection": {
+          "prefixes": [
+            "M01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "pr02",
+    "profile_key": "pr02",
+    "detections": [
+      {
+        "name": "PR02",
+        "detection": {
+          "prefixes": [
+            "PR02-"
+          ]
+        }
+      },
+      {
+        "name": "XW008",
+        "detection": {
+          "prefixes": [
+            "XW008-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "xw001",
+    "profile_key": "xw001",
+    "detections": [
+      {
+        "name": "PR20",
+        "detection": {
+          "prefixes": [
+            "PR20-"
+          ]
+        }
+      },
+      {
+        "name": "XW001",
+        "detection": {
+          "prefixes": [
+            "XW001-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "pr30",
+    "profile_key": "pr30",
+    "detections": [
+      {
+        "name": "PR30",
+        "detection": {
+          "prefixes": [
+            "PR30-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "xw002",
+    "profile_key": "xw002",
+    "detections": [
+      {
+        "name": "XW002",
+        "detection": {
+          "prefixes": [
+            "XW002-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "xw004",
+    "profile_key": "pr35",
+    "detections": [
+      {
+        "name": "XW004",
+        "detection": {
+          "prefixes": [
+            "XW004-"
+          ]
+        }
+      },
+      {
+        "name": "PR35",
+        "detection": {
+          "prefixes": [
+            "PR35-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "s101",
+    "profile_key": "s101",
+    "detections": [
+      {
+        "name": "S101",
+        "detection": {
+          "prefixes": [
+            "S101-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "s102",
+    "profile_key": "s102_2",
+    "detections": [
+      {
+        "name": "S102",
+        "detection": {
+          "prefixes": [
+            "S102-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "zhhc",
+    "profile_key": "zhhc",
+    "detections": [
+      {
+        "name": "ZHHC",
+        "detection": {
+          "prefixes": [
+            "ZHHC-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "a33",
+    "profile_key": "a33",
+    "detections": [
+      {
+        "name": "A33",
+        "detection": {
+          "prefixes": [
+            "A33-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "a43",
+    "profile_key": "a43",
+    "detections": [
+      {
+        "name": "A43",
+        "detection": {
+          "prefixes": [
+            "A43-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "hd1",
+    "profile_key": "hd1",
+    "detections": [
+      {
+        "name": "HD1",
+        "detection": {
+          "prefixes": [
+            "HD1-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "p10",
+    "profile_key": "p10",
+    "detections": [
+      {
+        "name": "P10",
+        "detection": {
+          "prefixes": [
+            "P10-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "s01",
+    "profile_key": "s01",
+    "detections": [
+      {
+        "name": "S01",
+        "detection": {
+          "prefixes": [
+            "S01-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "v5x",
+    "profile_key": "v5x",
+    "detections": [
+      {
+        "name": "V5X",
+        "detection": {
+          "prefixes": [
+            "V5X-"
+          ]
+        }
+      },
+      {
+        "name": "X1",
+        "detection": {
+          "exact_names": [
+            "X1"
+          ]
+        }
+      },
+      {
+        "name": "X2",
+        "detection": {
+          "prefixes": [
+            "X2-"
+          ],
+          "exact_names": [
+            "X2"
+          ]
+        }
+      },
+      {
+        "name": "MXW01",
+        "detection": {
+          "prefixes": [
+            "MXW01"
+          ]
+        }
+      },
+      {
+        "name": "MXW01-1",
+        "detection": {
+          "prefixes": [
+            "MXW01-1"
+          ]
+        }
+      },
+      {
+        "name": "C17",
+        "detection": {
+          "prefixes": [
+            "C17"
+          ]
+        }
+      },
+      {
+        "name": "MXW-W5",
+        "detection": {
+          "prefixes": [
+            "MXW-W5"
+          ]
+        }
+      },
+      {
+        "name": "AC695X_PRINT",
+        "detection": {
+          "prefixes": [
+            "AC695X_PRINT"
+          ]
+        }
+      },
+      {
+        "name": "JK01",
+        "detection": {
+          "prefixes": [
+            "JK01"
+          ]
+        }
+      },
+      {
+        "name": "PORTABLEPRINTER",
+        "detection": {
+          "prefixes": [
+            "PORTABLEPRINTER"
+          ]
+        }
+      },
+      {
+        "name": "INSTANTPRINTPLUS",
+        "detection": {
+          "prefixes": [
+            "INSTANTPRINTPLUS"
+          ]
+        }
+      },
+      {
+        "name": "REKA",
+        "detection": {
+          "prefixes": [
+            "REKA"
+          ]
+        }
+      },
+      {
+        "name": "HDMDT-00",
+        "detection": {
+          "prefixes": [
+            "HDMDT-00"
+          ]
+        }
+      },
+      {
+        "name": "KERUI",
+        "detection": {
+          "prefixes": [
+            "KERUI"
+          ]
+        }
+      },
+      {
+        "name": "BH03",
+        "detection": {
+          "prefixes": [
+            "BH03"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "x16",
+    "profile_key": "x16",
+    "detections": [
+      {
+        "name": "X16",
+        "detection": {
+          "prefixes": [
+            "X16-"
+          ],
+          "exact_names": [
+            "X16"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "m2",
+    "profile_key": "m2",
+    "detections": [
+      {
+        "name": "M2",
+        "detection": {
+          "prefixes": [
+            "M2-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "p4",
+    "profile_key": "p4",
+    "detections": [
+      {
+        "name": "P4",
+        "detection": {
+          "prefixes": [
+            "P4-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "p6",
+    "profile_key": "p6",
+    "detections": [
+      {
+        "name": "P6",
+        "detection": {
+          "prefixes": [
+            "P6-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "p7",
+    "profile_key": "p7",
+    "detections": [
+      {
+        "name": "P7",
+        "detection": {
+          "prefixes": [
+            "P7-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "u1",
+    "profile_key": "u1",
+    "detections": [
+      {
+        "name": "U1",
+        "detection": {
+          "prefixes": [
+            "U1-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "x1",
+    "profile_key": "x1",
+    "detections": [
+      {
+        "name": "X1",
+        "detection": {
+          "prefixes": [
+            "X1-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "x5",
+    "profile_key": "x5_2",
+    "detections": [
+      {
+        "name": "X5",
+        "detection": {
+          "prefixes": [
+            "X5-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "x6",
+    "profile_key": "x6",
+    "detections": [
+      {
+        "name": "X6",
+        "detection": {
+          "prefixes": [
+            "X6-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "x7",
+    "profile_key": "x7",
+    "detections": [
+      {
+        "name": "X7",
+        "detection": {
+          "prefixes": [
+            "X7-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "x8",
+    "profile_key": "x8",
+    "detections": [
+      {
+        "name": "X8",
+        "detection": {
+          "prefixes": [
+            "X8-"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "yt01_v5g",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "YT01",
+        "detection": {
+          "prefixes": [
+            "YT01"
+          ]
+        }
+      },
+      {
+        "name": "YT02",
+        "detection": {
+          "prefixes": [
+            "YT02"
+          ]
+        }
+      },
+      {
+        "name": "MX01",
+        "detection": {
+          "prefixes": [
+            "MX01"
+          ]
+        }
+      },
+      {
+        "name": "MXPC-100",
+        "detection": {
+          "prefixes": [
+            "MXPC-100"
+          ]
+        }
+      },
+      {
+        "name": "URBANWORXKIDSCAMERA",
+        "detection": {
+          "prefixes": [
+            "URBANWORXKIDSCAMERA"
+          ]
+        }
+      },
+      {
+        "name": "BQ01",
+        "detection": {
+          "prefixes": [
+            "BQ01"
+          ]
+        }
+      },
+      {
+        "name": "BQ05",
+        "detection": {
+          "prefixes": [
+            "BQ05"
+          ]
+        }
+      },
+      {
+        "name": "BQ95B",
+        "detection": {
+          "prefixes": [
+            "BQ95B"
+          ]
+        }
+      },
+      {
+        "name": "BQ95C",
+        "detection": {
+          "prefixes": [
+            "BQ95C"
+          ]
+        }
+      },
+      {
+        "name": "BQ95",
+        "detection": {
+          "prefixes": [
+            "BQ95"
+          ]
+        }
+      },
+      {
+        "name": "BQ06B",
+        "detection": {
+          "prefixes": [
+            "BQ06B"
+          ]
+        }
+      },
+      {
+        "name": "BQ06",
+        "detection": {
+          "prefixes": [
+            "BQ06"
+          ]
+        }
+      },
+      {
+        "name": "BQ07",
+        "detection": {
+          "prefixes": [
+            "BQ07"
+          ]
+        }
+      },
+      {
+        "name": "BQ7A",
+        "detection": {
+          "prefixes": [
+            "BQ7A"
+          ]
+        }
+      },
+      {
+        "name": "BQ7B",
+        "detection": {
+          "prefixes": [
+            "BQ7B"
+          ]
+        }
+      },
+      {
+        "name": "BQ08",
+        "detection": {
+          "prefixes": [
+            "BQ08"
+          ]
+        }
+      },
+      {
+        "name": "BQ96",
+        "detection": {
+          "prefixes": [
+            "BQ96"
+          ]
+        }
+      },
+      {
+        "name": "EWTTOET-N3689",
+        "detection": {
+          "prefixes": [
+            "EWTTOET-N3689"
+          ]
+        }
+      },
+      {
+        "name": "EWTTOET-N3687",
+        "detection": {
+          "prefixes": [
+            "EWTTOET-N3687"
+          ]
+        }
+      },
+      {
+        "name": "X6",
+        "detection": {
+          "exact_names": [
+            "X6"
+          ]
+        }
+      },
+      {
+        "name": "K06",
+        "detection": {
+          "prefixes": [
+            "K06-"
+          ],
+          "exact_names": [
+            "K06"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mx07_v5g",
+    "profile_key": "mx07",
+    "detections": [
+      {
+        "name": "MX07",
+        "detection": {
+          "prefixes": [
+            "MX07"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mx13_v5g",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "MX13",
+        "detection": {
+          "prefixes": [
+            "MX13"
+          ]
+        }
+      },
+      {
+        "name": "XOPOPPY",
+        "detection": {
+          "prefixes": [
+            "XOPOPPY"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "xopoppy"
+  },
+  {
+    "model_key": "pd01_v5g",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "PD01",
+        "detection": {
+          "prefixes": [
+            "PD01"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "pd01_mx11"
+  },
+  {
+    "model_key": "miniprinter_v5g",
+    "profile_key": "gt02_v5g",
+    "detections": [
+      {
+        "name": "MINIPRINTER",
+        "detection": {
+          "prefixes": [
+            "MINIPRINTER"
+          ]
+        }
+      },
+      {
+        "name": "JL-BR22",
+        "detection": {
+          "prefixes": [
+            "JL-BR22"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "bq02_v5g",
+    "profile_key": "bq02",
+    "detections": [
+      {
+        "name": "BQ02",
+        "detection": {
+          "prefixes": [
+            "BQ02"
+          ]
+        }
+      },
+      {
+        "name": "BQ03",
+        "detection": {
+          "prefixes": [
+            "BQ03"
+          ]
+        }
+      },
+      {
+        "name": "BQ17",
+        "detection": {
+          "prefixes": [
+            "BQ17"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "mxw010_v5g",
+    "profile_key": "v5g_small_203",
+    "detections": [
+      {
+        "name": "MXW010",
+        "detection": {
+          "prefixes": [
+            "MXW010"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "profile_runtime_preset_key": "mx10_control"
+  },
+  {
+    "model_key": "c21",
+    "profile_key": "d1",
+    "protocol_override": {
+      "type": "dck"
+    },
+    "detections": [
+      {
+        "name": "C21",
+        "detection": {
+          "prefixes": [
+            "C21"
+          ]
+        }
+      },
+      {
+        "name": "D2",
+        "detection": {
+          "prefixes": [
+            "D2"
+          ]
+        }
+      },
+      {
+        "name": "E2",
+        "detection": {
+          "prefixes": [
+            "E2"
+          ]
+        }
+      },
+      {
+        "name": "NEWSMY",
+        "detection": {
+          "prefixes": [
+            "NEWSMY"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ]
+  },
+  {
+    "model_key": "luck_a2",
+    "profile_key": "luck_a2",
+    "detections": [
+      {
+        "name": "PPA2",
+        "detection": {
+          "prefixes": [
+            "PPA2_"
+          ],
+          "exact_names": [
+            "PPA2"
+          ]
+        }
+      },
+      {
+        "name": "A2",
+        "detection": {
+          "exact_names": [
+            "A2"
+          ]
+        }
+      },
+      {
+        "name": "A2_EY48D",
+        "detection": {
+          "exact_names": [
+            "A2_EY48D"
+          ]
+        }
+      },
+      {
+        "name": "A2_LYiN48D_ITSR",
+        "detection": {
+          "exact_names": [
+            "A2_LYiN48D_ITSR"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_a2h",
+    "profile_key": "luck_a2h",
+    "detections": [
+      {
+        "name": "PPA2H",
+        "detection": {
+          "prefixes": [
+            "PPA2H_"
+          ],
+          "exact_names": [
+            "PPA2H"
+          ]
+        }
+      },
+      {
+        "name": "A2H",
+        "detection": {
+          "exact_names": [
+            "A2H"
+          ]
+        }
+      },
+      {
+        "name": "A2_LYiN48DH",
+        "detection": {
+          "exact_names": [
+            "A2_LYiN48DH"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_ppa2l",
+    "profile_key": "luck_ppa2l",
+    "protocol_override": {
+      "packets_type": "lujiang_normal"
+    },
+    "detections": [
+      {
+        "name": "PPA2L",
+        "detection": {
+          "prefixes": [
+            "PPA2L_"
+          ],
+          "exact_names": [
+            "PPA2L"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_ppa2lh",
+    "profile_key": "luck_ppa2lh",
+    "protocol_override": {
+      "packets_type": "lujiang_normal_h"
+    },
+    "detections": [
+      {
+        "name": "PPA2LH",
+        "detection": {
+          "prefixes": [
+            "PPA2LH_"
+          ],
+          "exact_names": [
+            "PPA2LH"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_a40",
+    "profile_key": "luck_a40",
+    "detections": [
+      {
+        "name": "A40",
+        "detection": {
+          "prefixes": [
+            "A40_"
+          ],
+          "exact_names": [
+            "A40"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_apa40",
+    "profile_key": "luck_lujiang_a4",
+    "detections": [
+      {
+        "name": "APA40",
+        "detection": {
+          "prefixes": [
+            "APA40_"
+          ],
+          "exact_names": [
+            "APA40"
+          ]
+        }
+      },
+      {
+        "name": "APA42",
+        "detection": {
+          "prefixes": [
+            "APA42_"
+          ],
+          "exact_names": [
+            "APA42"
+          ]
+        }
+      },
+      {
+        "name": "APA43",
+        "detection": {
+          "prefixes": [
+            "APA43_"
+          ],
+          "exact_names": [
+            "APA43"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_apa41",
+    "profile_key": "luck_lujiang_a4_dense",
+    "detections": [
+      {
+        "name": "APA41",
+        "detection": {
+          "prefixes": [
+            "APA41_"
+          ],
+          "exact_names": [
+            "APA41"
+          ]
+        }
+      },
+      {
+        "name": "APA49",
+        "detection": {
+          "prefixes": [
+            "APA49_"
+          ],
+          "exact_names": [
+            "APA49"
+          ]
+        }
+      },
+      {
+        "name": "A49",
+        "detection": {
+          "exact_names": [
+            "A49"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_a49h",
+    "profile_key": "luck_a49h",
+    "detections": [
+      {
+        "name": "APA49H",
+        "detection": {
+          "prefixes": [
+            "APA49H_"
+          ],
+          "exact_names": [
+            "APA49H"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_itp05",
+    "profile_key": "luck_a4_compressed_tattoo",
+    "detections": [
+      {
+        "name": "ITP05",
+        "detection": {
+          "prefixes": [
+            "ITP05_"
+          ],
+          "exact_names": [
+            "ITP05"
+          ]
+        }
+      },
+      {
+        "name": "ITP05H",
+        "detection": {
+          "exact_names": [
+            "ITP05H"
+          ]
+        }
+      },
+      {
+        "name": "DYA46",
+        "detection": {
+          "exact_names": [
+            "DYA46"
+          ]
+        }
+      },
+      {
+        "name": "DP_ITP05",
+        "detection": {
+          "prefixes": [
+            "DP_ITP05_"
+          ]
+        }
+      },
+      {
+        "name": "TPA46",
+        "detection": {
+          "prefixes": [
+            "TPA46_"
+          ],
+          "exact_names": [
+            "TPA46"
+          ]
+        }
+      },
+      {
+        "name": "DP_A4",
+        "detection": {
+          "prefixes": [
+            "DP_A4_"
+          ],
+          "exact_names": [
+            "DP_A4"
+          ]
+        }
+      },
+      {
+        "name": "DP-A4",
+        "detection": {
+          "prefixes": [
+            "DP-A4_"
+          ],
+          "exact_names": [
+            "DP-A4"
+          ]
+        }
+      },
+      {
+        "name": "DP_8038",
+        "detection": {
+          "prefixes": [
+            "DP_8038_"
+          ],
+          "exact_names": [
+            "DP_8038"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_itp06",
+    "profile_key": "luck_a4_compressed_tattoo_96_dense",
+    "detections": [
+      {
+        "name": "ITP06",
+        "detection": {
+          "prefixes": [
+            "ITP06_"
+          ],
+          "exact_names": [
+            "ITP06"
+          ]
+        }
+      },
+      {
+        "name": "DYA49",
+        "detection": {
+          "exact_names": [
+            "DYA49"
+          ]
+        }
+      },
+      {
+        "name": "DP_ITP06",
+        "detection": {
+          "prefixes": [
+            "DP_ITP06_"
+          ]
+        }
+      },
+      {
+        "name": "TPA46Pro",
+        "detection": {
+          "prefixes": [
+            "TPA46Pro_"
+          ],
+          "exact_names": [
+            "TPA46Pro"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_apa46y",
+    "profile_key": "luck_a4_compressed_tattoo_96",
+    "detections": [
+      {
+        "name": "APA46Y",
+        "detection": {
+          "prefixes": [
+            "APA46Y_"
+          ],
+          "exact_names": [
+            "APA46Y"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_apl86",
+    "profile_key": "luck_apl86",
+    "detections": [
+      {
+        "name": "APL86",
+        "detection": {
+          "prefixes": [
+            "APL86_"
+          ],
+          "exact_names": [
+            "APL86"
+          ]
+        }
+      },
+      {
+        "name": "L86",
+        "detection": {
+          "exact_names": [
+            "L86"
+          ]
+        }
+      },
+      {
+        "name": "L86_Printer",
+        "detection": {
+          "exact_names": [
+            "L86_Printer"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_apl86h",
+    "profile_key": "luck_apl86h",
+    "detections": [
+      {
+        "name": "APL86H",
+        "detection": {
+          "prefixes": [
+            "APL86H_"
+          ],
+          "exact_names": [
+            "APL86H"
+          ]
+        }
+      },
+      {
+        "name": "APL86HL",
+        "detection": {
+          "exact_names": [
+            "APL86HL"
+          ]
+        }
+      },
+      {
+        "name": "L86H_Printer",
+        "detection": {
+          "exact_names": [
+            "L86H_Printer"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_u8",
+    "profile_key": "luck_u8",
+    "detections": [
+      {
+        "name": "U8",
+        "detection": {
+          "prefixes": [
+            "U8_"
+          ],
+          "exact_names": [
+            "U8"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_d80",
+    "profile_key": "luck_d80",
+    "detections": [
+      {
+        "name": "D80",
+        "detection": {
+          "prefixes": [
+            "D80-",
+            "D80_"
+          ],
+          "exact_names": [
+            "D80"
+          ]
+        }
+      },
+      {
+        "name": "PeriPage_A40",
+        "detection": {
+          "exact_names": [
+            "PeriPage_A40"
+          ]
+        }
+      },
+      {
+        "name": "DYD80",
+        "detection": {
+          "exact_names": [
+            "DYD80"
+          ]
+        }
+      },
+      {
+        "name": "DP_D80",
+        "detection": {
+          "prefixes": [
+            "DP_D80_"
+          ]
+        }
+      },
+      {
+        "name": "DP-D80",
+        "detection": {
+          "prefixes": [
+            "DP-D80_"
+          ]
+        }
+      },
+      {
+        "name": "E80",
+        "detection": {
+          "prefixes": [
+            "E80_"
+          ]
+        }
+      },
+      {
+        "name": "CASA-01",
+        "detection": {
+          "prefixes": [
+            "CASA-01_"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_d80h",
+    "profile_key": "luck_d80h",
+    "detections": [
+      {
+        "name": "DYD80H",
+        "detection": {
+          "exact_names": [
+            "DYD80H"
+          ]
+        }
+      },
+      {
+        "name": "DP_D80H",
+        "detection": {
+          "prefixes": [
+            "DP_D80H_"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_a80h_way1",
+    "profile_key": "luck_a80h_way1",
+    "protocol_override": {
+      "packets_type": "a80h_way1"
+    },
+    "detections": [
+      {
+        "name": "A80H-HD",
+        "detection": {
+          "exact_names": [
+            "A80H-HD"
+          ]
+        }
+      },
+      {
+        "name": "DP_A80H",
+        "detection": {
+          "prefixes": [
+            "DP_A80H_"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_qirui_q1",
+    "profile_key": "luck_qirui_q1",
+    "detections": [
+      {
+        "name": "QIRUI_Q1",
+        "detection": {
+          "prefixes": [
+            "QIRUI_Q1_"
+          ],
+          "exact_names": [
+            "QIRUI_Q1"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luck_qirui_q2",
+    "profile_key": "luck_qirui_q2",
+    "detections": [
+      {
+        "name": "QIRUI_Q2",
+        "detection": {
+          "prefixes": [
+            "QIRUI_Q2_"
+          ],
+          "exact_names": [
+            "QIRUI_Q2"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luckp_a41",
+    "profile_key": "luck_a41_luckp",
+    "detections": [
+      {
+        "name": "LuckP_A41",
+        "detection": {
+          "prefixes": [
+            "LuckP_A41_"
+          ],
+          "exact_names": [
+            "LuckP_A41"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "luckp_a42",
+    "profile_key": "luck_a42_luckp",
+    "detections": [
+      {
+        "name": "LuckP_A42",
+        "detection": {
+          "prefixes": [
+            "LuckP_A42_"
+          ],
+          "exact_names": [
+            "LuckP_A42"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "eleph_tspl_p1",
+    "profile_key": "eleph_tspl_p1",
+    "protocol_override": {
+      "packets_type": "p1"
+    },
+    "detections": [
+      {
+        "name": "P1",
+        "detection": {
+          "prefixes": [
+            "P1_"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.sandu.JxPrinter",
+      "com.fyhd.toprint"
+    ]
+  },
+  {
+    "model_key": "eleph_hprt_esc_zl1",
+    "profile_key": "eleph_hprt_esc_zl1",
+    "protocol_override": {
+      "packets_type": "zl1"
+    },
+    "detections": [
+      {
+        "name": "P11",
+        "detection": {
+          "prefixes": [
+            "P11_"
+          ]
+        }
+      },
+      {
+        "name": "P2",
+        "detection": {
+          "prefixes": [
+            "P2_"
+          ]
+        }
+      },
+      {
+        "name": "P3",
+        "detection": {
+          "prefixes": [
+            "P3_"
+          ]
+        }
+      },
+      {
+        "name": "P5",
+        "detection": {
+          "prefixes": [
+            "P5_"
+          ]
+        }
+      },
+      {
+        "name": "YHK",
+        "detection": {
+          "prefixes": [
+            "YHK_"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.sandu.JxPrinter",
+      "com.fyhd.toprint"
+    ]
+  },
+  {
+    "model_key": "niimbot_d110",
+    "profile_key": "niimbot_d110",
+    "detections": [
+      {
+        "name": "D110",
+        "detection": {
+          "prefixes": [
+            "D110-"
+          ],
+          "exact_names": [
+            "D110"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ]
+  },
+  {
+    "model_key": "phomemo_m02s",
+    "profile_key": "phomemo_m02s",
+    "protocol_override": {
+      "packets_type": "m02s"
+    },
+    "detections": [
+      {
+        "name": "M02S",
+        "detection": {
+          "prefixes": [
+            "M02S-",
+            "M02S_"
+          ],
+          "exact_names": [
+            "M02S"
+          ]
+        }
+      },
+      {
+        "name": "Mr.in_M02S",
+        "detection": {
+          "prefixes": [
+            "Mr.in_M02S"
+          ],
+          "exact_names": [
+            "Mr.in_M02S"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ]
+  },
+  {
+    "model_key": "phomemo_m02",
+    "profile_key": "phomemo_m02",
+    "protocol_override": {
+      "packets_type": "m02"
+    },
+    "detections": [
+      {
+        "name": "M02",
+        "detection": {
+          "prefixes": [
+            "M02-",
+            "M02_"
+          ],
+          "exact_names": [
+            "M02"
+          ]
+        }
+      },
+      {
+        "name": "Mr.in",
+        "detection": {
+          "exact_names": [
+            "Mr.in"
+          ]
+        }
+      },
+      {
+        "name": "Mr.in_M02",
+        "detection": {
+          "exact_names": [
+            "Mr.in_M02"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ]
+  },
+  {
+    "model_key": "phomemo_m02x",
+    "profile_key": "phomemo_m02x",
+    "protocol_override": {
+      "packets_type": "m02x"
+    },
+    "detections": [
+      {
+        "name": "M02X",
+        "detection": {
+          "prefixes": [
+            "M02X-",
+            "M02X_"
+          ],
+          "exact_names": [
+            "M02X"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ]
+  },
+  {
+    "model_key": "phomemo_t02",
+    "profile_key": "phomemo_t02",
+    "protocol_override": {
+      "packets_type": "t02"
+    },
+    "detections": [
+      {
+        "name": "T02",
+        "detection": {
+          "prefixes": [
+            "T02-",
+            "T02_"
+          ],
+          "exact_names": [
+            "T02"
+          ]
+        }
+      },
+      {
+        "name": "T02E",
+        "detection": {
+          "prefixes": [
+            "T02E-",
+            "T02E_"
+          ],
+          "exact_names": [
+            "T02E"
+          ]
+        }
+      },
+      {
+        "name": "Q02E",
+        "detection": {
+          "prefixes": [
+            "Q02E-",
+            "Q02E_"
+          ],
+          "exact_names": [
+            "Q02E"
+          ]
+        }
+      },
+      {
+        "name": "C02E",
+        "detection": {
+          "prefixes": [
+            "C02E-",
+            "C02E_"
+          ],
+          "exact_names": [
+            "C02E"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ]
+  },
+  {
+    "model_key": "phomemo_m02_pro",
+    "profile_key": "phomemo_m02_pro",
+    "protocol_override": {
+      "packets_type": "m02_pro"
+    },
+    "detections": [
+      {
+        "name": "M02 Pro",
+        "detection": {
+          "prefixes": [
+            "M02 Pro-",
+            "M02 Pro_",
+            "M02PRO-",
+            "M02PRO_"
+          ],
+          "exact_names": [
+            "M02 Pro",
+            "M02PRO"
+          ]
+        }
+      },
+      {
+        "name": "M02PRO",
+        "detection": {
+          "prefixes": [
+            "M02 Pro-",
+            "M02 Pro_",
+            "M02PRO-",
+            "M02PRO_"
+          ],
+          "exact_names": [
+            "M02 Pro",
+            "M02PRO"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ]
+  },
+  {
+    "model_key": "phomemo_m110",
+    "profile_key": "phomemo_m110",
+    "protocol_override": {
+      "packets_type": "m110"
+    },
+    "detections": [
+      {
+        "name": "M110",
+        "detection": {
+          "prefixes": [
+            "M110-",
+            "M110_"
+          ],
+          "exact_names": [
+            "M110"
+          ]
+        }
+      },
+      {
+        "name": "M120",
+        "detection": {
+          "prefixes": [
+            "M120-",
+            "M120_"
+          ],
+          "exact_names": [
+            "M120"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ]
+  },
+  {
+    "model_key": "phomemo_m220",
+    "profile_key": "phomemo_m220",
+    "protocol_override": {
+      "packets_type": "m220"
+    },
+    "detections": [
+      {
+        "name": "M220",
+        "detection": {
+          "prefixes": [
+            "M220-",
+            "M220_"
+          ],
+          "exact_names": [
+            "M220"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ]
+  }
+]

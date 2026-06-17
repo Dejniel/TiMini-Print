@@ -39,7 +39,7 @@ class _V5GSessionState:
     didian_status: bool = False
     printing: bool = False
     helper_kind: Optional[str] = None
-    runtime_defaults_key: Optional[str] = None
+    profile_runtime_preset_key: Optional[str] = None
     last_complete_time: float = 0.0
     last_density_value: Optional[int] = None
     last_single_density_value: int = 0
@@ -311,10 +311,10 @@ class V5GRuntimeController(RuntimeController):
         *,
         runtime_settings: Optional[RuntimeSettings] = None,
     ) -> None:
-        defaults = None if runtime_settings is None else runtime_settings.defaults
+        preset = None if runtime_settings is None else runtime_settings.preset
         self._state = _V5GSessionState(
-            helper_kind=None if runtime_settings is None else runtime_settings.variant,
-            runtime_defaults_key=None if defaults is None else defaults.key,
+            helper_kind=None if runtime_settings is None else runtime_settings.control_algorithm,
+            profile_runtime_preset_key=None if preset is None else preset.key,
         )
         self._runtime_settings = runtime_settings
 
@@ -322,30 +322,30 @@ class V5GRuntimeController(RuntimeController):
         if not isinstance(previous, V5GRuntimeController):
             return
         helper_kind = self._state.helper_kind
-        runtime_defaults_key = self._state.runtime_defaults_key
+        profile_runtime_preset_key = self._state.profile_runtime_preset_key
         pending_reset_task = self._state.pending_reset_task
         runtime_settings = self._runtime_settings
         self._state = previous._state
         self._state.helper_kind = helper_kind or self._state.helper_kind
-        self._state.runtime_defaults_key = runtime_defaults_key or self._state.runtime_defaults_key
+        self._state.profile_runtime_preset_key = profile_runtime_preset_key or self._state.profile_runtime_preset_key
         self._state.pending_reset_task = pending_reset_task
         self._runtime_settings = runtime_settings or previous._runtime_settings
 
     def debug_snapshot(self) -> dict[str, object]:
         density_levels = None
-        defaults = None if self._runtime_settings is None else self._runtime_settings.defaults
+        preset = None if self._runtime_settings is None else self._runtime_settings.preset
         capabilities = None if self._runtime_settings is None else self._runtime_settings.capabilities
-        if defaults is not None:
+        if preset is not None and preset.density is not None:
             density_levels = {
                 "image": {
-                    "low": defaults.density.image.low,
-                    "middle": defaults.density.image.middle,
-                    "high": defaults.density.image.high,
+                    "low": preset.density.image.low,
+                    "middle": preset.density.image.middle,
+                    "high": preset.density.image.high,
                 },
                 "text": {
-                    "low": defaults.density.text.low,
-                    "middle": defaults.density.text.middle,
-                    "high": defaults.density.text.high,
+                    "low": preset.density.text.low,
+                    "middle": preset.density.text.middle,
+                    "high": preset.density.text.high,
                 },
             }
         return {
@@ -354,7 +354,7 @@ class V5GRuntimeController(RuntimeController):
             "didian_status": self._state.didian_status,
             "printing": self._state.printing,
             "helper_kind": self._state.helper_kind,
-            "runtime_defaults_key": self._state.runtime_defaults_key,
+            "profile_runtime_preset_key": self._state.profile_runtime_preset_key,
             "capabilities": {
                 "d2_status": False if capabilities is None else capabilities.d2_status,
                 "didian_status": False if capabilities is None else capabilities.didian_status,
@@ -366,7 +366,7 @@ class V5GRuntimeController(RuntimeController):
             "last_print_record_density": self._state.last_print_record_density,
             "last_print_mode_is_text": self._state.last_print_mode_is_text,
             "has_pending_reset_task": self._state.pending_reset_task is not None,
-            "runtime_defaults": None if defaults is None else {"key": defaults.key},
+            "runtime_preset": None if preset is None else {"key": preset.key},
             "density_levels": density_levels,
         }
 
@@ -414,10 +414,10 @@ class V5GRuntimeController(RuntimeController):
             self._update_temperature(session, payload)
 
     def _select_levels(self, *, is_text: bool) -> DensityLevels | None:
-        defaults = None if self._runtime_settings is None else self._runtime_settings.defaults
-        if defaults is None:
+        preset = None if self._runtime_settings is None else self._runtime_settings.preset
+        if preset is None or preset.density is None:
             return None
-        source = defaults.density.text if is_text else defaults.density.image
+        source = preset.density.text if is_text else preset.density.image
         return DensityLevels(low=source.low, middle=source.middle, high=source.high)
 
     def _prepare_v5g_standard_payload(self, session, data: bytes) -> bytes:

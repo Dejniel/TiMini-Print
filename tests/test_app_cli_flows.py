@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import os
 import tempfile
 import sys
@@ -16,9 +15,6 @@ install_crc8_stub()
 
 from timiniprint.app import cli
 from timiniprint.devices import BluetoothTarget, PrinterCatalog
-from timiniprint.protocol import ImageEncoding, ProtocolJob
-from timiniprint.protocol.family import ProtocolFamily
-from timiniprint.protocol.packet import make_packet
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 from timiniprint.update_check import UpdateCheckResult
 
@@ -26,7 +22,7 @@ from timiniprint.update_check import UpdateCheckResult
 class AppCliFlowsTests(unittest.TestCase):
     def _args(self, **kwargs):
         base = dict(
-            list_profiles=False,
+            list_models=False,
             scan=False,
             feed=False,
             retract=False,
@@ -37,9 +33,6 @@ class AppCliFlowsTests(unittest.TestCase):
             bluetooth=None,
             printer_config=None,
             export_printer_config=None,
-            debug_profile=None,
-            debug_dump_protocol_job=None,
-            debug_image_encoding=None,
             debug_row_markers=None,
             force_text_mode=False,
             force_image_mode=False,
@@ -61,14 +54,14 @@ class AppCliFlowsTests(unittest.TestCase):
             code = cli.main([])
         self.assertEqual(code, 2)
 
-    def test_main_dispatch_list_profiles_and_scan(self) -> None:
-        args = self._args(list_profiles=True)
-        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+    def test_main_dispatch_list_models_and_scan(self) -> None:
+        args_models = self._args(list_models=True)
+        with patch("timiniprint.app.cli.parse_args", return_value=args_models), patch(
             "timiniprint.app.cli.emit_startup_warnings"
         ), patch("timiniprint.app.cli.emit_update_warning"
-        ), patch("timiniprint.app.cli.list_profiles", return_value=0) as list_profiles:
-            self.assertEqual(cli.main(["--list-profiles"]), 0)
-        list_profiles.assert_called_once()
+        ), patch("timiniprint.app.cli.list_models", return_value=0) as list_models:
+            self.assertEqual(cli.main(["--list-models"]), 0)
+        list_models.assert_called_once()
 
         args2 = self._args(scan=True)
         with patch("timiniprint.app.cli.parse_args", return_value=args2), patch(
@@ -152,13 +145,6 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertIsNone(cli._resolve_paper_mode(self._args()))
         self.assertEqual(cli._resolve_paper_mode(self._args(paper_mode="tag")).value, "tag")
 
-    def test_resolve_image_encoding_override_returns_enum(self) -> None:
-        self.assertIsNone(cli._resolve_image_encoding_override(self._args()))
-        self.assertEqual(
-            cli._resolve_image_encoding_override(self._args(debug_image_encoding="v5g_gray")),
-            ImageEncoding.V5G_GRAY,
-        )
-
     def test_print_and_motion_flows_use_connectors(self) -> None:
         args = self._args(path="x.txt", bluetooth="X6H")
         device = MagicMock()
@@ -209,9 +195,10 @@ class AppCliFlowsTests(unittest.TestCase):
             self.assertEqual(code, 0)
             exported = cli._load_printer_config(out_path)
             self.assertEqual(exported["schema"], "timiniprint/printer-config/v1")
+            self.assertEqual(exported["model_key"], "luck_a2")
             self.assertEqual(exported["profile_key"], "luck_a2")
             overrides = exported["profile_overrides"]
-            self.assertEqual(overrides["default_protocol_family"], "luck_normal")
+            self.assertEqual(overrides["protocol_default"]["type"], "luck_normal")
             self.assertIn("stream", overrides)
             self.assertIn("print_defaults", overrides)
             self.assertIn("energy", overrides["print_defaults"])
@@ -220,17 +207,19 @@ class AppCliFlowsTests(unittest.TestCase):
     def test_export_printer_config_writes_editable_runtime_overrides(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = f"{tmpdir}/printer.json"
-            args = self._args(export_printer_config=("mx06", out_path))
+            args = self._args(export_printer_config=("mx10", out_path))
 
             code = cli.export_printer_config(args, cli._build_cli_reporter(verbose=False))
 
             self.assertEqual(code, 0)
             exported = cli._load_printer_config(out_path)
+            self.assertEqual(exported["model_key"], "mx10")
             runtime_overrides = exported["runtime_overrides"]
-            self.assertEqual(runtime_overrides["variant"], "mx06")
-            self.assertEqual(runtime_overrides["defaults_key"], "mx06")
+            self.assertEqual(runtime_overrides["control_algorithm"], "mx10")
+            self.assertEqual(runtime_overrides["preset_key"], "mx10_mx06")
             self.assertEqual(runtime_overrides["density"]["image"]["middle"], 180)
             self.assertTrue(runtime_overrides["capabilities"]["d2_status"])
+            self.assertNotIn("runtime_presets", exported["profile_overrides"])
             self.assertIsNone(exported["profile_overrides"]["print_defaults"]["density"])
 
     def test_printer_config_json_path_not_found_is_reported_as_missing_file(self) -> None:
@@ -289,59 +278,6 @@ class AppCliFlowsTests(unittest.TestCase):
                 2,
             )
 
-    def test_debug_dump_protocol_job_writes_offline_profile_dump(self) -> None:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            dump_path = f"{tmpdir}/job.json"
-            args = self._args(
-                debug_profile="mx06",
-                debug_dump_protocol_job=dump_path,
-                debug_image_encoding="v5g_gray",
-                text="hello",
-                darkness=5,
-            )
-            packet = make_packet(0xA4, b"\x35", ProtocolFamily.V5G)
-
-            with patch(
-                "timiniprint.app.cli.build_print_job",
-                return_value=ProtocolJob(payload=packet),
-            ) as build_job:
-                code = cli.debug_dump_protocol_job(args, cli._build_cli_reporter(verbose=False))
-
-            self.assertEqual(code, 0)
-            build_job.assert_called_once()
-            self.assertEqual(build_job.call_args.kwargs["image_encoding_override"], ImageEncoding.V5G_GRAY)
-            with open(dump_path, encoding="utf-8") as handle:
-                payload = json.load(handle)
-            self.assertEqual(payload["schema"], "timiniprint/debug-protocol-job/v1")
-            self.assertTrue(payload["diagnostic_only"])
-            self.assertEqual(payload["device"]["profile_key"], "v5g_small_203")
-            self.assertEqual(payload["device"]["runtime_defaults_key"], "mx06")
-            self.assertEqual(payload["device"]["protocol_family"], "v5g")
-            self.assertEqual(payload["device"]["image_pipeline"]["encoding"], "v5g_dot")
-            self.assertEqual(payload["settings"]["darkness"], 5)
-            self.assertEqual(payload["settings"]["image_encoding_override"], "v5g_gray")
-            self.assertIsNone(payload["settings"]["debug_row_markers"])
-            self.assertEqual(payload["job"]["effective_image_pipeline"]["encoding"], "v5g_gray")
-            self.assertEqual(payload["job"]["effective_image_pipeline"]["formats"][0], "gray4")
-            self.assertIn("connect_packets", payload["transport"])
-            self.assertEqual(payload["job"]["payload_bytes"], len(packet))
-            self.assertEqual(payload["packets"][0]["op"], "A4")
-            self.assertEqual(payload["payload_hex"], packet.hex())
-
-    def test_main_rejects_debug_profile_without_debug_dump(self) -> None:
-        args = self._args(debug_profile="gt01", text="hello")
-        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
-            "timiniprint.app.cli.emit_startup_warnings"
-        ):
-            self.assertEqual(cli.main(["--debug-profile", "gt01", "--text", "hello"]), 2)
-
-    def test_main_rejects_debug_image_encoding_with_motion(self) -> None:
-        args = self._args(feed=True, debug_image_encoding="v5g_gray")
-        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
-            "timiniprint.app.cli.emit_startup_warnings"
-        ):
-            self.assertEqual(cli.main(["--feed", "--debug-image-encoding", "v5g_gray"]), 2)
-
     def test_main_rejects_debug_row_markers_with_motion(self) -> None:
         args = self._args(feed=True, debug_row_markers=10)
         with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
@@ -399,14 +335,14 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertIsInstance(device.transport_target, BluetoothTarget)
         self.assertEqual(device.address, "AA:BB:CC:DD:EE:02")
 
-    def test_printer_config_profile_key_with_bluetooth_uses_raw_target_resolution(self) -> None:
+    def test_printer_config_model_name_with_bluetooth_uses_raw_target_resolution(self) -> None:
         catalog = PrinterCatalog.load()
         endpoint = DeviceInfo(
             name="PPA2L_3F19",
             address="AA:BB:CC:DD:EE:01",
             transport=DeviceTransport.CLASSIC,
         )
-        args = self._args(printer_config="x6h", bluetooth="PPA2L_3F19")
+        args = self._args(printer_config="PPA2L", bluetooth="PPA2L_3F19")
 
         with patch(
             "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures",
@@ -414,7 +350,7 @@ class AppCliFlowsTests(unittest.TestCase):
         ):
             device = asyncio.run(cli._resolve_bluetooth_device(args, catalog))
 
-        self.assertEqual(device.profile_key, "x6h")
+        self.assertEqual(device.profile_key, "luck_ppa2l")
         self.assertEqual(device.display_name, "PPA2L_3F19")
         self.assertIsInstance(device.transport_target, BluetoothTarget)
         self.assertEqual(device.address, "AA:BB:CC:DD:EE:01")
@@ -429,11 +365,11 @@ class AppCliFlowsTests(unittest.TestCase):
         device.protocol_family.value = "v5g"
         device.protocol_variant = None
         device.runtime_settings = types.SimpleNamespace(
-            variant="mx10",
-            defaults=types.SimpleNamespace(key="mx06"),
+            control_algorithm="mx10",
+            preset=types.SimpleNamespace(key="mx10_mx06"),
         )
-        device.detection_rule_key = "rule_mx10_v5g"
-        device.profile.origin_app_packages = ("com.fun.mxw",)
+        device.model_key = "mx10"
+        device.origin_app_packages = ("com.fun.mxw",)
         device.profile.use_spp = False
 
         cli._debug_resolved_device(reporter, device, action="print")
@@ -443,8 +379,8 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertIn("profile=v5g_small_203", detail)
         self.assertIn("protocol=v5g", detail)
         self.assertIn("runtime=mx10", detail)
-        self.assertIn("runtime_defaults=mx06", detail)
-        self.assertIn("detection_rule=rule_mx10_v5g", detail)
+        self.assertIn("runtime_preset=mx10_mx06", detail)
+        self.assertIn("model=mx10", detail)
         self.assertIn("origin_app_packages=com.fun.mxw", detail)
 
 

@@ -22,15 +22,20 @@ from .device import (
 )
 from .model_codec import model_from_json
 from .profiles import (
-    DetectionRule,
+    ModelMatch,
+    NamedModelDetection,
     PrinterProfile,
-    PrinterRuntimeDefaults,
+    RuntimePreset,
     RuntimeSettings,
+    SupportedModelMatch,
+    SupportedPrinterModel,
+    UnsupportedModelMatch,
+    UnsupportedPrinterModel,
 )
 
 PROFILE_DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "printer_profiles.json"
-RULE_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_detection_rules.json")
-PRINTER_RUNTIME_DEFAULTS_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_runtime_defaults.json")
+MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models.json")
+UNSUPPORTED_MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models_unsupported.json")
 _UNSET = object()
 
 
@@ -42,52 +47,131 @@ class PrinterCatalog:
     def __init__(
         self,
         profiles: Iterable[PrinterProfile],
-        rules: Iterable[DetectionRule],
-        printer_runtime_defaults: Iterable[PrinterRuntimeDefaults] = (),
+        models: Iterable[SupportedPrinterModel],
+        unsupported_models: Iterable[UnsupportedPrinterModel] = (),
     ) -> None:
         self._profiles = list(profiles)
-        self._rules = list(rules)
-        self._printer_runtime_defaults = list(printer_runtime_defaults)
+        self._models = sorted(
+            models,
+            key=self._detection_specificity,
+            reverse=True,
+        )
+        self._unsupported_models = sorted(
+            unsupported_models,
+            key=self._detection_specificity,
+            reverse=True,
+        )
         self._profile_by_key = {profile.profile_key: profile for profile in self._profiles}
-        self._rule_by_key = {rule.rule_key: rule for rule in self._rules}
-        self._runtime_defaults_by_key = {
-            defaults.key: defaults for defaults in self._printer_runtime_defaults
+        self._model_by_key = {model.model_key: model for model in self._models}
+        self._models_by_detection_name = self._index_models_by_detection_name(self._models)
+        self._unsupported_model_by_key = {
+            model.model_key: model for model in self._unsupported_models
         }
+        self._supported_detection_entries = self._sorted_detection_entries(self._models)
+        self._unsupported_detection_entries = self._sorted_detection_entries(self._unsupported_models)
         self._validate_speed_requirements()
         self._validate_default_paper_modes()
-        self._validate_runtime_defaults_keys()
+        self._validate_model_keys()
+        self._validate_runtime_presets()
+        self._validate_unsupported_model_keys()
+        self._validate_model_references()
+
+    @staticmethod
+    def _detection_specificity(model: SupportedPrinterModel | UnsupportedPrinterModel) -> tuple[int, int]:
+        triggers: list[str] = []
+        for named_detection in model.detections:
+            detection = named_detection.detection
+            triggers.extend(detection.exact_names)
+            triggers.extend(detection.prefixes)
+            triggers.extend(detection.mac_suffixes)
+        max_trigger_length = max((len(trigger) for trigger in triggers), default=0)
+        return (max_trigger_length, len(triggers))
+
+    @staticmethod
+    def _named_detection_specificity(detection: NamedModelDetection) -> tuple[int, int, int, int, int, int]:
+        name_triggers = [
+            *detection.detection.exact_names,
+            *detection.detection.prefixes,
+        ]
+        logical_lengths = [len(trigger.rstrip("-_")) for trigger in name_triggers]
+        max_logical_length = max(logical_lengths, default=0)
+        max_raw_length = max((len(trigger) for trigger in name_triggers), default=0)
+        uppercase_score = max(
+            (sum(1 for char in trigger if char.isupper()) for trigger in name_triggers),
+            default=0,
+        )
+        return (
+            max_logical_length,
+            int(bool(detection.detection.mac_suffixes)),
+            int(bool(detection.detection.exact_names)),
+            max_raw_length,
+            uppercase_score,
+            len(name_triggers),
+        )
+
+    @classmethod
+    def _sorted_detection_entries(
+        cls,
+        models: Iterable[SupportedPrinterModel] | Iterable[UnsupportedPrinterModel],
+    ) -> list[tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection]]:
+        entries = [
+            (model, detection)
+            for model in models
+            for detection in model.detections
+        ]
+        return sorted(
+            entries,
+            key=lambda entry: cls._named_detection_specificity(entry[1]),
+            reverse=True,
+        )
+
+    @staticmethod
+    def _index_models_by_detection_name(
+        models: Iterable[SupportedPrinterModel],
+    ) -> dict[str, tuple[SupportedPrinterModel, ...]]:
+        indexed: dict[str, list[SupportedPrinterModel]] = {}
+        for model in models:
+            for detection in model.detections:
+                name = detection.normalized_name
+                entries = indexed.setdefault(name, [])
+                if model not in entries:
+                    entries.append(model)
+        return {
+            name: tuple(models)
+            for name, models in indexed.items()
+        }
 
     @classmethod
     def load(
         cls,
         profile_path: Path = PROFILE_DATA_PATH,
-        rule_path: Path = RULE_DATA_PATH,
-        runtime_defaults_path: Path = PRINTER_RUNTIME_DEFAULTS_DATA_PATH,
+        model_path: Path = MODEL_DATA_PATH,
+        unsupported_model_path: Path = UNSUPPORTED_MODEL_DATA_PATH,
     ) -> "PrinterCatalog":
-        """Load the shared catalog instance from JSON profile and rule files."""
-        cache_key = (profile_path, rule_path, runtime_defaults_path)
+        """Load the shared catalog instance from JSON profile and model files."""
+        cache_key = (profile_path, model_path, unsupported_model_path)
         cached = cls._cache.get(cache_key)
         if cached is not None:
             return cached
         profiles_raw = json.loads(profile_path.read_text(encoding="utf-8"))
-        rules_raw = json.loads(rule_path.read_text(encoding="utf-8"))
-        printer_runtime_defaults_raw = json.loads(runtime_defaults_path.read_text(encoding="utf-8"))
+        models_raw = json.loads(model_path.read_text(encoding="utf-8"))
+        unsupported_models_raw = json.loads(unsupported_model_path.read_text(encoding="utf-8"))
         if not isinstance(profiles_raw, list):
             raise ValueError("Profile file must contain a JSON list")
-        if not isinstance(rules_raw, list):
-            raise ValueError("Detection rule file must contain a JSON list")
-        if not isinstance(printer_runtime_defaults_raw, list):
-            raise ValueError("Runtime defaults file must contain a JSON list")
+        if not isinstance(models_raw, list):
+            raise ValueError("Model file must contain a JSON list")
+        if not isinstance(unsupported_models_raw, list):
+            raise ValueError("Unsupported model file must contain a JSON list")
         profiles = [model_from_json(PrinterProfile, entry) for entry in profiles_raw]
-        rules = [model_from_json(DetectionRule, entry) for entry in rules_raw]
-        printer_runtime_defaults = [
-            model_from_json(PrinterRuntimeDefaults, entry)
-            for entry in printer_runtime_defaults_raw
+        models = [model_from_json(SupportedPrinterModel, entry) for entry in models_raw]
+        unsupported_models = [
+            model_from_json(UnsupportedPrinterModel, entry)
+            for entry in unsupported_models_raw
         ]
         catalog = cls(
             profiles,
-            rules,
-            printer_runtime_defaults,
+            models,
+            unsupported_models,
         )
         cls._cache[cache_key] = catalog
         return catalog
@@ -96,17 +180,18 @@ class PrinterCatalog:
         for profile in self._profiles:
             self._validate_profile_speed_for_family(
                 profile=profile,
-                protocol_family=profile.default_protocol_family,
+                protocol_family=profile.protocol_default.type,
                 context=f"profile {profile.profile_key} default family",
             )
-        for rule in self._rules:
-            profile = self._profile_by_key.get(rule.profile_key)
+        for model in self._models:
+            profile = self._profile_by_key.get(model.profile_key)
             if profile is None:
                 continue
+            protocol_family = self._protocol_family_for_model(model, profile)
             self._validate_profile_speed_for_family(
                 profile=profile,
-                protocol_family=rule.protocol_family,
-                context=f"rule {rule.rule_key}",
+                protocol_family=protocol_family,
+                context=f"model {model.model_key}",
             )
 
     @staticmethod
@@ -128,38 +213,78 @@ class PrinterCatalog:
         for profile in self._profiles:
             self._validate_profile_default_paper_mode(profile)
 
-    def _validate_runtime_defaults_keys(self) -> None:
-        colliding_keys = sorted(
-            set(self._profile_by_key) & set(self._runtime_defaults_by_key)
+    def _validate_model_keys(self) -> None:
+        duplicate_keys = self._duplicate_keys(model.model_key for model in self._models)
+        if duplicate_keys:
+            raise ValueError(
+                "Duplicate printer model keys: "
+                + ", ".join(duplicate_keys)
+            )
+
+    def _validate_unsupported_model_keys(self) -> None:
+        duplicate_keys = self._duplicate_keys(
+            model.model_key for model in self._unsupported_models
         )
+        if duplicate_keys:
+            raise ValueError(
+                "Duplicate unsupported model keys: "
+                + ", ".join(duplicate_keys)
+            )
+        colliding_keys = sorted(set(self._unsupported_model_by_key) & set(self._model_by_key))
         if colliding_keys:
             raise ValueError(
-                "Runtime defaults keys collide with profile keys: "
+                "Unsupported model keys collide with supported model keys: "
                 + ", ".join(colliding_keys)
             )
-        for defaults in self._printer_runtime_defaults:
-            if defaults.profile_key not in self._profile_by_key:
+
+    def _validate_runtime_presets(self) -> None:
+        for profile in self._profiles:
+            seen_in_profile: set[str] = set()
+            for preset in profile.runtime_presets:
+                if preset.key in seen_in_profile:
+                    raise ValueError(
+                        f"Profile {profile.profile_key} repeats protocol runtime preset "
+                        f"{preset.key}"
+                    )
+                seen_in_profile.add(preset.key)
+
+    def _validate_model_references(self) -> None:
+        for model in self._models:
+            profile = self._profile_by_key.get(model.profile_key)
+            if profile is None:
                 raise ValueError(
-                    f"Runtime defaults {defaults.key} references unknown profile "
-                    f"{defaults.profile_key}"
+                    f"Printer model {model.model_key} references unknown profile "
+                    f"{model.profile_key}"
                 )
-        for rule in self._rules:
-            if rule.runtime_defaults_key is None:
+            if model.profile_runtime_preset_key is None:
                 continue
-            if rule.runtime_defaults_key not in self._runtime_defaults_by_key:
+            if not any(
+                preset.key == model.profile_runtime_preset_key
+                for preset in profile.runtime_presets
+            ):
                 raise ValueError(
-                    f"Detection rule {rule.rule_key} references unknown runtime defaults "
-                    f"{rule.runtime_defaults_key}"
+                    f"Printer model {model.model_key} references unknown runtime preset "
+                    f"{model.profile_runtime_preset_key} for profile {profile.profile_key}"
                 )
+
+    @staticmethod
+    def _duplicate_keys(keys: Iterable[str]) -> list[str]:
+        seen: set[str] = set()
+        duplicates: set[str] = set()
+        for key in keys:
+            if key in seen:
+                duplicates.add(key)
+            seen.add(key)
+        return sorted(duplicates)
 
     @staticmethod
     def _validate_profile_default_paper_mode(profile: PrinterProfile) -> None:
         if profile.default_paper_mode is None:
             return
-        behavior = get_protocol_behavior(profile.default_protocol_family)
+        behavior = get_protocol_behavior(profile.protocol_default.type)
         if behavior.supported_paper_modes_resolver is not None:
             supported_modes = behavior.supported_paper_modes_resolver(
-                profile.default_protocol_variant
+                profile.protocol_default.packets_type
             )
         else:
             supported_modes = behavior.supported_paper_modes
@@ -167,7 +292,7 @@ class PrinterCatalog:
             raise ValueError(
                 f"profile {profile.profile_key} default_paper_mode "
                 f"{profile.default_paper_mode.value} is not supported by "
-                f"{profile.default_protocol_family.value}"
+                f"{profile.protocol_default.type.value}"
             )
 
     @property
@@ -175,8 +300,12 @@ class PrinterCatalog:
         return list(sorted(self._profiles, key=lambda profile: profile.profile_key))
 
     @property
-    def rules(self) -> List[DetectionRule]:
-        return list(self._rules)
+    def models(self) -> List[SupportedPrinterModel]:
+        return list(self._models)
+
+    @property
+    def unsupported_models(self) -> List[UnsupportedPrinterModel]:
+        return list(self._unsupported_models)
 
     def get_profile(self, profile_key: str) -> Optional[PrinterProfile]:
         """Return a profile by key, or ``None`` if the key is unknown."""
@@ -199,26 +328,20 @@ class PrinterCatalog:
 
         This is catalog-level detection only. It does not scan hardware.
         """
-        match = self._detect_rule_match(device_name, address)
-        if match is None:
+        match = self.detect_model(device_name, address)
+        if not isinstance(match, SupportedModelMatch):
             return None
-        rule, profile = match
-        defaults = (
-            None
-            if rule.runtime_defaults_key is None
-            else self.require_runtime_defaults(rule.runtime_defaults_key)
-        )
+        model = match.model
+        profile = match.profile
         return self._build_device(
             display_name=device_name,
             profile=profile,
-            protocol_family=rule.protocol_family,
-            protocol_variant=rule.protocol_variant,
-            image_pipeline=self._select_image_pipeline(profile, rule),
-            runtime_settings=runtime_settings_from_parts(
-                variant=rule.runtime_variant,
-                defaults=defaults,
-            ),
-            detection_rule_key=rule.rule_key,
+            protocol_family=self._protocol_family_for_model(model, profile),
+            protocol_variant=self._protocol_packets_type_for_model(model, profile),
+            image_pipeline=self._select_image_pipeline(profile, model),
+            runtime_settings=self._runtime_settings_for_model(model, profile),
+            model_key=model.model_key,
+            origin_app_packages=model.origin_app_packages,
             transport_target=transport_target,
         )
 
@@ -234,11 +357,12 @@ class PrinterCatalog:
         return self._build_device(
             display_name=display_name or profile.profile_key,
             profile=profile,
-            protocol_family=profile.default_protocol_family,
-            protocol_variant=profile.default_protocol_variant,
+            protocol_family=profile.protocol_default.type,
+            protocol_variant=profile.protocol_default.packets_type,
             image_pipeline=profile.default_image_pipeline,
             runtime_settings=None,
-            detection_rule_key=f"manual:{profile.profile_key}",
+            model_key=f"manual:{profile.profile_key}",
+            origin_app_packages=(),
             transport_target=transport_target,
         )
 
@@ -249,54 +373,105 @@ class PrinterCatalog:
         display_name: Optional[str] = None,
         transport_target: TransportTarget | None = None,
     ) -> PrinterDevice:
-        """Create a runtime device from a profile key or runtime defaults key."""
-        if self.get_profile(key) is not None:
-            return self.device_from_profile(
+        """Create a runtime device from a model key or public detection name."""
+        model = self.get_model(key)
+        if model is not None:
+            return self.device_from_model(
                 key,
                 display_name=display_name,
                 transport_target=transport_target,
             )
-        if self.get_runtime_defaults(key) is not None:
-            return self.device_from_runtime_defaults(
-                key,
-                display_name=display_name,
+        matches = self.get_models_by_detection_name(key)
+        if len(matches) == 1:
+            return self.device_from_model(
+                matches[0].model_key,
+                display_name=display_name or key,
                 transport_target=transport_target,
             )
-        raise RuntimeError(f"Unknown profile/runtime defaults key '{key}'")
+        if len(matches) > 1:
+            candidates = ", ".join(model.model_key for model in matches)
+            raise RuntimeError(
+                f"Printer name '{key}' is ambiguous; use one of these model keys: "
+                f"{candidates}"
+            )
+        raise RuntimeError(f"Unknown printer model or detection name '{key}'")
 
-    def device_from_runtime_defaults(
+    def get_model(self, model_key: str) -> SupportedPrinterModel | None:
+        return self._model_by_key.get(model_key)
+
+    def get_models_by_detection_name(self, name: str) -> tuple[SupportedPrinterModel, ...]:
+        normalized = NamedModelDetection.normalize_public_name(name)
+        return self._models_by_detection_name.get(normalized, ())
+
+    def require_model(self, model_key: str) -> SupportedPrinterModel:
+        model = self.get_model(model_key)
+        if model is None:
+            raise RuntimeError(f"Unknown printer model '{model_key}'")
+        return model
+
+    def get_unsupported_model(self, model_key: str) -> UnsupportedPrinterModel | None:
+        return self._unsupported_model_by_key.get(model_key)
+
+    def require_unsupported_model(self, model_key: str) -> UnsupportedPrinterModel:
+        model = self.get_unsupported_model(model_key)
+        if model is None:
+            raise RuntimeError(f"Unknown unsupported printer model '{model_key}'")
+        return model
+
+    def detect_model(
         self,
-        runtime_defaults_key: str,
+        device_name: str,
+        address: Optional[str] = None,
+    ) -> ModelMatch | None:
+        supported = self._detect_supported_model_match(device_name, address)
+        if supported is not None:
+            return supported
+        unsupported = self._detect_unsupported_model_match(device_name, address)
+        if unsupported is not None:
+            return unsupported
+        return None
+
+    def detect_unsupported_model(
+        self,
+        device_name: str,
+        address: Optional[str] = None,
+    ) -> UnsupportedPrinterModel | None:
+        match = self.detect_model(device_name, address)
+        if isinstance(match, UnsupportedModelMatch):
+            return match.model
+        return None
+
+    def device_from_model(
+        self,
+        model_key: str,
         *,
         display_name: Optional[str] = None,
         transport_target: TransportTarget | None = None,
     ) -> PrinterDevice:
-        """Create a runtime device from a known runtime defaults key."""
-        defaults = self.require_runtime_defaults(runtime_defaults_key)
-        profile = self.require_profile(defaults.profile_key)
-        runtime_settings = runtime_settings_from_parts(
-            variant=defaults.variant,
-            defaults=defaults,
-        )
+        model = self.require_model(model_key)
+        profile = self.require_profile(model.profile_key)
         return self._build_device(
-            display_name=display_name or runtime_defaults_key,
+            display_name=display_name or model.names[0],
             profile=profile,
-            protocol_family=profile.default_protocol_family,
-            protocol_variant=profile.default_protocol_variant,
-            image_pipeline=profile.default_image_pipeline,
-            runtime_settings=runtime_settings,
-            detection_rule_key=f"runtime:{runtime_defaults_key}",
+            protocol_family=self._protocol_family_for_model(model, profile),
+            protocol_variant=self._protocol_packets_type_for_model(model, profile),
+            image_pipeline=self._select_image_pipeline(profile, model),
+            runtime_settings=self._runtime_settings_for_model(model, profile),
+            model_key=model.model_key,
+            origin_app_packages=model.origin_app_packages,
             transport_target=transport_target,
         )
 
     def serialize_printer_config(self, device: PrinterDevice) -> dict[str, Any]:
         """Serialize a device into an editable printer config object.
 
-        The printer config keeps ``profile_key`` as the catalog fallback and writes the
-        full current profile as overrides so users can tune values in-place.
-        Removing an override key falls back to the catalog profile value.
+        The printer config keeps ``model_key`` as the catalog fallback when
+        possible and writes full effective overrides so users can tune values
+        in-place. Removing an override key falls back to the catalog model, or
+        to the raw profile for low-level profile configs.
         """
-        return serialize_printer_config(device)
+        model_key = device.model_key if self.get_model(device.model_key) is not None else None
+        return serialize_printer_config(device, model_key=model_key)
 
     def device_from_printer_config(
         self,
@@ -309,7 +484,8 @@ class PrinterCatalog:
         printer_config_parts = parse_printer_config(
             printer_config,
             require_profile=self.require_profile,
-            require_runtime_defaults=self.require_runtime_defaults,
+            require_model_device=self.device_from_model,
+            require_runtime_preset=self.require_profile_runtime_preset,
         )
         resolved_transport_target = (
             printer_config_parts.transport_target
@@ -319,38 +495,64 @@ class PrinterCatalog:
         return self._build_device(
             display_name=display_name or printer_config_parts.display_name,
             profile=printer_config_parts.profile,
-            protocol_family=printer_config_parts.profile.default_protocol_family,
-            protocol_variant=printer_config_parts.profile.default_protocol_variant,
+            protocol_family=printer_config_parts.profile.protocol_default.type,
+            protocol_variant=printer_config_parts.profile.protocol_default.packets_type,
             image_pipeline=printer_config_parts.profile.default_image_pipeline,
             runtime_settings=printer_config_parts.runtime_settings,
-            detection_rule_key=f"printer_config:{printer_config_parts.profile.profile_key}",
+            model_key=printer_config_parts.model_key
+            or f"printer_config:{printer_config_parts.profile.profile_key}",
+            origin_app_packages=printer_config_parts.origin_app_packages,
             transport_target=resolved_transport_target,
         )
 
-    def require_runtime_defaults(self, runtime_defaults_key: str) -> PrinterRuntimeDefaults:
-        defaults = self.get_runtime_defaults(runtime_defaults_key)
-        if defaults is None:
-            raise RuntimeError(f"Unknown runtime defaults '{runtime_defaults_key}'")
-        return defaults
+    def require_profile_runtime_preset(
+        self,
+        profile: PrinterProfile,
+        profile_runtime_preset_key: str,
+    ) -> RuntimePreset:
+        preset = next(
+            (
+                candidate
+                for candidate in profile.runtime_presets
+                if candidate.key == profile_runtime_preset_key
+            ),
+            None,
+        )
+        if preset is None:
+            raise RuntimeError(
+                f"Unknown runtime preset '{profile_runtime_preset_key}' "
+                f"for profile '{profile.profile_key}'"
+            )
+        return preset
 
-    def get_runtime_defaults(self, runtime_defaults_key: str) -> PrinterRuntimeDefaults | None:
-        return self._runtime_defaults_by_key.get(runtime_defaults_key)
-
-    def _detect_rule_match(
+    def _detect_supported_model_match(
         self,
         device_name: str,
         address: Optional[str] = None,
-    ) -> tuple[DetectionRule, PrinterProfile] | None:
+    ) -> SupportedModelMatch | None:
         for case_sensitive in (True, False):
-            for rule in self._rules:
-                if not rule.matches(device_name, address, case_sensitive=case_sensitive):
+            for model, detection in self._supported_detection_entries:
+                if not detection.detection.matches(device_name, address, case_sensitive=case_sensitive):
                     continue
-                profile = self._profile_by_key.get(rule.profile_key)
+                assert isinstance(model, SupportedPrinterModel)
+                profile = self._profile_by_key.get(model.profile_key)
                 if profile is None:
                     raise ValueError(
-                        f"Detection rule {rule.rule_key} references unknown profile {rule.profile_key}"
+                        f"Printer model {model.model_key} references unknown profile {model.profile_key}"
                     )
-                return rule, profile
+                return SupportedModelMatch(model=model, profile=profile, detection=detection)
+        return None
+
+    def _detect_unsupported_model_match(
+        self,
+        device_name: str,
+        address: Optional[str] = None,
+    ) -> UnsupportedModelMatch | None:
+        for case_sensitive in (True, False):
+            for model, detection in self._unsupported_detection_entries:
+                if detection.detection.matches(device_name, address, case_sensitive=case_sensitive):
+                    assert isinstance(model, UnsupportedPrinterModel)
+                    return UnsupportedModelMatch(model=model, detection=detection)
         return None
 
     def _build_device(
@@ -362,13 +564,11 @@ class PrinterCatalog:
         protocol_variant: str | None,
         image_pipeline: ImagePipelineConfig,
         runtime_settings: RuntimeSettings | None,
-        detection_rule_key: str,
+        model_key: str,
+        origin_app_packages: tuple[str, ...],
         transport_target: TransportTarget | None,
     ) -> PrinterDevice:
-        resolved_protocol_variant = (
-            profile.default_protocol_variant if protocol_variant is None else protocol_variant
-        )
-        self._validate_protocol_variant(protocol_family, resolved_protocol_variant)
+        self._validate_protocol_variant(protocol_family, protocol_variant)
         self._validate_profile_speed_for_family(
             profile=profile,
             protocol_family=protocol_family,
@@ -379,11 +579,12 @@ class PrinterCatalog:
             display_name=display_name,
             profile=profile,
             protocol_family=protocol_family,
-            protocol_variant=resolved_protocol_variant,
+            protocol_variant=protocol_variant,
             image_pipeline=image_pipeline,
             runtime_settings=runtime_settings,
             transport_target=transport_target,
-            detection_rule_key=detection_rule_key,
+            model_key=model_key,
+            origin_app_packages=origin_app_packages,
         )
 
     @staticmethod
@@ -402,17 +603,62 @@ class PrinterCatalog:
     @staticmethod
     def _select_image_pipeline(
         profile: PrinterProfile,
-        rule: DetectionRule,
+        model: SupportedPrinterModel,
     ) -> ImagePipelineConfig:
-        if rule.image_pipeline is not None:
-            return rule.image_pipeline
-        if rule.protocol_family == profile.default_protocol_family:
+        if model.image_pipeline is not None:
+            return model.image_pipeline
+        protocol_family = PrinterCatalog._protocol_family_for_model(model, profile)
+        if protocol_family == profile.protocol_default.type:
             return profile.default_image_pipeline
-        return get_protocol_definition(rule.protocol_family).behavior.default_image_pipeline
+        return get_protocol_definition(protocol_family).behavior.default_image_pipeline
+
+    @staticmethod
+    def _protocol_family_for_model(
+        model: SupportedPrinterModel,
+        profile: PrinterProfile,
+    ) -> ProtocolFamily:
+        override = model.protocol_override
+        if override is not None and override.type is not None:
+            return override.type
+        return profile.protocol_default.type
+
+    @staticmethod
+    def _protocol_packets_type_for_model(
+        model: SupportedPrinterModel,
+        profile: PrinterProfile,
+    ) -> str | None:
+        override = model.protocol_override
+        if override is not None and override.packets_type is not None:
+            return override.packets_type
+        if override is not None and override.type is not None and override.type != profile.protocol_default.type:
+            return None
+        return profile.protocol_default.packets_type
+
+    @staticmethod
+    def _runtime_settings_for_model(
+        model: SupportedPrinterModel,
+        profile: PrinterProfile,
+    ) -> RuntimeSettings | None:
+        if model.profile_runtime_preset_key is None:
+            return None
+        preset = next(
+            (
+                candidate
+                for candidate in profile.runtime_presets
+                if candidate.key == model.profile_runtime_preset_key
+            ),
+            None,
+        )
+        if preset is None:
+            raise RuntimeError(
+                f"Model {model.model_key} references unknown runtime preset "
+                f"{model.profile_runtime_preset_key}"
+            )
+        return runtime_settings_from_parts(preset=preset)
 
 __all__ = [
     "PROFILE_DATA_PATH",
-    "RULE_DATA_PATH",
-    "PRINTER_RUNTIME_DEFAULTS_DATA_PATH",
+    "MODEL_DATA_PATH",
+    "UNSUPPORTED_MODEL_DATA_PATH",
     "PrinterCatalog",
 ]

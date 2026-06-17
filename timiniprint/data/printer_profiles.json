@@ -1,9 +1,6 @@
 [
   {
     "profile_key": "15p3",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 1,
     "paper_size": 90,
     "print_size": 96,
@@ -14,7 +11,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -48,9 +47,6 @@
   },
   {
     "profile_key": "58p5",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -61,7 +57,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -95,9 +93,6 @@
   },
   {
     "profile_key": "a200",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1648,
     "print_size": 1664,
@@ -108,7 +103,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -139,14 +137,10 @@
       }
     },
     "a4xii": true,
-    "render_to_paper_width": false,
-    "default_protocol_variant": "line_eight"
+    "render_to_paper_width": false
   },
   {
     "profile_key": "luck_a2",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -157,7 +151,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal",
+    "protocol_default": {
+      "type": "luck_normal"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -201,9 +197,6 @@
   },
   {
     "profile_key": "luck_a2h",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -214,7 +207,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal",
+    "protocol_default": {
+      "type": "luck_normal"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -258,9 +253,6 @@
   },
   {
     "profile_key": "luck_ppa2l",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -271,9 +263,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal",
-    "default_protocol_variant": "lujiang_normal",
     "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "luck_normal",
+      "packets_type": "lujiang_normal"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -317,9 +311,6 @@
   },
   {
     "profile_key": "luck_ppa2lh",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -330,9 +321,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal",
-    "default_protocol_variant": "lujiang_normal_h",
     "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "luck_normal",
+      "packets_type": "lujiang_normal_h"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -376,9 +369,6 @@
   },
   {
     "profile_key": "a33",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -389,7 +379,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -423,9 +415,6 @@
   },
   {
     "profile_key": "luck_a40",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -436,7 +425,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
+    "protocol_default": {
+      "type": "luck_normal_a4"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -480,9 +471,6 @@
   },
   {
     "profile_key": "luck_lujiang_a4",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -493,8 +481,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "lujiang_a4",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "lujiang_a4"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -538,9 +528,6 @@
   },
   {
     "profile_key": "luck_lujiang_a4_dense",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -551,8 +538,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "lujiang_a4",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "lujiang_a4"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -596,9 +585,6 @@
   },
   {
     "profile_key": "luck_a49h",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -609,8 +595,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "a49h",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "a49h"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -654,9 +642,6 @@
   },
   {
     "profile_key": "luck_a4_compressed_tattoo",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -667,8 +652,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "a4_tattoo_64",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "a4_tattoo_64"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -712,9 +699,6 @@
   },
   {
     "profile_key": "luck_a4_compressed_tattoo_96",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -725,8 +709,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "a4_tattoo_64_endline96",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "a4_tattoo_64_endline96"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -770,9 +756,6 @@
   },
   {
     "profile_key": "luck_a4_compressed_tattoo_96_dense",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -783,8 +766,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "a4_tattoo_64_endline96",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "a4_tattoo_64_endline96"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -828,9 +813,6 @@
   },
   {
     "profile_key": "luck_u8",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -841,8 +823,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "u8",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "u8"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -886,9 +870,6 @@
   },
   {
     "profile_key": "luck_apl86",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -899,8 +880,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "apl86",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "apl86"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -944,9 +927,6 @@
   },
   {
     "profile_key": "luck_apl86h",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -957,8 +937,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "apl86",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "apl86"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1002,9 +984,6 @@
   },
   {
     "profile_key": "luck_d80",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1015,8 +994,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "d80",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "d80"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1060,9 +1041,6 @@
   },
   {
     "profile_key": "luck_d80h",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -1073,8 +1051,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "d80h",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "d80h"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1118,9 +1098,6 @@
   },
   {
     "profile_key": "luck_a80h_way1",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -1131,8 +1108,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "a80h_way1",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "a80h_way1"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1176,9 +1155,6 @@
   },
   {
     "profile_key": "luck_qirui_q1",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1189,8 +1165,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal",
-    "default_protocol_variant": "qirui_q1",
+    "protocol_default": {
+      "type": "luck_normal",
+      "packets_type": "qirui_q1"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1234,9 +1212,6 @@
   },
   {
     "profile_key": "luck_qirui_q2",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -1247,8 +1222,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal",
-    "default_protocol_variant": "qirui_q2",
+    "protocol_default": {
+      "type": "luck_normal",
+      "packets_type": "qirui_q2"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1292,9 +1269,6 @@
   },
   {
     "profile_key": "luck_a41_luckp",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1305,8 +1279,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "luckp_a41",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "luckp_a41"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1350,9 +1326,6 @@
   },
   {
     "profile_key": "luck_a42_luckp",
-    "origin_app_packages": [
-      "com.dingdang.newprint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1363,8 +1336,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "luck_normal_a4",
-    "default_protocol_variant": "luckp_a42",
+    "protocol_default": {
+      "type": "luck_normal_a4",
+      "packets_type": "luckp_a42"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1408,9 +1383,6 @@
   },
   {
     "profile_key": "a41iii",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1648,
     "print_size": 1664,
@@ -1421,7 +1393,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1452,14 +1427,10 @@
       }
     },
     "a4xii": true,
-    "render_to_paper_width": false,
-    "default_protocol_variant": "line_eight"
+    "render_to_paper_width": false
   },
   {
     "profile_key": "a43",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -1470,7 +1441,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1501,15 +1475,11 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true,
     "left_padding_pixels": 32
   },
   {
     "profile_key": "a4300",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -1520,7 +1490,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1551,15 +1524,10 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": false
   },
   {
     "profile_key": "ai01",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1571,7 +1539,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5x",
+    "protocol_default": {
+      "type": "v5x"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1603,9 +1573,6 @@
   },
   {
     "profile_key": "an01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1616,7 +1583,9 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1650,10 +1619,6 @@
   },
   {
     "profile_key": "bq02",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1664,7 +1629,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5g",
+    "protocol_default": {
+      "type": "v5g"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -1708,9 +1675,6 @@
   },
   {
     "profile_key": "cp01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1721,7 +1685,9 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1755,9 +1721,6 @@
   },
   {
     "profile_key": "d1",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1768,7 +1731,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1802,9 +1767,6 @@
   },
   {
     "profile_key": "d100",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 4,
     "paper_size": 864,
     "print_size": 864,
@@ -1815,7 +1777,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1849,9 +1813,6 @@
   },
   {
     "profile_key": "dl_x2",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -1862,7 +1823,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1896,9 +1859,6 @@
   },
   {
     "profile_key": "dl_x7",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 4,
     "paper_size": 864,
     "print_size": 864,
@@ -1909,7 +1869,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1943,9 +1905,6 @@
   },
   {
     "profile_key": "dl_x7pro",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 4,
     "paper_size": 1280,
     "print_size": 1280,
@@ -1956,7 +1915,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -1990,9 +1951,6 @@
   },
   {
     "profile_key": "fc02",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2003,7 +1961,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2037,9 +1997,6 @@
   },
   {
     "profile_key": "fl01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2050,7 +2007,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2084,9 +2043,6 @@
   },
   {
     "profile_key": "gb01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2097,7 +2053,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2131,9 +2089,6 @@
   },
   {
     "profile_key": "gb02",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2144,7 +2099,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2178,9 +2135,6 @@
   },
   {
     "profile_key": "gb02sh",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2191,7 +2145,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2225,9 +2181,6 @@
   },
   {
     "profile_key": "gb03",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2238,7 +2191,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2272,9 +2227,6 @@
   },
   {
     "profile_key": "gb03_2",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2285,7 +2237,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2319,9 +2273,6 @@
   },
   {
     "profile_key": "gb03ph",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2332,7 +2283,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2366,9 +2319,6 @@
   },
   {
     "profile_key": "gb03sl",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2379,7 +2329,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2413,9 +2365,6 @@
   },
   {
     "profile_key": "gb04",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2426,7 +2375,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2460,9 +2411,6 @@
   },
   {
     "profile_key": "gb05",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2473,7 +2421,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2507,9 +2457,6 @@
   },
   {
     "profile_key": "gt01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2520,7 +2467,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2554,9 +2503,6 @@
   },
   {
     "profile_key": "gt02",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2567,7 +2513,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2601,9 +2549,6 @@
   },
   {
     "profile_key": "gt04",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2614,7 +2559,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2648,9 +2595,6 @@
   },
   {
     "profile_key": "gt08",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2661,7 +2605,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2691,14 +2638,10 @@
         }
       }
     },
-    "a4xii": false,
-    "default_protocol_variant": "line_eight"
+    "a4xii": false
   },
   {
     "profile_key": "gt09",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2709,7 +2652,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2740,14 +2686,10 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true
   },
   {
     "profile_key": "gw09",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2758,7 +2700,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2788,14 +2733,10 @@
         }
       }
     },
-    "a4xii": false,
-    "default_protocol_variant": "line_eight"
+    "a4xii": false
   },
   {
     "profile_key": "hd1",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -2806,7 +2747,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2840,9 +2783,6 @@
   },
   {
     "profile_key": "jx001",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2854,7 +2794,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2888,9 +2830,6 @@
   },
   {
     "profile_key": "jxm800",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -2901,7 +2840,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny_prefixed",
+    "protocol_default": {
+      "type": "tiny_prefixed",
+      "packets_type": "esc_star_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2932,14 +2874,10 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "esc_star_eight",
     "render_to_paper_width": true
   },
   {
     "profile_key": "label_printer",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 1,
     "paper_size": 90,
     "print_size": 96,
@@ -2950,7 +2888,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -2984,9 +2924,6 @@
   },
   {
     "profile_key": "lt01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -2997,7 +2934,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3031,9 +2970,6 @@
   },
   {
     "profile_key": "ly01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3045,7 +2981,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3079,9 +3017,6 @@
   },
   {
     "profile_key": "ly02",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3093,7 +3028,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3127,9 +3064,6 @@
   },
   {
     "profile_key": "ly03",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3140,7 +3074,9 @@
     "can_print_label": false,
     "label_value": "16",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3174,9 +3110,6 @@
   },
   {
     "profile_key": "ly05",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -3187,7 +3120,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3221,9 +3156,6 @@
   },
   {
     "profile_key": "ly10",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3234,7 +3166,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny_prefixed",
+    "protocol_default": {
+      "type": "tiny_prefixed",
+      "packets_type": "esc_star"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3264,14 +3199,10 @@
         }
       }
     },
-    "a4xii": false,
-    "default_protocol_variant": "esc_star"
+    "a4xii": false
   },
   {
     "profile_key": "ly11",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -3282,7 +3213,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny_prefixed",
+    "protocol_default": {
+      "type": "tiny_prefixed",
+      "packets_type": "esc_star"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3312,14 +3246,10 @@
         }
       }
     },
-    "a4xii": false,
-    "default_protocol_variant": "esc_star"
+    "a4xii": false
   },
   {
     "profile_key": "m01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3331,7 +3261,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3365,9 +3297,6 @@
   },
   {
     "profile_key": "m2",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3378,7 +3307,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3412,9 +3343,6 @@
   },
   {
     "profile_key": "mini_printer",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3425,7 +3353,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3459,9 +3389,6 @@
   },
   {
     "profile_key": "mpa81",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -3472,7 +3399,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3503,16 +3433,11 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true,
     "left_padding_pixels": 32
   },
   {
     "profile_key": "mx02",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3523,7 +3448,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5g",
+    "protocol_default": {
+      "type": "v5g"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -3555,10 +3482,6 @@
   },
   {
     "profile_key": "mx03",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -3569,7 +3492,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5g",
+    "protocol_default": {
+      "type": "v5g"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -3601,10 +3526,6 @@
   },
   {
     "profile_key": "mx07",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3615,7 +3536,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5g",
+    "protocol_default": {
+      "type": "v5g"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -3659,9 +3582,6 @@
   },
   {
     "profile_key": "p10",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3672,7 +3592,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3706,9 +3628,6 @@
   },
   {
     "profile_key": "p4",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -3719,7 +3638,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3750,15 +3672,11 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true,
     "left_padding_pixels": 24
   },
   {
     "profile_key": "p5",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -3769,7 +3687,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3803,9 +3723,6 @@
   },
   {
     "profile_key": "p6",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3816,7 +3733,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3850,9 +3769,6 @@
   },
   {
     "profile_key": "p7",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3863,7 +3779,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3897,9 +3815,6 @@
   },
   {
     "profile_key": "pr02",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -3910,7 +3825,9 @@
     "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 80,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3944,9 +3861,6 @@
   },
   {
     "profile_key": "pr30",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -3957,7 +3871,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -3991,9 +3907,6 @@
   },
   {
     "profile_key": "pr35",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -4004,7 +3917,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4038,9 +3953,6 @@
   },
   {
     "profile_key": "pr89",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -4051,7 +3963,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4082,15 +3997,11 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true,
     "left_padding_pixels": 32
   },
   {
     "profile_key": "pr893",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2592,
@@ -4101,7 +4012,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4132,15 +4046,11 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true,
     "left_padding_pixels": 48
   },
   {
     "profile_key": "professional_printer",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -4151,7 +4061,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "professional"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4182,15 +4095,11 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "professional",
     "render_to_paper_width": true,
     "left_padding_pixels": 32
   },
   {
     "profile_key": "pt001",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4201,7 +4110,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 32,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4235,9 +4146,6 @@
   },
   {
     "profile_key": "s01",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4249,7 +4157,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4283,9 +4193,6 @@
   },
   {
     "profile_key": "s101",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4296,7 +4203,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4330,9 +4239,6 @@
   },
   {
     "profile_key": "s102_2",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4343,7 +4249,9 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4377,9 +4285,6 @@
   },
   {
     "profile_key": "shipping_printer",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 4,
     "paper_size": 864,
     "print_size": 800,
@@ -4390,7 +4295,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4424,9 +4331,6 @@
   },
   {
     "profile_key": "u1",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4437,7 +4341,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4471,10 +4377,6 @@
   },
   {
     "profile_key": "gt02_v5g",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4485,7 +4387,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5g",
+    "protocol_default": {
+      "type": "v5g"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -4529,10 +4433,6 @@
   },
   {
     "profile_key": "v5g_small_203",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4543,7 +4443,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5g",
+    "protocol_default": {
+      "type": "v5g"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -4571,14 +4473,156 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "runtime_presets": [
+      {
+        "key": "mx06",
+        "density": {
+          "image": {
+            "low": 150,
+            "middle": 180,
+            "high": 200
+          },
+          "text": {
+            "low": 100,
+            "middle": 130,
+            "high": 150
+          }
+        },
+        "capabilities": {
+          "d2_status": true,
+          "didian_status": false
+        },
+        "control_algorithm": "mx06"
+      },
+      {
+        "key": "mx08",
+        "density": {
+          "image": {
+            "low": 60,
+            "middle": 90,
+            "high": 110
+          },
+          "text": {
+            "low": 50,
+            "middle": 70,
+            "high": 100
+          }
+        },
+        "capabilities": {
+          "d2_status": true,
+          "didian_status": false
+        },
+        "control_algorithm": "d2"
+      },
+      {
+        "key": "mx09",
+        "density": {
+          "image": {
+            "low": 100,
+            "middle": 120,
+            "high": 140
+          },
+          "text": {
+            "low": 80,
+            "middle": 100,
+            "high": 120
+          }
+        },
+        "capabilities": {
+          "d2_status": true,
+          "didian_status": true
+        },
+        "control_algorithm": "d2"
+      },
+      {
+        "key": "mx11",
+        "density": {
+          "image": {
+            "low": 100,
+            "middle": 130,
+            "high": 150
+          },
+          "text": {
+            "low": 100,
+            "middle": 130,
+            "high": 150
+          }
+        },
+        "capabilities": {
+          "d2_status": false,
+          "didian_status": false
+        },
+        "control_algorithm": "mx10"
+      },
+      {
+        "key": "xopoppy",
+        "density": {
+          "image": {
+            "low": 60,
+            "middle": 80,
+            "high": 100
+          },
+          "text": {
+            "low": 60,
+            "middle": 80,
+            "high": 100
+          }
+        },
+        "capabilities": {
+          "d2_status": false,
+          "didian_status": false
+        },
+        "control_algorithm": "mx10"
+      },
+      {
+        "key": "mx10_mx06",
+        "density": {
+          "image": {
+            "low": 150,
+            "middle": 180,
+            "high": 200
+          },
+          "text": {
+            "low": 100,
+            "middle": 130,
+            "high": 150
+          }
+        },
+        "capabilities": {
+          "d2_status": true,
+          "didian_status": false
+        },
+        "control_algorithm": "mx10"
+      },
+      {
+        "key": "pd01_mx11",
+        "density": {
+          "image": {
+            "low": 100,
+            "middle": 130,
+            "high": 150
+          },
+          "text": {
+            "low": 100,
+            "middle": 130,
+            "high": 150
+          }
+        },
+        "capabilities": {
+          "d2_status": false,
+          "didian_status": false
+        },
+        "control_algorithm": "pd01"
+      },
+      {
+        "key": "mx10_control",
+        "control_algorithm": "mx10"
+      }
+    ]
   },
   {
     "profile_key": "v5x",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4589,7 +4633,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 45,
-    "default_protocol_family": "v5x",
+    "protocol_default": {
+      "type": "v5x"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1",
@@ -4621,9 +4667,6 @@
   },
   {
     "profile_key": "x1",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 3,
     "paper_size": 576,
     "print_size": 576,
@@ -4634,7 +4677,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4668,9 +4713,6 @@
   },
   {
     "profile_key": "x101h",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4681,7 +4723,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4715,9 +4759,6 @@
   },
   {
     "profile_key": "x16",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4728,7 +4769,9 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4762,9 +4805,6 @@
   },
   {
     "profile_key": "x5",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4775,7 +4815,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4809,9 +4851,6 @@
   },
   {
     "profile_key": "x5_2",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4822,7 +4861,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4856,9 +4897,6 @@
   },
   {
     "profile_key": "x6",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4869,7 +4907,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4903,9 +4943,6 @@
   },
   {
     "profile_key": "x6h",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4916,7 +4953,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4950,9 +4989,6 @@
   },
   {
     "profile_key": "x7",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -4963,7 +4999,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -4997,9 +5035,6 @@
   },
   {
     "profile_key": "x7hp",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5010,7 +5045,9 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5044,9 +5081,6 @@
   },
   {
     "profile_key": "x8",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -5057,7 +5091,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5088,14 +5125,10 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true
   },
   {
     "profile_key": "x9",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 1600,
     "print_size": 1728,
@@ -5106,7 +5139,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5137,16 +5173,12 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true,
     "left_padding_pixels": 32,
     "a4_sheet_max_height": 2460
   },
   {
     "profile_key": "xw001",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5158,7 +5190,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5192,9 +5226,6 @@
   },
   {
     "profile_key": "xw002",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -5206,7 +5237,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5240,10 +5273,6 @@
   },
   {
     "profile_key": "ytb01",
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5254,7 +5283,9 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "v5c",
+    "protocol_default": {
+      "type": "v5c"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5284,9 +5315,6 @@
   },
   {
     "profile_key": "zhhc",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5298,7 +5326,9 @@
     "can_print_label": false,
     "label_value": "1",
     "back_paper_num": 40,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5332,9 +5362,6 @@
   },
   {
     "profile_key": "zp802",
-    "origin_app_packages": [
-      "com.frogtosea.tinyPrint"
-    ],
     "size": 8,
     "paper_size": 2400,
     "print_size": 2496,
@@ -5345,7 +5372,10 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "tiny",
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5376,16 +5406,11 @@
       }
     },
     "a4xii": false,
-    "default_protocol_variant": "line_eight",
     "render_to_paper_width": true,
     "left_padding_pixels": 36
   },
   {
     "profile_key": "eleph_tspl_p1",
-    "origin_app_packages": [
-      "com.sandu.JxPrinter",
-      "com.fyhd.toprint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5396,9 +5421,11 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_protocol_family": "eleph_tspl",
-    "default_protocol_variant": "p1",
     "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "eleph_tspl",
+      "packets_type": "p1"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5444,10 +5471,6 @@
   },
   {
     "profile_key": "eleph_hprt_esc_zl1",
-    "origin_app_packages": [
-      "com.sandu.JxPrinter",
-      "com.fyhd.toprint"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5458,9 +5481,11 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_protocol_family": "eleph_hprt_esc",
-    "default_protocol_variant": "zl1",
     "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "eleph_hprt_esc",
+      "packets_type": "zl1"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5502,9 +5527,6 @@
   },
   {
     "profile_key": "niimbot_d110",
-    "origin_app_packages": [
-      "com.gengcon.android.jccloudprinter"
-    ],
     "size": 1,
     "paper_size": 96,
     "print_size": 96,
@@ -5515,8 +5537,10 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_protocol_family": "niimbot",
-    "default_protocol_variant": "d110",
+    "protocol_default": {
+      "type": "niimbot",
+      "packets_type": "d110"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5558,9 +5582,6 @@
   },
   {
     "profile_key": "phomemo_m02",
-    "origin_app_packages": [
-      "com.quyin.phomemo"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5571,9 +5592,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_esc",
-    "default_protocol_variant": "m02",
     "default_paper_mode": "plain",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "m02"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5615,9 +5638,6 @@
   },
   {
     "profile_key": "phomemo_m02s",
-    "origin_app_packages": [
-      "com.quyin.phomemo"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5628,9 +5648,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_esc",
-    "default_protocol_variant": "m02s",
     "default_paper_mode": "plain",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "m02s"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5672,9 +5694,6 @@
   },
   {
     "profile_key": "phomemo_m02x",
-    "origin_app_packages": [
-      "com.quyin.phomemo"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5685,9 +5704,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_esc",
-    "default_protocol_variant": "m02x",
     "default_paper_mode": "plain",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "m02x"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5729,9 +5750,6 @@
   },
   {
     "profile_key": "phomemo_t02",
-    "origin_app_packages": [
-      "com.quyin.phomemo"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5742,9 +5760,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_esc",
-    "default_protocol_variant": "t02",
     "default_paper_mode": "plain",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "t02"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5786,9 +5806,6 @@
   },
   {
     "profile_key": "phomemo_m02_pro",
-    "origin_app_packages": [
-      "com.quyin.phomemo"
-    ],
     "size": 2,
     "paper_size": 624,
     "print_size": 624,
@@ -5799,9 +5816,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_esc",
-    "default_protocol_variant": "m02_pro",
     "default_paper_mode": "plain",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "m02_pro"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5843,9 +5862,6 @@
   },
   {
     "profile_key": "phomemo_m110",
-    "origin_app_packages": [
-      "com.quyin.phomemo"
-    ],
     "size": 2,
     "paper_size": 384,
     "print_size": 384,
@@ -5856,9 +5872,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_esc",
-    "default_protocol_variant": "m110",
     "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "m110"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"
@@ -5904,9 +5922,6 @@
   },
   {
     "profile_key": "phomemo_m220",
-    "origin_app_packages": [
-      "com.quyin.phomemo"
-    ],
     "size": 2,
     "paper_size": 576,
     "print_size": 576,
@@ -5917,9 +5932,11 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_protocol_family": "phomemo_esc",
-    "default_protocol_variant": "m220",
     "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "m220"
+    },
     "default_image_pipeline": {
       "formats": [
         "bw1"

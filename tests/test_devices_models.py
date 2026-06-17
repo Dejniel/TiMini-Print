@@ -3,10 +3,9 @@ from __future__ import annotations
 import unittest
 
 from tests.helpers import reset_registry_cache
-from timiniprint.devices import PrinterCatalog
+from timiniprint.devices import PrinterCatalog, SupportedModelMatch, UnsupportedModelMatch
 from timiniprint.devices.model_codec import model_from_json, model_to_json
-from timiniprint.devices.profiles import DetectionRule
-from timiniprint.devices.profiles import PrinterProfile, PrinterRuntimeDefaults
+from timiniprint.devices.profiles import PrinterProfile, SupportedPrinterModel
 from timiniprint.protocol import PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding, PaperMode
@@ -27,7 +26,9 @@ def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) ->
         "can_print_label": False,
         "label_value": "",
         "back_paper_num": 0,
-        "default_protocol_family": "tiny",
+        "protocol_default": {
+            "type": "tiny",
+        },
         "default_image_pipeline": {
             "formats": ["bw1"],
             "encoding": "tiny_raw",
@@ -57,17 +58,16 @@ def _with_optional_speed(payload: dict, speed: dict | None) -> dict:
     return payload
 
 
-def _runtime_defaults_payload(
+def _runtime_preset_payload(
     *,
     key: str = "demo-runtime",
-    profile_key: str = "demo",
+    image_middle: int = 120,
 ) -> dict:
     return {
         "key": key,
-        "profile_key": profile_key,
-        "variant": "mx06",
+        "control_algorithm": "mx06",
         "density": {
-            "image": {"low": 100, "middle": 120, "high": 140},
+            "image": {"low": 100, "middle": image_middle, "high": 140},
             "text": {"low": 80, "middle": 100, "high": 120},
         },
         "capabilities": {
@@ -75,6 +75,37 @@ def _runtime_defaults_payload(
             "didian_status": False,
         },
     }
+
+
+def _model_payload(
+    *,
+    model_key: str = "demo-model",
+    profile_key: str = "demo",
+    protocol_family: str | None = None,
+    prefixes: list[str] | None = None,
+    mac_suffixes: list[str] | None = None,
+    profile_runtime_preset_key: str | None = None,
+) -> dict:
+    payload = {
+        "model_key": model_key,
+        "origin_app_packages": ["com.example.demo"],
+        "detections": [
+            {
+                "name": "DEMO",
+                "detection": {
+                    "prefixes": prefixes or ["DEMO"],
+                },
+            }
+        ],
+        "profile_key": profile_key,
+    }
+    if protocol_family is not None:
+        payload["protocol_override"] = {"type": protocol_family}
+    if mac_suffixes:
+        payload["detections"][0]["detection"]["mac_suffixes"] = mac_suffixes
+    if profile_runtime_preset_key is not None:
+        payload["profile_runtime_preset_key"] = profile_runtime_preset_key
+    return payload
 
 
 class DevicesModelsTests(unittest.TestCase):
@@ -87,22 +118,75 @@ class DevicesModelsTests(unittest.TestCase):
         device,
         *,
         variant: str | None,
-        defaults_key: str | None,
+        preset_key: str | None,
         d2_status: bool = False,
         didian_status: bool = False,
     ) -> None:
         self.assertIsNotNone(device.runtime_settings)
-        self.assertEqual(device.runtime_settings.variant, variant)
-        self.assertEqual(device.runtime_settings.defaults_key, defaults_key)
+        self.assertEqual(device.runtime_settings.control_algorithm, variant)
+        self.assertEqual(device.runtime_settings.preset_key, preset_key)
         self.assertEqual(device.runtime_settings.capabilities.d2_status, d2_status)
         self.assertEqual(device.runtime_settings.capabilities.didian_status, didian_status)
 
-    def test_catalog_loads_profiles_and_rules(self) -> None:
+    def test_catalog_loads_profiles_and_models(self) -> None:
         self.assertGreater(len(self.catalog.profiles), 0)
-        self.assertGreater(len(self.catalog.rules), 0)
+        self.assertGreater(len(self.catalog.models), 0)
+        self.assertGreater(len(self.catalog.unsupported_models), 0)
         profile = self.catalog.require_profile("x6h")
         self.assertEqual(profile.stream.chunk_size, 180)
         self.assertEqual(profile.stream.delay_ms, 4)
+
+    def test_unsupported_models_are_detected_without_creating_devices(self) -> None:
+        self.assertIsNone(self.catalog.detect_device("P12"))
+
+        match = self.catalog.detect_model("P12")
+        unsupported = self.catalog.detect_unsupported_model("P12")
+
+        self.assertIsInstance(match, UnsupportedModelMatch)
+        self.assertIsNotNone(unsupported)
+        assert unsupported is not None
+        self.assertEqual(unsupported.model_key, "unsupported_phomemo_p12_family_p12")
+        self.assertEqual(unsupported.names, ("P12",))
+
+    def test_unsupported_models_keep_source_origins_and_advisory_prefixes(self) -> None:
+        supported_names = {
+            name
+            for model in self.catalog.models
+            for name in model.names
+        }
+        for model in self.catalog.unsupported_models:
+            with self.subTest(model=model.model_key):
+                self.assertTrue(model.origin_app_packages)
+                self.assertNotIn(model.model_group, supported_names)
+                for detection in model.detections:
+                    self.assertTrue(detection.detection.prefixes)
+                    self.assertFalse(detection.detection.exact_names)
+
+    def test_unsupported_case_variants_can_stay_source_distinct(self) -> None:
+        niimbot_d11s = self.catalog.detect_model("D11S")
+        luck_d11s = self.catalog.detect_model("D11s_1234")
+
+        self.assertIsInstance(niimbot_d11s, UnsupportedModelMatch)
+        self.assertIsInstance(luck_d11s, UnsupportedModelMatch)
+        assert isinstance(niimbot_d11s, UnsupportedModelMatch)
+        assert isinstance(luck_d11s, UnsupportedModelMatch)
+        self.assertEqual(niimbot_d11s.model.model_key, "unsupported_todo_niimbot_candidates_d11s")
+        self.assertEqual(niimbot_d11s.model.origin_app_packages, ("com.gengcon.android.jccloudprinter",))
+        self.assertEqual(luck_d11s.model.model_key, "unsupported_todo_luck_mpl11")
+        self.assertEqual(luck_d11s.model.origin_app_packages, ("com.dingdang.newprint",))
+
+    def test_detect_model_returns_supported_match_for_printable_models(self) -> None:
+        match = self.catalog.detect_model("X6H-1234")
+
+        self.assertIsInstance(match, SupportedModelMatch)
+        assert isinstance(match, SupportedModelMatch)
+        self.assertEqual(match.detection.name, "X6H")
+        self.assertEqual(match.profile.profile_key, "x6h")
+
+    def test_supported_model_keys_do_not_use_synthetic_model_prefix(self) -> None:
+        for model in self.catalog.models:
+            with self.subTest(model=model.model_key):
+                self.assertFalse(model.model_key.startswith("model_"))
 
     def test_model_codec_rejects_non_positive_stream_chunk_size(self) -> None:
         payload = _profile_payload()
@@ -112,7 +196,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_model_codec_allows_missing_speed_for_non_speed_family(self) -> None:
         payload = _with_optional_speed(_profile_payload(), None)
-        payload["default_protocol_family"] = "luck_normal"
+        payload["protocol_default"]["type"] = "luck_normal"
 
         profile = model_from_json(PrinterProfile, payload)
 
@@ -120,7 +204,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_model_codec_accepts_default_paper_mode(self) -> None:
         payload = _with_optional_speed(_profile_payload(), None)
-        payload["default_protocol_family"] = "luck_normal"
+        payload["protocol_default"]["type"] = "luck_normal"
         payload["default_paper_mode"] = "tag"
 
         profile = model_from_json(PrinterProfile, payload)
@@ -136,17 +220,15 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_model_codec_profile_roundtrip_keeps_normalized_shape(self) -> None:
         payload = _profile_payload()
-        payload["origin_app_packages"] = ["com.example.demo"]
         profile = model_from_json(PrinterProfile, payload)
 
         payload = model_to_json(profile)
 
         self.assertEqual(payload["profile_key"], "demo")
-        self.assertEqual(payload["default_protocol_variant"], None)
+        self.assertEqual(payload["protocol_default"]["packets_type"], None)
         self.assertEqual(payload["default_paper_mode"], None)
         self.assertEqual(payload["ble_mtu_request"], 512)
         self.assertEqual(payload["print_defaults"]["speed"]["image"], 10)
-        self.assertEqual(payload["origin_app_packages"][0], "com.example.demo")
 
     def test_profile_ble_mtu_request_defaults_to_512(self) -> None:
         profile = model_from_json(PrinterProfile, _profile_payload())
@@ -185,64 +267,110 @@ class DevicesModelsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             PrinterCatalog([profile], [])
 
-    def test_catalog_rejects_missing_speed_for_speed_rule_override(self) -> None:
+    def test_catalog_rejects_missing_speed_for_speed_model_override(self) -> None:
         payload = _with_optional_speed(_profile_payload(), None)
-        payload["default_protocol_family"] = "luck_normal"
+        payload["protocol_default"]["type"] = "luck_normal"
         profile = model_from_json(PrinterProfile, payload)
-        rule = DetectionRule(
-            rule_key="demo",
-            prefixes=("DEMO",),
-            exact_names=(),
-            profile_key=profile.profile_key,
-            protocol_family=ProtocolFamily.TINY,
+        model = model_from_json(
+            SupportedPrinterModel,
+            _model_payload(
+                model_key="demo",
+                profile_key=profile.profile_key,
+                protocol_family="tiny",
+            ),
         )
 
         with self.assertRaisesRegex(ValueError, "requires speed defaults"):
-            PrinterCatalog([profile], [rule])
+            PrinterCatalog([profile], [model])
 
-    def test_catalog_rejects_runtime_defaults_key_collision_with_profile_key(self) -> None:
-        profile = model_from_json(PrinterProfile, _profile_payload("demo"))
-        runtime_defaults = [
-            model_from_json(PrinterRuntimeDefaults, entry)
-            for entry in
-            [
-                _runtime_defaults_payload(
-                    key="demo",
-                    profile_key="demo",
-                )
-            ]
+    def test_runtime_preset_key_is_scoped_to_profile(self) -> None:
+        payload_a = _profile_payload("profile-a")
+        payload_a["runtime_presets"] = [
+            _runtime_preset_payload(key="shared", image_middle=111)
         ]
+        payload_b = _profile_payload("profile-b")
+        payload_b["runtime_presets"] = [
+            _runtime_preset_payload(key="shared", image_middle=222)
+        ]
+        profile_a = model_from_json(PrinterProfile, payload_a)
+        profile_b = model_from_json(PrinterProfile, payload_b)
+        model_a = model_from_json(
+            SupportedPrinterModel,
+            _model_payload(
+                model_key="model-a",
+                profile_key="profile-a",
+                prefixes=["A"],
+                profile_runtime_preset_key="shared",
+            ),
+        )
+        model_b = model_from_json(
+            SupportedPrinterModel,
+            _model_payload(
+                model_key="model-b",
+                profile_key="profile-b",
+                prefixes=["B"],
+                profile_runtime_preset_key="shared",
+            ),
+        )
 
-        with self.assertRaisesRegex(ValueError, "collide with profile keys: demo"):
-            PrinterCatalog([profile], [], runtime_defaults)
+        catalog = PrinterCatalog([profile_a, profile_b], [model_a, model_b])
+
+        self.assertEqual(
+            catalog.device_from_model("model-a").runtime_settings.preset.density.image.middle,
+            111,
+        )
+        self.assertEqual(
+            catalog.device_from_model("model-b").runtime_settings.preset.density.image.middle,
+            222,
+        )
 
     def test_first_match_wins_for_mac_suffix_rules(self) -> None:
         shared_profile = model_from_json(PrinterProfile, _profile_payload("shared"))
-        rules = [
-            DetectionRule(
-                rule_key="mac59",
-                prefixes=("MX05",),
-                exact_names=(),
-                profile_key="shared",
-                protocol_family=ProtocolFamily.V5X,
-                mac_suffixes=("59",),
+        models = [
+            model_from_json(
+                SupportedPrinterModel,
+                _model_payload(
+                    model_key="mac59",
+                    profile_key="shared",
+                    protocol_family="v5x",
+                    prefixes=["MX05"],
+                    mac_suffixes=["59"],
+                ),
             ),
-            DetectionRule(
-                rule_key="default",
-                prefixes=("MX05",),
-                exact_names=(),
-                profile_key="shared",
-                protocol_family=ProtocolFamily.V5G,
+            model_from_json(
+                SupportedPrinterModel,
+                _model_payload(
+                    model_key="default",
+                    profile_key="shared",
+                    protocol_family="v5g",
+                    prefixes=["MX05"],
+                ),
             ),
         ]
-        catalog = PrinterCatalog([shared_profile], rules)
+        catalog = PrinterCatalog([shared_profile], models)
 
         resolved = catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:59")
 
         self.assertIsNotNone(resolved)
         self.assertEqual(resolved.profile_key, "shared")
         self.assertEqual(resolved.protocol_family, ProtocolFamily.V5X)
-        self.assertEqual(resolved.detection_rule_key, "mac59")
+        self.assertEqual(resolved.model_key, "mac59")
+
+    def test_device_from_key_resolves_model_key_or_public_detection_name(self) -> None:
+        by_model_key = self.catalog.device_from_key("luck_a2")
+        by_detection_name = self.catalog.device_from_key("PPA2L")
+
+        self.assertEqual(by_model_key.model_key, "luck_a2")
+        self.assertEqual(by_detection_name.model_key, "luck_ppa2l")
+        self.assertEqual(by_detection_name.display_name, "PPA2L")
+
+    def test_device_from_key_rejects_ambiguous_public_detection_name(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "MX10.*yt01_mac59.*mx10"):
+            self.catalog.device_from_key("MX10")
+
+    def test_device_from_key_does_not_resolve_profile_keys(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "Unknown printer model or detection name"):
+            self.catalog.device_from_key("v5g_small_203")
 
     def test_direct_profiles_resolve_without_alias_semantics(self) -> None:
         resolved = self.catalog.detect_device("X6H-1234")
@@ -273,7 +401,6 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(d1.energy.image.middle, 5000)
         self.assertEqual(d1.energy.image.high, 5000)
         self.assertEqual(d1.energy.text.middle, 8000)
-        self.assertEqual(d1.origin_app_packages[0], "com.frogtosea.tinyPrint")
 
         ht0125 = self.catalog.detect_device("HT0125-ABCD")
         self.assertIsNotNone(ht0125)
@@ -346,18 +473,21 @@ class DevicesModelsTests(unittest.TestCase):
         )
 
     def test_origin_app_packages_keep_conflicting_names_explicit(self) -> None:
-        rules = {rule.rule_key: rule for rule in self.catalog.rules}
+        tiny_p1 = self.catalog.detect_model("P1-")
+        eleph_p1 = self.catalog.detect_model("P1_")
+        dck_d1 = self.catalog.detect_model("C21")
 
-        tiny_p1 = rules["profile_p1"]
-        eleph_p1 = rules["rule_eleph_tspl_p1"]
-        dck_d1 = rules["alias_c21"]
-
-        self.assertEqual(tiny_p1.origin_app_packages[0], "com.frogtosea.tinyPrint")
-        self.assertEqual(eleph_p1.origin_app_packages[0], "com.sandu.JxPrinter")
-        self.assertEqual(eleph_p1.origin_app_packages[1], "com.fyhd.toprint")
-        self.assertEqual(dck_d1.origin_app_packages[0], "com.fun.mxw")
-        self.assertEqual(dck_d1.origin_app_packages[1], "com.bleem.liugm")
-        self.assertEqual(self.catalog.require_profile("d1").origin_app_packages[0], "com.frogtosea.tinyPrint")
+        self.assertIsInstance(tiny_p1, SupportedModelMatch)
+        self.assertIsInstance(eleph_p1, SupportedModelMatch)
+        self.assertIsInstance(dck_d1, SupportedModelMatch)
+        assert isinstance(tiny_p1, SupportedModelMatch)
+        assert isinstance(eleph_p1, SupportedModelMatch)
+        assert isinstance(dck_d1, SupportedModelMatch)
+        self.assertEqual(tiny_p1.model.origin_app_packages[0], "com.frogtosea.tinyPrint")
+        self.assertEqual(eleph_p1.model.origin_app_packages[0], "com.sandu.JxPrinter")
+        self.assertEqual(eleph_p1.model.origin_app_packages[1], "com.fyhd.toprint")
+        self.assertEqual(dck_d1.model.origin_app_packages[0], "com.fun.mxw")
+        self.assertEqual(dck_d1.model.origin_app_packages[1], "com.bleem.liugm")
 
     def test_old_small_bucket_uses_v5g_and_mac59_switches_family_only(self) -> None:
         normal = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:58")
@@ -372,7 +502,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assert_runtime_settings(
             normal,
             variant="mx06",
-            defaults_key="mx06",
+            preset_key="mx06",
             d2_status=True,
         )
 
@@ -398,34 +528,34 @@ class DevicesModelsTests(unittest.TestCase):
         mxw010 = self.catalog.detect_device("MXW010-ABCD", "AA:BB:CC:DD:EE:58")
 
         self.assertIsNotNone(mx06)
-        self.assert_runtime_settings(mx06, variant="mx06", defaults_key="mx06", d2_status=True)
+        self.assert_runtime_settings(mx06, variant="mx06", preset_key="mx06", d2_status=True)
 
         self.assertIsNotNone(mx08)
-        self.assert_runtime_settings(mx08, variant="d2", defaults_key="mx08", d2_status=True)
+        self.assert_runtime_settings(mx08, variant="d2", preset_key="mx08", d2_status=True)
 
         self.assertIsNotNone(mx09)
         self.assert_runtime_settings(
             mx09,
             variant="d2",
-            defaults_key="mx09",
+            preset_key="mx09",
             d2_status=True,
             didian_status=True,
         )
 
         self.assertIsNotNone(mx10)
-        self.assert_runtime_settings(mx10, variant="mx10", defaults_key="mx06", d2_status=True)
+        self.assert_runtime_settings(mx10, variant="mx10", preset_key="mx10_mx06", d2_status=True)
 
         self.assertIsNotNone(pd01)
-        self.assert_runtime_settings(pd01, variant="pd01", defaults_key="mx11")
+        self.assert_runtime_settings(pd01, variant="pd01", preset_key="pd01_mx11")
 
         self.assertIsNotNone(xopoppy)
-        self.assert_runtime_settings(xopoppy, variant="mx10", defaults_key="xopoppy")
+        self.assert_runtime_settings(xopoppy, variant="mx10", preset_key="xopoppy")
 
         self.assertIsNotNone(mx13)
-        self.assert_runtime_settings(mx13, variant="mx10", defaults_key="xopoppy")
+        self.assert_runtime_settings(mx13, variant="mx10", preset_key="xopoppy")
 
         self.assertIsNotNone(mxw010)
-        self.assert_runtime_settings(mxw010, variant="mx10", defaults_key=None)
+        self.assert_runtime_settings(mxw010, variant="mx10", preset_key="mx10_control")
 
     def test_printer_config_roundtrip_preserves_runtime_fields(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
@@ -440,15 +570,15 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.image_pipeline, resolved.image_pipeline)
         self.assert_runtime_settings(
             rebuilt,
-            variant=resolved.runtime_settings.variant,
-            defaults_key=resolved.runtime_settings.defaults_key,
+            variant=resolved.runtime_settings.control_algorithm,
+            preset_key=resolved.runtime_settings.preset_key,
             d2_status=resolved.runtime_settings.capabilities.d2_status,
             didian_status=resolved.runtime_settings.capabilities.didian_status,
         )
         self.assertEqual(rebuilt.address, resolved.address)
         self.assertEqual(rebuilt.transport_badge, resolved.transport_badge)
 
-    def test_printer_config_runtime_density_override_updates_runtime_defaults_only(self) -> None:
+    def test_printer_config_runtime_density_override_updates_runtime_preset_only(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         printer_config = self.catalog.serialize_printer_config(resolved)
@@ -459,10 +589,46 @@ class DevicesModelsTests(unittest.TestCase):
         rebuilt = self.catalog.device_from_printer_config(printer_config)
 
         self.assertIsNotNone(rebuilt.runtime_settings)
-        self.assertIsNotNone(rebuilt.runtime_settings.defaults)
-        self.assertEqual(rebuilt.runtime_settings.defaults.key, "mx06")
-        self.assertEqual(rebuilt.runtime_settings.defaults.density.image.middle, 177)
+        self.assertIsNotNone(rebuilt.runtime_settings.preset)
+        self.assertEqual(rebuilt.runtime_settings.preset.key, "mx10_mx06")
+        self.assertIsNotNone(rebuilt.runtime_settings.preset.density)
+        self.assertEqual(rebuilt.runtime_settings.preset.density.image.middle, 177)
         self.assertIsNone(rebuilt.profile.density)
+
+    def test_printer_config_model_key_is_fallback_for_protocol_and_runtime(self) -> None:
+        resolved = self.catalog.device_from_key("mx10")
+        printer_config = self.catalog.serialize_printer_config(resolved)
+        self.assertEqual(printer_config["model_key"], "mx10")
+        del printer_config["profile_overrides"]["protocol_default"]
+        del printer_config["runtime_overrides"]
+
+        rebuilt = self.catalog.device_from_printer_config(printer_config)
+
+        self.assertEqual(rebuilt.model_key, "mx10")
+        self.assertEqual(rebuilt.protocol_family, resolved.protocol_family)
+        self.assertEqual(rebuilt.protocol_variant, resolved.protocol_variant)
+        self.assertIsNotNone(rebuilt.runtime_settings)
+        self.assertEqual(rebuilt.runtime_settings.preset_key, "mx10_mx06")
+
+    def test_printer_config_model_key_is_fallback_for_protocol_override(self) -> None:
+        resolved = self.catalog.device_from_key("c21")
+        printer_config = self.catalog.serialize_printer_config(resolved)
+        self.assertEqual(printer_config["model_key"], "c21")
+        del printer_config["profile_overrides"]["protocol_default"]
+
+        rebuilt = self.catalog.device_from_printer_config(printer_config)
+
+        self.assertEqual(rebuilt.model_key, "c21")
+        self.assertEqual(rebuilt.protocol_family, resolved.protocol_family)
+        self.assertEqual(rebuilt.protocol_family, ProtocolFamily.DCK)
+
+    def test_printer_config_rejects_runtime_preset_from_other_profile(self) -> None:
+        resolved = self.catalog.device_from_key("mx10")
+        printer_config = self.catalog.serialize_printer_config(resolved)
+        printer_config["runtime_overrides"]["preset_key"] = "demo"
+
+        with self.assertRaisesRegex(RuntimeError, "Unknown runtime preset 'demo' for profile"):
+            self.catalog.device_from_printer_config(printer_config)
 
     def test_printer_config_roundtrip_preserves_protocol_variant(self) -> None:
         resolved = self.catalog.detect_device("QIRUI_Q2_1234")
@@ -496,7 +662,7 @@ class DevicesModelsTests(unittest.TestCase):
     def test_device_from_printer_config_rejects_unknown_protocol_variant(self) -> None:
         base = self.catalog.device_from_profile("luck_a40")
         printer_config = self.catalog.serialize_printer_config(base)
-        printer_config["profile_overrides"]["default_protocol_variant"] = "not_a_variant"
+        printer_config["profile_overrides"]["protocol_default"]["packets_type"] = "not_a_variant"
 
         with self.assertRaisesRegex(
             RuntimeError,
@@ -733,16 +899,17 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(mx07.density)
         self.assertEqual(mx07.density.image.high, 100)
 
-        self.assertEqual(mx10.default_protocol_family, ProtocolFamily.V5G)
+        self.assertEqual(mx10.protocol_default.type, ProtocolFamily.V5G)
         self.assertIsNone(mx10.speed)
         self.assertEqual(mx10.post_print_feed_count, 1)
         self.assertEqual(mx10.energy.image.middle, 10000)
         self.assertEqual(mx10.energy.text.high, 20000)
 
-        xopoppy_runtime = self.catalog.device_from_key("xopoppy")
+        xopoppy_runtime = self.catalog.device_from_key("mx13_v5g")
         self.assertIsNotNone(xopoppy_runtime.runtime_settings)
-        self.assertIsNotNone(xopoppy_runtime.runtime_settings.defaults)
-        self.assertEqual(xopoppy_runtime.runtime_settings.defaults.density.text.middle, 80)
+        self.assertIsNotNone(xopoppy_runtime.runtime_settings.preset)
+        self.assertIsNotNone(xopoppy_runtime.runtime_settings.preset.density)
+        self.assertEqual(xopoppy_runtime.runtime_settings.preset.density.text.middle, 80)
 
         self.assertIsNotNone(bq02.density)
         self.assertEqual(bq02.density.text.high, 180)
@@ -751,7 +918,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(gt02.density.image.middle, 110)
         self.assertEqual(gt02.density.text.high, 150)
 
-        self.assertEqual(shared.default_protocol_family, ProtocolFamily.V5G)
+        self.assertEqual(shared.protocol_default.type, ProtocolFamily.V5G)
         self.assertIsNone(shared.speed)
         self.assertEqual(shared.post_print_feed_count, 1)
         self.assertEqual(shared.energy.image.middle, 10000)
@@ -828,7 +995,7 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assert_runtime_settings(
                     resolved,
                     variant="mx06",
-                    defaults_key="mx06",
+                    preset_key="mx06",
                     d2_status=True,
                 )
 

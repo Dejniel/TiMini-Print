@@ -87,7 +87,8 @@ class PrinterDevice:
     image_pipeline: ImagePipelineConfig
     runtime_settings: "RuntimeSettings | None" = None
     transport_target: TransportTarget | None = None
-    detection_rule_key: str = ""
+    model_key: str = ""
+    origin_app_packages: tuple[str, ...] = ()
 
     @property
     def name(self) -> str:

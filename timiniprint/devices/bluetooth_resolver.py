@@ -223,7 +223,8 @@ class BluetoothEndpointResolver:
             image_pipeline=classic_candidate.device.image_pipeline,
             runtime_settings=classic_candidate.device.runtime_settings,
             transport_target=target,
-            detection_rule_key=classic_candidate.device.detection_rule_key,
+            model_key=classic_candidate.device.model_key,
+            origin_app_packages=classic_candidate.device.origin_app_packages,
         )
 
     def _attach_single_anonymous_ble_endpoint(

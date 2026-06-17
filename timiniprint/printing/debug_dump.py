@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping
-
 from ..devices import PrinterDevice
-from ..protocol import ImagePipelineConfig, ProtocolJob
-from ..protocol.families import get_protocol_behavior
 from ..protocol.packet import prefixed_packet_length
 
 
@@ -26,106 +22,6 @@ def build_protocol_packet_summary(device: PrinterDevice, payload: bytes) -> dict
             for packet in packets
             if "parse_error" in packet
         ],
-    }
-
-
-def build_protocol_job_debug_dump(
-    device: PrinterDevice,
-    job: ProtocolJob,
-    *,
-    settings: Mapping[str, object],
-    effective_image_pipeline: ImagePipelineConfig | None = None,
-) -> dict[str, object]:
-    runtime_settings = device.runtime_settings
-    runtime_defaults = None if runtime_settings is None else runtime_settings.defaults
-    runtime_capabilities = None if runtime_settings is None else runtime_settings.capabilities
-    transport = get_protocol_behavior(device.protocol_family).transport
-    return {
-        "schema": "timiniprint/debug-protocol-job/v1",
-        "diagnostic_only": True,
-        "device": {
-            "display_name": device.display_name,
-            "profile_key": device.profile_key,
-            "protocol_family": device.protocol_family.value,
-            "protocol_variant": device.protocol_variant,
-            "image_pipeline": {
-                "encoding": device.image_pipeline.encoding.value,
-                "formats": [pixel_format.value for pixel_format in device.image_pipeline.formats],
-            },
-            "runtime_variant": None if runtime_settings is None else runtime_settings.variant,
-            "runtime_defaults_key": (
-                None
-                if runtime_defaults is None
-                else runtime_defaults.key
-            ),
-            "runtime_density": (
-                None if runtime_defaults is None else _mode_level_debug_entry(runtime_defaults.density)
-            ),
-            "runtime_capabilities": {
-                "d2_status": False if runtime_capabilities is None else runtime_capabilities.d2_status,
-                "didian_status": (
-                    False if runtime_capabilities is None else runtime_capabilities.didian_status
-                ),
-            },
-            "detection_rule_key": device.detection_rule_key,
-        },
-        "settings": dict(settings),
-        "transport": {
-            "connect_packets": [packet.hex() for packet in transport.connect_packets],
-            "connect_delay_ms": transport.connect_delay_ms,
-            "standard_chunk_cap": transport.standard_chunk_cap,
-            "standard_write_delay_ms": transport.standard_write_delay_ms,
-            "write_without_response_payload_reserve": (
-                transport.write_without_response_payload_reserve
-            ),
-        },
-        "job": {
-            "payload_bytes": len(job.payload),
-            "payload_segments": len(job.payload_segments),
-            "effective_image_pipeline": (
-                None
-                if effective_image_pipeline is None
-                else _image_pipeline_debug_entry(effective_image_pipeline)
-            ),
-            "steps": [
-                {
-                    "label": step.label,
-                    "operation": step.operation.value,
-                    "bytes": len(step.data),
-                    "expect": step.expect.value,
-                }
-                for step in job.steps
-            ],
-            "runtime_controller": (
-                None
-                if job.runtime_controller is None
-                else type(job.runtime_controller).__name__
-            ),
-        },
-        "packets": _packet_debug_entries(device, job.payload),
-        "payload_hex": job.payload.hex(),
-    }
-
-
-def _image_pipeline_debug_entry(pipeline: ImagePipelineConfig) -> dict[str, object]:
-    return {
-        "encoding": pipeline.encoding.value,
-        "formats": [pixel_format.value for pixel_format in pipeline.formats],
-    }
-
-
-def _mode_level_debug_entry(profile) -> dict[str, dict[str, int]]:
-    return {
-        "image": {
-            "low": profile.image.low,
-            "middle": profile.image.middle,
-            "high": profile.image.high,
-        },
-        "text": {
-            "low": profile.text.low,
-            "middle": profile.text.middle,
-            "high": profile.text.high,
-        },
     }
 
 

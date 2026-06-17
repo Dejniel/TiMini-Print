@@ -45,7 +45,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--printer-config",
         metavar="KEY_OR_PATH",
-        help="Known printer profile/runtime defaults key or printer config JSON path",
+        help="Known printer model key/name or printer config JSON path",
     )
     return parser.parse_args()
 
@@ -71,8 +71,11 @@ def _text_size(text: str, font: ImageFont.ImageFont) -> tuple[int, int]:
 def _load_printer_config(catalog: PrinterCatalog, value: str | None) -> dict | None:
     if not value:
         return None
-    if catalog.get_profile(value) is not None or catalog.get_runtime_defaults(value) is not None:
+    try:
+        catalog.device_from_key(value)
         return None
+    except RuntimeError:
+        pass
     path = timini_cli._printer_config_path(value)
     if path is None:
         return None

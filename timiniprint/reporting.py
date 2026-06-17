@@ -29,7 +29,6 @@ ERROR_PAPER_MOTION_FAILED = "paper_motion_failed"
 ERROR_NO_DEVICE = "no_device"
 ERROR_NO_FILE = "no_file"
 ERROR_PROFILE_NOT_DETECTED = "profile_not_detected"
-ERROR_UNSUPPORTED_DEVICE = "unsupported_device"
 
 
 class MessageCatalog:
@@ -61,7 +60,6 @@ class MessageCatalog:
         ERROR_NO_DEVICE: "Select a Bluetooth device",
         ERROR_NO_FILE: "Select a file to print",
         ERROR_PROFILE_NOT_DETECTED: "Printer profile not detected",
-        ERROR_UNSUPPORTED_DEVICE: "Unsupported Bluetooth device selected",
     }
 
     @classmethod

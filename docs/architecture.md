@@ -36,18 +36,49 @@ It does not say:
 - which protocol family is active right now
 - which protocol variant is active right now
 - which image pipeline is active right now
-- which runtime defaults/capabilities are active right now
+- which runtime control algorithm, preset, and capabilities are active right now
 - which transport target is active right now
+
+### `SupportedPrinterModel`
+Catalog model data.
+It describes a source-backed printer model or clone:
+- named Bluetooth detections, where each public model name is attached to its
+  own exact names, prefixes, and optional MAC suffix constraints
+- original Android app package names
+- the shared `PrinterProfile` key to use
+- optional protocol/runtime overrides for this model
+
+Several supported models may intentionally point to the same `PrinterProfile`
+when they use the same protocol recipe. If two source apps use the same advertised
+name with different values, model both variants explicitly and keep automatic
+detection conservative.
+
+Editable printer configs should normally keep `model_key` as the fallback.
+That preserves model-level protocol overrides, image pipeline overrides,
+runtime presets, and source-app metadata when users delete individual override
+fields. Raw profile-based configs are low-level diagnostics only.
+
+### `UnsupportedPrinterModel`
+Catalog model data for known-but-not-implemented printers.
+It has named detections and optional source app packages, but no
+`PrinterProfile`.
+
+Use it to recognize reports and future-support candidates without pretending the
+printer is printable. `catalog.detect_model(...)` may return one of these
+records as an unsupported match; `catalog.detect_device(...)` must not.
+`model_group`, when present, is only a public inventory grouping hint for
+clone-like TODO names. It is not a profile key and must not route unsupported
+hardware to an implemented protocol.
 
 ### `RuntimeSettings`
 Runtime catalog data.
 It describes stateful print-session behavior that is not part of the static printer profile:
-- `variant`: which runtime algorithm to use
-- `defaults`: default dynamic density inputs for that algorithm
+- `control_algorithm`: which runtime algorithm to use
+- `preset`: dynamic density inputs for that algorithm, when the protocol needs them
 - `capabilities`: status-notification features used by the runtime controller
 
 This exists so dynamic V5G/MX density behavior does not have to borrow a second
-`PrinterProfile` just to get density defaults.
+`PrinterProfile` just to get density inputs.
 
 ### `PrinterDevice`
 The central runtime object.
@@ -136,9 +167,11 @@ Owns printer description and detection.
 It contains:
 - `PrinterDevice`
 - `PrinterProfile`
+- `SupportedPrinterModel`
+- `UnsupportedPrinterModel`
 - Bluetooth endpoint and target models
 - `BluetoothEndpointResolver` for raw Bluetooth endpoint merging and catalog matching
-- detection rules
+- model detection
 - `PrinterCatalog`
 - config serialization
 

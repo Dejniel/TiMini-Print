@@ -1,0 +1,2004 @@
+[
+  {
+    "model_key": "unsupported_phomemo_p12_family_p12",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "P12",
+        "detection": {
+          "prefixes": [
+            "P12"
+          ]
+        }
+      }
+    ],
+    "model_group": "P12"
+  },
+  {
+    "model_key": "unsupported_phomemo_p12_family_p12_pro",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "P12 Pro",
+        "detection": {
+          "prefixes": [
+            "P12 Pro",
+            "P12PRO"
+          ]
+        }
+      }
+    ],
+    "model_group": "P12"
+  },
+  {
+    "model_key": "unsupported_phomemo_p12_family_a30",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "A30",
+        "detection": {
+          "prefixes": [
+            "A30"
+          ]
+        }
+      }
+    ],
+    "model_group": "P12"
+  },
+  {
+    "model_key": "unsupported_phomemo_m03_family_m03",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M03",
+        "detection": {
+          "prefixes": [
+            "M03"
+          ]
+        }
+      }
+    ],
+    "model_group": "M03"
+  },
+  {
+    "model_key": "unsupported_phomemo_m03_family_m200",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M200",
+        "detection": {
+          "prefixes": [
+            "M200"
+          ]
+        }
+      }
+    ],
+    "model_group": "M03"
+  },
+  {
+    "model_key": "unsupported_phomemo_m03_family_m250",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M250",
+        "detection": {
+          "prefixes": [
+            "M250"
+          ]
+        }
+      }
+    ],
+    "model_group": "M03"
+  },
+  {
+    "model_key": "unsupported_phomemo_m03_family_m221",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M221",
+        "detection": {
+          "prefixes": [
+            "M221"
+          ]
+        }
+      }
+    ],
+    "model_group": "M03"
+  },
+  {
+    "model_key": "unsupported_phomemo_m03_family_m260",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M260",
+        "detection": {
+          "prefixes": [
+            "M260"
+          ]
+        }
+      }
+    ],
+    "model_group": "M03"
+  },
+  {
+    "model_key": "unsupported_phomemo_m04_family_m04s",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M04S",
+        "detection": {
+          "prefixes": [
+            "M04S"
+          ]
+        }
+      }
+    ],
+    "model_group": "M04S"
+  },
+  {
+    "model_key": "unsupported_phomemo_m04_family_m04as",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M04AS",
+        "detection": {
+          "prefixes": [
+            "M04AS"
+          ]
+        }
+      }
+    ],
+    "model_group": "M04S"
+  },
+  {
+    "model_key": "unsupported_phomemo_d_family_d30",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "D30",
+        "detection": {
+          "prefixes": [
+            "D30"
+          ]
+        }
+      }
+    ],
+    "model_group": "D30"
+  },
+  {
+    "model_key": "unsupported_phomemo_d_family_d35",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "D35",
+        "detection": {
+          "prefixes": [
+            "D35"
+          ]
+        }
+      }
+    ],
+    "model_group": "D30"
+  },
+  {
+    "model_key": "unsupported_phomemo_d_family_d50",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "D50",
+        "detection": {
+          "prefixes": [
+            "D50"
+          ]
+        }
+      }
+    ],
+    "model_group": "D30"
+  },
+  {
+    "model_key": "unsupported_phomemo_d_family_q30",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "Q30",
+        "detection": {
+          "prefixes": [
+            "Q30"
+          ]
+        }
+      }
+    ],
+    "model_group": "D30"
+  },
+  {
+    "model_key": "unsupported_phomemo_d_family_q30s",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "Q30S",
+        "detection": {
+          "prefixes": [
+            "Q30S"
+          ]
+        }
+      }
+    ],
+    "model_group": "D30"
+  },
+  {
+    "model_key": "unsupported_phomemo_pm241_family_pm_241_bt",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "PM-241-BT",
+        "detection": {
+          "prefixes": [
+            "PM-241-BT"
+          ]
+        }
+      }
+    ],
+    "model_group": "PM-241-BT"
+  },
+  {
+    "model_key": "unsupported_phomemo_pm241_family_pm241",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "PM241",
+        "detection": {
+          "prefixes": [
+            "PM241",
+            "PM 241"
+          ]
+        }
+      },
+      {
+        "name": "PM 241",
+        "detection": {
+          "prefixes": [
+            "PM241",
+            "PM 241"
+          ]
+        }
+      }
+    ],
+    "model_group": "PM-241-BT"
+  },
+  {
+    "model_key": "unsupported_lp100_family_lp100",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "LP100",
+        "detection": {
+          "prefixes": [
+            "LP100"
+          ]
+        }
+      }
+    ],
+    "model_group": "LP100"
+  },
+  {
+    "model_key": "unsupported_lp100_family_lp220",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "LP220",
+        "detection": {
+          "prefixes": [
+            "LP220"
+          ]
+        }
+      }
+    ],
+    "model_group": "LP100"
+  },
+  {
+    "model_key": "unsupported_lp100_family_ly100_ble",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "LY100_BLE",
+        "detection": {
+          "prefixes": [
+            "LY100_BLE"
+          ]
+        }
+      }
+    ],
+    "model_group": "LP100"
+  },
+  {
+    "model_key": "unsupported_lp100s_family_lp100s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "LP100S",
+        "detection": {
+          "prefixes": [
+            "LP100S"
+          ]
+        }
+      }
+    ],
+    "model_group": "LP100S"
+  },
+  {
+    "model_key": "unsupported_lp100s_family_lp220s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "LP220S",
+        "detection": {
+          "prefixes": [
+            "LP220S"
+          ]
+        }
+      }
+    ],
+    "model_group": "LP100S"
+  },
+  {
+    "model_key": "unsupported_p100_family_p100",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "P100",
+        "detection": {
+          "prefixes": [
+            "P100"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100"
+  },
+  {
+    "model_key": "unsupported_p100_family_mp100",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP100",
+        "detection": {
+          "prefixes": [
+            "MP100"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100"
+  },
+  {
+    "model_key": "unsupported_p100_family_mp200",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP200",
+        "detection": {
+          "prefixes": [
+            "MP200"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100"
+  },
+  {
+    "model_key": "unsupported_p100_family_mp220",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP220",
+        "detection": {
+          "prefixes": [
+            "MP220"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100"
+  },
+  {
+    "model_key": "unsupported_p100_family_yintibao_v5",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "YINTIBAO-V5",
+        "detection": {
+          "prefixes": [
+            "YINTIBAO-V5"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100"
+  },
+  {
+    "model_key": "unsupported_p100_family_aeq918n4",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "AEQ918N4",
+        "detection": {
+          "prefixes": [
+            "AEQ918N4"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100"
+  },
+  {
+    "model_key": "unsupported_p100s_family_p100s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "P100S",
+        "detection": {
+          "prefixes": [
+            "P100S"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100S"
+  },
+  {
+    "model_key": "unsupported_p100s_family_mp100s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP100S",
+        "detection": {
+          "prefixes": [
+            "MP100S"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100S"
+  },
+  {
+    "model_key": "unsupported_p100s_family_mp200s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP200S",
+        "detection": {
+          "prefixes": [
+            "MP200S"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100S"
+  },
+  {
+    "model_key": "unsupported_p100s_family_mp220s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP220S",
+        "detection": {
+          "prefixes": [
+            "MP220S"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100S"
+  },
+  {
+    "model_key": "unsupported_p100s_family_yintibao_v5pro",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "YINTIBAO-V5PRO",
+        "detection": {
+          "prefixes": [
+            "YINTIBAO-V5PRO"
+          ]
+        }
+      }
+    ],
+    "model_group": "P100S"
+  },
+  {
+    "model_key": "unsupported_p3_family_mp300",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP300",
+        "detection": {
+          "prefixes": [
+            "MP300"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_p3s_family_p3s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "P3S",
+        "detection": {
+          "prefixes": [
+            "P3S"
+          ]
+        }
+      }
+    ],
+    "model_group": "P3S"
+  },
+  {
+    "model_key": "unsupported_p3s_family_mp300s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MP300S",
+        "detection": {
+          "prefixes": [
+            "MP300S"
+          ]
+        }
+      }
+    ],
+    "model_group": "P3S"
+  },
+  {
+    "model_key": "unsupported_m08f_family_m08f",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M08F",
+        "detection": {
+          "prefixes": [
+            "M08F"
+          ]
+        }
+      }
+    ],
+    "model_group": "M08F"
+  },
+  {
+    "model_key": "unsupported_m08f_family_tp81",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "TP81",
+        "detection": {
+          "prefixes": [
+            "TP81"
+          ]
+        }
+      }
+    ],
+    "model_group": "M08F"
+  },
+  {
+    "model_key": "unsupported_m08f_family_tp84",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "TP84",
+        "detection": {
+          "prefixes": [
+            "TP84"
+          ]
+        }
+      }
+    ],
+    "model_group": "M08F"
+  },
+  {
+    "model_key": "unsupported_m08f_family_tp85",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "TP85",
+        "detection": {
+          "prefixes": [
+            "TP85"
+          ]
+        }
+      }
+    ],
+    "model_group": "M08F"
+  },
+  {
+    "model_key": "unsupported_m08f_family_tp86",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "TP86",
+        "detection": {
+          "prefixes": [
+            "TP86"
+          ]
+        }
+      }
+    ],
+    "model_group": "M08F"
+  },
+  {
+    "model_key": "unsupported_m08f_family_tp87",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "TP87",
+        "detection": {
+          "prefixes": [
+            "TP87"
+          ]
+        }
+      }
+    ],
+    "model_group": "M08F"
+  },
+  {
+    "model_key": "unsupported_m08f_family_tp88",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "TP88",
+        "detection": {
+          "prefixes": [
+            "TP88"
+          ]
+        }
+      }
+    ],
+    "model_group": "M08F"
+  },
+  {
+    "model_key": "unsupported_m832_family_m832",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M832",
+        "detection": {
+          "prefixes": [
+            "M832"
+          ]
+        }
+      }
+    ],
+    "model_group": "M832"
+  },
+  {
+    "model_key": "unsupported_m832_family_m836",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M836",
+        "detection": {
+          "prefixes": [
+            "M836"
+          ]
+        }
+      }
+    ],
+    "model_group": "M832"
+  },
+  {
+    "model_key": "unsupported_q302_family_q302",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "Q302",
+        "detection": {
+          "prefixes": [
+            "Q302"
+          ]
+        }
+      }
+    ],
+    "model_group": "Q302"
+  },
+  {
+    "model_key": "unsupported_q302_family_q580",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "Q580",
+        "detection": {
+          "prefixes": [
+            "Q580"
+          ]
+        }
+      }
+    ],
+    "model_group": "Q302"
+  },
+  {
+    "model_key": "unsupported_todo_v10g_mxw_a4",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "MXW-A4",
+        "detection": {
+          "prefixes": [
+            "MXW-A4"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v10_jxprinter",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "JXPRINTER",
+        "detection": {
+          "prefixes": [
+            "JXPRINTER"
+          ]
+        }
+      }
+    ],
+    "model_group": "JXPRINTER"
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v10_printer",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "PRINTER",
+        "detection": {
+          "prefixes": [
+            "PRINTER"
+          ]
+        }
+      }
+    ],
+    "model_group": "JXPRINTER"
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v8s_other_baypage",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "BAYPAGE",
+        "detection": {
+          "prefixes": [
+            "BAYPAGE"
+          ]
+        }
+      }
+    ],
+    "model_group": "BAYPAGE"
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v8s_other_yintibao_v8s",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "YINTIBAO-V8S",
+        "detection": {
+          "prefixes": [
+            "YINTIBAO-V8S"
+          ]
+        }
+      }
+    ],
+    "model_group": "BAYPAGE"
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v8pro_jx400r06p",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "JX400R06P",
+        "detection": {
+          "prefixes": [
+            "JX400R06P"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v8_jx400r",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "JX400R",
+        "detection": {
+          "prefixes": [
+            "JX400R"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v6_yintibao",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "YINTIBAO",
+        "detection": {
+          "prefixes": [
+            "YINTIBAO"
+          ]
+        }
+      }
+    ],
+    "model_group": "YINTIBAO"
+  },
+  {
+    "model_key": "unsupported_todo_ibleem_v6_papergo",
+    "origin_app_packages": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "PAPERGO",
+        "detection": {
+          "prefixes": [
+            "PAPERGO"
+          ]
+        }
+      }
+    ],
+    "model_group": "YINTIBAO"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b1",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B1",
+        "detection": {
+          "prefixes": [
+            "B1"
+          ]
+        }
+      }
+    ],
+    "model_group": "B1"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b1_pro",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B1 Pro",
+        "detection": {
+          "prefixes": [
+            "B1 Pro"
+          ]
+        }
+      }
+    ],
+    "model_group": "B1"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b18",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B18",
+        "detection": {
+          "prefixes": [
+            "B18"
+          ]
+        }
+      }
+    ],
+    "model_group": "B18"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b18s",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B18S",
+        "detection": {
+          "prefixes": [
+            "B18S"
+          ]
+        }
+      }
+    ],
+    "model_group": "B18"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b21",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B21",
+        "detection": {
+          "prefixes": [
+            "B21"
+          ]
+        }
+      }
+    ],
+    "model_group": "B21"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b21_c2b",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B21-C2B",
+        "detection": {
+          "prefixes": [
+            "B21-C2B"
+          ]
+        }
+      }
+    ],
+    "model_group": "B21"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b21_l2b",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B21-L2B",
+        "detection": {
+          "prefixes": [
+            "B21-L2B"
+          ]
+        }
+      }
+    ],
+    "model_group": "B21"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b21s",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B21S",
+        "detection": {
+          "prefixes": [
+            "B21S"
+          ]
+        }
+      }
+    ],
+    "model_group": "B21"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b21s_c2b",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B21S-C2B",
+        "detection": {
+          "prefixes": [
+            "B21S-C2B"
+          ]
+        }
+      }
+    ],
+    "model_group": "B21"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b21_pro",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B21_Pro",
+        "detection": {
+          "prefixes": [
+            "B21_Pro"
+          ]
+        }
+      }
+    ],
+    "model_group": "B21"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b24",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B24",
+        "detection": {
+          "prefixes": [
+            "B24"
+          ]
+        }
+      }
+    ],
+    "model_group": "B3S"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b3s",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B3S",
+        "detection": {
+          "prefixes": [
+            "B3S"
+          ]
+        }
+      }
+    ],
+    "model_group": "B3S"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_b3s_p",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "B3S_P",
+        "detection": {
+          "prefixes": [
+            "B3S_P"
+          ]
+        }
+      }
+    ],
+    "model_group": "B3S"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d101",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "D101",
+        "detection": {
+          "prefixes": [
+            "D101"
+          ]
+        }
+      }
+    ],
+    "model_group": "D101"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d11",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "D11",
+        "detection": {
+          "prefixes": [
+            "D11"
+          ]
+        }
+      }
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d11s",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "D11S",
+        "detection": {
+          "prefixes": [
+            "D11S"
+          ]
+        }
+      }
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d11_h",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "D11_H",
+        "detection": {
+          "prefixes": [
+            "D11_H"
+          ]
+        }
+      }
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d110_m",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "D110_M",
+        "detection": {
+          "prefixes": [
+            "D110_M"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_hi_d110",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "Hi-D110",
+        "detection": {
+          "prefixes": [
+            "Hi-D110"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_hi_nb_d11",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "Hi-NB-D11",
+        "detection": {
+          "prefixes": [
+            "Hi-NB-D11"
+          ]
+        }
+      }
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_jcb3s",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "JCB3S",
+        "detection": {
+          "prefixes": [
+            "JCB3S"
+          ]
+        }
+      }
+    ],
+    "model_group": "B3S"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_m2_h",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "M2_H",
+        "detection": {
+          "prefixes": [
+            "M2_H"
+          ]
+        }
+      }
+    ],
+    "model_group": "B1"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_n1",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "N1",
+        "detection": {
+          "prefixes": [
+            "N1"
+          ]
+        }
+      }
+    ],
+    "model_group": "B1"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_s6",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "detections": [
+      {
+        "name": "S6",
+        "detection": {
+          "prefixes": [
+            "S6"
+          ]
+        }
+      }
+    ],
+    "model_group": "B3S"
+  },
+  {
+    "model_key": "unsupported_todo_luck_mpl11",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "MPL11",
+        "detection": {
+          "prefixes": [
+            "MPL11_"
+          ]
+        }
+      },
+      {
+        "name": "D11s",
+        "detection": {
+          "prefixes": [
+            "D11s_"
+          ]
+        }
+      },
+      {
+        "name": "FICHERO_5836",
+        "detection": {
+          "prefixes": [
+            "FICHERO_5836"
+          ]
+        }
+      },
+      {
+        "name": "MULLER_6473",
+        "detection": {
+          "prefixes": [
+            "MULLER_6473"
+          ]
+        }
+      }
+    ],
+    "model_group": "MPL11"
+  },
+  {
+    "model_key": "unsupported_todo_luck_hanyin_al200",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "AL200",
+        "detection": {
+          "prefixes": [
+            "AL200"
+          ]
+        }
+      }
+    ],
+    "model_group": "AL200"
+  },
+  {
+    "model_key": "unsupported_todo_luck_hanyin_al2",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "AL2",
+        "detection": {
+          "prefixes": [
+            "AL2"
+          ]
+        }
+      }
+    ],
+    "model_group": "AL200"
+  },
+  {
+    "model_key": "unsupported_todo_luck_hanyin_rpp02n",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "RPP02N",
+        "detection": {
+          "prefixes": [
+            "RPP02N"
+          ]
+        }
+      }
+    ],
+    "model_group": "AL200"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_normal_d12",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "D12",
+        "detection": {
+          "prefixes": [
+            "D12"
+          ]
+        }
+      }
+    ],
+    "model_group": "D12"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_normal_c2",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "C2",
+        "detection": {
+          "prefixes": [
+            "C2"
+          ]
+        }
+      }
+    ],
+    "model_group": "D12"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_normal_c3",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "C3",
+        "detection": {
+          "prefixes": [
+            "C3"
+          ]
+        }
+      }
+    ],
+    "model_group": "D12"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_normal_c16",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "C16",
+        "detection": {
+          "prefixes": [
+            "C16"
+          ]
+        }
+      }
+    ],
+    "model_group": "D12"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_a4_d82",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "D82",
+        "detection": {
+          "prefixes": [
+            "D82"
+          ]
+        }
+      }
+    ],
+    "model_group": "D82"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_a4_d82s",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "D82S",
+        "detection": {
+          "prefixes": [
+            "D82S"
+          ]
+        }
+      }
+    ],
+    "model_group": "D82"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_a4_d83",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "D83",
+        "detection": {
+          "prefixes": [
+            "D83"
+          ]
+        }
+      }
+    ],
+    "model_group": "D82"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_a4_a10",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "A10",
+        "detection": {
+          "prefixes": [
+            "A10"
+          ]
+        }
+      }
+    ],
+    "model_group": "D82"
+  },
+  {
+    "model_key": "unsupported_todo_luck_aiyin_a4_fichero_6181",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "FICHERO_6181",
+        "detection": {
+          "prefixes": [
+            "FICHERO_6181"
+          ]
+        }
+      }
+    ],
+    "model_group": "D82"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_d400",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "D400",
+        "detection": {
+          "prefixes": [
+            "D400"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_y810bt",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "Y810BT",
+        "detection": {
+          "prefixes": [
+            "Y810BT"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_qr380a",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "QR380A",
+        "detection": {
+          "prefixes": [
+            "QR380A"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_tb41",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "TB41",
+        "detection": {
+          "prefixes": [
+            "TB41"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_qr_386a",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "QR_386A",
+        "detection": {
+          "prefixes": [
+            "QR_386A"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_itpp941",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "ITPP941",
+        "detection": {
+          "prefixes": [
+            "ITPP941"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_p80s",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "P80S",
+        "detection": {
+          "prefixes": [
+            "P80S"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_sheetlabel_itpp130b",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "ITPP130B",
+        "detection": {
+          "prefixes": [
+            "ITPP130B"
+          ]
+        }
+      }
+    ],
+    "model_group": "D400"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_itp05n",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "ITP05N",
+        "detection": {
+          "prefixes": [
+            "ITP05N"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_itp06n",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "ITP06N",
+        "detection": {
+          "prefixes": [
+            "ITP06N"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_pcps_d80",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "PCPS_D80",
+        "detection": {
+          "prefixes": [
+            "PCPS_D80"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_dp_a80",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "DP_A80",
+        "detection": {
+          "prefixes": [
+            "DP_A80"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_dp_a80s",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "DP_A80S",
+        "detection": {
+          "prefixes": [
+            "DP_A80S"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_dp_a80w",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "DP_A80W",
+        "detection": {
+          "prefixes": [
+            "DP_A80W"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_pd_a4",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "PD_A4",
+        "detection": {
+          "prefixes": [
+            "PD_A4"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_luck_unfinished_branches_gd_88",
+    "origin_app_packages": [
+      "com.dingdang.newprint"
+    ],
+    "detections": [
+      {
+        "name": "GD-88",
+        "detection": {
+          "prefixes": [
+            "GD-88"
+          ]
+        }
+      }
+    ],
+    "model_group": "ITP05N"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d61",
+    "detections": [
+      {
+        "name": "D61",
+        "detection": {
+          "prefixes": [
+            "D61"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d41",
+    "detections": [
+      {
+        "name": "D41",
+        "detection": {
+          "prefixes": [
+            "D41"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_dxx",
+    "detections": [
+      {
+        "name": "Dxx",
+        "detection": {
+          "prefixes": [
+            "Dxx"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_fust",
+    "detections": [
+      {
+        "name": "Fust",
+        "detection": {
+          "prefixes": [
+            "Fust"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_d11_pro",
+    "detections": [
+      {
+        "name": "D11_Pro",
+        "detection": {
+          "prefixes": [
+            "D11_Pro"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "model_group": "D11"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_betty",
+    "detections": [
+      {
+        "name": "Betty",
+        "detection": {
+          "prefixes": [
+            "Betty"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "model_group": "D101"
+  },
+  {
+    "model_key": "unsupported_todo_niimbot_candidates_s6_p",
+    "detections": [
+      {
+        "name": "S6_P",
+        "detection": {
+          "prefixes": [
+            "S6_P"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ],
+    "model_group": "B3S"
+  }
+]

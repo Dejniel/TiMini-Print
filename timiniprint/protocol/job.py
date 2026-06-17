@@ -159,7 +159,7 @@ class PrinterProtocol:
         behavior = get_protocol_behavior(self.device.protocol_family)
         if image_pipeline is not None:
             pipeline = image_pipeline
-        elif self.device.protocol_family == self.device.profile.default_protocol_family:
+        elif self.device.protocol_family == self.device.profile.protocol_default.type:
             pipeline = self.device.image_pipeline
         else:
             pipeline = behavior.default_image_pipeline

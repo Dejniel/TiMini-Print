@@ -129,8 +129,11 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(manual.image_pipeline, auto.image_pipeline)
         self.assertIsNotNone(manual.runtime_settings)
         self.assertIsNotNone(auto.runtime_settings)
-        self.assertEqual(manual.runtime_settings.variant, auto.runtime_settings.variant)
-        self.assertEqual(manual.runtime_settings.defaults_key, auto.runtime_settings.defaults_key)
+        self.assertEqual(
+            manual.runtime_settings.control_algorithm,
+            auto.runtime_settings.control_algorithm,
+        )
+        self.assertEqual(manual.runtime_settings.preset_key, auto.runtime_settings.preset_key)
         self.assertEqual(
             manual.runtime_settings.capabilities,
             auto.runtime_settings.capabilities,

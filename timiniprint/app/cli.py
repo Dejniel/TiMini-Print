@@ -14,7 +14,6 @@ from typing import Optional, Sequence
 from .. import __version__, reporting
 from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarget
 from ..printing.builder import PrintJobBuilder
-from ..printing.debug_dump import build_protocol_job_debug_dump
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
 from ..printing.send import send_prepared_job
@@ -39,28 +38,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--printer-config",
         metavar="KEY_OR_PATH",
-        help="Known printer profile/runtime defaults key or printer config JSON path used for manual overrides",
+        help="Known printer model key, public model name, or printer config JSON path used for manual overrides",
     )
     parser.add_argument(
         "--export-printer-config",
         nargs=2,
         metavar=("KEY", "PATH"),
-        help="Write a fresh editable printer config JSON for a known profile/runtime defaults key and exit",
-    )
-    parser.add_argument(
-        "--debug-profile",
-        metavar="KEY",
-        help="Use a known printer profile for offline debug actions; never connects to a printer",
-    )
-    parser.add_argument(
-        "--debug-dump-protocol-job",
-        metavar="PATH",
-        help="Write an offline protocol-job debug dump as JSON and exit; this is not a print/replay format",
-    )
-    parser.add_argument(
-        "--debug-image-encoding",
-        choices=[encoding.value for encoding in ImageEncoding],
-        help="Debug only: override the protocol image encoding when building a print job",
+        help="Write a fresh editable printer config JSON for a known printer model key or public model name and exit",
     )
     parser.add_argument(
         "--debug-row-markers",
@@ -69,7 +53,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Debug only: add side row markers every N raster rows",
     )
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
-    parser.add_argument("--list-profiles", action="store_true", help="List known printer profiles and exit")
+    parser.add_argument("--list-models", action="store_true", help="List known printer model keys and public names and exit")
     parser.add_argument("--text", metavar="TEXT", help="Print raw text instead of a file path")
     parser.add_argument("--text-font", metavar="PATH", help="Path to a .ttf/.otf font used for text rendering (default: monospace bold)")
     parser.add_argument("--text-columns", type=int, metavar="N", help="Target number of characters per line for text rendering")
@@ -97,10 +81,11 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def list_profiles() -> int:
+def list_models() -> int:
     catalog = PrinterCatalog.load()
-    for profile in catalog.profiles:
-        print(profile.profile_key)
+    for model in sorted(catalog.models, key=lambda model: model.model_key):
+        names = ", ".join(model.names)
+        print(f"{model.model_key}: {names}")
     return 0
 
 
@@ -171,28 +156,25 @@ def _device_from_printer_config_arg(
     profile_transport_target = (
         None if transport_target is _TRANSPORT_UNSET else transport_target
     )
-    if catalog.get_profile(value) is not None or catalog.get_runtime_defaults(value) is not None:
+    try:
         return catalog.device_from_key(
             value,
             display_name=display_name,
             transport_target=profile_transport_target,
         )
+    except RuntimeError as key_error:
+        path = _printer_config_path(value)
+        if path is None:
+            raise key_error
 
-    path = _printer_config_path(value)
-    if path is not None:
-        kwargs = {}
-        if transport_target is not _TRANSPORT_UNSET:
-            kwargs["transport_target"] = transport_target
-        if display_name is not None:
-            kwargs["display_name"] = display_name
-        return catalog.device_from_printer_config(
-            _load_printer_config(str(path)),
-            **kwargs,
-        )
-    return catalog.device_from_key(
-        value,
-        display_name=display_name,
-        transport_target=profile_transport_target,
+    kwargs = {}
+    if transport_target is not _TRANSPORT_UNSET:
+        kwargs["transport_target"] = transport_target
+    if display_name is not None:
+        kwargs["display_name"] = display_name
+    return catalog.device_from_printer_config(
+        _load_printer_config(str(path)),
+        **kwargs,
     )
 
 
@@ -364,33 +346,12 @@ def _resolve_serial_device(
     if not args.printer_config:
         raise RuntimeError(
             "Serial printing requires --printer-config "
-            "(use a profile/runtime defaults key or export one first with --export-printer-config)"
+            "(use a printer model key/name or export one first with --export-printer-config)"
         )
     return _device_from_printer_config_arg(
         catalog,
         args.printer_config,
         transport_target=SerialTarget(args.serial),
-    )
-
-
-def _resolve_debug_dump_device(
-    args: argparse.Namespace,
-    catalog: PrinterCatalog,
-) -> PrinterDevice:
-    if args.debug_profile and args.printer_config:
-        raise RuntimeError("Use either --debug-profile or --printer-config for debug dumps, not both")
-    if args.debug_profile:
-        return catalog.device_from_key(args.debug_profile)
-    if args.printer_config:
-        return _device_from_printer_config_arg(catalog, args.printer_config, transport_target=None)
-    if args.bluetooth:
-        device = catalog.detect_device(args.bluetooth)
-        if device is None:
-            raise RuntimeError(f"Could not detect printer model from name '{args.bluetooth}'")
-        return device
-    raise RuntimeError(
-        "--debug-dump-protocol-job requires --debug-profile KEY, --printer-config KEY_OR_PATH, "
-        "or --bluetooth NAME"
     )
 
 
@@ -405,8 +366,8 @@ def _debug_resolved_device(
     action: str,
 ) -> None:
     runtime_settings = device.runtime_settings
-    runtime_defaults = None if runtime_settings is None else runtime_settings.defaults
-    origin_app_packages = getattr(device.profile, "origin_app_packages", ())
+    runtime_preset = None if runtime_settings is None else runtime_settings.preset
+    origin_app_packages = device.origin_app_packages
     reporter.debug(
         short="Device",
         detail=(
@@ -417,9 +378,9 @@ def _debug_resolved_device(
             f"profile={device.profile_key} "
             f"protocol={_field_value(device.protocol_family)} "
             f"variant={device.protocol_variant or '<none>'} "
-            f"runtime={getattr(runtime_settings, 'variant', None) or '<none>'} "
-            f"runtime_defaults={getattr(runtime_defaults, 'key', None) or '<none>'} "
-            f"detection_rule={device.detection_rule_key or '<none>'} "
+            f"runtime={getattr(runtime_settings, 'control_algorithm', None) or '<none>'} "
+            f"runtime_preset={getattr(runtime_preset, 'key', None) or '<none>'} "
+            f"model={device.model_key or '<none>'} "
             f"origin_app_packages={','.join(origin_app_packages) or '<none>'} "
             f"use_spp={device.profile.use_spp}"
         ),
@@ -431,8 +392,8 @@ def export_printer_config(
     reporter: reporting.Reporter,
 ) -> int:
     catalog = PrinterCatalog.load()
-    profile_key, out_path = args.export_printer_config
-    device = catalog.device_from_key(profile_key)
+    key, out_path = args.export_printer_config
+    device = catalog.device_from_key(key)
     _write_printer_config(
         out_path,
         catalog.serialize_printer_config(device),
@@ -444,67 +405,6 @@ def export_printer_config(
             f"path={out_path} "
             f"profile={device.profile_key} "
             f"family={device.protocol_family.value}"
-        ),
-    )
-    return 0
-
-
-def debug_dump_protocol_job(
-    args: argparse.Namespace,
-    reporter: reporting.Reporter,
-) -> int:
-    catalog = PrinterCatalog.load()
-    device = _resolve_debug_dump_device(args, catalog)
-    _debug_resolved_device(reporter, device, action="debug-dump")
-    image_encoding_override = _resolve_image_encoding_override(args)
-    effective_image_pipeline = PrinterProtocol(device).resolve_image_pipeline(
-        image_encoding_override=image_encoding_override,
-    )
-    job = build_print_job(
-        device,
-        args.path,
-        text_mode=_resolve_text_mode(args),
-        blackening=_resolve_blackening(args),
-        text_input=_resolve_text_input(args),
-        text_font=_resolve_text_font(args),
-        text_columns=_resolve_text_columns(args),
-        text_wrap=_resolve_text_wrap(args),
-        trim_side_margins=_resolve_trim_side_margins(args),
-        trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
-        pdf_pages=_resolve_pdf_pages(args),
-        pdf_page_gap_mm=_resolve_pdf_page_gap(args),
-        paper_mode=_resolve_paper_mode(args),
-        image_encoding_override=image_encoding_override,
-        debug_row_markers_interval=args.debug_row_markers,
-        reporter=reporter if args.verbose else None,
-    )
-    paper_mode = _resolve_paper_mode(args)
-    dump = build_protocol_job_debug_dump(
-        device,
-        job,
-        settings={
-            "text_mode": _resolve_text_mode(args),
-            "darkness": _resolve_blackening(args),
-            "paper_mode": None if paper_mode is None else paper_mode.value,
-            "image_encoding_override": args.debug_image_encoding,
-            "debug_row_markers": args.debug_row_markers,
-            "text_input": args.text is not None,
-            "path": args.path,
-        },
-        effective_image_pipeline=effective_image_pipeline,
-    )
-    Path(args.debug_dump_protocol_job).write_text(
-        json.dumps(dump, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-    )
-    reporter.debug(
-        short="Debug",
-        detail=(
-            "Wrote protocol job debug dump: "
-            f"path={args.debug_dump_protocol_job} "
-            f"profile={device.profile_key} "
-            f"family={device.protocol_family.value} "
-            f"bytes={len(job.payload)}"
         ),
     )
     return 0
@@ -566,12 +466,6 @@ def _resolve_paper_mode(args: argparse.Namespace) -> PaperMode | None:
     return PaperMode(args.paper_mode)
 
 
-def _resolve_image_encoding_override(args: argparse.Namespace) -> ImageEncoding | None:
-    if not args.debug_image_encoding:
-        return None
-    return ImageEncoding(args.debug_image_encoding)
-
-
 def _resolve_trim_side_margins(args: argparse.Namespace) -> bool:
     return bool(args.trim_side_margins)
 
@@ -629,7 +523,6 @@ def print_bluetooth(
                 pdf_pages=_resolve_pdf_pages(args),
                 pdf_page_gap_mm=_resolve_pdf_page_gap(args),
                 paper_mode=_resolve_paper_mode(args),
-                image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
                 debug_row_markers_interval=args.debug_row_markers,
                 reporter=reporter if args.verbose else None,
@@ -667,7 +560,6 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
                 pdf_pages=_resolve_pdf_pages(args),
                 pdf_page_gap_mm=_resolve_pdf_page_gap(args),
                 paper_mode=_resolve_paper_mode(args),
-                image_encoding_override=_resolve_image_encoding_override(args),
                 runtime_context=runtime_context,
                 debug_row_markers_interval=args.debug_row_markers,
                 reporter=reporter if args.verbose else None,
@@ -737,8 +629,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     emit_startup_debug(reporter)
     emit_startup_warnings(reporter)
     emit_update_warning(reporter)
-    if args.list_profiles:
-        return list_profiles()
+    if args.list_models:
+        return list_models()
     if args.scan:
         return scan_devices(reporter)
     if args.export_printer_config:
@@ -750,9 +642,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.bluetooth
             or args.serial
             or args.printer_config
-            or args.debug_profile
-            or args.debug_dump_protocol_job
-            or args.debug_image_encoding
             or args.debug_row_markers is not None
         ):
             reporter.error(
@@ -767,48 +656,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         except Exception as exc:
             reporter.error(detail=str(exc), exc=exc)
             return 2
-    if args.debug_dump_protocol_job:
-        if args.feed or args.retract or args.serial:
-            reporter.error(
-                detail=(
-                    "Provide --debug-dump-protocol-job with a printable file path or --text, "
-                    "not with --feed/--retract or --serial. Use --debug-profile, --printer-config, "
-                    "or --bluetooth to select the offline device."
-                )
-            )
-            return 2
-        print_inputs = _print_input_count(args)
-        if print_inputs > 1:
-            reporter.error(
-                detail=(
-                    "Provide either a file path or --text, not both. Use --help for usage."
-                )
-            )
-            return 2
-        if print_inputs == 0:
-            reporter.error(
-                detail=(
-                    "Missing file path or --text for --debug-dump-protocol-job. Use --help for usage."
-                )
-            )
-            return 2
-        try:
-            return debug_dump_protocol_job(args, reporter)
-        except Exception as exc:
-            reporter.error(detail=str(exc), exc=exc)
-            return 2
-    if args.debug_profile:
-        reporter.error(
-            detail="--debug-profile is only valid with --debug-dump-protocol-job. Use --help for usage."
-        )
-        return 2
     action = _resolve_paper_motion_action(args)
     if action and (args.path or args.text is not None):
         reporter.error(
             detail="Provide either --feed/--retract or a file path/--text, not both. Use --help for usage."
         )
         return 2
-    if action and (args.debug_image_encoding or args.debug_row_markers is not None):
+    if action and args.debug_row_markers is not None:
         reporter.error(
             detail="Debug print modifiers are only valid for print jobs, not --feed/--retract."
         )

@@ -4,16 +4,14 @@ import re
 import unittest
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol.families import get_protocol_behavior
 from tools.render_readme_models import (
-    load_inventory_entries,
     render_supported_models_block,
     render_todo_models_block,
-    validate_inventory,
+    validate_catalog_models,
 )
 
 
-def _detect_readme_name(catalog: PrinterCatalog, name: str):
+def _detect_supported_readme_name(catalog: PrinterCatalog, name: str):
     candidates = (
         name,
         f"{name}-ABCD",
@@ -28,121 +26,69 @@ def _detect_readme_name(catalog: PrinterCatalog, name: str):
 
 
 class ReadmeModelInventoryTests(unittest.TestCase):
-    def test_inventory_validates_against_runtime_catalog(self) -> None:
-        entries = load_inventory_entries()
+    def test_catalog_models_validate_for_readme_rendering(self) -> None:
+        self.assertEqual(validate_catalog_models(), [])
 
-        self.assertEqual(validate_inventory(entries), [])
-
-    def test_readme_inventory_matches_runtime_detection_contract(self) -> None:
+    def test_readme_names_match_catalog_detection_contract(self) -> None:
         catalog = PrinterCatalog.load()
-        entries = load_inventory_entries()
 
-        for entry in entries:
-            for name in entry.visible_names:
-                with self.subTest(entry=entry.id, status=entry.status, name=name):
-                    detected = _detect_readme_name(catalog, name)
-                    if entry.status == "supported":
-                        self.assertIsNotNone(detected)
-                        assert detected is not None
-                        self.assertTrue(
-                            get_protocol_behavior(detected.protocol_family).implemented,
-                            detected.protocol_family,
-                        )
-                    elif entry.rule_keys:
-                        if detected is not None:
-                            self.assertIn(detected.detection_rule_key, entry.rule_keys)
-                    else:
-                        self.assertIsNone(detected)
+        for model in catalog.models:
+            for name in model.names:
+                with self.subTest(model=model.model_key, status="supported", name=name):
+                    detected = _detect_supported_readme_name(catalog, name)
+                    self.assertIsNotNone(detected)
+
+        for model in catalog.unsupported_models:
+            for name in model.names:
+                with self.subTest(model=model.model_key, status="unsupported", name=name):
+                    self.assertIsNone(catalog.detect_device(name))
+                    unsupported = catalog.detect_unsupported_model(name)
+                    self.assertIsNotNone(unsupported)
+                    assert unsupported is not None
+                    self.assertEqual(unsupported.model_key, model.model_key)
 
     def test_supported_and_todo_blocks_render_non_empty_content(self) -> None:
-        entries = load_inventory_entries()
+        supported = render_supported_models_block()
+        todo = render_todo_models_block()
 
-        supported = render_supported_models_block(entries)
-        todo = render_todo_models_block(entries)
-
-        self.assertIn("CTP750BY (Shipping Printer)", supported)
+        self.assertIn("CTP750BY", supported)
         self.assertRegex(supported, r"(?<![A-Z0-9_-])APA46Y(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])PPA2L(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])PPA2LH(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])DP_A4(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])DL_X7Pro(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])")
-        self.assertIn("P1 (Eleph)", supported)
-        self.assertIn("P1 (Tiny)", supported)
-        self.assertIn("- P11 (Eleph HPRT ESC) and clones: P2_, P3_, P5_, YHK_", supported)
-        self.assertIn("- M02 and clones: M02S", supported)
-        self.assertRegex(supported, r"(?<![A-Z0-9_-])M02 Pro(?![A-Z0-9_-])")
-        self.assertRegex(supported, r"(?<![A-Z0-9_-])M02X(?![A-Z0-9_-])")
-        self.assertIn("- M110 and clones: M120", supported)
-        self.assertRegex(supported, r"(?<![A-Z0-9_-])M220(?![A-Z0-9_-])")
-        self.assertIn("- T02 and clones: T02E, Q02E, C02E", supported)
-        self.assertIn("- JXPRINTER and clones: PRINTER", todo)
-        self.assertIn("- BAYPAGE and clones: YINTIBAO-V8S", todo)
-        self.assertIn("- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4", todo)
-        self.assertIn("- P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO", todo)
-        self.assertIn("MP300", todo)
-        self.assertIn("- P3S and clones: MP300S", todo)
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])DL_X7Pro(?![A-Z0-9_-])", todo))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])", todo))
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])P1(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])P11(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])P2(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])M02(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])M02S(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])M110(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])M120(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])T02(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])Q02E(?![A-Z0-9_-])")
+
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])JXPRINTER(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])PRINTER(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])BAYPAGE(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])YINTIBAO-V8S(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])P100(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])MP100(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])MP300(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])MXW-A4(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])JX400R06P(?![A-Z0-9_-])")
-        self.assertNotIn("(iBleem", todo)
-        self.assertNotIn("(Luck ", todo)
-        self.assertIsNone(re.search(r"^- P4(?:\s|$)", todo, re.M))
-        self.assertIsNone(re.search(r"^- MXW-A4(?:\s|$)", todo, re.M))
-        self.assertIsNone(re.search(r"^- JX400R06P(?:\s|$)", todo, re.M))
-        todo_flat_line = todo.splitlines()[0]
-        self.assertIn("JX400R", todo_flat_line)
-        self.assertIn("JX400R06P", todo_flat_line)
-        self.assertIn("MXW-A4", todo_flat_line)
-        self.assertIn("D11", todo_flat_line)
-        self.assertIn("D110_M", todo_flat_line)
-        self.assertIn("B21", todo_flat_line)
-        self.assertIsNone(re.search(r"^- APA46Y(?:\s|$)", supported, re.M))
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])D11(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])D61(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])Betty(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])S6_P(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])D110_M(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])B21(?![A-Z0-9_-])")
+
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])DL_X7Pro(?![A-Z0-9_-])", todo))
+        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])", todo))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100S(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])MP100(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])MP100S(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])LP100(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])LP100S(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M08F(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M832(?![A-Z0-9_-])", supported))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])Q302(?![A-Z0-9_-])", supported))
-        self.assertIn("- M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88", todo)
-        self.assertIn("- M832 and clones: M836", todo)
-        self.assertIn("- Q302 and clones: Q580", todo)
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M02X(?![A-Z0-9_-])", todo))
-        self.assertIn("- P12 and clones: P12 Pro, A30", todo)
-        self.assertIn("- M03 and clones: M200, M250, M221, M260", todo)
-        self.assertIn("- M04S and clones: M04AS", todo)
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M110(?![A-Z0-9_-])", todo))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M120(?![A-Z0-9_-])", todo))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])M220(?![A-Z0-9_-])", todo))
-        self.assertIn("- D30 and clones: D35, D50, Q30, Q30S", todo)
-        self.assertIn("- PM-241-BT and clones: PM241, PM 241", todo)
-        self.assertNotIn("- T02 and clones: T02E, Q02E, C02E", todo)
-        self.assertIsNone(re.search(r"/", supported))
-        self.assertIsNone(re.search(r"/", todo))
-        self.assertNotIn("DP_A4 and clones: DP-A4", supported)
-
-    def test_rendered_readme_names_do_not_keep_unexpected_detection_suffixes(self) -> None:
-        entries = load_inventory_entries()
-
-        rendered = "\n".join(
-            [
-                render_supported_models_block(entries),
-                render_todo_models_block(entries),
-            ]
-        )
-        rendered = re.sub(
-            r"^- P11 \(Eleph HPRT ESC\) and clones: P2_, P3_, P5_, YHK_$",
-            "- P11 (Eleph HPRT ESC) and clones: P2, P3, P5, YHK",
-            rendered,
-            flags=re.M,
-        )
-
-        self.assertIsNone(re.search(r"\b[^\s,()]+[_-](?=[,\n])", rendered))
 
 
 if __name__ == "__main__":

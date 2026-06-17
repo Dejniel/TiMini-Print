@@ -20,15 +20,13 @@ from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
 from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
-from ..protocol import ImageEncoding, PaperMode, PrinterProtocol
-from ..protocol.families import get_protocol_behavior
+from ..protocol import PaperMode, PrinterProtocol
 from ..rendering.converters.text import TextConverter
 from ..transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
-from ..transport.bluetooth.types import DeviceInfo, DeviceTransport
+from ..transport.bluetooth.types import DeviceTransport
 from ..update_check import UpdateCheckResult, check_for_updates, should_check_for_updates
 
 PAPER_MOTION_INTERVAL_MS = 1000
-DEBUG_AUTO_LABEL = "Auto"
 
 
 class BleLoop:
@@ -110,17 +108,10 @@ class TiMiniPrintGUI(tk.Tk):
 
         self.devices = []
         self.device_map = {}
-        self._unsupported_device_labels: set[str] = set()
         self._last_scan_result = BluetoothScanResult(devices=[], failures=[], raw_endpoints=[])
 
         self.device_var = tk.StringVar()
         self.profile_var = tk.StringVar(value="")
-        self.debug_mode_var = tk.BooleanVar(value=False)
-        self.debug_profile_var = tk.StringVar(value=DEBUG_AUTO_LABEL)
-        self.debug_image_encoding_var = tk.StringVar(value=DEBUG_AUTO_LABEL)
-        self.debug_paper_mode_var = tk.StringVar(value=DEBUG_AUTO_LABEL)
-        self.debug_row_markers_var = tk.BooleanVar(value=False)
-        self.debug_row_markers_interval_var = tk.IntVar(value=10)
         self.file_var = tk.StringVar()
         self.text_mode_var = tk.BooleanVar(value=False)
         self.rotate_90_var = tk.BooleanVar(value=False)
@@ -145,9 +136,6 @@ class TiMiniPrintGUI(tk.Tk):
         self._layout_ready = False
         self._closing = False
         self._paper_mode_choice_map: dict[str, PaperMode] = {}
-        self._debug_profile_choice_map: dict[str, str | None] = {}
-        self._debug_image_encoding_choice_map: dict[str, ImageEncoding | None] = {}
-        self._debug_paper_mode_choice_map: dict[str, PaperMode | None] = {}
         self._update_release_url: str | None = None
         self.file_var.trace_add("write", self._on_file_path_change)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -182,53 +170,6 @@ class TiMiniPrintGUI(tk.Tk):
 
         self.connection_button = ttk.Button(device_frame, text="Connect", command=self.toggle_connection)
         self.connection_button.grid(row=1, column=2, sticky="e", **padding)
-
-        self.debug_frame = ttk.LabelFrame(self, text="Debug overrides")
-        self.debug_frame.columnconfigure(1, weight=1)
-        ttk.Label(self.debug_frame, text="Force profile:").grid(row=0, column=0, sticky="w", **padding)
-        self.debug_profile_combo = ttk.Combobox(
-            self.debug_frame,
-            textvariable=self.debug_profile_var,
-            width=48,
-            state="readonly",
-        )
-        self.debug_profile_combo.grid(row=0, column=1, sticky="ew", **padding)
-        self.debug_profile_combo.bind("<<ComboboxSelected>>", self._on_debug_override_changed)
-        ttk.Label(self.debug_frame, text="Force image encoding:").grid(row=1, column=0, sticky="w", **padding)
-        self.debug_image_encoding_combo = ttk.Combobox(
-            self.debug_frame,
-            textvariable=self.debug_image_encoding_var,
-            width=48,
-            state="readonly",
-        )
-        self.debug_image_encoding_combo.grid(row=1, column=1, sticky="ew", **padding)
-        self.debug_image_encoding_combo.bind("<<ComboboxSelected>>", self._on_debug_override_changed)
-        ttk.Label(self.debug_frame, text="Force paper mode:").grid(row=2, column=0, sticky="w", **padding)
-        self.debug_paper_mode_combo = ttk.Combobox(
-            self.debug_frame,
-            textvariable=self.debug_paper_mode_var,
-            width=48,
-            state="readonly",
-        )
-        self.debug_paper_mode_combo.grid(row=2, column=1, sticky="ew", **padding)
-        self.debug_paper_mode_combo.bind("<<ComboboxSelected>>", self._on_debug_override_changed)
-        marker_frame = ttk.Frame(self.debug_frame)
-        marker_frame.grid(row=3, column=0, columnspan=2, sticky="w", **padding)
-        self.debug_row_markers_check = ttk.Checkbutton(
-            marker_frame,
-            text="Add debug row markers every",
-            variable=self.debug_row_markers_var,
-        )
-        self.debug_row_markers_check.pack(side="left")
-        self.debug_row_markers_spin = tk.Spinbox(
-            marker_frame,
-            from_=1,
-            to=500,
-            width=5,
-            textvariable=self.debug_row_markers_interval_var,
-        )
-        self.debug_row_markers_spin.pack(side="left", padx=(6, 6))
-        ttk.Label(marker_frame, text="rows").pack(side="left")
 
         self.file_frame = ttk.LabelFrame(self, text="File")
         self.file_frame.pack(fill="x", padx=10, pady=10)
@@ -360,19 +301,11 @@ class TiMiniPrintGUI(tk.Tk):
 
         status_frame = ttk.Frame(self)
         status_frame.pack(fill="x", padx=10, pady=10)
-        self.debug_mode_check = ttk.Checkbutton(
-            status_frame,
-            text="Debug only for programmers",
-            variable=self.debug_mode_var,
-            command=self._on_debug_mode_changed,
-        )
-        self.debug_mode_check.pack(side="right")
         ttk.Label(status_frame, text="Status:").pack(side="left")
         ttk.Label(status_frame, textvariable=self.status_var).pack(side="left", padx=6, fill="x", expand=True)
 
         self._update_option_sections(self.file_var.get())
         self._refresh_paper_mode_controls()
-        self._refresh_debug_controls()
 
     def _process_queue(self) -> None:
         if self._closing:
@@ -433,29 +366,13 @@ class TiMiniPrintGUI(tk.Tk):
             return f"{name} ({device.address}){transport}{status}"
         return f"{device.address}{transport}{status}"
 
-    @staticmethod
-    def _unsupported_endpoint_label(endpoint: DeviceInfo) -> str:
-        name = endpoint.name or endpoint.address or "<unknown>"
-        address = endpoint.address or "<unknown>"
-        transport = f"[{endpoint.transport.value}]"
-        status = " [unpaired]" if endpoint.paired is False else ""
-        if endpoint.name:
-            return f"{name} ({address}) {transport} [unsupported]{status}"
-        return f"{address} {transport} [unsupported]{status}"
-
     def _refresh_device_list(self) -> None:
         result = self._last_scan_result
         devices = list(result.devices)
         self.devices = devices
         self.device_map = {self._device_label(device): device for device in devices}
-        self._unsupported_device_labels = set()
 
         labels = list(self.device_map.keys())
-        if self.debug_mode_var.get():
-            for endpoint in self._unsupported_endpoints(result.raw_endpoints):
-                label = self._unsupported_endpoint_label(endpoint)
-                self._unsupported_device_labels.add(label)
-                labels.append(label)
 
         self.device_combo["values"] = labels
         current = self.device_var.get()
@@ -468,20 +385,6 @@ class TiMiniPrintGUI(tk.Tk):
             self.device_var.set("")
         self._refresh_profile_label()
         self._refresh_paper_mode_controls()
-        self._refresh_debug_controls()
-
-    def _unsupported_endpoints(self, endpoints: list[DeviceInfo]) -> list[DeviceInfo]:
-        unsupported = []
-        for endpoint in endpoints:
-            if self.catalog.detect_device(endpoint.name or "", endpoint.address) is None:
-                unsupported.append(endpoint)
-        return unsupported
-
-    def _unsupported_endpoint_for_label(self, label: str) -> DeviceInfo | None:
-        for endpoint in self._unsupported_endpoints(self._last_scan_result.raw_endpoints):
-            if self._unsupported_endpoint_label(endpoint) == label:
-                return endpoint
-        return None
 
     def _queue_status(self, key: str, **ctx) -> None:
         self.reporter.status(key, **ctx)
@@ -522,17 +425,12 @@ class TiMiniPrintGUI(tk.Tk):
         threading.Thread(target=run_scan, name="timiniprint-gui-scan", daemon=True).start()
 
     def _scan_result_status_count(self, result: BluetoothScanResult) -> int:
-        if self.debug_mode_var.get():
-            return len(result.raw_endpoints)
         return len(result.devices)
 
     def connect(self) -> None:
         label = self.device_var.get()
         device = self._effective_selected_device()
         if not device:
-            if label in self._unsupported_device_labels:
-                self._queue_error(reporting.ERROR_UNSUPPORTED_DEVICE)
-                return
             self._queue_error(reporting.ERROR_NO_DEVICE)
             return
         self._queue_status(reporting.STATUS_CONNECT_START)
@@ -625,22 +523,6 @@ class TiMiniPrintGUI(tk.Tk):
     def _on_device_selection_changed(self, _event=None) -> None:
         self._refresh_profile_label()
         self._refresh_paper_mode_controls()
-        self._refresh_debug_controls()
-
-    def _on_debug_mode_changed(self) -> None:
-        levels = {"warning", "error"}
-        if self.debug_mode_var.get():
-            levels.add("debug")
-        self._stderr_sink.set_levels(levels)
-        self._refresh_device_list()
-        self._set_debug_panel_visible(self.debug_mode_var.get())
-        self._refresh_debug_widget_states()
-        self._refresh_debug_controls()
-
-    def _on_debug_override_changed(self, _event=None) -> None:
-        self._refresh_profile_label()
-        self._refresh_paper_mode_controls()
-        self._refresh_debug_controls()
 
     def _set_text_mode_for_path(self, path: str) -> None:
         path = path.strip()
@@ -677,145 +559,18 @@ class TiMiniPrintGUI(tk.Tk):
         label = self.device_var.get()
         return self.device_map.get(label)
 
-    def _selected_debug_profile_key(self) -> str | None:
-        if not self.debug_mode_var.get():
-            return None
-        return self._debug_profile_choice_map.get(self.debug_profile_var.get())
-
-    def _selected_image_encoding_override(self) -> ImageEncoding | None:
-        if not self.debug_mode_var.get():
-            return None
-        return self._debug_image_encoding_choice_map.get(self.debug_image_encoding_var.get())
-
-    def _selected_debug_paper_mode(self) -> PaperMode | None:
-        if not self.debug_mode_var.get():
-            return None
-        return self._debug_paper_mode_choice_map.get(self.debug_paper_mode_var.get())
-
-    def _selected_debug_row_markers_interval(self) -> int | None:
-        if not self.debug_mode_var.get() or not self.debug_row_markers_var.get():
-            return None
-        try:
-            return max(1, int(self.debug_row_markers_interval_var.get()))
-        except Exception:
-            return 10
-
     def _effective_selected_device(self):
-        base_device = self._selected_device()
-        profile_key = self._selected_debug_profile_key()
-        if profile_key is None:
-            return base_device
-
-        label = self.device_var.get()
-        endpoint = self._unsupported_endpoint_for_label(label)
-        if base_device is not None:
-            display_name = base_device.display_name
-            transport_target = base_device.transport_target
-        elif endpoint is not None:
-            display_name = endpoint.name or endpoint.address
-            transport_target = self.discovery.transport_target_from_endpoint(endpoint)
-        else:
-            return None
-        return self.catalog.device_from_profile(
-            profile_key,
-            display_name=display_name,
-            transport_target=transport_target,
-        )
+        return self._selected_device()
 
     def _refresh_profile_label(self) -> None:
         if self.connected_device:
             self.profile_var.set(self.connected_device.profile_key.upper())
             return
-        label = self.device_var.get()
         device = self._effective_selected_device()
         if device is not None:
             self.profile_var.set(device.profile_key.upper())
             return
-        if label in self._unsupported_device_labels:
-            self.profile_var.set("Unsupported (debug only)")
-            return
         self.profile_var.set("")
-
-    def _set_debug_panel_visible(self, visible: bool) -> None:
-        if visible:
-            if not self.debug_frame.winfo_manager():
-                self.debug_frame.pack(before=self.file_frame, fill="x", padx=10, pady=10)
-            self._refresh_min_height()
-            return
-        if self.debug_frame.winfo_manager():
-            self.debug_frame.pack_forget()
-        self._refresh_min_height()
-
-    def _refresh_debug_controls(self) -> None:
-        self._refresh_debug_profile_choices()
-        self._refresh_debug_image_encoding_choices()
-        self._refresh_debug_paper_mode_choices()
-        self._refresh_debug_widget_states()
-
-    def _refresh_debug_widget_states(self) -> None:
-        debug_enabled = self.debug_mode_var.get()
-        profile_enabled = debug_enabled and self.connected_device is None
-        self._set_widget_state(self.debug_profile_combo, profile_enabled)
-        self._set_widget_state(self.debug_image_encoding_combo, debug_enabled)
-        self._set_widget_state(self.debug_paper_mode_combo, debug_enabled)
-        self._set_widget_state(self.debug_row_markers_check, debug_enabled)
-        self._set_widget_state(self.debug_row_markers_spin, debug_enabled)
-
-    def _refresh_debug_profile_choices(self) -> None:
-        current_key = self._selected_debug_profile_key()
-        selected_device = self._selected_device()
-        choices: list[tuple[str, str | None]] = [(DEBUG_AUTO_LABEL, None)]
-        for profile in self.catalog.profiles:
-            suffix = f"[{profile.default_protocol_family.value}]"
-            if selected_device is not None and profile.profile_key == selected_device.profile_key:
-                suffix = f"{suffix} [detected]"
-            choices.append((f"{profile.profile_key} {suffix}", profile.profile_key))
-        self._debug_profile_choice_map = dict(choices)
-        self.debug_profile_combo["values"] = [label for label, _value in choices]
-        self._restore_debug_choice(
-            self.debug_profile_var,
-            self._debug_profile_choice_map,
-            current_key,
-        )
-
-    def _refresh_debug_image_encoding_choices(self) -> None:
-        current_encoding = self._selected_image_encoding_override()
-        device = self.connected_device or self._effective_selected_device()
-        choices: list[tuple[str, ImageEncoding | None]] = [(DEBUG_AUTO_LABEL, None)]
-        if device is not None:
-            compatible = get_protocol_behavior(device.protocol_family).image_encoding_support.keys()
-            for encoding in compatible:
-                choices.append((f"{encoding.value} [compatible]", encoding))
-        self._debug_image_encoding_choice_map = dict(choices)
-        self.debug_image_encoding_combo["values"] = [label for label, _value in choices]
-        self._restore_debug_choice(
-            self.debug_image_encoding_var,
-            self._debug_image_encoding_choice_map,
-            current_encoding,
-        )
-
-    def _refresh_debug_paper_mode_choices(self) -> None:
-        current_mode = self._selected_debug_paper_mode()
-        device = self.connected_device or self._effective_selected_device()
-        choices: list[tuple[str, PaperMode | None]] = [(DEBUG_AUTO_LABEL, None)]
-        if device is not None:
-            for mode in PrinterProtocol(device).supported_paper_modes():
-                choices.append((f"{mode.label} ({mode.value}) [compatible]", mode))
-        self._debug_paper_mode_choice_map = dict(choices)
-        self.debug_paper_mode_combo["values"] = [label for label, _value in choices]
-        self._restore_debug_choice(
-            self.debug_paper_mode_var,
-            self._debug_paper_mode_choice_map,
-            current_mode,
-        )
-
-    @staticmethod
-    def _restore_debug_choice(choice_var, choice_map: dict[str, object], selected_value: object) -> None:
-        for label, value in choice_map.items():
-            if value == selected_value:
-                choice_var.set(label)
-                return
-        choice_var.set(DEBUG_AUTO_LABEL)
 
     @staticmethod
     def _paper_mode_choices_for_device(device) -> tuple[tuple[str, PaperMode], ...]:
@@ -833,9 +588,6 @@ class TiMiniPrintGUI(tk.Tk):
         return device.profile.default_paper_mode.label
 
     def _selected_paper_mode(self) -> PaperMode | None:
-        debug_paper_mode = self._selected_debug_paper_mode()
-        if debug_paper_mode is not None:
-            return debug_paper_mode
         return self._paper_mode_choice_map.get(self.paper_mode_var.get())
 
     def _refresh_paper_mode_controls(self) -> None:
@@ -884,8 +636,7 @@ class TiMiniPrintGUI(tk.Tk):
             trim_top_bottom_margins=self.trim_top_bottom_margins_var.get(),
             pdf_pages=pdf_pages,
             pdf_page_gap_mm=pdf_page_gap_mm,
-            image_encoding_override=self._selected_image_encoding_override(),
-            debug_row_markers_interval=self._selected_debug_row_markers_interval(),
+            debug_row_markers_interval=None,
         )
         builder = PrintJobBuilder(
             connected_device,
@@ -1012,8 +763,6 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_connection_button("Disconnect", True)
             self._configure_text_columns(device.profile)
             self._refresh_paper_mode_controls()
-            self._refresh_debug_controls()
-            self._refresh_debug_widget_states()
             return
 
         self.profile_var.set("")
@@ -1044,8 +793,6 @@ class TiMiniPrintGUI(tk.Tk):
         self._stop_paper_motion()
         self._refresh_profile_label()
         self._refresh_paper_mode_controls()
-        self._refresh_debug_controls()
-        self._refresh_debug_widget_states()
 
     def _configure_text_columns(self, profile) -> None:
         width = self._normalized_width(profile.width)

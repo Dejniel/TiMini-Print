@@ -37,7 +37,7 @@ class DocsSanityTests(unittest.TestCase):
         for pattern in forbidden:
             self.assertNotIn(pattern, text)
 
-    def test_readme_model_sections_are_generated_from_inventory(self) -> None:
+    def test_readme_model_sections_are_generated_from_catalog(self) -> None:
         assert_readme_is_current()
 
 

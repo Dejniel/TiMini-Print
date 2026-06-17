@@ -38,13 +38,13 @@ original app's A4-sheet feed recipe. `PaperMode.PLAIN` keeps roll-paper feed
 behavior.
 
 Runtime settings are separate from the static profile:
-- `variant` selects the stateful runtime algorithm, when a family needs one
-- `defaults` provides runtime density defaults such as V5G/MX dynamic density inputs
+- `control_algorithm` selects the stateful runtime algorithm, when a family needs one
+- `preset` provides runtime density defaults such as V5G/MX dynamic density inputs
 - `capabilities` describes runtime notification features used by the controller
 
 Editable JSON configs keep this separation too: `profile_overrides` edits the
-static profile, while `runtime_overrides` edits runtime variant, defaults key,
-density, and capabilities.
+static profile, while `runtime_overrides` edits runtime control algorithm,
+preset key, density, and capabilities.
 
 ### `PrintJobBuilder`
 `PrintJobBuilder(device, settings=...)` is the normal high-level entry point.
@@ -295,25 +295,32 @@ without importing the desktop Bluetooth backend.
 
 There are two different operations in the codebase and they should not be confused.
 
-### `catalog.detect_device(...)`
+### `catalog.detect_model(...)`
 This does not scan hardware.
-It applies detection rules to a known device name and optional address.
+It applies supported and known-unsupported model detection to a known device
+name and optional address.
 
 Use it when you already have values such as:
 - a BLE name from somewhere else
 - a saved MAC address
-- a stored printer config flow that still wants catalog-backed detection
+- a UI scan result that should show whether a model is printable or only a
+  future-support candidate
 
 Example:
 
 ```python
-from timiniprint.devices import PrinterCatalog
+from timiniprint.devices import PrinterCatalog, SupportedModelMatch
 
 catalog = PrinterCatalog.load()
-device = catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
-if device is None:
-    raise RuntimeError("Printer profile not detected")
+match = catalog.detect_model("MX10-ABCD", "AA:BB:CC:DD:EE:59")
+if not isinstance(match, SupportedModelMatch):
+    raise RuntimeError("Printer model not detected")
+device = catalog.device_from_model(match.model.model_key)
 ```
+
+`catalog.detect_device(...)` is a supported-only convenience wrapper that returns
+a printable `PrinterDevice` or `None`. Unsupported matches are metadata only and
+must not be treated as printable devices.
 
 ### `BluetoothDiscovery`
 This does scan hardware.
@@ -336,8 +343,9 @@ device = catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
 if device is None:
     raise RuntimeError("Printer profile not detected")
 
-# Export an editable printer config. profile_key remains the catalog fallback;
-# profile_overrides can be edited or partially deleted.
+# Export an editable printer config. For normal model-based configs, model_key
+# is the fallback and profile_key records the shared parameter recipe underneath.
+# profile_overrides and runtime_overrides can be edited or partially deleted.
 printer_config = catalog.serialize_printer_config(device)
 Path("printer.json").write_text(
     json.dumps(printer_config, indent=2) + "\n",
@@ -350,14 +358,34 @@ manual_device = catalog.device_from_printer_config(loaded)
 ```
 
 This printer config captures:
-- base profile key
+- base model key when the device came from a catalog model
+- base profile key for the shared parameter recipe
 - full editable profile overrides
 - protocol family
 - image pipeline
-- runtime overrides: variant, defaults key, density, and capabilities
+- runtime overrides: control algorithm, preset key, density, and capabilities
 - optional transport target
 
+If `model_key` is present, removing an override falls back to that catalog
+model's effective protocol, image pipeline, and runtime preset. Raw profile
+configs are still possible for low-level diagnostics, but they do not carry
+model detection metadata.
+
 This is the right tool if you want to experiment with runtime values without adding more one-off CLI flags.
+
+## Low-level protocol dump
+
+Protocol job dumps are a developer diagnostic, not part of the public CLI surface.
+Use the tool version when you need to compare packet structure or image encoding
+without connecting to hardware:
+
+```bash
+python3 tools/debug_protocol_job.py --model mx10 --text "test" --out job.json
+python3 tools/debug_protocol_job.py --runtime-preset mx06 --text "test" --image-encoding v5g_gray --out job.json
+```
+
+`--profile` and `--runtime-preset` intentionally use internal catalog keys. Prefer
+`--model` or `--printer-config` unless you are debugging catalog internals.
 
 ## Advanced: build jobs from raster data
 
@@ -461,7 +489,7 @@ Rule of thumb:
 Examples:
 - profile data models
 - profile loading
-- detection rules
+- supported printer model detection
 - `PrinterDevice` creation
 - printer config serialization
 

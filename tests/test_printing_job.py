@@ -198,7 +198,7 @@ class PrintingJobTests(unittest.TestCase):
             0,
         )
 
-    def test_v5g_runtime_controller_uses_runtime_defaults(self) -> None:
+    def test_v5g_runtime_controller_uses_runtime_preset(self) -> None:
         resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         builder = self.job_mod.PrintJobBuilder(
@@ -220,8 +220,8 @@ class PrintingJobTests(unittest.TestCase):
         self.assertIsNotNone(controller)
         snapshot = controller.debug_snapshot()
         self.assertEqual(snapshot["helper_kind"], "mx10")
-        self.assertEqual(snapshot["runtime_defaults_key"], "mx06")
-        self.assertEqual(snapshot["runtime_defaults"]["key"], "mx06")
+        self.assertEqual(snapshot["profile_runtime_preset_key"], "mx10_mx06")
+        self.assertEqual(snapshot["runtime_preset"]["key"], "mx10_mx06")
         self.assertTrue(snapshot["capabilities"]["d2_status"])
         self.assertFalse(snapshot["capabilities"]["didian_status"])
         self.assertEqual(snapshot["density_levels"]["image"]["middle"], 180)
@@ -240,7 +240,7 @@ class PrintingJobTests(unittest.TestCase):
             )
         )
 
-    def test_v5g_runtime_controller_can_use_xopoppy_runtime_defaults(self) -> None:
+    def test_v5g_runtime_controller_can_use_xopoppy_runtime_preset(self) -> None:
         resolved = self.catalog.detect_device("XOPOPPY-ABCD", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         builder = self.job_mod.PrintJobBuilder(resolved, page_loader=_FakeLoader([]))
@@ -255,7 +255,7 @@ class PrintingJobTests(unittest.TestCase):
         controller = job.runtime_controller
         self.assertIsNotNone(controller)
         snapshot = controller.debug_snapshot()
-        self.assertEqual(snapshot["runtime_defaults"]["key"], "xopoppy")
+        self.assertEqual(snapshot["runtime_preset"]["key"], "xopoppy")
         self.assertEqual(snapshot["density_levels"]["image"]["middle"], 80)
         self.assertEqual(snapshot["density_levels"]["text"]["middle"], 80)
 
