@@ -51,14 +51,14 @@ preset key, density, and capabilities.
 Use it when you start from a file such as `.png`, `.jpg`, `.pdf`, or `.txt`.
 
 It handles:
-- file loading
-- page transforms
-- rasterization
+- file-to-page rendering through the printing-layer `DocumentRenderer`
+- print-job-only debug markers
 - protocol job building
 
 Use `build_from_file(...)` when you want one combined `ProtocolJob`.
 Use `iter_page_jobs(...)` when memory matters and you want to render and build one page at a time.
-The streaming path yields page metadata with each job: `page_index`, `page_count`, and `job`.
+The streaming path yields page metadata with each job: `page_index`, `page_count`,
+`image_pipeline`, and `job`.
 
 ### `PrinterProtocol`
 `PrinterProtocol(device)` is the lower-level protocol entry point.

@@ -46,26 +46,6 @@ class BluetoothConnectionPlan:
             for attempt in self.attempts
         )
 
-    # TODO: Unused outside tests/mobile experiments; wire into callers or remove before upstreaming.
-    def failure_message(
-        self,
-        failures: Iterable[tuple[BluetoothConnectionAttempt, Exception]],
-    ) -> str:
-        failure_list = list(failures)
-        if not failure_list:
-            return "Bluetooth connection failed"
-        if len(failure_list) == 1:
-            attempt, error = failure_list[0]
-            return (
-                "Bluetooth connection failed "
-                f"({attempt.endpoint.transport.value} error: {error})"
-            )
-        parts = []
-        for attempt, error in failure_list:
-            suffix = "fallback error" if attempt.is_fallback else "error"
-            parts.append(f"{attempt.endpoint.transport.value} {suffix}: {error}")
-        return "Bluetooth connection failed (" + "; ".join(parts) + ")"
-
 
 class BluetoothTransportPolicy:
     """Backend-neutral Bluetooth decisions shared by desktop and mobile transports."""
@@ -94,29 +74,8 @@ class BluetoothTransportPolicy:
         )
 
     @staticmethod
-    def ordered_connection_endpoints(device: PrinterDevice) -> list[BluetoothEndpoint]:
-        # TODO: Unused convenience helper; prefer bluetooth_connection_plan unless mobile code needs this shape.
-        return ordered_connection_endpoints(device)
-
-    @staticmethod
     def connection_plan(device: PrinterDevice) -> BluetoothConnectionPlan:
         return bluetooth_connection_plan(device)
-
-
-# TODO: Unused convenience helper; prefer BluetoothTransportPolicy unless mobile code needs this shape.
-def should_retry_ble_scan(
-    catalog: PrinterCatalog,
-    endpoints: Iterable[BluetoothEndpoint],
-) -> bool:
-    return BluetoothTransportPolicy(catalog).should_retry_ble_scan(endpoints)
-
-
-# TODO: Unused convenience helper; prefer bluetooth_connection_plan unless mobile code needs this shape.
-def ordered_connection_endpoints(device: PrinterDevice) -> list[BluetoothEndpoint]:
-    target = device.transport_target
-    if not isinstance(target, BluetoothTarget):
-        raise RuntimeError("Bluetooth connection requires a PrinterDevice with BluetoothTarget")
-    return target.ordered_endpoints(prefer_spp=device.profile.use_spp)
 
 
 def bluetooth_connection_plan(device: PrinterDevice) -> BluetoothConnectionPlan:
@@ -146,6 +105,4 @@ __all__ = [
     "BluetoothConnectionPlan",
     "BluetoothTransportPolicy",
     "bluetooth_connection_plan",
-    "ordered_connection_endpoints",
-    "should_retry_ble_scan",
 ]

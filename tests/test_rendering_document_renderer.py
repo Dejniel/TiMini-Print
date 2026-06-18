@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
 from PIL import Image
 
@@ -8,6 +9,8 @@ from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.document_renderer import DocumentRenderer, RenderDocument
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.protocol import ImageEncoding, RuntimePrintCapabilities
+from timiniprint.protocol.family import ProtocolFamily
+from timiniprint.protocol.families import get_protocol_definition
 from timiniprint.raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
 from timiniprint.rendering.formats import document_kind
 
@@ -94,6 +97,109 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(image_renderer.preview_formats, [PixelFormat.GRAY4])
         self.assertEqual(image_renderer.raster_formats, [(PixelFormat.BW1,)])
 
+    def test_print_render_respects_text_mode_override(self) -> None:
+        renderer = DocumentRenderer(image_loader=lambda _path: _test_image())
+        settings = PrintSettings(
+            text_mode=True,
+            dither_mode=DitherMode.NONE,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), self.device, settings)
+
+        rendered = renderer.print_page(plan, plan.pages[0], self.device, settings)
+
+        self.assertTrue(rendered.is_text)
+
+    def test_print_render_uses_v5c_default_bw1_pipeline(self) -> None:
+        image_renderer = _RecordingImageRenderer()
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image("L"),
+            image_renderer=image_renderer,
+        )
+        device = self._family_device(ProtocolFamily.V5C)
+        settings = PrintSettings(trim_side_margins=False, trim_top_bottom_margins=False)
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.BW1,)])
+        self.assertEqual(rendered.image_pipeline.encoding, ImageEncoding.V5C_A4)
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.BW1)
+        self.assertFalse(rendered.gamma_handle)
+        self.assertIsNone(rendered.gamma_value)
+
+    def test_print_render_can_override_v5c_a5_to_gray8_with_gamma(self) -> None:
+        image_renderer = _RecordingImageRenderer()
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image("L"),
+            image_renderer=image_renderer,
+        )
+        device = self._family_device(ProtocolFamily.V5C)
+        settings = PrintSettings(
+            image_encoding_override=ImageEncoding.V5C_A5,
+            pixel_format_override=PixelFormat.GRAY8,
+            v5c_gamma_value=1.2,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY8,)])
+        self.assertEqual(rendered.image_pipeline.encoding, ImageEncoding.V5C_A5)
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY8)
+        self.assertTrue(rendered.gamma_handle)
+        self.assertEqual(rendered.gamma_value, 1.2)
+
+    def test_print_render_can_disable_v5c_a5_gamma(self) -> None:
+        image_renderer = _RecordingImageRenderer()
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image("L"),
+            image_renderer=image_renderer,
+        )
+        device = self._family_device(ProtocolFamily.V5C)
+        settings = PrintSettings(
+            image_encoding_override=ImageEncoding.V5C_A5,
+            v5c_gamma_handle=False,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY4,)])
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY4)
+        self.assertFalse(rendered.gamma_handle)
+        self.assertIsNone(rendered.gamma_value)
+
+    def test_print_render_uses_v5x_gray_gamma_override(self) -> None:
+        image_renderer = _RecordingImageRenderer()
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image("L"),
+            image_renderer=image_renderer,
+        )
+        device = self._family_device(ProtocolFamily.V5X)
+        settings = PrintSettings(
+            image_encoding_override=ImageEncoding.V5X_GRAY,
+            pixel_format_override=PixelFormat.GRAY8,
+            v5x_gamma_handle=True,
+            v5x_gamma_value=1.1,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY8,)])
+        self.assertEqual(rendered.image_pipeline.encoding, ImageEncoding.V5X_GRAY)
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY8)
+        self.assertTrue(rendered.gamma_handle)
+        self.assertEqual(rendered.gamma_value, 1.1)
+
     def test_rotated_image_uses_full_print_width(self) -> None:
         renderer = DocumentRenderer(
             image_loader=lambda _path: Image.new("RGB", (800, 200), "black"),
@@ -176,9 +282,16 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         self.assertEqual(calls, ["content://text"])
 
+    def _family_device(self, family: ProtocolFamily):
+        return replace(
+            self.device,
+            protocol_family=family,
+            image_pipeline=get_protocol_definition(family).behavior.default_image_pipeline,
+        )
 
-def _test_image() -> Image.Image:
-    return Image.new("RGB", (16, 2), "black")
+
+def _test_image(mode: str = "RGB") -> Image.Image:
+    return Image.new(mode, (16, 2), "black")
 
 
 class _RecordingImageRenderer:

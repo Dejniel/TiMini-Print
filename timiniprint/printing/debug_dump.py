@@ -6,7 +6,7 @@ from ..protocol.packet import prefixed_packet_length
 
 def build_protocol_packet_summary(device: PrinterDevice, payload: bytes) -> dict[str, object]:
     """Return a compact packet overview for verbose diagnostics."""
-    packets = _packet_debug_entries(device, payload)
+    packets = build_protocol_packet_entries(device, payload)
     op_counts: dict[str, int] = {}
     for packet in packets:
         op = packet["op"]
@@ -25,7 +25,8 @@ def build_protocol_packet_summary(device: PrinterDevice, payload: bytes) -> dict
     }
 
 
-def _packet_debug_entries(device: PrinterDevice, payload: bytes) -> list[dict[str, object]]:
+def build_protocol_packet_entries(device: PrinterDevice, payload: bytes) -> list[dict[str, object]]:
+    """Return packet-level diagnostic entries for verbose/debug tools."""
     prefix = device.protocol_family.packet_prefix
     if prefix is None:
         return [
@@ -78,3 +79,9 @@ def _packet_debug_entries(device: PrinterDevice, payload: bytes) -> list[dict[st
         offset += packet_len
         index += 1
     return entries
+
+
+__all__ = [
+    "build_protocol_packet_entries",
+    "build_protocol_packet_summary",
+]

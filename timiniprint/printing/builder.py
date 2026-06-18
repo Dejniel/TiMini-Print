@@ -8,12 +8,14 @@ from .. import reporting
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImagePipelineConfig
-from ..rendering.converters import Page, PageLoader, PdfRenderer
+from ..rendering.converters import PdfRenderer
+from ..rendering.formats import SUPPORTED_DOCUMENT_EXTENSIONS
 from ..rendering.renderer import PrintImageRenderer
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
+from .document_renderer import DocumentRenderer, RenderDocument
 from .raster_job import build_raster_page_job, combine_raster_page_jobs
-from .settings import DitherMode, PrintSettings, resolve_gray_preprocessing
+from .settings import PrintSettings
 
 if TYPE_CHECKING:
     from ..devices import PrinterDevice
@@ -24,6 +26,7 @@ class PreparedPageJob:
     page_index: int
     page_count: int
     job: ProtocolJob
+    image_pipeline: ImagePipelineConfig
 
 
 class PrintJobBuilder:
@@ -33,7 +36,7 @@ class PrintJobBuilder:
         self,
         device: PrinterDevice,
         settings: Optional[PrintSettings] = None,
-        page_loader: Optional[PageLoader] = None,
+        document_renderer: DocumentRenderer | None = None,
         pdf_renderer: PdfRenderer | None = None,
         image_renderer: PrintImageRenderer | None = None,
         runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
@@ -43,29 +46,21 @@ class PrintJobBuilder:
         self.settings = settings or PrintSettings()
         self.runtime_context = runtime_context
         self._reporter = reporter
-        self.image_renderer = image_renderer or PrintImageRenderer()
-        pdf_page_gap_px = self._mm_to_px(self.settings.pdf_page_gap_mm, self.device.profile.dev_dpi)
-        self.page_loader = page_loader or PageLoader(
-            text_font=self.settings.text_font,
-            text_columns=self.settings.text_columns,
-            text_wrap=self.settings.text_wrap,
-            rotate_90_clockwise=self.settings.rotate_90_clockwise,
-            trim_side_margins=self.settings.trim_side_margins,
-            trim_top_bottom_margins=self.settings.trim_top_bottom_margins,
-            pdf_pages=self.settings.pdf_pages,
-            pdf_page_gap_px=pdf_page_gap_px,
+        self.document_renderer = document_renderer or DocumentRenderer(
             pdf_renderer=pdf_renderer,
+            image_renderer=image_renderer,
         )
-        self.protocol = PrinterProtocol(device)
 
     def build_from_file(self, path: str) -> ProtocolJob:
         """Load a file, rasterize it, and build one printable protocol job."""
-        pipeline = self._resolve_image_pipeline()
         page_count = 0
+        pipeline: ImagePipelineConfig | None = None
         page_jobs: list[ProtocolJob] = []
-        for prepared in self._iter_page_jobs(path, pipeline):
+        for prepared in self._iter_page_jobs(path):
             page_count = prepared.page_count
             page_jobs.append(prepared.job)
+            if pipeline is None:
+                pipeline = prepared.image_pipeline
         job = combine_raster_page_jobs(
             self.device,
             page_jobs,
@@ -76,94 +71,77 @@ class PrintJobBuilder:
             device=self.device,
             settings=self.settings,
             job=job,
-            pipeline=pipeline,
+            pipeline=pipeline or self._default_image_pipeline(),
             page_count=page_count,
         )
         return job
 
     def iter_page_jobs(self, path: str) -> Iterator[PreparedPageJob]:
         """Load, rasterize, and yield printable protocol jobs one page at a time."""
-        yield from self._iter_page_jobs(path, self._resolve_image_pipeline())
+        yield from self._iter_page_jobs(path)
 
-    def _iter_page_jobs(self, path: str, pipeline: ImagePipelineConfig) -> Iterator[PreparedPageJob]:
+    def _iter_page_jobs(self, path: str) -> Iterator[PreparedPageJob]:
         self._validate_input_path(path)
-        width = self._normalized_width(self.device.profile.width)
-        required_formats = pipeline.formats[:1]
-        gamma_handle, gamma_value = resolve_gray_preprocessing(
+        plan = self.document_renderer.plan_document(
+            RenderDocument(path),
+            self.device,
             self.settings,
-            self.device.protocol_family,
-            pipeline.encoding,
         )
-        with self.page_loader.open(path, width) as pages:
-            page_count = pages.page_count
-            for page_index, page in enumerate(pages, start=1):
-                is_text = self._select_text_mode(page)
-                raster_set = self.image_renderer.raster_set(
-                    page.image,
-                    required_formats,
-                    dither_mode=self._dither_mode(page),
-                    gamma_handle=gamma_handle,
-                    gamma_value=gamma_value,
-                )
-                if self.settings.debug_row_markers_interval is not None:
-                    raster_set = apply_debug_row_markers(
-                        raster_set,
-                        self.settings.debug_row_markers_interval,
-                    )
-                report_raster_build(
-                    self._reporter,
-                    device=self.device,
-                    settings=self.settings,
-                    page_index=page_index,
-                    page_count=page_count,
-                    page=page,
-                    raster_set=raster_set,
-                    is_text=is_text,
-                    dither_mode=self._dither_mode(page),
-                    gamma_handle=gamma_handle,
-                    gamma_value=gamma_value,
-                )
-                page_job = build_raster_page_job(
-                    self.device,
+        page_count = plan.page_count
+        for page in plan.pages:
+            rendered = self.document_renderer.print_page(
+                plan,
+                page,
+                self.device,
+                self.settings,
+                runtime_capabilities=self.runtime_context.capabilities,
+            )
+            raster_set = rendered.raster_set
+            if self.settings.debug_row_markers_interval is not None:
+                raster_set = apply_debug_row_markers(
                     raster_set,
-                    is_text=is_text,
-                    settings=self.settings,
-                    runtime_context=self.runtime_context,
-                    page_index=page_index,
-                    page_count=page_count,
+                    self.settings.debug_row_markers_interval,
                 )
-                yield PreparedPageJob(page_index=page_index, page_count=page_count, job=page_job)
+            report_raster_build(
+                self._reporter,
+                device=self.device,
+                settings=self.settings,
+                page_index=page.number,
+                page_count=page_count,
+                page=rendered.source_page,
+                raster_set=raster_set,
+                is_text=rendered.is_text,
+                dither_mode=rendered.dither_mode,
+                gamma_handle=rendered.gamma_handle,
+                gamma_value=rendered.gamma_value,
+            )
+            page_job = build_raster_page_job(
+                self.device,
+                raster_set,
+                is_text=rendered.is_text,
+                settings=self.settings,
+                runtime_context=self.runtime_context,
+                page_index=page.number,
+                page_count=page_count,
+                image_pipeline=rendered.image_pipeline,
+            )
+            yield PreparedPageJob(
+                page_index=page.number,
+                page_count=page_count,
+                job=page_job,
+                image_pipeline=rendered.image_pipeline,
+            )
 
-    def _resolve_image_pipeline(self) -> ImagePipelineConfig:
-        return self.protocol.resolve_image_pipeline(
+    def _default_image_pipeline(self) -> ImagePipelineConfig:
+        return PrinterProtocol(self.device).resolve_image_pipeline(
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
             runtime_capabilities=self.runtime_context.capabilities,
         )
 
-    def _dither_mode(self, page: Page) -> DitherMode:
-        return self.settings.dither_mode if page.dither else DitherMode.NONE
-
-    def _select_text_mode(self, page: Page) -> bool:
-        if self.settings.text_mode is not None:
-            return self.settings.text_mode
-        return page.is_text
-
-    @staticmethod
-    def _mm_to_px(mm: int, dpi: int) -> int:
-        if mm <= 0:
-            return 0
-        return max(0, int(round(mm * dpi / 25.4)))
-
-    @staticmethod
-    def _normalized_width(width: int) -> int:
-        if width % 8 == 0:
-            return width
-        return width - (width % 8)
-
     def _validate_input_path(self, path: str) -> None:
         ext = os.path.splitext(path)[1].lower()
-        supported = self.page_loader.supported_extensions
+        supported = SUPPORTED_DOCUMENT_EXTENSIONS
         if ext not in supported:
             raise ValueError("Supported formats: " + ", ".join(sorted(supported)))
         if not os.path.isfile(path):

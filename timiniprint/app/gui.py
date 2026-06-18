@@ -23,6 +23,7 @@ from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
 from ..protocol import PaperMode, PrinterProtocol
 from ..rendering.converters.text import TextConverter
+from ..rendering.formats import normalized_width
 from ..transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
 from ..transport.bluetooth.types import DeviceTransport
 from ..update_check import UpdateCheckResult, check_for_updates, should_check_for_updates
@@ -967,18 +968,12 @@ class TiMiniPrintGUI(tk.Tk):
         self._refresh_paper_mode_controls()
 
     def _configure_text_columns(self, profile) -> None:
-        width = self._normalized_width(profile.width)
+        width = normalized_width(profile.width)
         default_columns = TextConverter.default_columns_for_width(width)
         min_columns = max(5, int(round(default_columns * 0.5)))
         max_columns = max(min_columns + 1, int(round(default_columns * 1.5)))
         self.text_columns_scale.configure(from_=min_columns, to=max_columns)
         self.text_columns_var.set(default_columns)
-
-    @staticmethod
-    def _normalized_width(width: int) -> int:
-        if width % 8 == 0:
-            return width
-        return width - (width % 8)
 
     def _set_connecting_state(self, connecting: bool) -> None:
         self._connecting = connecting

@@ -4,8 +4,6 @@ from .bluetooth_policy import (
     BluetoothConnectionPlan,
     BluetoothTransportPolicy,
     bluetooth_connection_plan,
-    ordered_connection_endpoints,
-    should_retry_ble_scan,
 )
 from .device import BluetoothEndpoint, BluetoothTarget, PrinterDevice, SerialTarget, TransportTarget
 from .catalog import PrinterCatalog
@@ -45,6 +43,4 @@ __all__ = [
     "UnsupportedModelMatch",
     "UnsupportedPrinterModel",
     "bluetooth_connection_plan",
-    "ordered_connection_endpoints",
-    "should_retry_ble_scan",
 ]

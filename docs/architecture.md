@@ -192,10 +192,10 @@ It exists so that rendering and protocol can share raster types without importin
 Owns file and page processing.
 
 It contains:
-- file loading
-- page sources for one-page-at-a-time rendering
+- low-level file converters
+- page sources for one-page-at-a-time conversion
 - page transforms
-- rasterization
+- rasterization primitives
 
 ### `timiniprint.protocol`
 Owns stateless protocol building.
@@ -213,9 +213,16 @@ Owns the higher-level file pipeline and stateful runtime logic.
 
 It contains:
 - `PrintJobBuilder`
+- `DocumentRenderer`, the printing-layer bridge from documents to raster pages
 - `PrintSettings`
 - streaming page-job assembly for memory-sensitive callers
 - runtime controllers in `printing.runtime`
+
+`DocumentRenderer` uses `timiniprint.rendering` converters, but it lives in
+`printing` because it also needs printer settings, resolved protocol image
+pipeline choices, and runtime capabilities. `PrintJobBuilder` does not own file
+conversion directly; it asks `DocumentRenderer` for rendered pages, applies any
+print-job-only debug markers, and builds `ProtocolJob` pages.
 
 ### `timiniprint.transport`
 Owns actual I/O.

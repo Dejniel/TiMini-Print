@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from typing import Callable
 
 from ..devices.device import PrinterDevice
+from ..protocol import ImagePipelineConfig
 from ..protocol.job import PrinterProtocol
 from ..protocol.runtime import RuntimePrintCapabilities
-from ..raster import DitherMode, PixelFormat, RasterSet
+from ..raster import DitherMode, RasterSet
 from ..rendering.converters import Page
 from ..rendering.converters.base import ImageLoader, PageSource
 from ..rendering.converters.image import ImageConverter
@@ -65,8 +66,13 @@ class PreviewPage:
 
 @dataclass(frozen=True)
 class RenderedPage:
+    source_page: Page
     raster_set: RasterSet
+    image_pipeline: ImagePipelineConfig
     is_text: bool = False
+    dither_mode: DitherMode = DitherMode.NONE
+    gamma_handle: bool = False
+    gamma_value: float | None = None
 
 
 class DocumentRenderer:
@@ -139,14 +145,14 @@ class DocumentRenderer:
         settings: PrintSettings,
     ) -> PreviewPage:
         vendor_page = self._open_vendor_page(plan, page, device, settings)
-        pixel_format, dither_mode, gamma_handle, gamma_value = self._render_options(
+        pipeline, dither_mode, gamma_handle, gamma_value = self._render_options(
             vendor_page,
             device,
             settings,
         )
         preview = self.image_renderer.preview_image(
             vendor_page.image,
-            pixel_format,
+            pipeline.default_format,
             dither_mode=dither_mode,
             gamma_handle=gamma_handle,
             gamma_value=gamma_value,
@@ -170,21 +176,26 @@ class DocumentRenderer:
         runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> RenderedPage:
         vendor_page = self._open_vendor_page(plan, page, device, settings)
-        pixel_format, dither_mode, gamma_handle, gamma_value = self._render_options(
+        pipeline, dither_mode, gamma_handle, gamma_value = self._render_options(
             vendor_page,
             device,
             settings,
             runtime_capabilities=runtime_capabilities,
         )
         return RenderedPage(
-            self.image_renderer.raster_set(
+            source_page=vendor_page,
+            raster_set=self.image_renderer.raster_set(
                 vendor_page.image,
-                (pixel_format,),
+                (pipeline.default_format,),
                 dither_mode=dither_mode,
                 gamma_handle=gamma_handle,
                 gamma_value=gamma_value,
             ),
-            is_text=vendor_page.is_text,
+            image_pipeline=pipeline,
+            is_text=settings.text_mode if settings.text_mode is not None else vendor_page.is_text,
+            dither_mode=dither_mode,
+            gamma_handle=gamma_handle,
+            gamma_value=gamma_value,
         )
 
     def _open_vendor_page(
@@ -240,7 +251,7 @@ class DocumentRenderer:
         settings: PrintSettings,
         *,
         runtime_capabilities: RuntimePrintCapabilities | None = None,
-    ) -> tuple[PixelFormat, DitherMode, bool, float | None]:
+    ) -> tuple[ImagePipelineConfig, DitherMode, bool, float | None]:
         pipeline = PrinterProtocol(device).resolve_image_pipeline(
             image_encoding_override=settings.image_encoding_override,
             pixel_format_override=settings.pixel_format_override,
@@ -252,7 +263,7 @@ class DocumentRenderer:
             pipeline.encoding,
         )
         return (
-            pipeline.formats[0],
+            pipeline,
             settings.dither_mode if page.dither else DitherMode.NONE,
             gamma_handle,
             gamma_value,

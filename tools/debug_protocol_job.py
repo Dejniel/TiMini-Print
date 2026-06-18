@@ -13,7 +13,7 @@ if str(REPO_ROOT) not in sys.path:
 from timiniprint.app import cli  # noqa: E402
 from timiniprint.devices import PrinterCatalog, PrinterDevice  # noqa: E402
 from timiniprint.devices.printer_config import runtime_settings_from_parts  # noqa: E402
-from timiniprint.printing.debug_dump import _packet_debug_entries  # noqa: E402
+from timiniprint.printing.debug_dump import build_protocol_packet_entries  # noqa: E402
 from timiniprint.protocol import ImageEncoding, ImagePipelineConfig, PaperMode, PrinterProtocol, ProtocolJob  # noqa: E402
 from timiniprint.protocol.families import get_protocol_behavior  # noqa: E402
 
@@ -172,7 +172,7 @@ def build_protocol_job_debug_dump(
                 else type(job.runtime_controller).__name__
             ),
         },
-        "packets": _packet_debug_entries(device, job.payload),
+        "packets": build_protocol_packet_entries(device, job.payload),
         "payload_hex": job.payload.hex(),
     }
 
