@@ -145,6 +145,13 @@ class BluetoothDiscovery:
             self._endpoints_from_scan(result.raw_endpoints),
         )
 
+    def manual_targets_for_display(self, result: BluetoothScanResult) -> List[ResolvedBluetoothTarget]:
+        """Return scanned raw targets that need a manual model choice."""
+        return self._resolver.manual_targets_for_display(
+            result.devices,
+            self._endpoints_from_scan(result.raw_endpoints),
+        )
+
     def _transport_targets_from_scan(
         self,
         devices: Iterable[DeviceInfo],

@@ -81,6 +81,29 @@ class BluetoothEndpointResolver:
                 devices.append(candidate)
         return self.sort_devices(devices)
 
+    def manual_targets_for_display(
+        self,
+        resolved_devices: Iterable[PrinterDevice],
+        endpoints: Iterable[BluetoothEndpoint],
+    ) -> List[ResolvedBluetoothTarget]:
+        """Return raw targets that need a manual model choice before printing."""
+        represented = self._represented_endpoint_keys(resolved_devices)
+        manual_targets: List[ResolvedBluetoothTarget] = []
+        for item in self.transport_targets_from_endpoints(endpoints):
+            target_keys = self._target_endpoint_keys(item.transport_target)
+            if target_keys and target_keys.issubset(represented):
+                continue
+            candidates = self._catalog.detection_devices(
+                item.display_name,
+                item.transport_target.display_address,
+                display_name=item.display_name,
+                transport_target=item.transport_target,
+            )
+            if candidates:
+                continue
+            manual_targets.append(item)
+        return self.sort_transport_targets(manual_targets)
+
     def transport_targets_from_endpoints(
         self,
         endpoints: Iterable[BluetoothEndpoint],
@@ -332,6 +355,31 @@ class BluetoothEndpointResolver:
             or ble_endpoint.address,
             transport_target=target,
         )
+
+    @staticmethod
+    def _endpoint_key(endpoint: BluetoothEndpoint) -> Tuple[BluetoothEndpointTransport, str]:
+        return (endpoint.transport, endpoint.address.lower())
+
+    @classmethod
+    def _target_endpoint_keys(cls, target: BluetoothTarget) -> set[Tuple[BluetoothEndpointTransport, str]]:
+        keys = set()
+        if target.classic_endpoint is not None:
+            keys.add(cls._endpoint_key(target.classic_endpoint))
+        if target.ble_endpoint is not None:
+            keys.add(cls._endpoint_key(target.ble_endpoint))
+        return keys
+
+    @classmethod
+    def _represented_endpoint_keys(
+        cls,
+        devices: Iterable[PrinterDevice],
+    ) -> set[Tuple[BluetoothEndpointTransport, str]]:
+        keys = set()
+        for device in devices:
+            target = device.transport_target
+            if isinstance(target, BluetoothTarget):
+                keys.update(cls._target_endpoint_keys(target))
+        return keys
 
     @staticmethod
     def _looks_like_address(value: str) -> bool:

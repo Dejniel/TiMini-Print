@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from timiniprint import reporting
-from timiniprint.app.gui import TiMiniPrintGUI
+from timiniprint.app.gui import ManualBluetoothSelection, TiMiniPrintGUI
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
@@ -123,6 +123,112 @@ class GuiDeviceListTests(unittest.TestCase):
 
         self.assertEqual(gui._scan_result_status_count(result), 1)
 
+    def test_unknown_devices_are_displayed_only_when_manual_mode_is_enabled(self) -> None:
+        unknown = DeviceInfo(
+            name="MysteryPrinter",
+            address="AA:BB:CC:DD:EE:02",
+            transport=DeviceTransport.BLE,
+        )
+        catalog = PrinterCatalog.load()
+        result = BluetoothScanResult(
+            devices=[],
+            failures=[],
+            raw_endpoints=[unknown],
+        )
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.catalog = catalog
+        gui.discovery = BluetoothDiscovery(catalog)
+
+        self.assertEqual(gui._scan_devices_for_display(result), [])
+
+        gui.show_unknown_devices_var = _FakeVar(True)
+        devices = gui._scan_devices_for_display(result)
+
+        self.assertEqual(len(devices), 1)
+        self.assertIsInstance(devices[0], ManualBluetoothSelection)
+        self.assertIn("manual model required", gui._device_label(devices[0]))
+
+    def test_manual_model_selection_builds_effective_device_from_raw_target(self) -> None:
+        catalog = PrinterCatalog.load()
+        unknown = DeviceInfo(
+            name="MysteryPrinter",
+            address="AA:BB:CC:DD:EE:02",
+            transport=DeviceTransport.BLE,
+        )
+        result = BluetoothScanResult(
+            devices=[],
+            failures=[],
+            raw_endpoints=[unknown],
+        )
+        target = BluetoothDiscovery(catalog).manual_targets_for_display(result)[0]
+        selection = ManualBluetoothSelection(display_name=target.display_name, target=target)
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.catalog = catalog
+        gui._manual_model_choice_map = gui._build_manual_model_choice_map()
+        choice = next(
+            label
+            for label, model_key in gui._manual_model_choice_map.items()
+            if model_key == "gt01"
+        )
+        label = gui._device_label(selection)
+        gui.device_var = _FakeVar(label)
+        gui.manual_model_var = _FakeVar(choice)
+        gui.device_map = {label: selection}
+
+        device = gui._effective_selected_device()
+
+        self.assertIsNotNone(device)
+        assert device is not None
+        self.assertEqual(device.model_key, "gt01")
+        self.assertEqual(device.display_name, "MysteryPrinter")
+        self.assertEqual(device.address, "AA:BB:CC:DD:EE:02")
+
+    def test_manual_model_selection_resets_when_raw_target_changes(self) -> None:
+        catalog = PrinterCatalog.load()
+        result = BluetoothScanResult(
+            devices=[],
+            failures=[],
+            raw_endpoints=[
+                DeviceInfo(
+                    name="MysteryOne",
+                    address="AA:BB:CC:DD:EE:02",
+                    transport=DeviceTransport.BLE,
+                ),
+                DeviceInfo(
+                    name="MysteryTwo",
+                    address="AA:BB:CC:DD:EE:03",
+                    transport=DeviceTransport.BLE,
+                ),
+            ],
+        )
+        targets = BluetoothDiscovery(catalog).manual_targets_for_display(result)
+        first = ManualBluetoothSelection(display_name=targets[0].display_name, target=targets[0])
+        second = ManualBluetoothSelection(display_name=targets[1].display_name, target=targets[1])
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.device_var = _FakeVar(gui._device_label(first))
+        gui.manual_model_var = _FakeVar("some model")
+        gui.device_map = {
+            gui._device_label(first): first,
+            gui._device_label(second): second,
+        }
+        gui._manual_model_target_key = gui._selected_manual_target_key()
+
+        gui.device_var.set(gui._device_label(second))
+        gui._reset_manual_model_if_target_changed()
+
+        self.assertEqual(gui.manual_model_var.get(), "")
+
+    def test_connected_manual_device_keeps_manual_profile_label(self) -> None:
+        catalog = PrinterCatalog.load()
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.connected_device = catalog.device_from_model("gt01")
+        gui.connected_device_was_manual = True
+        gui.profile_var = _FakeVar()
+
+        gui._refresh_profile_label()
+
+        self.assertEqual(gui.profile_var.get(), "GT01 (MANUAL)")
+
     def test_scan_uses_blocking_discovery_worker(self) -> None:
         catalog = PrinterCatalog.load()
         result = BluetoothScanResult(
@@ -211,6 +317,17 @@ class _InlineThread:
 
     def start(self) -> None:
         self._target()
+
+
+class _FakeVar:
+    def __init__(self, value=None):
+        self.value = value
+
+    def get(self):
+        return self.value
+
+    def set(self, value) -> None:
+        self.value = value
 
 
 if __name__ == "__main__":
