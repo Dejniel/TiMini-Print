@@ -95,7 +95,7 @@ Private local notes may live in ignored files such as `AGENTS.local.md`.
 ## Project Layout
 
 - `timiniprint/app`: CLI and GUI entry points
-- `timiniprint/data`: printer profiles, runtime defaults, detection rules, and README model groups
+- `timiniprint/data`: printer profiles, supported/unsupported model catalog data, and origin app names
 - `timiniprint/devices`: catalog, `PrinterDevice`, profile/config models, and transport targets
 - `timiniprint/printing`: print job builder, settings, diagnostics, and runtime controllers
 - `timiniprint/protocol`: public protocol API and internal family implementations

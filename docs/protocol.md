@@ -299,6 +299,7 @@ There are two different operations in the codebase and they should not be confus
 This does not scan hardware.
 It applies supported and known-unsupported model detection to a known device
 name and optional address.
+It returns an immutable tuple of matches; an empty tuple means nothing matched.
 
 Use it when you already have values such as:
 - a BLE name from somewhere else
@@ -312,19 +313,28 @@ Example:
 from timiniprint.devices import PrinterCatalog, SupportedModelMatch
 
 catalog = PrinterCatalog.load()
-match = catalog.detect_model("MX10-ABCD", "AA:BB:CC:DD:EE:59")
-if not isinstance(match, SupportedModelMatch):
-    raise RuntimeError("Printer model not detected")
+matches = catalog.detect_model("MX10", "AA:BB:CC:DD:EE:59")
+supported = [match for match in matches if isinstance(match, SupportedModelMatch)]
+if len(supported) != 1:
+    raise RuntimeError("Printer model not detected unambiguously")
+match = supported[0]
 device = catalog.device_from_model(match.model.model_key)
 ```
 
 `catalog.detect_device(...)` is a supported-only convenience wrapper that returns
-a printable `PrinterDevice` or `None`. Unsupported matches are metadata only and
-must not be treated as printable devices.
+a printable `PrinterDevice` or `None`. Unsupported matches are metadata only.
+More specific unsupported metadata can prevent a broad supported prefix from
+stealing an unrelated model; when supported and unsupported matches have the same
+specificity, supported wins. Multiple equally specific supported matches return
+`None` so the caller can ask the user to choose the source app/model explicitly.
 
 ### `BluetoothDiscovery`
 This does scan hardware.
 It returns real reachable Bluetooth printers as `PrinterDevice` objects.
+`scan_report(...).devices` contains only devices that are printable without a
+manual source-app/model choice. Use `devices_for_display(scan_report)` when a UI
+or diagnostic CLI should also show manual candidates for ambiguous supported
+names.
 
 Use it when your program needs to find printers nearby.
 

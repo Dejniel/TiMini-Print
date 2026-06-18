@@ -58,6 +58,29 @@ class BluetoothEndpointResolver:
         resolved = self._attach_single_anonymous_ble_endpoint(resolved, endpoint_list)
         return self.sort_devices(resolved)
 
+    def devices_for_display(
+        self,
+        resolved_devices: Iterable[PrinterDevice],
+        endpoints: Iterable[BluetoothEndpoint],
+    ) -> List[PrinterDevice]:
+        """Return resolved devices plus manual candidates for ambiguous names."""
+        devices = list(resolved_devices)
+        seen = {
+            (device.model_key, device.address, device.transport_badge)
+            for device in devices
+        }
+        for endpoint in endpoints:
+            candidates = self._candidate_devices_from_endpoint(endpoint)
+            if len(candidates) <= 1:
+                continue
+            for candidate in candidates:
+                key = (candidate.model_key, candidate.address, candidate.transport_badge)
+                if key in seen:
+                    continue
+                seen.add(key)
+                devices.append(candidate)
+        return self.sort_devices(devices)
+
     def transport_targets_from_endpoints(
         self,
         endpoints: Iterable[BluetoothEndpoint],
@@ -172,16 +195,33 @@ class BluetoothEndpointResolver:
             )
         return candidates
 
+    def _candidate_devices_from_endpoint(
+        self,
+        endpoint: BluetoothEndpoint,
+    ) -> List[PrinterDevice]:
+        return list(
+            self._catalog.detection_devices(
+                endpoint.name or "",
+                endpoint.address,
+                display_name=endpoint.name or "",
+                transport_target=self.transport_target_from_endpoint(endpoint),
+            )
+        )
+
     @staticmethod
     def _group_candidates(
         candidates: Iterable[_ResolvedEndpoint],
-    ) -> Dict[Tuple[str, str], Dict[BluetoothEndpointTransport, List[_ResolvedEndpoint]]]:
-        grouped: Dict[Tuple[str, str], Dict[BluetoothEndpointTransport, List[_ResolvedEndpoint]]] = {}
+    ) -> Dict[Tuple[str, str, str], Dict[BluetoothEndpointTransport, List[_ResolvedEndpoint]]]:
+        grouped: Dict[Tuple[str, str, str], Dict[BluetoothEndpointTransport, List[_ResolvedEndpoint]]] = {}
         for candidate in candidates:
             # This classic+BLE merge is intentionally name/profile-based for the
             # single-printer workflow. Revisit only if endpoint pairing ambiguity
             # starts causing connection regressions in practice.
-            key = (candidate.device.profile_key, candidate.normalized_name)
+            key = (
+                candidate.device.model_key,
+                candidate.device.profile_key,
+                candidate.normalized_name,
+            )
             bucket = grouped.setdefault(
                 key,
                 {BluetoothEndpointTransport.CLASSIC: [], BluetoothEndpointTransport.BLE: []},

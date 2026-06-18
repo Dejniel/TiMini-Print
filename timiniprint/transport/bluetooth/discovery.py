@@ -11,6 +11,8 @@ from ...devices import (
     PrinterCatalog,
     PrinterDevice,
     ResolvedBluetoothTarget,
+    SupportedModelMatch,
+    UnsupportedModelMatch,
 )
 from ...devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from .backend import SppBackend
@@ -136,6 +138,13 @@ class BluetoothDiscovery:
         """Resolve raw scan endpoints into logical printer devices."""
         return self._policy.devices_from_endpoints(self._endpoints_from_scan(devices))
 
+    def devices_for_display(self, result: BluetoothScanResult) -> List[PrinterDevice]:
+        """Return scan devices plus manual source-app candidates for UI/CLI lists."""
+        return self._resolver.devices_for_display(
+            result.devices,
+            self._endpoints_from_scan(result.raw_endpoints),
+        )
+
     def _transport_targets_from_scan(
         self,
         devices: Iterable[DeviceInfo],
@@ -259,6 +268,26 @@ class BluetoothDiscovery:
                         ),
                     )
                     continue
+                matches = self._catalog.detect_model(endpoint.name or "", endpoint.address)
+                supported = [
+                    match
+                    for match in matches
+                    if isinstance(match, SupportedModelMatch)
+                ]
+                unsupported = [
+                    match
+                    for match in matches
+                    if isinstance(match, UnsupportedModelMatch)
+                ]
+                if len(supported) > 1:
+                    reason = "ambiguous_supported_model"
+                    candidates = ",".join(match.model.model_key for match in supported)
+                elif unsupported:
+                    reason = "known_unsupported_model"
+                    candidates = ",".join(match.model.model_key for match in unsupported)
+                else:
+                    reason = "no_supported_model"
+                    candidates = ""
                 self._reporter.debug(
                     short="Discovery",
                     detail=reporting.format_kv(
@@ -266,7 +295,8 @@ class BluetoothDiscovery:
                         name=endpoint.name or "<unknown>",
                         address=endpoint.address or "<unknown>",
                         transport=endpoint.transport.value,
-                        reason="no_supported_model",
+                        reason=reason,
+                        candidates=candidates,
                     ),
                 )
                 continue

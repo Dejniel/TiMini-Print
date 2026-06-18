@@ -112,7 +112,7 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [{"name": "FOO", "detection": {"prefixes": ["FOO"]}}],
                 "profile_key": "specific_profile",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.specific"],
+                "origin_app_packages": ["com.example.generic"],
             },
         ]
 
@@ -124,9 +124,12 @@ class CatalogAuditTests(unittest.TestCase):
 
             report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
 
-        shadowed = [error for error in report["errors"] if error["kind"] == "shadowed_model"]
-        self.assertEqual(len(shadowed), 1)
-        self.assertEqual(shadowed[0]["model_key"], "specific")
+        ambiguous = [error for error in report["errors"] if error["kind"] == "ambiguous_model"]
+        self.assertEqual(len(ambiguous), 2)
+        self.assertEqual(
+            {error["model_key"] for error in ambiguous},
+            {"generic", "specific"},
+        )
 
     def test_catalog_audit_detects_mergeable_model_group(self) -> None:
         profiles = [

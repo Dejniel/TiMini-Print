@@ -64,8 +64,8 @@ It has named detections and optional source app packages, but no
 `PrinterProfile`.
 
 Use it to recognize reports and future-support candidates without pretending the
-printer is printable. `catalog.detect_model(...)` may return one of these
-records as an unsupported match; `catalog.detect_device(...)` must not.
+printer is printable. `catalog.detect_model(...)` may include these records in
+its match tuple; `catalog.detect_device(...)` must not return them.
 `model_group`, when present, is only a public inventory grouping hint for
 clone-like TODO names. It is not a profile key and must not route unsupported
 hardware to an implemented protocol.
@@ -128,11 +128,19 @@ The codebase has two different concepts and they are intentionally separate.
 This is catalog-level detection.
 It does not scan hardware.
 It takes an already known device name and optional address and maps them to a `PrinterDevice`.
+More specific unsupported metadata can prevent a broad supported prefix from
+stealing an unrelated model. When supported and unsupported matches have the same
+specificity, supported wins. If multiple supported models tie, `detect_device(...)`
+returns `None` so the caller can ask the user to choose the source app or model
+explicitly.
 
 ### `BluetoothDiscovery`
 This is transport-facing discovery.
 It does scan hardware.
 It returns reachable Bluetooth printers as `PrinterDevice` objects and can also select one by name or address.
+Automatic discovery keeps only unambiguous printable devices. UI and CLI scan
+views should call `devices_for_display(...)` to include manual candidates for
+source-app/model conflicts.
 It delegates raw endpoint resolution to `BluetoothEndpointResolver` in `timiniprint.devices`.
 
 This split keeps device knowledge out of transport while still allowing discovery to produce fully resolved runtime objects.

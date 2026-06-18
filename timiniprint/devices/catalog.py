@@ -22,6 +22,7 @@ from .device import (
 )
 from .model_codec import model_from_json
 from .profiles import (
+    DetectionNormalizer,
     ModelMatch,
     NamedModelDetection,
     PrinterProfile,
@@ -36,19 +37,21 @@ from .profiles import (
 PROFILE_DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "printer_profiles.json"
 MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models.json")
 UNSUPPORTED_MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models_unsupported.json")
+ORIGIN_APP_DATA_PATH = PROFILE_DATA_PATH.with_name("origin_apps.json")
 _UNSET = object()
 
 
 class PrinterCatalog:
     """Load printer profiles and detect runtime devices from catalog data."""
 
-    _cache: Dict[Tuple[Path, Path, Path], "PrinterCatalog"] = {}
+    _cache: Dict[Tuple[Path, Path, Path, Path | None], "PrinterCatalog"] = {}
 
     def __init__(
         self,
         profiles: Iterable[PrinterProfile],
         models: Iterable[SupportedPrinterModel],
         unsupported_models: Iterable[UnsupportedPrinterModel] = (),
+        origin_app_names: Mapping[str, str] | None = None,
     ) -> None:
         self._profiles = list(profiles)
         self._models = sorted(
@@ -67,14 +70,18 @@ class PrinterCatalog:
         self._unsupported_model_by_key = {
             model.model_key: model for model in self._unsupported_models
         }
+        self._origin_app_names = dict(origin_app_names or {})
         self._supported_detection_entries = self._sorted_detection_entries(self._models)
-        self._unsupported_detection_entries = self._sorted_detection_entries(self._unsupported_models)
+        self._unsupported_detection_entries = self._sorted_detection_entries(
+            self._unsupported_models
+        )
         self._validate_speed_requirements()
         self._validate_default_paper_modes()
         self._validate_model_keys()
         self._validate_runtime_presets()
         self._validate_unsupported_model_keys()
         self._validate_model_references()
+        self._validate_origin_app_names()
 
     @staticmethod
     def _detection_specificity(model: SupportedPrinterModel | UnsupportedPrinterModel) -> tuple[int, int]:
@@ -93,21 +100,83 @@ class PrinterCatalog:
             *detection.detection.exact_names,
             *detection.detection.prefixes,
         ]
-        logical_lengths = [len(trigger.rstrip("-_")) for trigger in name_triggers]
-        max_logical_length = max(logical_lengths, default=0)
+        trigger_lengths = [
+            len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
+            for trigger in name_triggers
+        ]
+        max_trigger_length = max(trigger_lengths, default=0)
         max_raw_length = max((len(trigger) for trigger in name_triggers), default=0)
         uppercase_score = max(
             (sum(1 for char in trigger if char.isupper()) for trigger in name_triggers),
             default=0,
         )
         return (
-            max_logical_length,
+            max_trigger_length,
             int(bool(detection.detection.mac_suffixes)),
             int(bool(detection.detection.exact_names)),
             max_raw_length,
             uppercase_score,
             len(name_triggers),
         )
+
+    @staticmethod
+    def _trigger_specificity(
+        trigger: str,
+        *,
+        exact: bool,
+        has_mac_suffix: bool,
+    ) -> tuple[int, int, int, int, int]:
+        trigger_length = len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
+        return (
+            trigger_length,
+            int(has_mac_suffix),
+            int(exact),
+            len(trigger),
+            sum(1 for char in trigger if char.isupper()),
+        )
+
+    @classmethod
+    def _matched_detection_specificity(
+        cls,
+        detection: NamedModelDetection,
+        device_name: str,
+        address: Optional[str],
+        *,
+        case_sensitive: bool,
+    ) -> tuple[int, int, int, int, int] | None:
+        model_detection = detection.detection
+        has_mac_suffix = bool(model_detection.mac_suffixes)
+        if has_mac_suffix:
+            if not address or not DetectionNormalizer.is_mac_like_address(address):
+                return None
+            normalized = DetectionNormalizer.normalize_mac_candidate(address)
+            if not any(normalized.endswith(suffix) for suffix in model_detection.mac_suffixes):
+                return None
+
+        normalized_name = DetectionNormalizer.normalize_name(device_name)
+        folded_name = DetectionNormalizer.fold_name(device_name)
+        matched: list[tuple[int, int, int, int, int]] = []
+        for exact_name in model_detection.exact_names:
+            candidate = exact_name if case_sensitive else DetectionNormalizer.fold_name(exact_name)
+            if (normalized_name if case_sensitive else folded_name) == candidate:
+                matched.append(
+                    cls._trigger_specificity(
+                        exact_name,
+                        exact=True,
+                        has_mac_suffix=has_mac_suffix,
+                    )
+                )
+        for prefix in model_detection.prefixes:
+            candidate = prefix if case_sensitive else DetectionNormalizer.fold_name(prefix)
+            if (normalized_name if case_sensitive else folded_name).startswith(candidate):
+                matched.append(
+                    cls._trigger_specificity(
+                        prefix,
+                        exact=False,
+                        has_mac_suffix=has_mac_suffix,
+                    )
+                )
+        return max(matched, default=None)
 
     @classmethod
     def _sorted_detection_entries(
@@ -147,31 +216,44 @@ class PrinterCatalog:
         profile_path: Path = PROFILE_DATA_PATH,
         model_path: Path = MODEL_DATA_PATH,
         unsupported_model_path: Path = UNSUPPORTED_MODEL_DATA_PATH,
+        origin_app_path: Path | None = ORIGIN_APP_DATA_PATH,
     ) -> "PrinterCatalog":
         """Load the shared catalog instance from JSON profile and model files."""
-        cache_key = (profile_path, model_path, unsupported_model_path)
+        cache_key = (profile_path, model_path, unsupported_model_path, origin_app_path)
         cached = cls._cache.get(cache_key)
         if cached is not None:
             return cached
         profiles_raw = json.loads(profile_path.read_text(encoding="utf-8"))
         models_raw = json.loads(model_path.read_text(encoding="utf-8"))
         unsupported_models_raw = json.loads(unsupported_model_path.read_text(encoding="utf-8"))
+        origin_app_names_raw = (
+            {}
+            if origin_app_path is None
+            else json.loads(origin_app_path.read_text(encoding="utf-8"))
+        )
         if not isinstance(profiles_raw, list):
             raise ValueError("Profile file must contain a JSON list")
         if not isinstance(models_raw, list):
             raise ValueError("Model file must contain a JSON list")
         if not isinstance(unsupported_models_raw, list):
             raise ValueError("Unsupported model file must contain a JSON list")
+        if not isinstance(origin_app_names_raw, dict):
+            raise ValueError("Origin app file must contain a JSON object")
         profiles = [model_from_json(PrinterProfile, entry) for entry in profiles_raw]
         models = [model_from_json(SupportedPrinterModel, entry) for entry in models_raw]
         unsupported_models = [
             model_from_json(UnsupportedPrinterModel, entry)
             for entry in unsupported_models_raw
         ]
+        origin_app_names = {
+            str(package): str(name)
+            for package, name in origin_app_names_raw.items()
+        }
         catalog = cls(
             profiles,
             models,
             unsupported_models,
+            origin_app_names,
         )
         cls._cache[cache_key] = catalog
         return catalog
@@ -267,6 +349,21 @@ class PrinterCatalog:
                     f"{model.profile_runtime_preset_key} for profile {profile.profile_key}"
                 )
 
+    def _validate_origin_app_names(self) -> None:
+        if not self._origin_app_names:
+            return
+        known_packages = {
+            package
+            for model in [*self._models, *self._unsupported_models]
+            for package in model.origin_app_packages
+        }
+        missing = sorted(known_packages - set(self._origin_app_names))
+        if missing:
+            raise ValueError(
+                "Origin app names are missing packages: "
+                + ", ".join(missing)
+            )
+
     @staticmethod
     def _duplicate_keys(keys: Iterable[str]) -> list[str]:
         seen: set[str] = set()
@@ -324,17 +421,40 @@ class PrinterCatalog:
         address: Optional[str] = None,
         transport_target: TransportTarget | None = None,
     ) -> Optional[PrinterDevice]:
-        """Detect a ``PrinterDevice`` from a known name and optional address.
+        """Detect a printable ``PrinterDevice`` from a known name and address.
 
-        This is catalog-level detection only. It does not scan hardware.
+        This is catalog-level detection only; it does not scan hardware.
+        More specific unsupported metadata can prevent a broad supported prefix
+        from stealing an unrelated model. When supported and unsupported matches
+        have the same specificity, supported wins. If multiple supported candidates
+        tie, this returns ``None`` so callers
+        can ask the user to choose the source app/model explicitly.
         """
-        match = self.detect_model(device_name, address)
-        if not isinstance(match, SupportedModelMatch):
+        supported = [
+            match
+            for match in self.detect_model(device_name, address)
+            if isinstance(match, SupportedModelMatch)
+        ]
+        if len(supported) != 1:
             return None
+        return self.device_from_match(
+            supported[0],
+            display_name=device_name,
+            transport_target=transport_target,
+        )
+
+    def device_from_match(
+        self,
+        match: SupportedModelMatch,
+        *,
+        display_name: Optional[str] = None,
+        transport_target: TransportTarget | None = None,
+    ) -> PrinterDevice:
+        """Create a runtime device from a supported catalog match."""
         model = match.model
         profile = match.profile
         return self._build_device(
-            display_name=device_name,
+            display_name=display_name or match.detection.name,
             profile=profile,
             protocol_family=self._protocol_family_for_model(model, profile),
             protocol_variant=self._protocol_packets_type_for_model(model, profile),
@@ -389,9 +509,9 @@ class PrinterCatalog:
                 transport_target=transport_target,
             )
         if len(matches) > 1:
-            candidates = ", ".join(model.model_key for model in matches)
+            candidates = ", ".join(self._format_model_candidate(model) for model in matches)
             raise RuntimeError(
-                f"Printer name '{key}' is ambiguous; use one of these model keys: "
+                f"Printer name '{key}' is ambiguous; choose the original app and use one of these model keys: "
                 f"{candidates}"
             )
         raise RuntimeError(f"Unknown printer model or detection name '{key}'")
@@ -412,6 +532,15 @@ class PrinterCatalog:
     def get_unsupported_model(self, model_key: str) -> UnsupportedPrinterModel | None:
         return self._unsupported_model_by_key.get(model_key)
 
+    def origin_app_names(self, packages: Iterable[str]) -> tuple[str, ...]:
+        return tuple(self._origin_app_names.get(package, package) for package in packages)
+
+    def _format_model_candidate(self, model: SupportedPrinterModel) -> str:
+        app_names = self.origin_app_names(model.origin_app_packages)
+        if not app_names:
+            return model.model_key
+        return f"{model.model_key} ({', '.join(app_names)})"
+
     def require_unsupported_model(self, model_key: str) -> UnsupportedPrinterModel:
         model = self.get_unsupported_model(model_key)
         if model is None:
@@ -422,23 +551,145 @@ class PrinterCatalog:
         self,
         device_name: str,
         address: Optional[str] = None,
-    ) -> ModelMatch | None:
-        supported = self._detect_supported_model_match(device_name, address)
-        if supported is not None:
-            return supported
-        unsupported = self._detect_unsupported_model_match(device_name, address)
-        if unsupported is not None:
-            return unsupported
-        return None
+    ) -> tuple[ModelMatch, ...]:
+        for case_sensitive in (True, False):
+            supported_matches, supported_specificity = self._best_detection_matches(
+                self._supported_detection_entries,
+                device_name,
+                address,
+                case_sensitive=case_sensitive,
+            )
+            unsupported_matches, unsupported_specificity = self._best_detection_matches(
+                self._unsupported_detection_entries,
+                device_name,
+                address,
+                case_sensitive=case_sensitive,
+            )
+            if supported_matches and unsupported_specificity is not None:
+                assert supported_specificity is not None
+                if unsupported_specificity > supported_specificity:
+                    return tuple(
+                        self._model_match(model, detection)
+                        for model, detection in unsupported_matches
+                    )
+            if supported_matches:
+                return tuple(
+                    self._model_match(model, detection)
+                    for model, detection in supported_matches
+                )
+            if unsupported_matches:
+                return tuple(
+                    self._model_match(model, detection)
+                    for model, detection in unsupported_matches
+                )
+        return ()
+
+    def detection_devices(
+        self,
+        device_name: str,
+        address: Optional[str] = None,
+        *,
+        display_name: Optional[str] = None,
+        transport_target: TransportTarget | None = None,
+    ) -> tuple[PrinterDevice, ...]:
+        """Return printable device candidates for a known detected name.
+
+        This keeps supported candidate construction in one place. It may return
+        multiple devices when the same advertised name is source-app ambiguous.
+        """
+        return tuple(
+            self.device_from_match(
+                match,
+                display_name=display_name or device_name,
+                transport_target=transport_target,
+            )
+            for match in self.detect_model(device_name, address)
+            if isinstance(match, SupportedModelMatch)
+        )
+
+    def _best_detection_matches(
+        self,
+        entries: Iterable[
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection]
+        ],
+        device_name: str,
+        address: Optional[str],
+        *,
+        case_sensitive: bool,
+    ) -> tuple[
+        tuple[
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection],
+            ...
+        ],
+        tuple[int, int, int, int, int] | None,
+    ]:
+        matches: list[
+            tuple[
+                SupportedPrinterModel | UnsupportedPrinterModel,
+                NamedModelDetection,
+                tuple[int, int, int, int, int],
+            ]
+        ] = []
+        best_specificity: tuple[int, int, int, int, int] | None = None
+        for model, detection in entries:
+            specificity = self._matched_detection_specificity(
+                detection,
+                device_name,
+                address,
+                case_sensitive=case_sensitive,
+            )
+            if specificity is None:
+                continue
+            if best_specificity is None or specificity > best_specificity:
+                best_specificity = specificity
+                matches = [(model, detection, specificity)]
+            elif specificity == best_specificity:
+                matches.append((model, detection, specificity))
+
+        deduped: list[
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection]
+        ] = []
+        seen_model_keys: set[str] = set()
+        for model, detection, _specificity in matches:
+            if model.model_key in seen_model_keys:
+                continue
+            seen_model_keys.add(model.model_key)
+            deduped.append((model, detection))
+        return tuple(deduped), best_specificity
+
+    def _model_match(
+        self,
+        model: SupportedPrinterModel | UnsupportedPrinterModel,
+        detection: NamedModelDetection,
+    ) -> SupportedModelMatch | UnsupportedModelMatch:
+        if isinstance(model, SupportedPrinterModel):
+            profile = self._profile_by_key.get(model.profile_key)
+            if profile is None:
+                raise ValueError(
+                    f"Printer model {model.model_key} references unknown profile {model.profile_key}"
+                )
+            return SupportedModelMatch(model=model, profile=profile, detection=detection)
+        assert isinstance(model, UnsupportedPrinterModel)
+        return UnsupportedModelMatch(model=model, detection=detection)
 
     def detect_unsupported_model(
         self,
         device_name: str,
         address: Optional[str] = None,
     ) -> UnsupportedPrinterModel | None:
-        match = self.detect_model(device_name, address)
-        if isinstance(match, UnsupportedModelMatch):
-            return match.model
+        matches = self.detect_model(device_name, address)
+        unsupported = [
+            match
+            for match in matches
+            if isinstance(match, UnsupportedModelMatch)
+        ]
+        supported = [
+            match
+            for match in matches
+            if isinstance(match, SupportedModelMatch)
+        ]
+        if len(unsupported) == 1 and not supported:
+            return unsupported[0].model
         return None
 
     def device_from_model(
@@ -524,36 +775,6 @@ class PrinterCatalog:
                 f"for profile '{profile.profile_key}'"
             )
         return preset
-
-    def _detect_supported_model_match(
-        self,
-        device_name: str,
-        address: Optional[str] = None,
-    ) -> SupportedModelMatch | None:
-        for case_sensitive in (True, False):
-            for model, detection in self._supported_detection_entries:
-                if not detection.detection.matches(device_name, address, case_sensitive=case_sensitive):
-                    continue
-                assert isinstance(model, SupportedPrinterModel)
-                profile = self._profile_by_key.get(model.profile_key)
-                if profile is None:
-                    raise ValueError(
-                        f"Printer model {model.model_key} references unknown profile {model.profile_key}"
-                    )
-                return SupportedModelMatch(model=model, profile=profile, detection=detection)
-        return None
-
-    def _detect_unsupported_model_match(
-        self,
-        device_name: str,
-        address: Optional[str] = None,
-    ) -> UnsupportedModelMatch | None:
-        for case_sensitive in (True, False):
-            for model, detection in self._unsupported_detection_entries:
-                if detection.detection.matches(device_name, address, case_sensitive=case_sensitive):
-                    assert isinstance(model, UnsupportedPrinterModel)
-                    return UnsupportedModelMatch(model=model, detection=detection)
-        return None
 
     def _build_device(
         self,

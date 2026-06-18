@@ -9,7 +9,7 @@
       {
         "name": "YT01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "YT01"
           ],
           "mac_suffixes": [
@@ -20,7 +20,7 @@
       {
         "name": "YT02",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "YT02"
           ],
           "mac_suffixes": [
@@ -31,7 +31,7 @@
       {
         "name": "MX01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX01"
           ],
           "mac_suffixes": [
@@ -42,7 +42,7 @@
       {
         "name": "MX05",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX05"
           ],
           "mac_suffixes": [
@@ -53,7 +53,7 @@
       {
         "name": "MX06",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX06"
           ],
           "mac_suffixes": [
@@ -64,7 +64,7 @@
       {
         "name": "MX08",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX08"
           ],
           "mac_suffixes": [
@@ -75,7 +75,7 @@
       {
         "name": "MX09",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX09"
           ],
           "mac_suffixes": [
@@ -86,7 +86,7 @@
       {
         "name": "MX10",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX10"
           ],
           "mac_suffixes": [
@@ -97,7 +97,7 @@
       {
         "name": "MX11",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX11"
           ],
           "mac_suffixes": [
@@ -108,7 +108,7 @@
       {
         "name": "MX12",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX12"
           ],
           "mac_suffixes": [
@@ -119,7 +119,7 @@
       {
         "name": "MX13",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX13"
           ],
           "mac_suffixes": [
@@ -130,7 +130,7 @@
       {
         "name": "MXTP-100",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXTP-100"
           ],
           "mac_suffixes": [
@@ -141,7 +141,7 @@
       {
         "name": "MXPC-100",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXPC-100"
           ],
           "mac_suffixes": [
@@ -152,7 +152,7 @@
       {
         "name": "AZ-P2108X",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "AZ-P2108X"
           ],
           "mac_suffixes": [
@@ -163,7 +163,7 @@
       {
         "name": "PD01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "PD01"
           ],
           "mac_suffixes": [
@@ -174,7 +174,7 @@
       {
         "name": "URBANWORXKIDSCAMERA",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "URBANWORXKIDSCAMERA"
           ],
           "mac_suffixes": [
@@ -185,7 +185,7 @@
       {
         "name": "CYLOBTPRINTER",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "CYLOBTPRINTER"
           ],
           "mac_suffixes": [
@@ -196,7 +196,7 @@
       {
         "name": "XOPOPPY",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "XOPOPPY"
           ],
           "mac_suffixes": [
@@ -207,7 +207,7 @@
       {
         "name": "BQ01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ01"
           ],
           "mac_suffixes": [
@@ -218,7 +218,7 @@
       {
         "name": "EWTTOET-Z0499",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "EWTTOET-Z0499"
           ],
           "mac_suffixes": [
@@ -229,7 +229,7 @@
       {
         "name": "BQ05",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ05"
           ],
           "mac_suffixes": [
@@ -240,7 +240,7 @@
       {
         "name": "BQ95B",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ95B"
           ],
           "mac_suffixes": [
@@ -251,7 +251,7 @@
       {
         "name": "BQ95C",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ95C"
           ],
           "mac_suffixes": [
@@ -262,7 +262,7 @@
       {
         "name": "BQ95",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ95"
           ],
           "mac_suffixes": [
@@ -273,7 +273,7 @@
       {
         "name": "BQ06B",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ06B"
           ],
           "mac_suffixes": [
@@ -284,7 +284,7 @@
       {
         "name": "BQ06",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ06"
           ],
           "mac_suffixes": [
@@ -295,7 +295,7 @@
       {
         "name": "BQ07",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ07"
           ],
           "mac_suffixes": [
@@ -306,7 +306,7 @@
       {
         "name": "BQ7A",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ7A"
           ],
           "mac_suffixes": [
@@ -317,7 +317,7 @@
       {
         "name": "BQ7B",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ7B"
           ],
           "mac_suffixes": [
@@ -328,7 +328,7 @@
       {
         "name": "BQ08",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ08"
           ],
           "mac_suffixes": [
@@ -339,7 +339,7 @@
       {
         "name": "BQ96",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ96"
           ],
           "mac_suffixes": [
@@ -350,7 +350,7 @@
       {
         "name": "MXW009",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW009"
           ],
           "mac_suffixes": [
@@ -361,7 +361,7 @@
       {
         "name": "MXW010",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW010"
           ],
           "mac_suffixes": [
@@ -372,7 +372,7 @@
       {
         "name": "EWTTOET-N3689",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "EWTTOET-N3689"
           ],
           "mac_suffixes": [
@@ -383,7 +383,7 @@
       {
         "name": "EWTTOET-N3687",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "EWTTOET-N3687"
           ],
           "mac_suffixes": [
@@ -394,7 +394,7 @@
       {
         "name": "KP-IM606",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "KP-IM606"
           ],
           "mac_suffixes": [
@@ -405,7 +405,7 @@
       {
         "name": "GV-MA211",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "GV-MA211"
           ],
           "mac_suffixes": [
@@ -427,9 +427,6 @@
       {
         "name": "K06",
         "detection": {
-          "prefixes": [
-            "K06-"
-          ],
           "exact_names": [
             "K06"
           ],
@@ -454,7 +451,7 @@
       {
         "name": "MX02",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX02"
           ],
           "mac_suffixes": [
@@ -478,7 +475,7 @@
       {
         "name": "MX03",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX03"
           ],
           "mac_suffixes": [
@@ -502,7 +499,7 @@
       {
         "name": "MX07",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX07"
           ],
           "mac_suffixes": [
@@ -526,7 +523,7 @@
       {
         "name": "MINIPRINTER",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MINIPRINTER"
           ],
           "mac_suffixes": [
@@ -537,7 +534,7 @@
       {
         "name": "JL-BR22",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "JL-BR22"
           ],
           "mac_suffixes": [
@@ -561,7 +558,7 @@
       {
         "name": "BQ02",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ02"
           ],
           "mac_suffixes": [
@@ -572,7 +569,7 @@
       {
         "name": "BQ03",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ03"
           ],
           "mac_suffixes": [
@@ -583,7 +580,7 @@
       {
         "name": "BQ17",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ17"
           ],
           "mac_suffixes": [
@@ -602,10 +599,10 @@
     "profile_key": "x5",
     "detections": [
       {
-        "name": "IprintIt Printer",
+        "name": "IprintIt",
         "detection": {
           "prefixes": [
-            "IprintIt Printer-"
+            "IprintIt"
           ]
         }
       },
@@ -613,7 +610,7 @@
         "name": "DY01",
         "detection": {
           "prefixes": [
-            "DY01-"
+            "DY01"
           ]
         }
       },
@@ -621,7 +618,7 @@
         "name": "LP6",
         "detection": {
           "prefixes": [
-            "LP6-"
+            "LP6"
           ]
         }
       }
@@ -638,7 +635,7 @@
         "name": "Pocket Printer",
         "detection": {
           "prefixes": [
-            "Pocket Printer-"
+            "Pocket Printer"
           ]
         }
       },
@@ -646,7 +643,7 @@
         "name": "Luxorp.PX10",
         "detection": {
           "prefixes": [
-            "Luxorp.PX10-"
+            "Luxorp.PX10"
           ]
         }
       },
@@ -654,7 +651,7 @@
         "name": "EMX-040256",
         "detection": {
           "prefixes": [
-            "EMX-040256-"
+            "EMX-040256"
           ]
         }
       },
@@ -662,7 +659,7 @@
         "name": "SeznikEcho",
         "detection": {
           "prefixes": [
-            "SeznikEcho-"
+            "SeznikEcho"
           ]
         }
       },
@@ -670,7 +667,7 @@
         "name": "TCM690464",
         "detection": {
           "prefixes": [
-            "TCM690464-"
+            "TCM690464"
           ]
         }
       },
@@ -678,7 +675,7 @@
         "name": "UXPORTMIP",
         "detection": {
           "prefixes": [
-            "UXPORTMIP-"
+            "UXPORTMIP"
           ]
         }
       },
@@ -686,7 +683,7 @@
         "name": "DL_GE225",
         "detection": {
           "prefixes": [
-            "DL_GE225-"
+            "DL_GE225"
           ]
         }
       },
@@ -694,7 +691,7 @@
         "name": "ML-MP-01",
         "detection": {
           "prefixes": [
-            "ML-MP-01-"
+            "ML-MP-01"
           ]
         }
       },
@@ -702,7 +699,7 @@
         "name": "ROSSMANN",
         "detection": {
           "prefixes": [
-            "ROSSMANN-"
+            "ROSSMANN"
           ]
         }
       },
@@ -710,7 +707,7 @@
         "name": "0019B-C",
         "detection": {
           "prefixes": [
-            "0019B-C-"
+            "0019B-C"
           ]
         }
       },
@@ -718,7 +715,7 @@
         "name": "0019B-D",
         "detection": {
           "prefixes": [
-            "0019B-D-"
+            "0019B-D"
           ]
         }
       },
@@ -726,7 +723,7 @@
         "name": "DTR-R0",
         "detection": {
           "prefixes": [
-            "DTR-R0-"
+            "DTR-R0"
           ]
         }
       },
@@ -734,7 +731,7 @@
         "name": "GB03PL",
         "detection": {
           "prefixes": [
-            "GB03PL-"
+            "GB03PL"
           ]
         }
       },
@@ -742,7 +739,7 @@
         "name": "HT0125",
         "detection": {
           "prefixes": [
-            "HT0125-"
+            "HT0125"
           ]
         }
       },
@@ -750,7 +747,7 @@
         "name": "RT034h",
         "detection": {
           "prefixes": [
-            "RT034h-"
+            "RT034h"
           ]
         }
       },
@@ -758,7 +755,7 @@
         "name": "DT1-0",
         "detection": {
           "prefixes": [
-            "DT1-0-"
+            "DT1-0"
           ]
         }
       },
@@ -766,7 +763,7 @@
         "name": "SC03h",
         "detection": {
           "prefixes": [
-            "SC03h-"
+            "SC03h"
           ]
         }
       },
@@ -774,7 +771,7 @@
         "name": "SC04h",
         "detection": {
           "prefixes": [
-            "SC04h-"
+            "SC04h"
           ]
         }
       },
@@ -782,9 +779,6 @@
         "name": "X103h",
         "detection": {
           "prefixes": [
-            "X103h-"
-          ],
-          "exact_names": [
             "X103h"
           ]
         }
@@ -793,7 +787,7 @@
         "name": "DY03",
         "detection": {
           "prefixes": [
-            "DY03-"
+            "DY03"
           ]
         }
       },
@@ -801,9 +795,6 @@
         "name": "X100",
         "detection": {
           "prefixes": [
-            "X100-"
-          ],
-          "exact_names": [
             "X100"
           ]
         }
@@ -812,9 +803,6 @@
         "name": "X2h",
         "detection": {
           "prefixes": [
-            "X2h-"
-          ],
-          "exact_names": [
             "X2h"
           ]
         }
@@ -823,7 +811,7 @@
         "name": "X5h",
         "detection": {
           "prefixes": [
-            "X5h-"
+            "X5h"
           ]
         }
       },
@@ -831,7 +819,7 @@
         "name": "X6h",
         "detection": {
           "prefixes": [
-            "X6h-"
+            "X6h"
           ]
         }
       },
@@ -839,7 +827,7 @@
         "name": "X7h",
         "detection": {
           "prefixes": [
-            "X7h-"
+            "X7h"
           ]
         }
       },
@@ -847,7 +835,7 @@
         "name": "XC9",
         "detection": {
           "prefixes": [
-            "XC9-"
+            "XC9"
           ]
         }
       },
@@ -855,7 +843,39 @@
         "name": "D1",
         "detection": {
           "prefixes": [
-            "D1-"
+            "D1"
+          ]
+        }
+      },
+      {
+        "name": "X18",
+        "detection": {
+          "prefixes": [
+            "X18"
+          ]
+        }
+      },
+      {
+        "name": "DT1-R",
+        "detection": {
+          "prefixes": [
+            "DT1-R"
+          ]
+        }
+      },
+      {
+        "name": "TD-11308",
+        "detection": {
+          "prefixes": [
+            "TD-11308"
+          ]
+        }
+      },
+      {
+        "name": "XC9-FL01",
+        "detection": {
+          "prefixes": [
+            "XC9-FL01"
           ]
         }
       },
@@ -863,7 +883,7 @@
         "name": "P1",
         "detection": {
           "prefixes": [
-            "P1-"
+            "P1"
           ]
         }
       },
@@ -871,7 +891,7 @@
         "name": "P2",
         "detection": {
           "prefixes": [
-            "P2-"
+            "P2"
           ]
         }
       }
@@ -888,7 +908,7 @@
         "name": "ewtto ET-Z0504",
         "detection": {
           "prefixes": [
-            "ewtto ET-Z0504-"
+            "ewtto ET-Z0504"
           ]
         }
       },
@@ -896,7 +916,7 @@
         "name": "IM.04",
         "detection": {
           "prefixes": [
-            "IM.04-"
+            "IM.04"
           ]
         }
       },
@@ -904,9 +924,6 @@
         "name": "X103H",
         "detection": {
           "prefixes": [
-            "X103H-"
-          ],
-          "exact_names": [
             "X103H"
           ]
         }
@@ -915,7 +932,7 @@
         "name": "SC05",
         "detection": {
           "prefixes": [
-            "SC05-"
+            "SC05"
           ]
         }
       },
@@ -923,9 +940,6 @@
         "name": "X102",
         "detection": {
           "prefixes": [
-            "X102-"
-          ],
-          "exact_names": [
             "X102"
           ]
         }
@@ -934,7 +948,7 @@
         "name": "X5HP",
         "detection": {
           "prefixes": [
-            "X5HP-"
+            "X5HP"
           ]
         }
       },
@@ -942,7 +956,7 @@
         "name": "X6HP",
         "detection": {
           "prefixes": [
-            "X6HP-"
+            "X6HP"
           ]
         }
       },
@@ -950,7 +964,7 @@
         "name": "P7H",
         "detection": {
           "prefixes": [
-            "P7H-"
+            "P7H"
           ]
         }
       },
@@ -958,9 +972,6 @@
         "name": "X2H",
         "detection": {
           "prefixes": [
-            "X2H-"
-          ],
-          "exact_names": [
             "X2H"
           ]
         }
@@ -969,7 +980,7 @@
         "name": "X5H",
         "detection": {
           "prefixes": [
-            "X5H-"
+            "X5H"
           ]
         }
       },
@@ -977,7 +988,7 @@
         "name": "X6H",
         "detection": {
           "prefixes": [
-            "X6H-"
+            "X6H"
           ]
         }
       },
@@ -985,7 +996,7 @@
         "name": "X7H",
         "detection": {
           "prefixes": [
-            "X7H-"
+            "X7H"
           ]
         }
       }
@@ -1002,7 +1013,7 @@
         "name": "SeznikNeo",
         "detection": {
           "prefixes": [
-            "SeznikNeo-"
+            "SeznikNeo"
           ]
         }
       },
@@ -1010,7 +1021,7 @@
         "name": "RS9000",
         "detection": {
           "prefixes": [
-            "RS9000-"
+            "RS9000"
           ]
         }
       },
@@ -1018,7 +1029,7 @@
         "name": "XiaoWa",
         "detection": {
           "prefixes": [
-            "XiaoWa-"
+            "XiaoWa"
           ]
         }
       },
@@ -1026,7 +1037,7 @@
         "name": "JRX01",
         "detection": {
           "prefixes": [
-            "JRX01-"
+            "JRX01"
           ]
         }
       },
@@ -1034,7 +1045,7 @@
         "name": "QDX01",
         "detection": {
           "prefixes": [
-            "QDX01-"
+            "QDX01"
           ]
         }
       },
@@ -1042,7 +1053,7 @@
         "name": "wts07",
         "detection": {
           "prefixes": [
-            "wts07-"
+            "wts07"
           ]
         }
       },
@@ -1050,7 +1061,7 @@
         "name": "CP01",
         "detection": {
           "prefixes": [
-            "CP01-"
+            "CP01"
           ]
         }
       },
@@ -1058,7 +1069,55 @@
         "name": "DY49",
         "detection": {
           "prefixes": [
-            "DY49-"
+            "DY49"
+          ]
+        }
+      },
+      {
+        "name": "S5A",
+        "detection": {
+          "prefixes": [
+            "S5A"
+          ]
+        }
+      },
+      {
+        "name": "P20 max",
+        "detection": {
+          "prefixes": [
+            "P20 max"
+          ]
+        }
+      },
+      {
+        "name": "S9A",
+        "detection": {
+          "prefixes": [
+            "S9A"
+          ]
+        }
+      },
+      {
+        "name": "DY33A",
+        "detection": {
+          "prefixes": [
+            "DY33A"
+          ]
+        }
+      },
+      {
+        "name": "YMS-BT01",
+        "detection": {
+          "prefixes": [
+            "YMS-BT01"
+          ]
+        }
+      },
+      {
+        "name": "WJ-HOT-PRT",
+        "detection": {
+          "prefixes": [
+            "WJ-HOT-PRT"
           ]
         }
       }
@@ -1075,7 +1134,7 @@
         "name": "CMT-0510",
         "detection": {
           "prefixes": [
-            "CMT-0510-"
+            "CMT-0510"
           ]
         }
       },
@@ -1083,7 +1142,7 @@
         "name": "SC03",
         "detection": {
           "prefixes": [
-            "SC03-"
+            "SC03"
           ]
         }
       },
@@ -1091,7 +1150,15 @@
         "name": "SC04",
         "detection": {
           "prefixes": [
-            "SC04-"
+            "SC04"
+          ]
+        }
+      },
+      {
+        "name": "GV-MA211",
+        "detection": {
+          "prefixes": [
+            "GV-MA211"
           ]
         }
       }
@@ -1108,7 +1175,7 @@
         "name": "DL_X2Pro",
         "detection": {
           "prefixes": [
-            "DL_X2Pro-"
+            "DL_X2Pro"
           ]
         }
       },
@@ -1116,7 +1183,7 @@
         "name": "P5",
         "detection": {
           "prefixes": [
-            "P5-"
+            "P5"
           ]
         }
       }
@@ -1130,10 +1197,10 @@
     "profile_key": "jxm800",
     "detections": [
       {
-        "name": "GG-D2100",
+        "name": "JXM800",
         "detection": {
           "prefixes": [
-            "GG-D2100-"
+            "JXM800"
           ]
         }
       }
@@ -1147,10 +1214,10 @@
     "profile_key": "professional_printer",
     "detections": [
       {
-        "name": "CTP100LG",
+        "name": "Professional Printer",
         "detection": {
           "prefixes": [
-            "CTP100LG"
+            "Professional Printer"
           ]
         }
       }
@@ -1164,18 +1231,10 @@
     "profile_key": "shipping_printer",
     "detections": [
       {
-        "name": "CTP750BY",
+        "name": "Shipping Printer",
         "detection": {
           "prefixes": [
-            "CTP750BY"
-          ]
-        }
-      },
-      {
-        "name": "CTP800BD",
-        "detection": {
-          "prefixes": [
-            "CTP800BD"
+            "Shipping Printer"
           ]
         }
       }
@@ -1192,7 +1251,7 @@
         "name": "MV-B530",
         "detection": {
           "prefixes": [
-            "MV-B530-"
+            "MV-B530"
           ]
         }
       },
@@ -1200,7 +1259,7 @@
         "name": "GL-VS9",
         "detection": {
           "prefixes": [
-            "GL-VS9-"
+            "GL-VS9"
           ]
         }
       },
@@ -1208,7 +1267,7 @@
         "name": "QDID",
         "detection": {
           "prefixes": [
-            "QDID-"
+            "QDID"
           ]
         }
       },
@@ -1216,7 +1275,7 @@
         "name": "X9",
         "detection": {
           "prefixes": [
-            "X9-"
+            "X9"
           ]
         }
       }
@@ -1233,7 +1292,7 @@
         "name": "A41III",
         "detection": {
           "prefixes": [
-            "A41III-"
+            "A41III"
           ]
         }
       }
@@ -1250,7 +1309,7 @@
         "name": "GB02SH",
         "detection": {
           "prefixes": [
-            "GB02SH-"
+            "GB02SH"
           ]
         }
       }
@@ -1267,7 +1326,7 @@
         "name": "GB03PH",
         "detection": {
           "prefixes": [
-            "GB03PH-"
+            "GB03PH"
           ]
         }
       },
@@ -1275,7 +1334,7 @@
         "name": "GB03SH",
         "detection": {
           "prefixes": [
-            "GB03SH-"
+            "GB03SH"
           ]
         }
       }
@@ -1292,7 +1351,7 @@
         "name": "GB03SL",
         "detection": {
           "prefixes": [
-            "GB03SL-"
+            "GB03SL"
           ]
         }
       }
@@ -1309,7 +1368,7 @@
         "name": "ZPA4Z1",
         "detection": {
           "prefixes": [
-            "ZPA4Z1-"
+            "ZPA4Z1"
           ]
         }
       },
@@ -1317,7 +1376,7 @@
         "name": "ZP801",
         "detection": {
           "prefixes": [
-            "ZP801-"
+            "ZP801"
           ]
         }
       },
@@ -1325,7 +1384,7 @@
         "name": "XW006",
         "detection": {
           "prefixes": [
-            "XW006-"
+            "XW006"
           ]
         }
       },
@@ -1333,7 +1392,7 @@
         "name": "PR89",
         "detection": {
           "prefixes": [
-            "PR89-"
+            "PR89"
           ]
         }
       },
@@ -1341,7 +1400,7 @@
         "name": "X8-L",
         "detection": {
           "prefixes": [
-            "X8-L-"
+            "X8-L"
           ]
         }
       },
@@ -1349,7 +1408,7 @@
         "name": "X8-W",
         "detection": {
           "prefixes": [
-            "X8-W-"
+            "X8-W"
           ]
         }
       }
@@ -1366,7 +1425,7 @@
         "name": "A41II",
         "detection": {
           "prefixes": [
-            "A41II-"
+            "A41II"
           ]
         }
       },
@@ -1374,7 +1433,7 @@
         "name": "A42II",
         "detection": {
           "prefixes": [
-            "A42II-"
+            "A42II"
           ]
         }
       },
@@ -1382,7 +1441,7 @@
         "name": "A200",
         "detection": {
           "prefixes": [
-            "A200-"
+            "A200"
           ]
         }
       }
@@ -1399,7 +1458,7 @@
         "name": "A4300",
         "detection": {
           "prefixes": [
-            "A4300-"
+            "A4300"
           ]
         }
       }
@@ -1413,10 +1472,10 @@
     "profile_key": "label_printer",
     "detections": [
       {
-        "name": "CPLM10",
+        "name": "Label Printer",
         "detection": {
           "prefixes": [
-            "CPLM10"
+            "Label Printer"
           ]
         }
       }
@@ -1430,10 +1489,10 @@
     "profile_key": "mini_printer",
     "detections": [
       {
-        "name": "CTP500",
+        "name": "Mini Printer",
         "detection": {
           "prefixes": [
-            "CTP500"
+            "Mini Printer"
           ]
         }
       }
@@ -1450,7 +1509,7 @@
         "name": "DL_X2",
         "detection": {
           "prefixes": [
-            "DL_X2-"
+            "DL_X2"
           ]
         }
       }
@@ -1467,7 +1526,7 @@
         "name": "DL_X7",
         "detection": {
           "prefixes": [
-            "DL_X7-"
+            "DL_X7"
           ]
         }
       }
@@ -1484,7 +1543,7 @@
         "name": "DL_X7Pro",
         "detection": {
           "prefixes": [
-            "DL_X7Pro-"
+            "DL_X7Pro"
           ]
         }
       }
@@ -1501,7 +1560,7 @@
         "name": "LGM01",
         "detection": {
           "prefixes": [
-            "LGM01-"
+            "LGM01"
           ]
         }
       },
@@ -1509,7 +1568,7 @@
         "name": "X7HP",
         "detection": {
           "prefixes": [
-            "X7HP-"
+            "X7HP"
           ]
         }
       }
@@ -1526,7 +1585,7 @@
         "name": "MPA81",
         "detection": {
           "prefixes": [
-            "MPA81-"
+            "MPA81"
           ]
         }
       }
@@ -1543,7 +1602,7 @@
         "name": "PR893",
         "detection": {
           "prefixes": [
-            "PR893-"
+            "PR893"
           ]
         }
       },
@@ -1551,7 +1610,7 @@
         "name": "XW007",
         "detection": {
           "prefixes": [
-            "XW007-"
+            "XW007"
           ]
         }
       }
@@ -1568,7 +1627,7 @@
         "name": "PT001",
         "detection": {
           "prefixes": [
-            "PT001-"
+            "PT001"
           ]
         }
       }
@@ -1585,7 +1644,7 @@
         "name": "SC03H",
         "detection": {
           "prefixes": [
-            "SC03H-"
+            "SC03H"
           ]
         }
       },
@@ -1593,7 +1652,7 @@
         "name": "FC02",
         "detection": {
           "prefixes": [
-            "FC02-"
+            "FC02"
           ]
         }
       }
@@ -1610,9 +1669,6 @@
         "name": "X101H",
         "detection": {
           "prefixes": [
-            "X101H-"
-          ],
-          "exact_names": [
             "X101H"
           ]
         }
@@ -1629,8 +1685,8 @@
       {
         "name": "YTB01",
         "detection": {
-          "prefixes": [
-            "YTB01-"
+          "exact_names": [
+            "YTB01"
           ]
         }
       }
@@ -1648,7 +1704,7 @@
         "name": "ZP802",
         "detection": {
           "prefixes": [
-            "ZP802-"
+            "ZP802"
           ]
         }
       }
@@ -1665,7 +1721,7 @@
         "name": "15P3",
         "detection": {
           "prefixes": [
-            "15P3-"
+            "15P3"
           ]
         }
       },
@@ -1673,7 +1729,49 @@
         "name": "YK06",
         "detection": {
           "prefixes": [
-            "YK06-"
+            "YK06"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "wq02",
+    "profile_key": "wq02",
+    "detections": [
+      {
+        "name": "WQ02",
+        "detection": {
+          "prefixes": [
+            "WQ02"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "l1_u2",
+    "profile_key": "l1_u2",
+    "detections": [
+      {
+        "name": "L1",
+        "detection": {
+          "prefixes": [
+            "L1"
+          ]
+        }
+      },
+      {
+        "name": "U2",
+        "detection": {
+          "prefixes": [
+            "U2"
           ]
         }
       }
@@ -1690,7 +1788,7 @@
         "name": "58P5",
         "detection": {
           "prefixes": [
-            "58P5-"
+            "58P5"
           ]
         }
       },
@@ -1698,7 +1796,7 @@
         "name": "WL01",
         "detection": {
           "prefixes": [
-            "WL01-"
+            "WL01"
           ]
         }
       }
@@ -1714,9 +1812,6 @@
       {
         "name": "AI01",
         "detection": {
-          "prefixes": [
-            "AI01-"
-          ],
           "exact_names": [
             "AI01"
           ]
@@ -1736,7 +1831,7 @@
         "name": "AN01",
         "detection": {
           "prefixes": [
-            "AN01-"
+            "AN01"
           ]
         }
       }
@@ -1753,7 +1848,7 @@
         "name": "D100",
         "detection": {
           "prefixes": [
-            "D100-"
+            "D100"
           ]
         }
       }
@@ -1770,7 +1865,7 @@
         "name": "FL01",
         "detection": {
           "prefixes": [
-            "FL01-"
+            "FL01"
           ]
         }
       },
@@ -1778,7 +1873,7 @@
         "name": "KF-5",
         "detection": {
           "prefixes": [
-            "KF-5-"
+            "KF-5"
           ]
         }
       }
@@ -1795,7 +1890,7 @@
         "name": "GB01",
         "detection": {
           "prefixes": [
-            "GB01-"
+            "GB01"
           ]
         }
       }
@@ -1812,7 +1907,7 @@
         "name": "GB02",
         "detection": {
           "prefixes": [
-            "GB02-"
+            "GB02"
           ]
         }
       }
@@ -1829,7 +1924,7 @@
         "name": "GB03",
         "detection": {
           "prefixes": [
-            "GB03-"
+            "GB03"
           ]
         }
       },
@@ -1837,7 +1932,7 @@
         "name": "GB06",
         "detection": {
           "prefixes": [
-            "GB06-"
+            "GB06"
           ]
         }
       }
@@ -1854,7 +1949,7 @@
         "name": "GB04",
         "detection": {
           "prefixes": [
-            "GB04-"
+            "GB04"
           ]
         }
       }
@@ -1871,7 +1966,7 @@
         "name": "GB05",
         "detection": {
           "prefixes": [
-            "GB05-"
+            "GB05"
           ]
         }
       }
@@ -1888,7 +1983,7 @@
         "name": "GT01",
         "detection": {
           "prefixes": [
-            "GT01-"
+            "GT01"
           ]
         }
       },
@@ -1896,7 +1991,7 @@
         "name": "GT03",
         "detection": {
           "prefixes": [
-            "GT03-"
+            "GT03"
           ]
         }
       }
@@ -1913,7 +2008,7 @@
         "name": "GT02",
         "detection": {
           "prefixes": [
-            "GT02-"
+            "GT02"
           ]
         }
       }
@@ -1930,7 +2025,7 @@
         "name": "GT04",
         "detection": {
           "prefixes": [
-            "GT04-"
+            "GT04"
           ]
         }
       }
@@ -1947,7 +2042,7 @@
         "name": "GT08",
         "detection": {
           "prefixes": [
-            "GT08-"
+            "GT08"
           ]
         }
       },
@@ -1955,7 +2050,7 @@
         "name": "GW08",
         "detection": {
           "prefixes": [
-            "GW08-"
+            "GW08"
           ]
         }
       },
@@ -1963,7 +2058,7 @@
         "name": "XW005",
         "detection": {
           "prefixes": [
-            "XW005-"
+            "XW005"
           ]
         }
       },
@@ -1971,7 +2066,7 @@
         "name": "PR88",
         "detection": {
           "prefixes": [
-            "PR88-"
+            "PR88"
           ]
         }
       }
@@ -1988,7 +2083,7 @@
         "name": "GT09",
         "detection": {
           "prefixes": [
-            "GT09-"
+            "GT09"
           ]
         }
       },
@@ -1996,7 +2091,7 @@
         "name": "GT10",
         "detection": {
           "prefixes": [
-            "GT10-"
+            "GT10"
           ]
         }
       }
@@ -2013,7 +2108,7 @@
         "name": "GW09",
         "detection": {
           "prefixes": [
-            "GW09-"
+            "GW09"
           ]
         }
       }
@@ -2027,50 +2122,50 @@
     "profile_key": "jx001",
     "detections": [
       {
-        "name": "JX01",
+        "name": "JX001",
         "detection": {
           "prefixes": [
-            "JX01-"
+            "JX001"
           ]
         }
       },
       {
-        "name": "JX02",
+        "name": "JX002",
         "detection": {
           "prefixes": [
-            "JX02-"
+            "JX002"
           ]
         }
       },
       {
-        "name": "JX03",
+        "name": "JX003",
         "detection": {
           "prefixes": [
-            "JX03-"
+            "JX003"
           ]
         }
       },
       {
-        "name": "JX04",
+        "name": "JX004",
         "detection": {
           "prefixes": [
-            "JX04-"
+            "JX004"
           ]
         }
       },
       {
-        "name": "JX05",
+        "name": "JX005",
         "detection": {
           "prefixes": [
-            "JX05-"
+            "JX005"
           ]
         }
       },
       {
-        "name": "JX06",
+        "name": "JX006",
         "detection": {
           "prefixes": [
-            "JX06-"
+            "JX006"
           ]
         }
       }
@@ -2087,7 +2182,7 @@
         "name": "LT01",
         "detection": {
           "prefixes": [
-            "LT01-"
+            "LT01"
           ]
         }
       }
@@ -2104,7 +2199,7 @@
         "name": "LY01",
         "detection": {
           "prefixes": [
-            "LY01-"
+            "LY01"
           ]
         }
       }
@@ -2121,7 +2216,7 @@
         "name": "LY02",
         "detection": {
           "prefixes": [
-            "LY02-"
+            "LY02"
           ]
         }
       }
@@ -2138,7 +2233,7 @@
         "name": "LY03",
         "detection": {
           "prefixes": [
-            "LY03-"
+            "LY03"
           ]
         }
       }
@@ -2155,7 +2250,7 @@
         "name": "LY05",
         "detection": {
           "prefixes": [
-            "LY05-"
+            "LY05"
           ]
         }
       }
@@ -2172,7 +2267,27 @@
         "name": "LY10",
         "detection": {
           "prefixes": [
-            "LY10-"
+            "LY10"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "lp100",
+    "profile_key": "lp100",
+    "detections": [
+      {
+        "name": "LP100",
+        "detection": {
+          "exact_names": [
+            "LP100"
+          ],
+          "prefixes": [
+            "LP100"
           ]
         }
       }
@@ -2189,7 +2304,7 @@
         "name": "LY11",
         "detection": {
           "prefixes": [
-            "LY11-"
+            "LY11"
           ]
         }
       }
@@ -2205,8 +2320,8 @@
       {
         "name": "MX02",
         "detection": {
-          "prefixes": [
-            "MX02-"
+          "exact_names": [
+            "MX02"
           ]
         }
       }
@@ -2223,8 +2338,8 @@
       {
         "name": "MX03",
         "detection": {
-          "prefixes": [
-            "MX03-"
+          "exact_names": [
+            "MX03"
           ]
         }
       }
@@ -2241,23 +2356,23 @@
       {
         "name": "MX05",
         "detection": {
-          "prefixes": [
-            "MX05-"
+          "exact_names": [
+            "MX05"
           ]
         }
       },
       {
         "name": "MX06",
         "detection": {
-          "prefixes": [
-            "MX06-"
+          "exact_names": [
+            "MX06"
           ]
         }
       },
       {
         "name": "MXTP-100",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXTP-100"
           ]
         }
@@ -2265,7 +2380,7 @@
       {
         "name": "CYLOBTPRINTER",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "CYLOBTPRINTER"
           ]
         }
@@ -2273,7 +2388,7 @@
       {
         "name": "EWTTOET-Z0499",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "EWTTOET-Z0499"
           ]
         }
@@ -2292,8 +2407,8 @@
       {
         "name": "MX08",
         "detection": {
-          "prefixes": [
-            "MX08-"
+          "exact_names": [
+            "MX08"
           ]
         }
       }
@@ -2311,8 +2426,8 @@
       {
         "name": "MX09",
         "detection": {
-          "prefixes": [
-            "MX09-"
+          "exact_names": [
+            "MX09"
           ]
         }
       }
@@ -2330,15 +2445,15 @@
       {
         "name": "MX10",
         "detection": {
-          "prefixes": [
-            "MX10-"
+          "exact_names": [
+            "MX10"
           ]
         }
       },
       {
         "name": "AZ-P2108X",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "AZ-P2108X"
           ]
         }
@@ -2346,7 +2461,7 @@
       {
         "name": "MXW009",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW009"
           ]
         }
@@ -2354,7 +2469,7 @@
       {
         "name": "KP-IM606",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "KP-IM606"
           ]
         }
@@ -2362,7 +2477,7 @@
       {
         "name": "GV-MA211",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "GV-MA211"
           ]
         }
@@ -2381,15 +2496,15 @@
       {
         "name": "MX11",
         "detection": {
-          "prefixes": [
-            "MX11-"
+          "exact_names": [
+            "MX11"
           ]
         }
       },
       {
         "name": "MX12",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX12"
           ]
         }
@@ -2409,7 +2524,7 @@
         "name": "P5AI",
         "detection": {
           "prefixes": [
-            "P5AI-"
+            "P5AI"
           ]
         }
       },
@@ -2417,15 +2532,7 @@
         "name": "PR07",
         "detection": {
           "prefixes": [
-            "PR07-"
-          ]
-        }
-      },
-      {
-        "name": "PR25",
-        "detection": {
-          "prefixes": [
-            "PR25-"
+            "PR07"
           ]
         }
       },
@@ -2433,7 +2540,7 @@
         "name": "XW003",
         "detection": {
           "prefixes": [
-            "XW003-"
+            "XW003"
           ]
         }
       },
@@ -2441,7 +2548,7 @@
         "name": "XW009",
         "detection": {
           "prefixes": [
-            "XW009-"
+            "XW009"
           ]
         }
       },
@@ -2449,7 +2556,15 @@
         "name": "M01",
         "detection": {
           "prefixes": [
-            "M01-"
+            "M01"
+          ]
+        }
+      },
+      {
+        "name": "AI01",
+        "detection": {
+          "prefixes": [
+            "AI01"
           ]
         }
       }
@@ -2466,7 +2581,7 @@
         "name": "PR02",
         "detection": {
           "prefixes": [
-            "PR02-"
+            "PR02"
           ]
         }
       },
@@ -2474,7 +2589,7 @@
         "name": "XW008",
         "detection": {
           "prefixes": [
-            "XW008-"
+            "XW008"
           ]
         }
       }
@@ -2488,18 +2603,10 @@
     "profile_key": "xw001",
     "detections": [
       {
-        "name": "PR20",
-        "detection": {
-          "prefixes": [
-            "PR20-"
-          ]
-        }
-      },
-      {
         "name": "XW001",
         "detection": {
           "prefixes": [
-            "XW001-"
+            "XW001"
           ]
         }
       }
@@ -2516,7 +2623,7 @@
         "name": "PR30",
         "detection": {
           "prefixes": [
-            "PR30-"
+            "PR30"
           ]
         }
       }
@@ -2533,7 +2640,7 @@
         "name": "XW002",
         "detection": {
           "prefixes": [
-            "XW002-"
+            "XW002"
           ]
         }
       }
@@ -2550,7 +2657,7 @@
         "name": "XW004",
         "detection": {
           "prefixes": [
-            "XW004-"
+            "XW004"
           ]
         }
       },
@@ -2558,7 +2665,7 @@
         "name": "PR35",
         "detection": {
           "prefixes": [
-            "PR35-"
+            "PR35"
           ]
         }
       }
@@ -2575,7 +2682,7 @@
         "name": "S101",
         "detection": {
           "prefixes": [
-            "S101-"
+            "S101"
           ]
         }
       }
@@ -2592,7 +2699,7 @@
         "name": "S102",
         "detection": {
           "prefixes": [
-            "S102-"
+            "S102"
           ]
         }
       }
@@ -2609,7 +2716,7 @@
         "name": "ZHHC",
         "detection": {
           "prefixes": [
-            "ZHHC-"
+            "ZHHC"
           ]
         }
       }
@@ -2626,7 +2733,7 @@
         "name": "A33",
         "detection": {
           "prefixes": [
-            "A33-"
+            "A33"
           ]
         }
       }
@@ -2643,7 +2750,7 @@
         "name": "A43",
         "detection": {
           "prefixes": [
-            "A43-"
+            "A43"
           ]
         }
       }
@@ -2660,7 +2767,7 @@
         "name": "HD1",
         "detection": {
           "prefixes": [
-            "HD1-"
+            "HD1"
           ]
         }
       }
@@ -2677,7 +2784,7 @@
         "name": "P10",
         "detection": {
           "prefixes": [
-            "P10-"
+            "P10"
           ]
         }
       }
@@ -2694,7 +2801,7 @@
         "name": "S01",
         "detection": {
           "prefixes": [
-            "S01-"
+            "S01"
           ]
         }
       }
@@ -2710,8 +2817,8 @@
       {
         "name": "V5X",
         "detection": {
-          "prefixes": [
-            "V5X-"
+          "exact_names": [
+            "V5X"
           ]
         }
       },
@@ -2726,9 +2833,6 @@
       {
         "name": "X2",
         "detection": {
-          "prefixes": [
-            "X2-"
-          ],
           "exact_names": [
             "X2"
           ]
@@ -2737,7 +2841,7 @@
       {
         "name": "MXW01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW01"
           ]
         }
@@ -2745,7 +2849,7 @@
       {
         "name": "MXW01-1",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW01-1"
           ]
         }
@@ -2753,7 +2857,7 @@
       {
         "name": "C17",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "C17"
           ]
         }
@@ -2761,7 +2865,7 @@
       {
         "name": "MXW-W5",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW-W5"
           ]
         }
@@ -2769,7 +2873,7 @@
       {
         "name": "AC695X_PRINT",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "AC695X_PRINT"
           ]
         }
@@ -2777,7 +2881,7 @@
       {
         "name": "JK01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "JK01"
           ]
         }
@@ -2785,7 +2889,7 @@
       {
         "name": "PORTABLEPRINTER",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "PORTABLEPRINTER"
           ]
         }
@@ -2793,7 +2897,7 @@
       {
         "name": "INSTANTPRINTPLUS",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "INSTANTPRINTPLUS"
           ]
         }
@@ -2801,7 +2905,7 @@
       {
         "name": "REKA",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "REKA"
           ]
         }
@@ -2809,7 +2913,7 @@
       {
         "name": "HDMDT-00",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "HDMDT-00"
           ]
         }
@@ -2817,7 +2921,7 @@
       {
         "name": "KERUI",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "KERUI"
           ]
         }
@@ -2825,7 +2929,7 @@
       {
         "name": "BH03",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BH03"
           ]
         }
@@ -2844,10 +2948,31 @@
         "name": "X16",
         "detection": {
           "prefixes": [
-            "X16-"
-          ],
-          "exact_names": [
             "X16"
+          ]
+        }
+      },
+      {
+        "name": "Audio Print",
+        "detection": {
+          "prefixes": [
+            "Audio Print"
+          ]
+        }
+      },
+      {
+        "name": "A2",
+        "detection": {
+          "prefixes": [
+            "A2"
+          ]
+        }
+      },
+      {
+        "name": "A3",
+        "detection": {
+          "prefixes": [
+            "A3"
           ]
         }
       }
@@ -2864,7 +2989,7 @@
         "name": "M2",
         "detection": {
           "prefixes": [
-            "M2-"
+            "M2"
           ]
         }
       }
@@ -2881,7 +3006,7 @@
         "name": "P4",
         "detection": {
           "prefixes": [
-            "P4-"
+            "P4"
           ]
         }
       }
@@ -2898,7 +3023,7 @@
         "name": "P6",
         "detection": {
           "prefixes": [
-            "P6-"
+            "P6"
           ]
         }
       }
@@ -2915,7 +3040,7 @@
         "name": "P7",
         "detection": {
           "prefixes": [
-            "P7-"
+            "P7"
           ]
         }
       }
@@ -2932,7 +3057,7 @@
         "name": "U1",
         "detection": {
           "prefixes": [
-            "U1-"
+            "U1"
           ]
         }
       }
@@ -2949,7 +3074,7 @@
         "name": "X1",
         "detection": {
           "prefixes": [
-            "X1-"
+            "X1"
           ]
         }
       }
@@ -2966,7 +3091,7 @@
         "name": "X5",
         "detection": {
           "prefixes": [
-            "X5-"
+            "X5"
           ]
         }
       }
@@ -2983,7 +3108,7 @@
         "name": "X6",
         "detection": {
           "prefixes": [
-            "X6-"
+            "X6"
           ]
         }
       }
@@ -3000,7 +3125,7 @@
         "name": "X7",
         "detection": {
           "prefixes": [
-            "X7-"
+            "X7"
           ]
         }
       }
@@ -3017,7 +3142,7 @@
         "name": "X8",
         "detection": {
           "prefixes": [
-            "X8-"
+            "X8"
           ]
         }
       }
@@ -3033,7 +3158,7 @@
       {
         "name": "YT01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "YT01"
           ]
         }
@@ -3041,7 +3166,7 @@
       {
         "name": "YT02",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "YT02"
           ]
         }
@@ -3049,7 +3174,7 @@
       {
         "name": "MX01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX01"
           ]
         }
@@ -3057,7 +3182,7 @@
       {
         "name": "MXPC-100",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXPC-100"
           ]
         }
@@ -3065,7 +3190,7 @@
       {
         "name": "URBANWORXKIDSCAMERA",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "URBANWORXKIDSCAMERA"
           ]
         }
@@ -3073,7 +3198,7 @@
       {
         "name": "BQ01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ01"
           ]
         }
@@ -3081,7 +3206,7 @@
       {
         "name": "BQ05",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ05"
           ]
         }
@@ -3089,7 +3214,7 @@
       {
         "name": "BQ95B",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ95B"
           ]
         }
@@ -3097,7 +3222,7 @@
       {
         "name": "BQ95C",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ95C"
           ]
         }
@@ -3105,7 +3230,7 @@
       {
         "name": "BQ95",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ95"
           ]
         }
@@ -3113,7 +3238,7 @@
       {
         "name": "BQ06B",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ06B"
           ]
         }
@@ -3121,7 +3246,7 @@
       {
         "name": "BQ06",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ06"
           ]
         }
@@ -3129,7 +3254,7 @@
       {
         "name": "BQ07",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ07"
           ]
         }
@@ -3137,7 +3262,7 @@
       {
         "name": "BQ7A",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ7A"
           ]
         }
@@ -3145,7 +3270,7 @@
       {
         "name": "BQ7B",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ7B"
           ]
         }
@@ -3153,7 +3278,7 @@
       {
         "name": "BQ08",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ08"
           ]
         }
@@ -3161,7 +3286,7 @@
       {
         "name": "BQ96",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ96"
           ]
         }
@@ -3169,7 +3294,7 @@
       {
         "name": "EWTTOET-N3689",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "EWTTOET-N3689"
           ]
         }
@@ -3177,7 +3302,7 @@
       {
         "name": "EWTTOET-N3687",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "EWTTOET-N3687"
           ]
         }
@@ -3193,9 +3318,6 @@
       {
         "name": "K06",
         "detection": {
-          "prefixes": [
-            "K06-"
-          ],
           "exact_names": [
             "K06"
           ]
@@ -3214,7 +3336,7 @@
       {
         "name": "MX07",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX07"
           ]
         }
@@ -3232,7 +3354,7 @@
       {
         "name": "MX13",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MX13"
           ]
         }
@@ -3240,7 +3362,7 @@
       {
         "name": "XOPOPPY",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "XOPOPPY"
           ]
         }
@@ -3259,7 +3381,7 @@
       {
         "name": "PD01",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "PD01"
           ]
         }
@@ -3278,7 +3400,7 @@
       {
         "name": "MINIPRINTER",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MINIPRINTER"
           ]
         }
@@ -3286,7 +3408,7 @@
       {
         "name": "JL-BR22",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "JL-BR22"
           ]
         }
@@ -3304,7 +3426,7 @@
       {
         "name": "BQ02",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ02"
           ]
         }
@@ -3312,7 +3434,7 @@
       {
         "name": "BQ03",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ03"
           ]
         }
@@ -3320,7 +3442,7 @@
       {
         "name": "BQ17",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "BQ17"
           ]
         }
@@ -3338,7 +3460,7 @@
       {
         "name": "MXW010",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW010"
           ]
         }
@@ -3360,15 +3482,23 @@
       {
         "name": "C21",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "C21"
+          ]
+        }
+      },
+      {
+        "name": "D1",
+        "detection": {
+          "exact_names": [
+            "D1"
           ]
         }
       },
       {
         "name": "D2",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "D2"
           ]
         }
@@ -3376,7 +3506,7 @@
       {
         "name": "E2",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "E2"
           ]
         }
@@ -3384,7 +3514,7 @@
       {
         "name": "NEWSMY",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "NEWSMY"
           ]
         }
@@ -3404,33 +3534,30 @@
         "detection": {
           "prefixes": [
             "PPA2_"
-          ],
-          "exact_names": [
-            "PPA2"
           ]
         }
       },
       {
         "name": "A2",
         "detection": {
-          "exact_names": [
-            "A2"
+          "prefixes": [
+            "PPA2_"
           ]
         }
       },
       {
         "name": "A2_EY48D",
         "detection": {
-          "exact_names": [
-            "A2_EY48D"
+          "prefixes": [
+            "PPA2_"
           ]
         }
       },
       {
         "name": "A2_LYiN48D_ITSR",
         "detection": {
-          "exact_names": [
-            "A2_LYiN48D_ITSR"
+          "prefixes": [
+            "PPA2_"
           ]
         }
       }
@@ -3448,25 +3575,22 @@
         "detection": {
           "prefixes": [
             "PPA2H_"
-          ],
-          "exact_names": [
-            "PPA2H"
           ]
         }
       },
       {
         "name": "A2H",
         "detection": {
-          "exact_names": [
-            "A2H"
+          "prefixes": [
+            "PPA2H_"
           ]
         }
       },
       {
         "name": "A2_LYiN48DH",
         "detection": {
-          "exact_names": [
-            "A2_LYiN48DH"
+          "prefixes": [
+            "PPA2H_"
           ]
         }
       }
@@ -3487,9 +3611,6 @@
         "detection": {
           "prefixes": [
             "PPA2L_"
-          ],
-          "exact_names": [
-            "PPA2L"
           ]
         }
       }
@@ -3510,9 +3631,6 @@
         "detection": {
           "prefixes": [
             "PPA2LH_"
-          ],
-          "exact_names": [
-            "PPA2LH"
           ]
         }
       }
@@ -3530,9 +3648,6 @@
         "detection": {
           "prefixes": [
             "A40_"
-          ],
-          "exact_names": [
-            "A40"
           ]
         }
       }
@@ -3550,9 +3665,6 @@
         "detection": {
           "prefixes": [
             "APA40_"
-          ],
-          "exact_names": [
-            "APA40"
           ]
         }
       },
@@ -3561,9 +3673,6 @@
         "detection": {
           "prefixes": [
             "APA42_"
-          ],
-          "exact_names": [
-            "APA42"
           ]
         }
       },
@@ -3572,9 +3681,6 @@
         "detection": {
           "prefixes": [
             "APA43_"
-          ],
-          "exact_names": [
-            "APA43"
           ]
         }
       }
@@ -3592,9 +3698,6 @@
         "detection": {
           "prefixes": [
             "APA41_"
-          ],
-          "exact_names": [
-            "APA41"
           ]
         }
       },
@@ -3603,17 +3706,22 @@
         "detection": {
           "prefixes": [
             "APA49_"
-          ],
-          "exact_names": [
-            "APA49"
           ]
         }
       },
       {
         "name": "A49",
         "detection": {
-          "exact_names": [
-            "A49"
+          "prefixes": [
+            "APA49_"
+          ]
+        }
+      },
+      {
+        "name": "E49",
+        "detection": {
+          "prefixes": [
+            "E49_"
           ]
         }
       }
@@ -3631,9 +3739,6 @@
         "detection": {
           "prefixes": [
             "APA49H_"
-          ],
-          "exact_names": [
-            "APA49H"
           ]
         }
       }
@@ -3651,25 +3756,22 @@
         "detection": {
           "prefixes": [
             "ITP05_"
-          ],
-          "exact_names": [
-            "ITP05"
           ]
         }
       },
       {
         "name": "ITP05H",
         "detection": {
-          "exact_names": [
-            "ITP05H"
+          "prefixes": [
+            "ITP05_"
           ]
         }
       },
       {
         "name": "DYA46",
         "detection": {
-          "exact_names": [
-            "DYA46"
+          "prefixes": [
+            "ITP05_"
           ]
         }
       },
@@ -3686,9 +3788,6 @@
         "detection": {
           "prefixes": [
             "TPA46_"
-          ],
-          "exact_names": [
-            "TPA46"
           ]
         }
       },
@@ -3697,9 +3796,6 @@
         "detection": {
           "prefixes": [
             "DP_A4_"
-          ],
-          "exact_names": [
-            "DP_A4"
           ]
         }
       },
@@ -3708,9 +3804,6 @@
         "detection": {
           "prefixes": [
             "DP-A4_"
-          ],
-          "exact_names": [
-            "DP-A4"
           ]
         }
       },
@@ -3719,9 +3812,6 @@
         "detection": {
           "prefixes": [
             "DP_8038_"
-          ],
-          "exact_names": [
-            "DP_8038"
           ]
         }
       }
@@ -3739,17 +3829,14 @@
         "detection": {
           "prefixes": [
             "ITP06_"
-          ],
-          "exact_names": [
-            "ITP06"
           ]
         }
       },
       {
         "name": "DYA49",
         "detection": {
-          "exact_names": [
-            "DYA49"
+          "prefixes": [
+            "ITP06_"
           ]
         }
       },
@@ -3766,9 +3853,6 @@
         "detection": {
           "prefixes": [
             "TPA46Pro_"
-          ],
-          "exact_names": [
-            "TPA46Pro"
           ]
         }
       }
@@ -3786,9 +3870,6 @@
         "detection": {
           "prefixes": [
             "APA46Y_"
-          ],
-          "exact_names": [
-            "APA46Y"
           ]
         }
       }
@@ -3806,25 +3887,22 @@
         "detection": {
           "prefixes": [
             "APL86_"
-          ],
-          "exact_names": [
-            "APL86"
           ]
         }
       },
       {
         "name": "L86",
         "detection": {
-          "exact_names": [
-            "L86"
+          "prefixes": [
+            "APL86_"
           ]
         }
       },
       {
         "name": "L86_Printer",
         "detection": {
-          "exact_names": [
-            "L86_Printer"
+          "prefixes": [
+            "APL86_"
           ]
         }
       }
@@ -3842,25 +3920,22 @@
         "detection": {
           "prefixes": [
             "APL86H_"
-          ],
-          "exact_names": [
-            "APL86H"
           ]
         }
       },
       {
         "name": "APL86HL",
         "detection": {
-          "exact_names": [
-            "APL86HL"
+          "prefixes": [
+            "APL86H_"
           ]
         }
       },
       {
         "name": "L86H_Printer",
         "detection": {
-          "exact_names": [
-            "L86H_Printer"
+          "prefixes": [
+            "APL86H_"
           ]
         }
       }
@@ -3878,9 +3953,6 @@
         "detection": {
           "prefixes": [
             "U8_"
-          ],
-          "exact_names": [
-            "U8"
           ]
         }
       }
@@ -3899,25 +3971,22 @@
           "prefixes": [
             "D80-",
             "D80_"
-          ],
-          "exact_names": [
-            "D80"
           ]
         }
       },
       {
         "name": "PeriPage_A40",
         "detection": {
-          "exact_names": [
-            "PeriPage_A40"
+          "prefixes": [
+            "D80_"
           ]
         }
       },
       {
         "name": "DYD80",
         "detection": {
-          "exact_names": [
-            "DYD80"
+          "prefixes": [
+            "D80_"
           ]
         }
       },
@@ -3965,8 +4034,8 @@
       {
         "name": "DYD80H",
         "detection": {
-          "exact_names": [
-            "DYD80H"
+          "prefixes": [
+            "DP_D80H_"
           ]
         }
       },
@@ -3993,8 +4062,8 @@
       {
         "name": "A80H-HD",
         "detection": {
-          "exact_names": [
-            "A80H-HD"
+          "prefixes": [
+            "DP_A80H_"
           ]
         }
       },
@@ -4020,9 +4089,6 @@
         "detection": {
           "prefixes": [
             "QIRUI_Q1_"
-          ],
-          "exact_names": [
-            "QIRUI_Q1"
           ]
         }
       }
@@ -4040,9 +4106,6 @@
         "detection": {
           "prefixes": [
             "QIRUI_Q2_"
-          ],
-          "exact_names": [
-            "QIRUI_Q2"
           ]
         }
       }
@@ -4060,9 +4123,6 @@
         "detection": {
           "prefixes": [
             "LuckP_A41_"
-          ],
-          "exact_names": [
-            "LuckP_A41"
           ]
         }
       }
@@ -4080,9 +4140,6 @@
         "detection": {
           "prefixes": [
             "LuckP_A42_"
-          ],
-          "exact_names": [
-            "LuckP_A42"
           ]
         }
       }
@@ -4108,13 +4165,32 @@
       }
     ],
     "origin_app_packages": [
-      "com.sandu.JxPrinter",
+      "com.sandu.JxPrinter"
+    ]
+  },
+  {
+    "model_key": "toprint_tspl_p1",
+    "profile_key": "toprint_tspl_p1",
+    "protocol_override": {
+      "packets_type": "p1"
+    },
+    "detections": [
+      {
+        "name": "P1",
+        "detection": {
+          "prefixes": [
+            "P1"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
       "com.fyhd.toprint"
     ]
   },
   {
-    "model_key": "eleph_hprt_esc_zl1",
-    "profile_key": "eleph_hprt_esc_zl1",
+    "model_key": "toprint_hprt_esc_zl1",
+    "profile_key": "toprint_hprt_esc_zl1",
     "protocol_override": {
       "packets_type": "zl1"
     },
@@ -4123,7 +4199,7 @@
         "name": "P11",
         "detection": {
           "prefixes": [
-            "P11_"
+            "P11"
           ]
         }
       },
@@ -4131,15 +4207,7 @@
         "name": "P2",
         "detection": {
           "prefixes": [
-            "P2_"
-          ]
-        }
-      },
-      {
-        "name": "P3",
-        "detection": {
-          "prefixes": [
-            "P3_"
+            "P2"
           ]
         }
       },
@@ -4147,7 +4215,7 @@
         "name": "P5",
         "detection": {
           "prefixes": [
-            "P5_"
+            "P5"
           ]
         }
       },
@@ -4155,13 +4223,12 @@
         "name": "YHK",
         "detection": {
           "prefixes": [
-            "YHK_"
+            "YHK"
           ]
         }
       }
     ],
     "origin_app_packages": [
-      "com.sandu.JxPrinter",
       "com.fyhd.toprint"
     ]
   },
@@ -4173,7 +4240,8 @@
         "name": "D110",
         "detection": {
           "prefixes": [
-            "D110-"
+            "D110-",
+            "D110_"
           ],
           "exact_names": [
             "D110"
@@ -4195,10 +4263,6 @@
       {
         "name": "M02S",
         "detection": {
-          "prefixes": [
-            "M02S-",
-            "M02S_"
-          ],
           "exact_names": [
             "M02S"
           ]
@@ -4207,9 +4271,6 @@
       {
         "name": "Mr.in_M02S",
         "detection": {
-          "prefixes": [
-            "Mr.in_M02S"
-          ],
           "exact_names": [
             "Mr.in_M02S"
           ]
@@ -4230,10 +4291,6 @@
       {
         "name": "M02",
         "detection": {
-          "prefixes": [
-            "M02-",
-            "M02_"
-          ],
           "exact_names": [
             "M02"
           ]
@@ -4270,12 +4327,48 @@
       {
         "name": "M02X",
         "detection": {
-          "prefixes": [
-            "M02X-",
-            "M02X_"
-          ],
           "exact_names": [
             "M02X"
+          ]
+        }
+      },
+      {
+        "name": "M02D",
+        "detection": {
+          "exact_names": [
+            "M02D"
+          ]
+        }
+      },
+      {
+        "name": "M02E",
+        "detection": {
+          "exact_names": [
+            "M02E"
+          ]
+        }
+      },
+      {
+        "name": "MR2",
+        "detection": {
+          "exact_names": [
+            "MR2"
+          ]
+        }
+      },
+      {
+        "name": "M02A",
+        "detection": {
+          "exact_names": [
+            "M02A"
+          ]
+        }
+      },
+      {
+        "name": "KP-Q1",
+        "detection": {
+          "exact_names": [
+            "KP-Q1"
           ]
         }
       }
@@ -4294,10 +4387,6 @@
       {
         "name": "T02",
         "detection": {
-          "prefixes": [
-            "T02-",
-            "T02_"
-          ],
           "exact_names": [
             "T02"
           ]
@@ -4306,10 +4395,6 @@
       {
         "name": "T02E",
         "detection": {
-          "prefixes": [
-            "T02E-",
-            "T02E_"
-          ],
           "exact_names": [
             "T02E"
           ]
@@ -4318,10 +4403,6 @@
       {
         "name": "Q02E",
         "detection": {
-          "prefixes": [
-            "Q02E-",
-            "Q02E_"
-          ],
           "exact_names": [
             "Q02E"
           ]
@@ -4330,10 +4411,6 @@
       {
         "name": "C02E",
         "detection": {
-          "prefixes": [
-            "C02E-",
-            "C02E_"
-          ],
           "exact_names": [
             "C02E"
           ]
@@ -4354,29 +4431,15 @@
       {
         "name": "M02 Pro",
         "detection": {
-          "prefixes": [
-            "M02 Pro-",
-            "M02 Pro_",
-            "M02PRO-",
-            "M02PRO_"
-          ],
           "exact_names": [
-            "M02 Pro",
-            "M02PRO"
+            "M02 Pro"
           ]
         }
       },
       {
         "name": "M02PRO",
         "detection": {
-          "prefixes": [
-            "M02 Pro-",
-            "M02 Pro_",
-            "M02PRO-",
-            "M02PRO_"
-          ],
           "exact_names": [
-            "M02 Pro",
             "M02PRO"
           ]
         }
@@ -4396,24 +4459,24 @@
       {
         "name": "M110",
         "detection": {
+          "exact_names": [
+            "M110"
+          ],
           "prefixes": [
             "M110-",
             "M110_"
-          ],
-          "exact_names": [
-            "M110"
           ]
         }
       },
       {
         "name": "M120",
         "detection": {
+          "exact_names": [
+            "M120"
+          ],
           "prefixes": [
             "M120-",
             "M120_"
-          ],
-          "exact_names": [
-            "M120"
           ]
         }
       }
@@ -4432,12 +4495,12 @@
       {
         "name": "M220",
         "detection": {
+          "exact_names": [
+            "M220"
+          ],
           "prefixes": [
             "M220-",
             "M220_"
-          ],
-          "exact_names": [
-            "M220"
           ]
         }
       }

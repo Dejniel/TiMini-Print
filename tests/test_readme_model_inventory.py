@@ -4,6 +4,7 @@ import re
 import unittest
 
 from timiniprint.devices import PrinterCatalog
+from timiniprint.devices.profiles import SupportedModelMatch, UnsupportedModelMatch
 from tools.render_readme_models import (
     render_supported_models_block,
     render_todo_models_block,
@@ -11,18 +12,57 @@ from tools.render_readme_models import (
 )
 
 
-def _detect_supported_readme_name(catalog: PrinterCatalog, name: str):
-    candidates = (
+def _readme_name_candidates(name: str) -> tuple[str, ...]:
+    return (
         name,
         f"{name}-ABCD",
         f"{name}_ABCD",
         f"{name}ABCD",
     )
-    for candidate in candidates:
+
+
+def _detect_supported_readme_name(catalog: PrinterCatalog, name: str):
+    for candidate in _readme_name_candidates(name):
         detected = catalog.detect_device(candidate)
         if detected is not None:
             return detected
     return None
+
+
+def _supported_readme_name_matches_model(
+    catalog: PrinterCatalog,
+    name: str,
+    model_key: str,
+) -> bool:
+    detected = _detect_supported_readme_name(catalog, name)
+    if detected is not None and detected.model_key == model_key:
+        return True
+    return model_key in {
+        model.model_key
+        for model in catalog.get_models_by_detection_name(name)
+    }
+
+
+def _unsupported_detection_matches_model(
+    catalog: PrinterCatalog,
+    model,
+    trigger: str,
+    *,
+    is_prefix: bool,
+) -> bool:
+    candidates = (f"{trigger}ABCD", trigger) if is_prefix else (trigger,)
+    model_origins = set(model.origin_app_packages)
+    for candidate in candidates:
+        for match in catalog.detect_model(candidate):
+            if isinstance(match, UnsupportedModelMatch) and match.model.model_key == model.model_key:
+                return True
+            if (
+                isinstance(match, SupportedModelMatch)
+                and model_origins
+                and model_origins.isdisjoint(match.model.origin_app_packages)
+            ):
+                return True
+    return False
 
 
 class ReadmeModelInventoryTests(unittest.TestCase):
@@ -35,23 +75,31 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         for model in catalog.models:
             for name in model.names:
                 with self.subTest(model=model.model_key, status="supported", name=name):
-                    detected = _detect_supported_readme_name(catalog, name)
-                    self.assertIsNotNone(detected)
+                    self.assertTrue(
+                        _supported_readme_name_matches_model(catalog, name, model.model_key)
+                    )
 
         for model in catalog.unsupported_models:
-            for name in model.names:
-                with self.subTest(model=model.model_key, status="unsupported", name=name):
-                    self.assertIsNone(catalog.detect_device(name))
-                    unsupported = catalog.detect_unsupported_model(name)
-                    self.assertIsNotNone(unsupported)
-                    assert unsupported is not None
-                    self.assertEqual(unsupported.model_key, model.model_key)
+            for detection in model.detections:
+                for prefix in detection.detection.prefixes:
+                    with self.subTest(model=model.model_key, status="unsupported", prefix=prefix):
+                        self.assertTrue(
+                            _unsupported_detection_matches_model(
+                                catalog, model, prefix, is_prefix=True
+                            )
+                        )
+                for exact_name in detection.detection.exact_names:
+                    with self.subTest(model=model.model_key, status="unsupported", exact=exact_name):
+                        self.assertTrue(
+                            _unsupported_detection_matches_model(
+                                catalog, model, exact_name, is_prefix=False
+                            )
+                        )
 
     def test_supported_and_todo_blocks_render_non_empty_content(self) -> None:
         supported = render_supported_models_block()
         todo = render_todo_models_block()
 
-        self.assertIn("CTP750BY", supported)
         self.assertRegex(supported, r"(?<![A-Z0-9_-])APA46Y(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])PPA2L(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])PPA2LH(?![A-Z0-9_-])")

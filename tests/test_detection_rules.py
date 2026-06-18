@@ -31,6 +31,21 @@ class ModelDetectionTests(unittest.TestCase):
         self.assertTrue(detection.matches("X6", None))
         self.assertFalse(detection.matches("X6H-1234", None))
 
+    def test_separator_suffix_prefix_does_not_create_base_alias(self) -> None:
+        detection = ModelDetection(
+            prefixes=("PPA2_",),
+        )
+        self.assertFalse(detection.matches("PPA2", None))
+        self.assertTrue(detection.matches("PPA2_1234", None))
+
+    def test_base_prefix_matches_source_style_suffixes(self) -> None:
+        detection = ModelDetection(
+            prefixes=("GT01",),
+        )
+        self.assertTrue(detection.matches("GT01", None))
+        self.assertTrue(detection.matches("GT01-1234", None))
+        self.assertTrue(detection.matches("GT01_1234", None))
+
 
 if __name__ == "__main__":
     unittest.main()

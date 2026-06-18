@@ -13,7 +13,13 @@ if str(REPO_ROOT) not in __import__("sys").path:
 
 from timiniprint.devices import PrinterCatalog  # noqa: E402
 from timiniprint.devices.model_codec import model_from_json  # noqa: E402
-from timiniprint.devices.profiles import PrinterProfile, SupportedPrinterModel, UnsupportedPrinterModel  # noqa: E402
+from timiniprint.devices.profiles import (  # noqa: E402
+    PrinterProfile,
+    SupportedModelMatch,
+    SupportedPrinterModel,
+    UnsupportedModelMatch,
+    UnsupportedPrinterModel,
+)
 
 
 def _sample_names(model: dict[str, Any]) -> list[str]:
@@ -55,12 +61,43 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
+    model_origins = set(model.get("origin_app_packages", []))
     for sample in samples:
         for address in addresses:
-            resolved = catalog.detect_device(sample, address=address)
-            if resolved is None:
+            matches = catalog.detect_model(sample, address=address)
+            if len(matches) > 1:
+                if model["model_key"] in {candidate.model.model_key for candidate in matches}:
+                    if not model_origins:
+                        return {
+                            "kind": "ambiguous_model",
+                            "model_key": model["model_key"],
+                            "sample_name": sample,
+                            "sample_address": address,
+                            "candidate_model_keys": [
+                                candidate.model.model_key for candidate in matches
+                            ],
+                        }
+                    for candidate in matches:
+                        candidate_origins = set(candidate.model.origin_app_packages)
+                        if (
+                            candidate.model.model_key != model["model_key"]
+                            and model_origins.intersection(candidate_origins)
+                        ):
+                            return {
+                                "kind": "ambiguous_model",
+                                "model_key": model["model_key"],
+                                "sample_name": sample,
+                                "sample_address": address,
+                                "candidate_model_keys": [
+                                    candidate.model.model_key for candidate in matches
+                                ],
+                            }
+                    return None
                 continue
-            if resolved.model_key == model["model_key"]:
+            match = matches[0] if matches else None
+            if not isinstance(match, SupportedModelMatch):
+                continue
+            if match.model.model_key == model["model_key"]:
                 return None
             if blocking is None:
                 blocking = {
@@ -68,11 +105,11 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
                     "model_key": model["model_key"],
                     "sample_name": sample,
                     "sample_address": address,
-                    "blocked_by_model_key": resolved.model_key,
+                    "blocked_by_model_key": match.model.model_key,
                     "expected_profile_key": model["profile_key"],
                     "expected_protocol_family": (model.get("protocol_override") or {}).get("type"),
-                    "actual_profile_key": resolved.profile_key,
-                    "actual_protocol_family": resolved.protocol_family.value,
+                    "actual_profile_key": match.profile.profile_key,
+                    "actual_protocol_family": match.profile.protocol_default.type.value,
                 }
     return blocking or {
         "kind": "unreachable_model",
@@ -81,7 +118,6 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
         "sample_addresses": addresses,
     }
 
-
 def _find_unsupported_model_reachability_error(
     catalog: PrinterCatalog,
     model: dict[str, Any],
@@ -89,22 +125,43 @@ def _find_unsupported_model_reachability_error(
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
+    model_origins = set(model.get("origin_app_packages", []))
     for sample in samples:
         for address in addresses:
-            supported = catalog.detect_device(sample, address=address)
-            if supported is not None:
-                return {
-                    "kind": "unsupported_model_matches_supported_model",
-                    "model_key": model["model_key"],
-                    "sample_name": sample,
-                    "sample_address": address,
-                    "supported_model_key": supported.model_key,
-                    "supported_profile_key": supported.profile_key,
-                }
-            resolved = catalog.detect_unsupported_model(sample, address=address)
-            if resolved is None:
+            matches = catalog.detect_model(sample, address=address)
+            if len(matches) > 1:
+                if model["model_key"] in {candidate.model.model_key for candidate in matches}:
+                    for candidate in matches:
+                        if not isinstance(candidate, SupportedModelMatch):
+                            continue
+                        candidate_origins = set(candidate.model.origin_app_packages)
+                        if not model_origins or model_origins.intersection(candidate_origins):
+                            return {
+                                "kind": "unsupported_model_matches_supported_model",
+                                "model_key": model["model_key"],
+                                "sample_name": sample,
+                                "sample_address": address,
+                                "supported_model_key": candidate.model.model_key,
+                                "supported_profile_key": candidate.profile.profile_key,
+                            }
+                    return None
                 continue
-            if resolved.model_key == model["model_key"]:
+            match = matches[0] if matches else None
+            if isinstance(match, SupportedModelMatch):
+                supported_origins = set(match.model.origin_app_packages)
+                if not model_origins or model_origins.intersection(supported_origins):
+                    return {
+                        "kind": "unsupported_model_matches_supported_model",
+                        "model_key": model["model_key"],
+                        "sample_name": sample,
+                        "sample_address": address,
+                        "supported_model_key": match.model.model_key,
+                        "supported_profile_key": match.profile.profile_key,
+                    }
+                return None
+            if not isinstance(match, UnsupportedModelMatch):
+                continue
+            if match.model.model_key == model["model_key"]:
                 return None
             if blocking is None:
                 blocking = {
@@ -112,7 +169,7 @@ def _find_unsupported_model_reachability_error(
                     "model_key": model["model_key"],
                     "sample_name": sample,
                     "sample_address": address,
-                    "blocked_by_model_key": resolved.model_key,
+                    "blocked_by_model_key": match.model.model_key,
                 }
     return blocking or {
         "kind": "unreachable_unsupported_model",
@@ -120,7 +177,6 @@ def _find_unsupported_model_reachability_error(
         "sample_names": samples[:5],
         "sample_addresses": addresses,
     }
-
 
 def _model_merge_key(model: dict[str, Any]) -> str:
     """Technical model body; names and detection triggers live under detections."""
@@ -214,15 +270,6 @@ def generate_report(
             )
         for named_detection in model.get("detections", []):
             detection = named_detection.get("detection", {})
-            if detection.get("exact_names"):
-                errors.append(
-                    {
-                        "kind": "unsupported_exact_names_not_allowed",
-                        "model_key": model["model_key"],
-                        "name": named_detection.get("name"),
-                        "exact_names": detection.get("exact_names"),
-                    }
-                )
             for field in ("prefixes", "exact_names"):
                 for trigger in detection.get(field, []):
                     if trigger != trigger.strip():

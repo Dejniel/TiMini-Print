@@ -44,8 +44,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--serial", metavar="PATH", help="Serial port path to bypass Bluetooth")
     parser.add_argument(
         "--printer-config",
-        metavar="KEY_OR_PATH",
-        help="Known printer model key/name or printer config JSON path",
+        metavar="PATH",
+        help="Editable printer config JSON path",
+    )
+    parser.add_argument(
+        "--printer-model",
+        metavar="KEY",
+        help="Known printer model key",
     )
     return parser.parse_args()
 
@@ -71,21 +76,14 @@ def _text_size(text: str, font: ImageFont.ImageFont) -> tuple[int, int]:
 def _load_printer_config(catalog: PrinterCatalog, value: str | None) -> dict | None:
     if not value:
         return None
-    try:
-        catalog.device_from_key(value)
-        return None
-    except RuntimeError:
-        pass
     path = timini_cli._printer_config_path(value)
-    if path is None:
-        return None
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise RuntimeError("Printer config JSON must contain an object at the top level")
     return raw
 
 
-def _resolve_width(printer_config_value: str | None) -> int:
+def _resolve_width(printer_config_value: str | None, printer_model: str | None) -> int:
     catalog = PrinterCatalog.load()
     printer_config = _load_printer_config(catalog, printer_config_value)
     if printer_config:
@@ -97,12 +95,11 @@ def _resolve_width(printer_config_value: str | None) -> int:
         except RuntimeError as exc:
             print(f"Warning: invalid printer config width source: {exc}", file=sys.stderr)
             return DEFAULT_WIDTH
-    profile_key = printer_config_value
-    if profile_key:
+    if printer_model:
         try:
-            device = catalog.device_from_key(str(profile_key), transport_target=None)
+            device = catalog.device_from_model(str(printer_model), transport_target=None)
         except RuntimeError:
-            print(f"Warning: unknown printer config key '{profile_key}', using default width.", file=sys.stderr)
+            print(f"Warning: unknown printer model '{printer_model}', using default width.", file=sys.stderr)
         else:
             return max(32, device.profile.width)
     return DEFAULT_WIDTH
@@ -225,30 +222,29 @@ def _build_sequence(
 async def _resolve_device(args: argparse.Namespace) -> PrinterDevice:
     catalog = PrinterCatalog.load()
     printer_config = _load_printer_config(catalog, args.printer_config)
+    if args.printer_config and args.printer_model:
+        raise RuntimeError("Use either --printer-model KEY or --printer-config PATH, not both.")
     if args.serial:
-        if args.printer_config is None:
-            raise RuntimeError("--printer-config is required with --serial.")
         if printer_config is not None:
             return catalog.device_from_printer_config(
                 printer_config,
                 transport_target=SerialTarget(args.serial),
             )
-        return catalog.device_from_key(
-            args.printer_config,
-            transport_target=SerialTarget(args.serial),
-        )
+        if args.printer_model:
+            return catalog.device_from_model(args.printer_model, transport_target=SerialTarget(args.serial))
+        raise RuntimeError("--printer-model or --printer-config is required with --serial.")
 
     discovery = BluetoothDiscovery(catalog)
     if printer_config is None:
-        if args.printer_config:
+        if args.printer_model:
             if args.bluetooth:
                 detected = await discovery.resolve_transport_target(args.bluetooth)
-                return catalog.device_from_key(
-                    args.printer_config,
+                return catalog.device_from_model(
+                    args.printer_model,
                     display_name=detected.display_name,
                     transport_target=detected.transport_target,
                 )
-            return catalog.device_from_key(args.printer_config)
+            return catalog.device_from_model(args.printer_model)
         return await discovery.resolve_device(args.bluetooth)
     if args.bluetooth:
         detected = await discovery.resolve_transport_target(args.bluetooth)
@@ -265,7 +261,7 @@ async def _run() -> int:
     reporter = reporting.Reporter([reporting.StderrSink()])
     emit_startup_warnings(reporter)
 
-    width = _resolve_width(args.printer_config)
+    width = _resolve_width(args.printer_config, args.printer_model)
     font = _load_font(14)
     header_font = _load_font(18)
     device = await _resolve_device(args)

@@ -37,8 +37,13 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--serial", metavar="PATH", help="Serial port path to bypass Bluetooth (e.g. /dev/rfcomm0)")
     parser.add_argument(
         "--printer-config",
-        metavar="KEY_OR_PATH",
-        help="Known printer model key, public model name, or printer config JSON path used for manual overrides",
+        metavar="PATH",
+        help="Editable printer config JSON path used for manual overrides",
+    )
+    parser.add_argument(
+        "--printer-model",
+        metavar="KEY",
+        help="Known printer model key used for manual model selection",
     )
     parser.add_argument(
         "--export-printer-config",
@@ -85,8 +90,19 @@ def list_models() -> int:
     catalog = PrinterCatalog.load()
     for model in sorted(catalog.models, key=lambda model: model.model_key):
         names = ", ".join(model.names)
-        print(f"{model.model_key}: {names}")
+        origin_apps = ", ".join(catalog.origin_app_names(model.origin_app_packages))
+        app_suffix = f" [app: {origin_apps}]" if origin_apps else ""
+        print(f"{model.model_key}: {names}{app_suffix}")
     return 0
+
+
+def _model_source_label(catalog: PrinterCatalog, device: PrinterDevice) -> str:
+    app_names = ", ".join(catalog.origin_app_names(device.origin_app_packages))
+    if not app_names and not device.model_key:
+        return ""
+    source = app_names or "unknown app"
+    model = device.model_key or "unknown model"
+    return f" [model: {model}; app: {source}]"
 
 
 def emit_update_warning(reporter: reporting.Reporter) -> None:
@@ -135,15 +151,13 @@ def _write_printer_config(path: str, printer_config: Mapping[str, object]) -> No
     )
 
 
-def _printer_config_path(value: str) -> Path | None:
+def _printer_config_path(value: str) -> Path:
     path = Path(value)
     if path.exists():
         if not path.is_file():
             raise RuntimeError(f"Printer config path '{value}' is not a file")
         return path
-    if path.suffix.lower() == ".json" or len(path.parts) > 1:
-        raise RuntimeError(f"Printer config file not found: {value}")
-    return None
+    raise RuntimeError(f"Printer config file not found: {value}")
 
 
 def _device_from_printer_config_arg(
@@ -153,20 +167,7 @@ def _device_from_printer_config_arg(
     transport_target=_TRANSPORT_UNSET,
     display_name: str | None = None,
 ) -> PrinterDevice:
-    profile_transport_target = (
-        None if transport_target is _TRANSPORT_UNSET else transport_target
-    )
-    try:
-        return catalog.device_from_key(
-            value,
-            display_name=display_name,
-            transport_target=profile_transport_target,
-        )
-    except RuntimeError as key_error:
-        path = _printer_config_path(value)
-        if path is None:
-            raise key_error
-
+    path = _printer_config_path(value)
     kwargs = {}
     if transport_target is not _TRANSPORT_UNSET:
         kwargs["transport_target"] = transport_target
@@ -175,6 +176,20 @@ def _device_from_printer_config_arg(
     return catalog.device_from_printer_config(
         _load_printer_config(str(path)),
         **kwargs,
+    )
+
+
+def _device_from_printer_model_arg(
+    catalog: PrinterCatalog,
+    value: str,
+    *,
+    transport_target: BluetoothTarget | SerialTarget | None = None,
+    display_name: str | None = None,
+) -> PrinterDevice:
+    return catalog.device_from_model(
+        value,
+        display_name=display_name,
+        transport_target=transport_target,
     )
 
 
@@ -191,15 +206,17 @@ def scan_devices(reporter: reporting.Reporter) -> int:
                 reporter.warning(reporting.WARNING_SCAN_BLE_FAILED, detail=str(failure.error))
             else:
                 reporter.warning(reporting.WARNING_SCAN_CLASSIC_FAILED, detail=str(failure.error))
-        for device in result.devices:
+        devices = discovery.devices_for_display(result)
+        for device in devices:
             name = device.display_name or ""
             transport_badge = f" {device.transport_badge}" if device.transport_badge else ""
             status = " [unpaired]" if device.paired is False else ""
             profile = f" [profile: {device.profile_key}]"
+            source = _model_source_label(catalog, device)
             if name:
-                print(f"{name}{profile} ({device.address}){transport_badge}{status}")
+                print(f"{name}{profile}{source} ({device.address}){transport_badge}{status}")
             else:
-                print(f"{device.address}{profile}{transport_badge}{status}")
+                print(f"{device.address}{profile}{source}{transport_badge}{status}")
 
     try:
         asyncio.run(run())
@@ -312,25 +329,42 @@ async def _resolve_bluetooth_device(
     reporter: reporting.Reporter | None = None,
 ) -> PrinterDevice:
     discovery = BluetoothDiscovery(catalog, reporter=reporter)
-    if not args.printer_config:
+    if not args.printer_config and not args.printer_model:
         return await discovery.resolve_device(args.bluetooth)
     if args.bluetooth:
         detected = await discovery.resolve_transport_target(args.bluetooth)
-        return _device_from_printer_config_arg(
+        if args.printer_model:
+            return _device_from_printer_model_arg(
+                catalog,
+                args.printer_model,
+                transport_target=detected.transport_target,
+                display_name=detected.display_name,
+            )
+        if args.printer_config:
+            return _device_from_printer_config_arg(
+                catalog,
+                args.printer_config,
+                transport_target=detected.transport_target,
+                display_name=detected.display_name,
+            )
+    if args.printer_config:
+        device = _device_from_printer_config_arg(catalog, args.printer_config)
+        if isinstance(device.transport_target, BluetoothTarget):
+            return device
+        if device.transport_target is not None:
+            raise RuntimeError(
+                "Bluetooth printing with --printer-config cannot use a non-Bluetooth "
+                "transport target saved in the printer config"
+            )
+    detected = await discovery.resolve_transport_target(None)
+    if args.printer_model:
+        return _device_from_printer_model_arg(
             catalog,
-            args.printer_config,
+            args.printer_model,
             transport_target=detected.transport_target,
             display_name=detected.display_name,
         )
-    device = _device_from_printer_config_arg(catalog, args.printer_config)
-    if isinstance(device.transport_target, BluetoothTarget):
-        return device
-    if device.transport_target is not None:
-        raise RuntimeError(
-            "Bluetooth printing with --printer-config cannot use a non-Bluetooth "
-            "transport target saved in the printer config"
-        )
-    detected = await discovery.resolve_transport_target(None)
+    assert args.printer_config is not None
     return _device_from_printer_config_arg(
         catalog,
         args.printer_config,
@@ -343,15 +377,21 @@ def _resolve_serial_device(
     args: argparse.Namespace,
     catalog: PrinterCatalog,
 ) -> PrinterDevice:
-    if not args.printer_config:
-        raise RuntimeError(
-            "Serial printing requires --printer-config "
-            "(use a printer model key/name or export one first with --export-printer-config)"
+    if args.printer_config:
+        return _device_from_printer_config_arg(
+            catalog,
+            args.printer_config,
+            transport_target=SerialTarget(args.serial),
         )
-    return _device_from_printer_config_arg(
-        catalog,
-        args.printer_config,
-        transport_target=SerialTarget(args.serial),
+    if args.printer_model:
+        return _device_from_printer_model_arg(
+            catalog,
+            args.printer_model,
+            transport_target=SerialTarget(args.serial),
+        )
+    raise RuntimeError(
+        "Serial printing requires --printer-model or --printer-config "
+        "(use a model key or export a config first with --export-printer-config)"
     )
 
 
@@ -633,6 +673,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return list_models()
     if args.scan:
         return scan_devices(reporter)
+    if args.printer_model and args.printer_config:
+        reporter.error(
+            detail="Use either --printer-model KEY or --printer-config PATH, not both."
+        )
+        return 2
     if args.export_printer_config:
         if (
             args.path
@@ -642,12 +687,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.bluetooth
             or args.serial
             or args.printer_config
+            or args.printer_model
             or args.debug_row_markers is not None
         ):
             reporter.error(
                 detail=(
                     "Provide only --export-printer-config KEY PATH when exporting a printer config. "
-                    "Do not combine it with printing, transport, or other printer config flags. Use --help for usage."
+                    "Do not combine it with printing, transport, model, or config flags. Use --help for usage."
                 )
             )
             return 2

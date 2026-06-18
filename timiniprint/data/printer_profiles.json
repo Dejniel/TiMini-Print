@@ -46,6 +46,98 @@
     "a4xii": false
   },
   {
+    "profile_key": "wq02",
+    "size": 1,
+    "paper_size": 90,
+    "print_size": 96,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 40,
+    "protocol_default": {
+      "type": "tiny"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "tiny_raw"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 10,
+        "text": 10
+      },
+      "energy": {
+        "image": {
+          "low": 5000,
+          "middle": 5000,
+          "high": 5000
+        },
+        "text": {
+          "low": 8000,
+          "middle": 8000,
+          "high": 8000
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
+    "profile_key": "l1_u2",
+    "size": 1,
+    "paper_size": 90,
+    "print_size": 96,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 40,
+    "protocol_default": {
+      "type": "tiny"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "tiny_rle"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 8,
+        "text": 8
+      },
+      "energy": {
+        "image": {
+          "low": 1500,
+          "middle": 1500,
+          "high": 1500
+        },
+        "text": {
+          "low": 1500,
+          "middle": 1500,
+          "high": 1500
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
     "profile_key": "58p5",
     "size": 2,
     "paper_size": 384,
@@ -3202,6 +3294,53 @@
     "a4xii": false
   },
   {
+    "profile_key": "lp100",
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "protocol_default": {
+      "type": "tiny_prefixed",
+      "packets_type": "esc_star"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "tiny_rle"
+    },
+    "stream": {
+      "chunk_size": 183,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 26,
+        "text": 25
+      },
+      "energy": {
+        "image": {
+          "low": 100,
+          "middle": 100,
+          "high": 100
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
     "profile_key": "ly11",
     "size": 2,
     "paper_size": 576,
@@ -5470,7 +5609,67 @@
     "a4xii": false
   },
   {
-    "profile_key": "eleph_hprt_esc_zl1",
+    "profile_key": "toprint_tspl_p1",
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "has_id": false,
+    "use_spp": true,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 0,
+    "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "eleph_tspl",
+      "packets_type": "p1"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "eleph_tspl_bitmap"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 10
+    },
+    "post_print_feed_count": 0,
+    "print_defaults": {
+      "speed": {
+        "image": 6,
+        "text": 6
+      },
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 6,
+          "middle": 9,
+          "high": 13
+        },
+        "text": {
+          "low": 6,
+          "middle": 9,
+          "high": 13
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
+    "profile_key": "toprint_hprt_esc_zl1",
     "size": 2,
     "paper_size": 384,
     "print_size": 384,

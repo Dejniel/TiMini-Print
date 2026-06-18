@@ -1,5 +1,53 @@
 [
   {
+    "model_key": "unsupported_toprint_p3",
+    "origin_app_packages": [
+      "com.fyhd.toprint"
+    ],
+    "detections": [
+      {
+        "name": "P3",
+        "detection": {
+          "prefixes": [
+            "P3"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_toprint_gt08",
+    "origin_app_packages": [
+      "com.fyhd.toprint"
+    ],
+    "detections": [
+      {
+        "name": "GT08",
+        "detection": {
+          "prefixes": [
+            "GT08"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_toprint_gw08",
+    "origin_app_packages": [
+      "com.fyhd.toprint"
+    ],
+    "detections": [
+      {
+        "name": "GW08",
+        "detection": {
+          "prefixes": [
+            "GW08"
+          ]
+        }
+      }
+    ]
+  },
+  {
     "model_key": "unsupported_phomemo_p12_family_p12",
     "origin_app_packages": [
       "com.quyin.phomemo"
@@ -9,6 +57,9 @@
         "name": "P12",
         "detection": {
           "prefixes": [
+            "P12"
+          ],
+          "exact_names": [
             "P12"
           ]
         }
@@ -28,6 +79,9 @@
           "prefixes": [
             "P12 Pro",
             "P12PRO"
+          ],
+          "exact_names": [
+            "P12 Pro"
           ]
         }
       }
@@ -45,6 +99,9 @@
         "detection": {
           "prefixes": [
             "A30"
+          ],
+          "exact_names": [
+            "A30"
           ]
         }
       }
@@ -60,7 +117,7 @@
       {
         "name": "M03",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "M03"
           ]
         }
@@ -79,6 +136,9 @@
         "detection": {
           "prefixes": [
             "M200"
+          ],
+          "exact_names": [
+            "M200"
           ]
         }
       }
@@ -95,6 +155,9 @@
         "name": "M250",
         "detection": {
           "prefixes": [
+            "M250"
+          ],
+          "exact_names": [
             "M250"
           ]
         }
@@ -113,6 +176,9 @@
         "detection": {
           "prefixes": [
             "M221"
+          ],
+          "exact_names": [
+            "M221"
           ]
         }
       }
@@ -130,6 +196,9 @@
         "detection": {
           "prefixes": [
             "M260"
+          ],
+          "exact_names": [
+            "M260"
           ]
         }
       }
@@ -145,7 +214,7 @@
       {
         "name": "M04S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "M04S"
           ]
         }
@@ -162,7 +231,7 @@
       {
         "name": "M04AS",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "M04AS"
           ]
         }
@@ -181,6 +250,9 @@
         "detection": {
           "prefixes": [
             "D30"
+          ],
+          "exact_names": [
+            "D30"
           ]
         }
       }
@@ -197,6 +269,9 @@
         "name": "D35",
         "detection": {
           "prefixes": [
+            "D35"
+          ],
+          "exact_names": [
             "D35"
           ]
         }
@@ -215,6 +290,9 @@
         "detection": {
           "prefixes": [
             "D50"
+          ],
+          "exact_names": [
+            "D50"
           ]
         }
       }
@@ -231,6 +309,9 @@
         "name": "Q30",
         "detection": {
           "prefixes": [
+            "Q30"
+          ],
+          "exact_names": [
             "Q30"
           ]
         }
@@ -249,11 +330,155 @@
         "detection": {
           "prefixes": [
             "Q30S"
+          ],
+          "exact_names": [
+            "Q30S"
           ]
         }
       }
     ],
     "model_group": "D30"
+  },
+  {
+    "model_key": "unsupported_phomemo_p3100_family",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "P3100",
+        "detection": {
+          "exact_names": [
+            "P3100"
+          ]
+        }
+      },
+      {
+        "name": "P3100D",
+        "detection": {
+          "exact_names": [
+            "P3100D"
+          ]
+        }
+      },
+      {
+        "name": "P3100J",
+        "detection": {
+          "exact_names": [
+            "P3100J"
+          ]
+        }
+      },
+      {
+        "name": "P3100DJ",
+        "detection": {
+          "exact_names": [
+            "P3100DJ"
+          ]
+        }
+      }
+    ],
+    "model_group": "P3100"
+  },
+  {
+    "model_key": "unsupported_phomemo_m02h_family",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M02PRE",
+        "detection": {
+          "exact_names": [
+            "M02PRE"
+          ]
+        }
+      },
+      {
+        "name": "M02S-H",
+        "detection": {
+          "exact_names": [
+            "M02S-H"
+          ]
+        }
+      },
+      {
+        "name": "M02H",
+        "detection": {
+          "exact_names": [
+            "M02H"
+          ]
+        }
+      }
+    ],
+    "model_group": "M02H"
+  },
+  {
+    "model_key": "unsupported_phomemo_m02l_family",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "M02X/L",
+        "detection": {
+          "exact_names": [
+            "M02X/L"
+          ]
+        }
+      },
+      {
+        "name": "M02L",
+        "detection": {
+          "exact_names": [
+            "M02L"
+          ]
+        }
+      }
+    ],
+    "model_group": "M02L"
+  },
+  {
+    "model_key": "unsupported_phomemo_q02_family",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "Q02",
+        "detection": {
+          "exact_names": [
+            "Q02"
+          ]
+        }
+      }
+    ],
+    "model_group": "Q02"
+  },
+  {
+    "model_key": "unsupported_phomemo_y02_family",
+    "origin_app_packages": [
+      "com.quyin.phomemo"
+    ],
+    "detections": [
+      {
+        "name": "Y02C",
+        "detection": {
+          "exact_names": [
+            "Y02C"
+          ]
+        }
+      },
+      {
+        "name": "Y02S",
+        "detection": {
+          "exact_names": [
+            "Y02S"
+          ]
+        }
+      }
+    ],
+    "model_group": "Y02"
   },
   {
     "model_key": "unsupported_phomemo_pm241_family_pm_241_bt",
@@ -308,13 +533,13 @@
       {
         "name": "LP100",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "LP100"
           ]
         }
       }
     ],
-    "model_group": "LP100"
+    "model_group": "LP100 legacy"
   },
   {
     "model_key": "unsupported_lp100_family_lp220",
@@ -325,13 +550,13 @@
       {
         "name": "LP220",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "LP220"
           ]
         }
       }
     ],
-    "model_group": "LP100"
+    "model_group": "LP100 legacy"
   },
   {
     "model_key": "unsupported_lp100_family_ly100_ble",
@@ -342,13 +567,13 @@
       {
         "name": "LY100_BLE",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "LY100_BLE"
           ]
         }
       }
     ],
-    "model_group": "LP100"
+    "model_group": "LP100 legacy"
   },
   {
     "model_key": "unsupported_lp100s_family_lp100s",
@@ -359,7 +584,7 @@
       {
         "name": "LP100S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "LP100S"
           ]
         }
@@ -376,7 +601,7 @@
       {
         "name": "LP220S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "LP220S"
           ]
         }
@@ -393,7 +618,7 @@
       {
         "name": "P100",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "P100"
           ]
         }
@@ -410,7 +635,7 @@
       {
         "name": "MP100",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP100"
           ]
         }
@@ -427,7 +652,7 @@
       {
         "name": "MP200",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP200"
           ]
         }
@@ -444,7 +669,7 @@
       {
         "name": "MP220",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP220"
           ]
         }
@@ -461,7 +686,7 @@
       {
         "name": "YINTIBAO-V5",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "YINTIBAO-V5"
           ]
         }
@@ -478,7 +703,7 @@
       {
         "name": "AEQ918N4",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "AEQ918N4"
           ]
         }
@@ -495,7 +720,7 @@
       {
         "name": "P100S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "P100S"
           ]
         }
@@ -512,7 +737,7 @@
       {
         "name": "MP100S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP100S"
           ]
         }
@@ -529,7 +754,7 @@
       {
         "name": "MP200S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP200S"
           ]
         }
@@ -546,7 +771,7 @@
       {
         "name": "MP220S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP220S"
           ]
         }
@@ -563,7 +788,7 @@
       {
         "name": "YINTIBAO-V5PRO",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "YINTIBAO-V5PRO"
           ]
         }
@@ -580,7 +805,7 @@
       {
         "name": "MP300",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP300"
           ]
         }
@@ -596,7 +821,7 @@
       {
         "name": "P3S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "P3S"
           ]
         }
@@ -613,7 +838,7 @@
       {
         "name": "MP300S",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MP300S"
           ]
         }
@@ -630,7 +855,7 @@
       {
         "name": "M08F",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "M08F"
           ]
         }
@@ -647,7 +872,7 @@
       {
         "name": "TP81",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "TP81"
           ]
         }
@@ -664,7 +889,7 @@
       {
         "name": "TP84",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "TP84"
           ]
         }
@@ -681,7 +906,7 @@
       {
         "name": "TP85",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "TP85"
           ]
         }
@@ -698,7 +923,7 @@
       {
         "name": "TP86",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "TP86"
           ]
         }
@@ -715,7 +940,7 @@
       {
         "name": "TP87",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "TP87"
           ]
         }
@@ -732,7 +957,7 @@
       {
         "name": "TP88",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "TP88"
           ]
         }
@@ -749,7 +974,7 @@
       {
         "name": "M832",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "M832"
           ]
         }
@@ -766,7 +991,7 @@
       {
         "name": "M836",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "M836"
           ]
         }
@@ -783,7 +1008,7 @@
       {
         "name": "Q302",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "Q302"
           ]
         }
@@ -800,7 +1025,7 @@
       {
         "name": "Q580",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "Q580"
           ]
         }
@@ -818,7 +1043,7 @@
       {
         "name": "MXW-A4",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "MXW-A4"
           ]
         }
@@ -834,7 +1059,7 @@
       {
         "name": "JXPRINTER",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "JXPRINTER"
           ]
         }
@@ -851,7 +1076,7 @@
       {
         "name": "PRINTER",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "PRINTER"
           ]
         }
@@ -934,7 +1159,7 @@
       {
         "name": "YINTIBAO",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "YINTIBAO"
           ]
         }
@@ -951,7 +1176,7 @@
       {
         "name": "PAPERGO",
         "detection": {
-          "prefixes": [
+          "exact_names": [
             "PAPERGO"
           ]
         }
@@ -1416,7 +1641,7 @@
         "name": "AL200",
         "detection": {
           "prefixes": [
-            "AL200"
+            "AL200-"
           ]
         }
       }
@@ -1433,7 +1658,7 @@
         "name": "AL2",
         "detection": {
           "prefixes": [
-            "AL2"
+            "AL2_"
           ]
         }
       }
@@ -1467,7 +1692,7 @@
         "name": "D12",
         "detection": {
           "prefixes": [
-            "D12"
+            "D12_"
           ]
         }
       }
@@ -1484,7 +1709,7 @@
         "name": "C2",
         "detection": {
           "prefixes": [
-            "C2"
+            "PPC2_"
           ]
         }
       }
@@ -1501,7 +1726,8 @@
         "name": "C3",
         "detection": {
           "prefixes": [
-            "C3"
+            "LPC3_",
+            "DP_ITP07_"
           ]
         }
       }
@@ -1518,7 +1744,8 @@
         "name": "C16",
         "detection": {
           "prefixes": [
-            "C16"
+            "MPC16_",
+            "15P3Pro_"
           ]
         }
       }
@@ -1535,7 +1762,7 @@
         "name": "D82",
         "detection": {
           "prefixes": [
-            "D82"
+            "D82_"
           ]
         }
       }
@@ -1552,7 +1779,7 @@
         "name": "D82S",
         "detection": {
           "prefixes": [
-            "D82S"
+            "D82S_"
           ]
         }
       }
@@ -1569,7 +1796,7 @@
         "name": "D83",
         "detection": {
           "prefixes": [
-            "D83"
+            "D83_"
           ]
         }
       }
@@ -1586,7 +1813,7 @@
         "name": "A10",
         "detection": {
           "prefixes": [
-            "A10"
+            "A10_"
           ]
         }
       }
@@ -1620,7 +1847,7 @@
         "name": "D400",
         "detection": {
           "prefixes": [
-            "D400"
+            "D400_"
           ]
         }
       }
@@ -1637,7 +1864,7 @@
         "name": "Y810BT",
         "detection": {
           "prefixes": [
-            "Y810BT"
+            "Y810BT-"
           ]
         }
       }
@@ -1654,7 +1881,8 @@
         "name": "QR380A",
         "detection": {
           "prefixes": [
-            "QR380A"
+            "QR380A_",
+            "QR380A-"
           ]
         }
       }
@@ -1671,7 +1899,7 @@
         "name": "TB41",
         "detection": {
           "prefixes": [
-            "TB41"
+            "TB41_"
           ]
         }
       }
@@ -1688,7 +1916,8 @@
         "name": "QR_386A",
         "detection": {
           "prefixes": [
-            "QR_386A"
+            "QR_386A_",
+            "QR-386A-"
           ]
         }
       }
@@ -1705,7 +1934,7 @@
         "name": "ITPP941",
         "detection": {
           "prefixes": [
-            "ITPP941"
+            "ITPP941_"
           ]
         }
       }
@@ -1722,7 +1951,7 @@
         "name": "P80S",
         "detection": {
           "prefixes": [
-            "P80S"
+            "P80S-"
           ]
         }
       }
@@ -1739,7 +1968,7 @@
         "name": "ITPP130B",
         "detection": {
           "prefixes": [
-            "ITPP130B"
+            "ITPP130B-"
           ]
         }
       }
@@ -1756,7 +1985,7 @@
         "name": "ITP05N",
         "detection": {
           "prefixes": [
-            "ITP05N"
+            "DP_ITP05N_"
           ]
         }
       }
@@ -1773,7 +2002,7 @@
         "name": "ITP06N",
         "detection": {
           "prefixes": [
-            "ITP06N"
+            "DP_ITP06N_"
           ]
         }
       }
@@ -1790,7 +2019,7 @@
         "name": "PCPS_D80",
         "detection": {
           "prefixes": [
-            "PCPS_D80"
+            "PCPS_D80_"
           ]
         }
       }
@@ -1807,7 +2036,7 @@
         "name": "DP_A80",
         "detection": {
           "prefixes": [
-            "DP_A80"
+            "DP_A80_"
           ]
         }
       }
@@ -1824,7 +2053,7 @@
         "name": "DP_A80S",
         "detection": {
           "prefixes": [
-            "DP_A80S"
+            "DP_A80S_"
           ]
         }
       }
@@ -1841,7 +2070,7 @@
         "name": "DP_A80W",
         "detection": {
           "prefixes": [
-            "DP_A80W"
+            "DP_A80W_"
           ]
         }
       }
@@ -1875,7 +2104,7 @@
         "name": "GD-88",
         "detection": {
           "prefixes": [
-            "GD-88"
+            "GD-88_"
           ]
         }
       }
@@ -2000,5 +2229,1190 @@
       "com.gengcon.android.jccloudprinter"
     ],
     "model_group": "B3S"
+  },
+  {
+    "model_key": "unsupported_printmaster_m3_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "BMW-M3",
+        "detection": {
+          "exact_names": [
+            "BMW-M3"
+          ]
+        }
+      },
+      {
+        "name": "YCN-M3",
+        "detection": {
+          "exact_names": [
+            "YCN-M3"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M3"
+  },
+  {
+    "model_key": "unsupported_printmaster_m8_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M8",
+        "detection": {
+          "exact_names": [
+            "M8"
+          ]
+        }
+      },
+      {
+        "name": "D68",
+        "detection": {
+          "exact_names": [
+            "D68"
+          ]
+        }
+      },
+      {
+        "name": "D80",
+        "detection": {
+          "exact_names": [
+            "D80"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M8"
+  },
+  {
+    "model_key": "unsupported_printmaster_m110_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M110",
+        "detection": {
+          "exact_names": [
+            "M110"
+          ]
+        }
+      },
+      {
+        "name": "M110C",
+        "detection": {
+          "exact_names": [
+            "M110C"
+          ]
+        }
+      },
+      {
+        "name": "M110S",
+        "detection": {
+          "exact_names": [
+            "M110S"
+          ]
+        }
+      },
+      {
+        "name": "M110s",
+        "detection": {
+          "exact_names": [
+            "M110s"
+          ]
+        }
+      },
+      {
+        "name": "M110R",
+        "detection": {
+          "exact_names": [
+            "M110R"
+          ]
+        }
+      },
+      {
+        "name": "M110r",
+        "detection": {
+          "exact_names": [
+            "M110r"
+          ]
+        }
+      },
+      {
+        "name": "M108",
+        "detection": {
+          "exact_names": [
+            "M108"
+          ]
+        }
+      },
+      {
+        "name": "M108_Z",
+        "detection": {
+          "exact_names": [
+            "M108_Z"
+          ]
+        }
+      },
+      {
+        "name": "M108TA",
+        "detection": {
+          "exact_names": [
+            "M108TA"
+          ]
+        }
+      },
+      {
+        "name": "M109",
+        "detection": {
+          "exact_names": [
+            "M109"
+          ]
+        }
+      },
+      {
+        "name": "M105",
+        "detection": {
+          "exact_names": [
+            "M105"
+          ]
+        }
+      },
+      {
+        "name": "M110SA",
+        "detection": {
+          "exact_names": [
+            "M110SA"
+          ]
+        }
+      },
+      {
+        "name": "111",
+        "detection": {
+          "exact_names": [
+            "111"
+          ]
+        }
+      },
+      {
+        "name": "A42",
+        "detection": {
+          "exact_names": [
+            "A42"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M110"
+  },
+  {
+    "model_key": "unsupported_printmaster_m120_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M120",
+        "detection": {
+          "exact_names": [
+            "M120"
+          ]
+        }
+      },
+      {
+        "name": "M120C",
+        "detection": {
+          "exact_names": [
+            "M120C"
+          ]
+        }
+      },
+      {
+        "name": "M126",
+        "detection": {
+          "exact_names": [
+            "M126"
+          ]
+        }
+      },
+      {
+        "name": "M102",
+        "detection": {
+          "exact_names": [
+            "M102"
+          ]
+        }
+      },
+      {
+        "name": "M8-BK",
+        "detection": {
+          "exact_names": [
+            "M8-BK"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M120"
+  },
+  {
+    "model_key": "unsupported_printmaster_m150_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M150",
+        "detection": {
+          "exact_names": [
+            "M150"
+          ]
+        }
+      },
+      {
+        "name": "M100",
+        "detection": {
+          "exact_names": [
+            "M100"
+          ]
+        }
+      },
+      {
+        "name": "M160",
+        "detection": {
+          "exact_names": [
+            "M160"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M150"
+  },
+  {
+    "model_key": "unsupported_printmaster_m200_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M200",
+        "detection": {
+          "exact_names": [
+            "M200"
+          ]
+        }
+      },
+      {
+        "name": "M206",
+        "detection": {
+          "exact_names": [
+            "M206"
+          ]
+        }
+      },
+      {
+        "name": "M208",
+        "detection": {
+          "exact_names": [
+            "M208"
+          ]
+        }
+      },
+      {
+        "name": "M209",
+        "detection": {
+          "exact_names": [
+            "M209"
+          ]
+        }
+      },
+      {
+        "name": "M220",
+        "detection": {
+          "exact_names": [
+            "M220"
+          ]
+        }
+      },
+      {
+        "name": "M220S",
+        "detection": {
+          "exact_names": [
+            "M220S"
+          ]
+        }
+      },
+      {
+        "name": "M220C",
+        "detection": {
+          "exact_names": [
+            "M220C"
+          ]
+        }
+      },
+      {
+        "name": "M219",
+        "detection": {
+          "exact_names": [
+            "M219"
+          ]
+        }
+      },
+      {
+        "name": "M200C",
+        "detection": {
+          "exact_names": [
+            "M200C"
+          ]
+        }
+      },
+      {
+        "name": "M221",
+        "detection": {
+          "exact_names": [
+            "M221"
+          ]
+        }
+      },
+      {
+        "name": "M250",
+        "detection": {
+          "exact_names": [
+            "M250"
+          ]
+        }
+      },
+      {
+        "name": "M260",
+        "detection": {
+          "exact_names": [
+            "M260"
+          ]
+        }
+      },
+      {
+        "name": "M220A",
+        "detection": {
+          "exact_names": [
+            "M220A"
+          ]
+        }
+      },
+      {
+        "name": "M320",
+        "detection": {
+          "exact_names": [
+            "M320"
+          ]
+        }
+      },
+      {
+        "name": "M321",
+        "detection": {
+          "exact_names": [
+            "M321"
+          ]
+        }
+      },
+      {
+        "name": "A43",
+        "detection": {
+          "exact_names": [
+            "A43"
+          ]
+        }
+      },
+      {
+        "name": "A431",
+        "detection": {
+          "exact_names": [
+            "A431"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M200"
+  },
+  {
+    "model_key": "unsupported_printmaster_m210_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M210",
+        "detection": {
+          "exact_names": [
+            "M210"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M210"
+  },
+  {
+    "model_key": "unsupported_printmaster_m330_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M330",
+        "detection": {
+          "exact_names": [
+            "M330"
+          ]
+        }
+      },
+      {
+        "name": "M332",
+        "detection": {
+          "exact_names": [
+            "M332"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M330"
+  },
+  {
+    "model_key": "unsupported_printmaster_m400_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M420",
+        "detection": {
+          "exact_names": [
+            "M420"
+          ]
+        }
+      },
+      {
+        "name": "M421",
+        "detection": {
+          "exact_names": [
+            "M421"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M400"
+  },
+  {
+    "model_key": "unsupported_printmaster_b246d_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "B246D",
+        "detection": {
+          "exact_names": [
+            "B246D"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master B246D"
+  },
+  {
+    "model_key": "unsupported_printmaster_e600s_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "E600S",
+        "detection": {
+          "exact_names": [
+            "E600S"
+          ]
+        }
+      },
+      {
+        "name": "E6000",
+        "detection": {
+          "exact_names": [
+            "E6000"
+          ]
+        }
+      },
+      {
+        "name": "E8000",
+        "detection": {
+          "exact_names": [
+            "E8000"
+          ]
+        }
+      },
+      {
+        "name": "QT-800",
+        "detection": {
+          "exact_names": [
+            "QT-800"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master E600S"
+  },
+  {
+    "model_key": "unsupported_printmaster_e9000_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "E9000",
+        "detection": {
+          "exact_names": [
+            "E9000"
+          ]
+        }
+      },
+      {
+        "name": "E93",
+        "detection": {
+          "exact_names": [
+            "E93"
+          ]
+        }
+      },
+      {
+        "name": "E9000Pro",
+        "detection": {
+          "exact_names": [
+            "E9000Pro"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master E9000"
+  },
+  {
+    "model_key": "unsupported_printmaster_e50_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "E50",
+        "detection": {
+          "exact_names": [
+            "E50"
+          ]
+        }
+      },
+      {
+        "name": "E50Pro",
+        "detection": {
+          "exact_names": [
+            "E50Pro"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master E50"
+  },
+  {
+    "model_key": "unsupported_printmaster_d30_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "D30",
+        "detection": {
+          "exact_names": [
+            "D30"
+          ]
+        }
+      },
+      {
+        "name": "D30S",
+        "detection": {
+          "exact_names": [
+            "D30S"
+          ]
+        }
+      },
+      {
+        "name": "D30S New",
+        "detection": {
+          "exact_names": [
+            "D30S New"
+          ]
+        }
+      },
+      {
+        "name": "D30S Pro",
+        "detection": {
+          "exact_names": [
+            "D30S Pro"
+          ]
+        }
+      },
+      {
+        "name": "D30N",
+        "detection": {
+          "exact_names": [
+            "D30N"
+          ]
+        }
+      },
+      {
+        "name": "D30Pro",
+        "detection": {
+          "exact_names": [
+            "D30Pro"
+          ]
+        }
+      },
+      {
+        "name": "D20",
+        "detection": {
+          "exact_names": [
+            "D20"
+          ]
+        }
+      },
+      {
+        "name": "D35",
+        "detection": {
+          "exact_names": [
+            "D35"
+          ]
+        }
+      },
+      {
+        "name": "D10",
+        "detection": {
+          "exact_names": [
+            "D10"
+          ]
+        }
+      },
+      {
+        "name": "D30AT",
+        "detection": {
+          "exact_names": [
+            "D30AT"
+          ]
+        }
+      },
+      {
+        "name": "CNL-D35",
+        "detection": {
+          "exact_names": [
+            "CNL-D35"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master D30"
+  },
+  {
+    "model_key": "unsupported_printmaster_q30_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "Q30",
+        "detection": {
+          "exact_names": [
+            "Q30"
+          ]
+        }
+      },
+      {
+        "name": "Q31",
+        "detection": {
+          "exact_names": [
+            "Q31"
+          ]
+        }
+      },
+      {
+        "name": "Q32",
+        "detection": {
+          "exact_names": [
+            "Q32"
+          ]
+        }
+      },
+      {
+        "name": "Q30S",
+        "detection": {
+          "exact_names": [
+            "Q30S"
+          ]
+        }
+      },
+      {
+        "name": "D31",
+        "detection": {
+          "exact_names": [
+            "D31"
+          ]
+        }
+      },
+      {
+        "name": "D32",
+        "detection": {
+          "exact_names": [
+            "D32"
+          ]
+        }
+      },
+      {
+        "name": "A10",
+        "detection": {
+          "exact_names": [
+            "A10"
+          ]
+        }
+      },
+      {
+        "name": "CNL-D32",
+        "detection": {
+          "exact_names": [
+            "CNL-D32"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master Q30"
+  },
+  {
+    "model_key": "unsupported_printmaster_d50_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "D50",
+        "detection": {
+          "exact_names": [
+            "D50"
+          ]
+        }
+      },
+      {
+        "name": "P50",
+        "detection": {
+          "exact_names": [
+            "P50"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master D50"
+  },
+  {
+    "model_key": "unsupported_printmaster_p15_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "P15",
+        "detection": {
+          "exact_names": [
+            "P15"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master P15"
+  },
+  {
+    "model_key": "unsupported_printmaster_f12_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "F12",
+        "detection": {
+          "exact_names": [
+            "F12"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master F12"
+  },
+  {
+    "model_key": "unsupported_printmaster_a30_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "A30",
+        "detection": {
+          "exact_names": [
+            "A30"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master A30"
+  },
+  {
+    "model_key": "unsupported_printmaster_p5100_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "P5100",
+        "detection": {
+          "exact_names": [
+            "P5100"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master P5100"
+  },
+  {
+    "model_key": "unsupported_printmaster_p1000_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "P1000",
+        "detection": {
+          "exact_names": [
+            "P1000"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master P1000"
+  },
+  {
+    "model_key": "unsupported_printmaster_p12_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "P12",
+        "detection": {
+          "exact_names": [
+            "P12"
+          ]
+        }
+      },
+      {
+        "name": "P12Pro",
+        "detection": {
+          "exact_names": [
+            "P12Pro"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master P12"
+  },
+  {
+    "model_key": "unsupported_printmaster_d1600_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "D1600",
+        "detection": {
+          "exact_names": [
+            "D1600"
+          ]
+        }
+      },
+      {
+        "name": "D1600D",
+        "detection": {
+          "exact_names": [
+            "D1600D"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master D1600"
+  },
+  {
+    "model_key": "unsupported_printmaster_m960_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M960",
+        "detection": {
+          "exact_names": [
+            "M960"
+          ]
+        }
+      },
+      {
+        "name": "M960D",
+        "detection": {
+          "exact_names": [
+            "M960D"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M960"
+  },
+  {
+    "model_key": "unsupported_printmaster_p3200_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "P3200",
+        "detection": {
+          "exact_names": [
+            "P3200"
+          ]
+        }
+      },
+      {
+        "name": "P3200D",
+        "detection": {
+          "exact_names": [
+            "P3200D"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master P3200"
+  },
+  {
+    "model_key": "unsupported_printmaster_p3100_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "P3100D",
+        "detection": {
+          "exact_names": [
+            "P3100D"
+          ]
+        }
+      },
+      {
+        "name": "P3100DJ",
+        "detection": {
+          "exact_names": [
+            "P3100DJ"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master P3100"
+  },
+  {
+    "model_key": "unsupported_printmaster_d480_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "D480",
+        "detection": {
+          "exact_names": [
+            "D480"
+          ]
+        }
+      },
+      {
+        "name": "D480BT",
+        "detection": {
+          "exact_names": [
+            "D480BT"
+          ]
+        }
+      },
+      {
+        "name": "D480BT PRO",
+        "detection": {
+          "exact_names": [
+            "D480BT PRO"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master D480"
+  },
+  {
+    "model_key": "unsupported_printmaster_p780_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "P780",
+        "detection": {
+          "exact_names": [
+            "P780"
+          ]
+        }
+      },
+      {
+        "name": "P780BT",
+        "detection": {
+          "exact_names": [
+            "P780BT"
+          ]
+        }
+      },
+      {
+        "name": "P780BT PRO",
+        "detection": {
+          "exact_names": [
+            "P780BT PRO"
+          ]
+        }
+      },
+      {
+        "name": "P24",
+        "detection": {
+          "exact_names": [
+            "P24"
+          ]
+        }
+      },
+      {
+        "name": "P580",
+        "detection": {
+          "exact_names": [
+            "P580"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master P780"
+  },
+  {
+    "model_key": "unsupported_printmaster_d680_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "D680",
+        "detection": {
+          "exact_names": [
+            "D680"
+          ]
+        }
+      },
+      {
+        "name": "D680BT",
+        "detection": {
+          "exact_names": [
+            "D680BT"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master D680"
+  },
+  {
+    "model_key": "unsupported_printmaster_m950_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "M950",
+        "detection": {
+          "exact_names": [
+            "M950"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master M950"
+  },
+  {
+    "model_key": "unsupported_printmaster_lt12_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "LT12",
+        "detection": {
+          "exact_names": [
+            "LT12"
+          ]
+        }
+      },
+      {
+        "name": "LT-110H",
+        "detection": {
+          "exact_names": [
+            "LT-110H"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master LT12"
+  },
+  {
+    "model_key": "unsupported_printmaster_lm1600_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "LM1600",
+        "detection": {
+          "exact_names": [
+            "LM1600"
+          ]
+        }
+      },
+      {
+        "name": "LM2800",
+        "detection": {
+          "exact_names": [
+            "LM2800"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master LM1600"
+  },
+  {
+    "model_key": "unsupported_printmaster_pm201_series",
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ],
+    "detections": [
+      {
+        "name": "PM-201",
+        "detection": {
+          "exact_names": [
+            "PM-201"
+          ]
+        }
+      }
+    ],
+    "model_group": "Print Master PM-201"
   }
 ]

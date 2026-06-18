@@ -99,18 +99,23 @@ class TsplProtocolTests(unittest.TestCase):
         catalog = PrinterCatalog.load()
 
         eleph = catalog.detect_device("P1_F30E")
-        old = catalog.detect_device("P1-1234")
+        toprint_conflict = catalog.detect_model("P1")
+        old_conflict = catalog.detect_model("P1-1234")
 
         self.assertIsNotNone(eleph)
         assert eleph is not None
         self.assertEqual(eleph.profile_key, "eleph_tspl_p1")
         self.assertEqual(eleph.protocol_family.value, "eleph_tspl")
         self.assertEqual(eleph.protocol_variant, "p1")
+        self.assertFalse(eleph.profile.use_spp)
 
-        self.assertIsNotNone(old)
-        assert old is not None
-        self.assertNotEqual(old.profile_key, "eleph_tspl_p1")
-        self.assertEqual(old.protocol_family.value, "tiny")
+        for match in (toprint_conflict, old_conflict):
+            self.assertEqual(
+                {candidate.model.model_key for candidate in match},
+                {"pocket_printer", "toprint_tspl_p1"},
+            )
+        self.assertIsNone(catalog.detect_device("P1"))
+        self.assertIsNone(catalog.detect_device("P1-1234"))
 
 
 if __name__ == "__main__":

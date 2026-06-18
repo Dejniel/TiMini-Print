@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
+import io
 import os
 import tempfile
 import sys
@@ -15,6 +17,7 @@ install_crc8_stub()
 
 from timiniprint.app import cli
 from timiniprint.devices import BluetoothTarget, PrinterCatalog
+from timiniprint.transport.bluetooth import BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 from timiniprint.update_check import UpdateCheckResult
 
@@ -32,6 +35,7 @@ class AppCliFlowsTests(unittest.TestCase):
             verbose=False,
             bluetooth=None,
             printer_config=None,
+            printer_model=None,
             export_printer_config=None,
             debug_row_markers=None,
             force_text_mode=False,
@@ -70,6 +74,44 @@ class AppCliFlowsTests(unittest.TestCase):
         ), patch("timiniprint.app.cli.scan_devices", return_value=0) as scan_devices:
             self.assertEqual(cli.main(["--scan"]), 0)
         scan_devices.assert_called_once()
+
+    def test_list_models_includes_origin_app_names(self) -> None:
+        output = io.StringIO()
+
+        with contextlib.redirect_stdout(output):
+            code = cli.list_models()
+
+        self.assertEqual(code, 0)
+        text = output.getvalue()
+        self.assertIn("pocket_printer: ", text)
+        self.assertIn("[app: Tiny Print]", text)
+        self.assertIn("toprint_tspl_p1: P1 [app: ToPrint]", text)
+
+    def test_scan_lists_ambiguous_supported_source_variants(self) -> None:
+        reporter, _sink = build_capture_reporter()
+        result = BluetoothScanResult(
+            devices=[],
+            failures=[],
+            raw_endpoints=[
+                DeviceInfo(
+                    name="P1",
+                    address="AA:BB:CC:DD:EE:01",
+                    transport=DeviceTransport.CLASSIC,
+                )
+            ],
+        )
+        output = io.StringIO()
+
+        with patch(
+            "timiniprint.transport.bluetooth.discovery.BluetoothDiscovery.scan_report",
+            new=AsyncMock(return_value=result),
+        ), contextlib.redirect_stdout(output):
+            code = cli.scan_devices(reporter)
+
+        self.assertEqual(code, 0)
+        text = output.getvalue()
+        self.assertIn("model: pocket_printer; app: Tiny Print", text)
+        self.assertIn("model: toprint_tspl_p1; app: ToPrint", text)
 
     def test_emit_update_warning_reports_available_release(self) -> None:
         reporter, sink = build_capture_reporter()
@@ -230,7 +272,7 @@ class AppCliFlowsTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Printer config file not found"):
                 cli._device_from_printer_config_arg(catalog, missing_path)
 
-    def test_printer_config_key_wins_over_same_named_local_file(self) -> None:
+    def test_printer_model_key_wins_over_same_named_local_file(self) -> None:
         catalog = PrinterCatalog.load()
         with tempfile.TemporaryDirectory() as tmpdir:
             current_dir = os.getcwd()
@@ -238,7 +280,7 @@ class AppCliFlowsTests(unittest.TestCase):
                 os.chdir(tmpdir)
                 cli._write_printer_config("gt01", catalog.serialize_printer_config(catalog.device_from_profile("x6h")))
 
-                device = cli._device_from_printer_config_arg(catalog, "gt01")
+                device = cli._device_from_printer_model_arg(catalog, "gt01")
             finally:
                 os.chdir(current_dir)
 
@@ -335,14 +377,14 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertIsInstance(device.transport_target, BluetoothTarget)
         self.assertEqual(device.address, "AA:BB:CC:DD:EE:02")
 
-    def test_printer_config_model_name_with_bluetooth_uses_raw_target_resolution(self) -> None:
+    def test_printer_model_with_bluetooth_uses_raw_target_resolution(self) -> None:
         catalog = PrinterCatalog.load()
         endpoint = DeviceInfo(
             name="PPA2L_3F19",
             address="AA:BB:CC:DD:EE:01",
             transport=DeviceTransport.CLASSIC,
         )
-        args = self._args(printer_config="PPA2L", bluetooth="PPA2L_3F19")
+        args = self._args(printer_model="luck_ppa2l", bluetooth="PPA2L_3F19")
 
         with patch(
             "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures",
@@ -354,6 +396,16 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertEqual(device.display_name, "PPA2L_3F19")
         self.assertIsInstance(device.transport_target, BluetoothTarget)
         self.assertEqual(device.address, "AA:BB:CC:DD:EE:01")
+
+    def test_main_rejects_printer_model_with_printer_config(self) -> None:
+        args = self._args(path="x.txt", printer_model="gt01", printer_config="printer.json")
+        with patch("timiniprint.app.cli.parse_args", return_value=args), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ):
+            self.assertEqual(
+                cli.main(["--printer-model", "gt01", "--printer-config", "printer.json", "x.txt"]),
+                2,
+            )
 
     def test_debug_resolved_device_includes_runtime_details(self) -> None:
         reporter, sink = build_capture_reporter()

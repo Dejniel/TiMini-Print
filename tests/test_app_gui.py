@@ -9,7 +9,7 @@ from timiniprint.app.gui import TiMiniPrintGUI
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
-from timiniprint.transport.bluetooth import BluetoothScanResult
+from timiniprint.transport.bluetooth import BluetoothDiscovery, BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 from timiniprint.update_check import UpdateCheckResult
 
@@ -76,6 +76,32 @@ class GuiPaperModeChoiceTests(unittest.TestCase):
 
 
 class GuiDeviceListTests(unittest.TestCase):
+    def test_scan_display_devices_include_ambiguous_supported_source_variants(self) -> None:
+        catalog = PrinterCatalog.load()
+        endpoint = DeviceInfo(
+            name="P1",
+            address="AA:BB:CC:DD:EE:01",
+            transport=DeviceTransport.CLASSIC,
+        )
+        result = BluetoothScanResult(
+            devices=[],
+            failures=[],
+            raw_endpoints=[endpoint],
+        )
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui.catalog = catalog
+        gui.discovery = BluetoothDiscovery(catalog)
+
+        devices = gui._scan_devices_for_display(result)
+        labels = [gui._device_label(device) for device in devices]
+
+        self.assertEqual(
+            {device.model_key for device in devices},
+            {"pocket_printer", "toprint_tspl_p1"},
+        )
+        self.assertTrue(any("Tiny Print: pocket_printer" in label for label in labels))
+        self.assertTrue(any("ToPrint: toprint_tspl_p1" in label for label in labels))
+
     def test_scan_status_count_uses_supported_devices_only(self) -> None:
         supported = DeviceInfo(
             name="X6H-ABCD",
@@ -109,7 +135,10 @@ class GuiDeviceListTests(unittest.TestCase):
         gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
         gui._closing = False
         gui._scan_busy = False
-        gui.discovery = SimpleNamespace(scan_report_blocking=lambda: result)
+        gui.discovery = SimpleNamespace(
+            scan_report_blocking=lambda: result,
+            devices_for_display=lambda result: list(result.devices),
+        )
         gui.queue = SimpleNamespace(put=queued.append)
         gui._queue_status = lambda key, **ctx: statuses.append((key, ctx))
         gui._queue_warning = lambda *args, **kwargs: None

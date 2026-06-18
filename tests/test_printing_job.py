@@ -199,7 +199,7 @@ class PrintingJobTests(unittest.TestCase):
         )
 
     def test_v5g_runtime_controller_uses_runtime_preset(self) -> None:
-        resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
+        resolved = self.catalog.detect_device("MX10", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         builder = self.job_mod.PrintJobBuilder(
             resolved,
@@ -241,7 +241,7 @@ class PrintingJobTests(unittest.TestCase):
         )
 
     def test_v5g_runtime_controller_can_use_xopoppy_runtime_preset(self) -> None:
-        resolved = self.catalog.detect_device("XOPOPPY-ABCD", "AA:BB:CC:DD:EE:58")
+        resolved = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         builder = self.job_mod.PrintJobBuilder(resolved, page_loader=_FakeLoader([]))
         with tempfile.TemporaryDirectory() as tmp:

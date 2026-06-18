@@ -362,13 +362,28 @@ class TiMiniPrintGUI(tk.Tk):
         name = device.display_name or ""
         transport = f" {device.transport_badge}"
         status = " [unpaired]" if device.paired is False else ""
+        source = self._device_source_label(device)
         if name:
-            return f"{name} ({device.address}){transport}{status}"
-        return f"{device.address}{transport}{status}"
+            return f"{name}{source} ({device.address}){transport}{status}"
+        return f"{device.address}{source}{transport}{status}"
+
+    def _device_source_label(self, device) -> str:
+        app_names = ", ".join(self.catalog.origin_app_names(device.origin_app_packages))
+        if not app_names and not device.model_key:
+            return ""
+        source = app_names or "unknown app"
+        model = device.model_key or "unknown model"
+        return f" [{source}: {model}]"
+
+    def _scan_devices_for_display(self, result: BluetoothScanResult):
+        discovery = self.__dict__.get("discovery")
+        if discovery is None:
+            return list(result.devices)
+        return discovery.devices_for_display(result)
 
     def _refresh_device_list(self) -> None:
         result = self._last_scan_result
-        devices = list(result.devices)
+        devices = self._scan_devices_for_display(result)
         self.devices = devices
         self.device_map = {self._device_label(device): device for device in devices}
 
@@ -425,7 +440,7 @@ class TiMiniPrintGUI(tk.Tk):
         threading.Thread(target=run_scan, name="timiniprint-gui-scan", daemon=True).start()
 
     def _scan_result_status_count(self, result: BluetoothScanResult) -> int:
-        return len(result.devices)
+        return len(self._scan_devices_for_display(result))
 
     def connect(self) -> None:
         label = self.device_var.get()

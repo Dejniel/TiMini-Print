@@ -108,11 +108,12 @@ def render_readme(readme_text: str | None = None) -> str:
 def validate_catalog_models() -> list[str]:
     catalog = PrinterCatalog.load()
     errors: list[str] = []
-    supported_names = {
-        _public_readme_name(name)
-        for model in catalog.models
-        for name in model.names
-    }
+    supported_origins_by_name: dict[str, set[str]] = {}
+    for model in catalog.models:
+        for name in model.names:
+            supported_origins_by_name.setdefault(_public_readme_name(name), set()).update(
+                model.origin_app_packages
+            )
     for model in catalog.models:
         if not model.names:
             errors.append(f"Supported model {model.model_key} has no names")
@@ -121,7 +122,8 @@ def validate_catalog_models() -> list[str]:
             errors.append(f"Unsupported model {model.model_key} has no names")
         for name in model.names:
             public_name = _public_readme_name(name)
-            if public_name in supported_names:
+            supported_origins = supported_origins_by_name.get(public_name)
+            if supported_origins and set(model.origin_app_packages).issubset(supported_origins):
                 errors.append(
                     f"Unsupported model {model.model_key} display name {public_name!r} is already supported"
                 )

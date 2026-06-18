@@ -207,9 +207,7 @@ class ModelDetection:
     exact_names: tuple[str, ...] = ()
     mac_suffixes: tuple[str, ...] = ()
     _folded_prefixes: tuple[str, ...] = field(init=False, repr=False)
-    _prefix_base_names: tuple[str, ...] = field(init=False, repr=False)
     _folded_exact_names: tuple[str, ...] = field(init=False, repr=False)
-    _folded_prefix_base_names: tuple[str, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         prefixes = tuple(DetectionNormalizer.normalize_name(prefix) for prefix in self.prefixes)
@@ -228,21 +226,10 @@ class ModelDetection:
             "_folded_prefixes",
             tuple(DetectionNormalizer.fold_name(prefix) for prefix in prefixes),
         )
-        prefix_base_names = tuple(
-            prefix.rstrip("-_")
-            for prefix in prefixes
-            if prefix.endswith(("-", "_"))
-        )
-        object.__setattr__(self, "_prefix_base_names", prefix_base_names)
         object.__setattr__(
             self,
             "_folded_exact_names",
             tuple(DetectionNormalizer.fold_name(name) for name in exact_names),
-        )
-        object.__setattr__(
-            self,
-            "_folded_prefix_base_names",
-            tuple(DetectionNormalizer.fold_name(name) for name in prefix_base_names),
         )
 
     def matches(
@@ -256,14 +243,12 @@ class ModelDetection:
         if case_sensitive:
             matches_name = (
                 normalized_name in self.exact_names
-                or normalized_name in self._prefix_base_names
                 or any(normalized_name.startswith(prefix) for prefix in self.prefixes)
             )
         else:
             folded_name = DetectionNormalizer.fold_name(device_name)
             matches_name = (
                 folded_name in self._folded_exact_names
-                or folded_name in self._folded_prefix_base_names
                 or any(folded_name.startswith(prefix) for prefix in self._folded_prefixes)
             )
         if not matches_name:

@@ -3,7 +3,12 @@ from __future__ import annotations
 import unittest
 
 from tests.helpers import reset_registry_cache
-from timiniprint.devices import PrinterCatalog, SupportedModelMatch, UnsupportedModelMatch
+from timiniprint.devices import (
+    ModelMatch,
+    PrinterCatalog,
+    SupportedModelMatch,
+    UnsupportedModelMatch,
+)
 from timiniprint.devices.model_codec import model_from_json, model_to_json
 from timiniprint.devices.profiles import PrinterProfile, SupportedPrinterModel
 from timiniprint.protocol import PrinterProtocol
@@ -108,6 +113,16 @@ def _model_payload(
     return payload
 
 
+def _single_match(matches: tuple[ModelMatch, ...]) -> ModelMatch:
+    if len(matches) != 1:
+        raise AssertionError(f"Expected exactly one model match, got {len(matches)}")
+    return matches[0]
+
+
+def _model_keys(matches: tuple[ModelMatch, ...]) -> set[str]:
+    return {match.model.model_key for match in matches}
+
+
 class DevicesModelsTests(unittest.TestCase):
     def setUp(self) -> None:
         reset_registry_cache()
@@ -139,16 +154,25 @@ class DevicesModelsTests(unittest.TestCase):
     def test_unsupported_models_are_detected_without_creating_devices(self) -> None:
         self.assertIsNone(self.catalog.detect_device("P12"))
 
-        match = self.catalog.detect_model("P12")
-        unsupported = self.catalog.detect_unsupported_model("P12")
+        self.assertEqual(
+            _model_keys(self.catalog.detect_model("P12")),
+            {
+                "unsupported_phomemo_p12_family_p12",
+                "unsupported_printmaster_p12_series",
+            },
+        )
+        self.assertIsNone(self.catalog.detect_unsupported_model("P12"))
+
+        match = _single_match(self.catalog.detect_model("P12-ABCD"))
+        unsupported = self.catalog.detect_unsupported_model("P12-ABCD")
 
         self.assertIsInstance(match, UnsupportedModelMatch)
         self.assertIsNotNone(unsupported)
         assert unsupported is not None
         self.assertEqual(unsupported.model_key, "unsupported_phomemo_p12_family_p12")
-        self.assertEqual(unsupported.names, ("P12",))
+        self.assertIn("P12", unsupported.names)
 
-    def test_unsupported_models_keep_source_origins_and_advisory_prefixes(self) -> None:
+    def test_unsupported_models_keep_source_origins_and_detection_triggers(self) -> None:
         supported_names = {
             name
             for model in self.catalog.models
@@ -159,12 +183,14 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertTrue(model.origin_app_packages)
                 self.assertNotIn(model.model_group, supported_names)
                 for detection in model.detections:
-                    self.assertTrue(detection.detection.prefixes)
-                    self.assertFalse(detection.detection.exact_names)
+                    self.assertTrue(
+                        detection.detection.prefixes
+                        or detection.detection.exact_names
+                    )
 
     def test_unsupported_case_variants_can_stay_source_distinct(self) -> None:
-        niimbot_d11s = self.catalog.detect_model("D11S")
-        luck_d11s = self.catalog.detect_model("D11s_1234")
+        niimbot_d11s = _single_match(self.catalog.detect_model("D11S"))
+        luck_d11s = _single_match(self.catalog.detect_model("D11s_1234"))
 
         self.assertIsInstance(niimbot_d11s, UnsupportedModelMatch)
         self.assertIsInstance(luck_d11s, UnsupportedModelMatch)
@@ -176,7 +202,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(luck_d11s.model.origin_app_packages, ("com.dingdang.newprint",))
 
     def test_detect_model_returns_supported_match_for_printable_models(self) -> None:
-        match = self.catalog.detect_model("X6H-1234")
+        match = _single_match(self.catalog.detect_model("X6H-1234"))
 
         self.assertIsInstance(match, SupportedModelMatch)
         assert isinstance(match, SupportedModelMatch)
@@ -187,6 +213,108 @@ class DevicesModelsTests(unittest.TestCase):
         for model in self.catalog.models:
             with self.subTest(model=model.model_key):
                 self.assertFalse(model.model_key.startswith("model_"))
+
+    def test_origin_app_names_are_loaded_from_catalog_data(self) -> None:
+        self.assertEqual(
+            self.catalog.origin_app_names(
+                (
+                    "com.frogtosea.tinyPrint",
+                    "com.fyhd.toprint",
+                    "com.sandu.JxPrinter",
+                    "com.project.aimotech.printmaster",
+                )
+            ),
+            ("Tiny Print", "ToPrint", "Eleph-label", "Print Master"),
+        )
+
+    def test_tinyprint_short_tokens_do_not_steal_other_sources(self) -> None:
+        expectations = {
+            "D11S": "unsupported_todo_niimbot_candidates_d11s",
+            "P1_1234": "eleph_tspl_p1",
+            "X1": "v5x",
+            "X6": "yt01_v5g",
+        }
+
+        for name, model_key in expectations.items():
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58"))
+                self.assertEqual(match.model.model_key, model_key)
+
+        self.assertEqual(
+            _model_keys(self.catalog.detect_model("P12", "AA:BB:CC:DD:EE:58")),
+            {
+                "unsupported_phomemo_p12_family_p12",
+                "unsupported_printmaster_p12_series",
+            },
+        )
+
+    def test_tinyprint_model_no_prefixes_match_source_behavior(self) -> None:
+        expectations = {
+            "U1": "u1",
+            "U1-1234": "u1",
+            "Mini Printer": "mini_printer",
+            "Professional Printer": "professional_printer",
+            "JXM800": "jxm800",
+        }
+
+        for name, model_key in expectations.items():
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58"))
+                self.assertEqual(match.model.model_key, model_key)
+
+    def test_tinyprint_head_names_are_not_detection_prefixes(self) -> None:
+        for name in ("CTP500", "CTP100LG", "GG-D2100-1234", "PR20-ABCD", "PR25-ABCD"):
+            with self.subTest(name=name):
+                self.assertEqual(self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58"), ())
+
+    def test_tinyprint_overlapping_model_no_uses_most_specific_detection(self) -> None:
+        expectations = {
+            "X8-1234": ("x8", "X8"),
+            "X8-L-1234": ("zpa4z1", "X8-L"),
+            "X8-W-1234": ("zpa4z1", "X8-W"),
+            "X18-1234": ("pocket_printer", "X18"),
+            "XC9-FL01-1234": ("pocket_printer", "XC9-FL01"),
+        }
+
+        for name, (model_key, detection_name) in expectations.items():
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58"))
+                self.assertEqual(match.model.model_key, model_key)
+                self.assertEqual(match.detection.name, detection_name)
+
+    def test_tinyprint_recent_source_aliases_detect_to_source_profiles(self) -> None:
+        expectations = {
+            "S5A-1234": ("seznikneo", "cp01"),
+            "P20 max-1234": ("seznikneo", "cp01"),
+            "S9A-1234": ("seznikneo", "cp01"),
+            "DY33A-1234": ("seznikneo", "cp01"),
+            "YMS-BT01-1234": ("seznikneo", "cp01"),
+            "WJ-HOT-PRT-1234": ("seznikneo", "cp01"),
+            "DT1-R-1234": ("pocket_printer", "d1"),
+            "TD-11308-1234": ("pocket_printer", "d1"),
+            "WQ02-1234": ("wq02", "wq02"),
+            "L1-1234": ("l1_u2", "l1_u2"),
+            "U2-1234": ("l1_u2", "l1_u2"),
+            "LP100": ("lp100", "lp100"),
+            "LP100-1234": ("lp100", "lp100"),
+            "AI01-1234": ("p5ai", "m01"),
+            "GV-MA211-1234": ("cmt_0510", "gb03"),
+            "Audio Print-1234": ("x16", "x16"),
+            "A2": ("x16", "x16"),
+            "A2-1234": ("x16", "x16"),
+            "A2H": ("x16", "x16"),
+            "A2_EY48D": ("x16", "x16"),
+            "A2_LYiN48DH": ("x16", "x16"),
+            "A3-1234": ("x16", "x16"),
+        }
+
+        for name, (model_key, profile_key) in expectations.items():
+            with self.subTest(name=name):
+                device = self.catalog.detect_device(name, "AA:BB:CC:DD:EE:58")
+                self.assertIsNotNone(device)
+                assert device is not None
+                self.assertEqual(device.model_key, model_key)
+                self.assertEqual(device.profile_key, profile_key)
 
     def test_model_codec_rejects_non_positive_stream_chunk_size(self) -> None:
         payload = _profile_payload()
@@ -365,8 +493,12 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(by_detection_name.display_name, "PPA2L")
 
     def test_device_from_key_rejects_ambiguous_public_detection_name(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "MX10.*yt01_mac59.*mx10"):
+        with self.assertRaisesRegex(RuntimeError, "MX10.*Fun Print.*iBleem"):
             self.catalog.device_from_key("MX10")
+
+    def test_device_from_key_ambiguous_message_lists_origin_apps(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "P1.*Tiny Print.*Eleph-label.*ToPrint"):
+            self.catalog.device_from_key("P1")
 
     def test_device_from_key_does_not_resolve_profile_keys(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "Unknown printer model or detection name"):
@@ -432,6 +564,14 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertFalse(x16.profile.can_print_label)
         self.assertEqual(x16.profile.energy.image.middle, 5000)
 
+        lp100 = self.catalog.detect_device("LP100")
+        self.assertIsNotNone(lp100)
+        self.assertEqual(lp100.profile_key, "lp100")
+        self.assertEqual(lp100.protocol_family, ProtocolFamily.TINY_PREFIXED)
+        self.assertEqual(lp100.profile.energy.image.low, 100)
+        self.assertEqual(lp100.profile.energy.image.middle, 100)
+        self.assertEqual(lp100.profile.energy.image.high, 100)
+
     def test_tiny_special_protocol_variants_are_modeled(self) -> None:
         x9 = self.catalog.detect_device("X9-38CC")
         self.assertIsNotNone(x9)
@@ -446,7 +586,7 @@ class DevicesModelsTests(unittest.TestCase):
             (PaperMode.PLAIN, PaperMode.A4_SHEET),
         )
 
-        jxm800 = self.catalog.detect_device("GG-D2100-1234")
+        jxm800 = self.catalog.detect_device("JXM800-1234")
         self.assertIsNotNone(jxm800)
         self.assertEqual(jxm800.profile_key, "jxm800")
         self.assertEqual(jxm800.protocol_family, ProtocolFamily.TINY_PREFIXED)
@@ -463,7 +603,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(ly10.protocol_variant, "esc_star")
         self.assertEqual(PrinterProtocol(ly10).supported_paper_modes(), ())
 
-        professional = self.catalog.detect_device("CTP100LG-1234")
+        professional = self.catalog.detect_device("Professional Printer-1234")
         self.assertIsNotNone(professional)
         self.assertEqual(professional.profile_key, "professional_printer")
         self.assertEqual(professional.protocol_variant, "professional")
@@ -474,24 +614,75 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_origin_app_packages_keep_conflicting_names_explicit(self) -> None:
         tiny_p1 = self.catalog.detect_model("P1-")
-        eleph_p1 = self.catalog.detect_model("P1_")
-        dck_d1 = self.catalog.detect_model("C21")
+        eleph_p1 = _single_match(self.catalog.detect_model("P1_"))
+        toprint_p1 = self.catalog.detect_model("P1")
+        dck_d1 = _single_match(self.catalog.detect_model("C21"))
+        exact_dck_d1 = _single_match(self.catalog.detect_model("D1"))
+        tiny_d1 = _single_match(self.catalog.detect_model("D1-1234"))
 
-        self.assertIsInstance(tiny_p1, SupportedModelMatch)
+        self.assertEqual(_model_keys(tiny_p1), {"pocket_printer", "toprint_tspl_p1"})
         self.assertIsInstance(eleph_p1, SupportedModelMatch)
+        self.assertEqual(_model_keys(toprint_p1), {"pocket_printer", "toprint_tspl_p1"})
         self.assertIsInstance(dck_d1, SupportedModelMatch)
-        assert isinstance(tiny_p1, SupportedModelMatch)
-        assert isinstance(eleph_p1, SupportedModelMatch)
-        assert isinstance(dck_d1, SupportedModelMatch)
-        self.assertEqual(tiny_p1.model.origin_app_packages[0], "com.frogtosea.tinyPrint")
+        self.assertIsInstance(exact_dck_d1, SupportedModelMatch)
+        self.assertIsInstance(tiny_d1, SupportedModelMatch)
+        self.assertEqual(exact_dck_d1.model.model_key, "c21")
+        self.assertEqual(tiny_d1.model.model_key, "pocket_printer")
+        self.assertEqual(
+            {
+                match.model.origin_app_packages[0]
+                for match in tiny_p1
+            },
+            {"com.frogtosea.tinyPrint", "com.fyhd.toprint"},
+        )
         self.assertEqual(eleph_p1.model.origin_app_packages[0], "com.sandu.JxPrinter")
-        self.assertEqual(eleph_p1.model.origin_app_packages[1], "com.fyhd.toprint")
+        self.assertEqual(
+            {
+                match.model.origin_app_packages[0]
+                for match in toprint_p1
+            },
+            {"com.frogtosea.tinyPrint", "com.fyhd.toprint"},
+        )
         self.assertEqual(dck_d1.model.origin_app_packages[0], "com.fun.mxw")
         self.assertEqual(dck_d1.model.origin_app_packages[1], "com.bleem.liugm")
 
+    def test_niimbot_d110_matches_source_separator_forms(self) -> None:
+        for name in ("D110", "D110-ABCD", "D110_1234", "D110__1234", "D110--1234"):
+            with self.subTest(name=name):
+                device = self.catalog.detect_device(name)
+                self.assertIsNotNone(device)
+                assert device is not None
+                self.assertEqual(device.model_key, "niimbot_d110")
+
+        d110_m = _single_match(self.catalog.detect_model("D110_M-1234"))
+
+        self.assertIsInstance(d110_m, UnsupportedModelMatch)
+        self.assertEqual(d110_m.model.model_key, "unsupported_todo_niimbot_candidates_d110_m")
+
+    def test_toprint_uncertain_models_stay_unsupported_or_source_backed(self) -> None:
+        p3 = self.catalog.detect_model("P3")
+        gt08 = self.catalog.detect_model("GT08")
+        gw08 = self.catalog.detect_model("GW08")
+
+        p3 = _single_match(p3)
+        self.assertIsInstance(p3, UnsupportedModelMatch)
+        self.assertEqual(p3.model.model_key, "unsupported_toprint_p3")
+
+        self.assertEqual(_model_keys(gt08), {"gt08"})
+        self.assertEqual(_model_keys(gw08), {"gt08"})
+
+        gt08_device = self.catalog.detect_device("GT08")
+        gw08_device = self.catalog.detect_device("GW08")
+        self.assertIsNotNone(gt08_device)
+        self.assertIsNotNone(gw08_device)
+        assert gt08_device is not None
+        assert gw08_device is not None
+        self.assertEqual(gt08_device.model_key, "gt08")
+        self.assertEqual(gw08_device.model_key, "gt08")
+
     def test_old_small_bucket_uses_v5g_and_mac59_switches_family_only(self) -> None:
-        normal = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:58")
-        mac59 = self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:59")
+        normal = self.catalog.detect_device("MX05", "AA:BB:CC:DD:EE:58")
+        mac59 = self.catalog.detect_device("MX05", "AA:BB:CC:DD:EE:59")
 
         self.assertIsNotNone(normal)
         self.assertIsNotNone(mac59)
@@ -506,6 +697,147 @@ class DevicesModelsTests(unittest.TestCase):
             d2_status=True,
         )
 
+    def test_funprint_ibleem_bucket_names_are_exact_not_separator_prefixes(self) -> None:
+        self.assertIsNotNone(self.catalog.detect_device("MX05", "AA:BB:CC:DD:EE:58"))
+        self.assertIsNone(self.catalog.detect_device("MX05-ABCD", "AA:BB:CC:DD:EE:58"))
+        self.assertIsNone(self.catalog.detect_device("MX05_ABCD", "AA:BB:CC:DD:EE:58"))
+
+    def test_funprint_ibleem_prefixes_are_source_backed_exceptions(self) -> None:
+        source_prefixes = {
+            "FYT2",
+            "P4",
+            "BAYPAGE",
+            "YINTIBAO-V8S",
+            "JX400R06P",
+            "JX400R",
+        }
+        source_apps = {"com.fun.mxw", "com.bleem.liugm"}
+
+        for model in [*self.catalog.models, *self.catalog.unsupported_models]:
+            if not source_apps.intersection(model.origin_app_packages):
+                continue
+            for detection in model.detections:
+                with self.subTest(model=model.model_key, detection=detection.name):
+                    self.assertFalse(
+                        any(
+                            exact_name.endswith(("-", "_"))
+                            for exact_name in detection.detection.exact_names
+                        )
+                    )
+                    for prefix in detection.detection.prefixes:
+                        self.assertIn(prefix, source_prefixes)
+
+    def test_official_phomemo_supported_detections_are_exact_aliases(self) -> None:
+        exact_alias_models = {
+            "phomemo_m02",
+            "phomemo_m02s",
+            "phomemo_m02x",
+            "phomemo_m02_pro",
+            "phomemo_t02",
+        }
+
+        for model in self.catalog.models:
+            if model.model_key not in exact_alias_models:
+                continue
+            for detection in model.detections:
+                with self.subTest(model=model.model_key, detection=detection.name):
+                    self.assertEqual(detection.detection.prefixes, ())
+                    self.assertTrue(detection.detection.exact_names)
+
+    def test_phomemo_m02d_m02e_and_p3100_source_status(self) -> None:
+        for name in ("M02D", "M02E", "MR2", "M02A", "KP-Q1"):
+            with self.subTest(name=name):
+                device = self.catalog.detect_device(name)
+                self.assertIsNotNone(device)
+                assert device is not None
+                self.assertEqual(device.model_key, "phomemo_m02x")
+                self.assertEqual(device.profile_key, "phomemo_m02x")
+
+        for name in ("P3100", "P3100J"):
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name))
+                self.assertIsInstance(match, UnsupportedModelMatch)
+                assert isinstance(match, UnsupportedModelMatch)
+                self.assertEqual(match.model.model_key, "unsupported_phomemo_p3100_family")
+
+        for name in ("P3100D", "P3100DJ"):
+            with self.subTest(name=name):
+                self.assertEqual(
+                    _model_keys(self.catalog.detect_model(name)),
+                    {
+                        "unsupported_phomemo_p3100_family",
+                        "unsupported_printmaster_p3100_series",
+                    },
+                )
+
+        unsupported_branches = {
+            "M02H": "unsupported_phomemo_m02h_family",
+            "M02S-H": "unsupported_phomemo_m02h_family",
+            "M02X/L": "unsupported_phomemo_m02l_family",
+            "M02L": "unsupported_phomemo_m02l_family",
+            "Q02": "unsupported_phomemo_q02_family",
+            "Y02C": "unsupported_phomemo_y02_family",
+            "Y02S": "unsupported_phomemo_y02_family",
+        }
+        for name, model_key in unsupported_branches.items():
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name))
+                self.assertIsInstance(match, UnsupportedModelMatch)
+                assert isinstance(match, UnsupportedModelMatch)
+                self.assertEqual(match.model.model_key, model_key)
+
+    def test_printmaster_unsupported_does_not_steal_existing_conflicts(self) -> None:
+        m110 = self.catalog.detect_device("M110")
+        m120 = self.catalog.detect_device("M120")
+
+        self.assertIsNotNone(m110)
+        self.assertIsNotNone(m120)
+        assert m110 is not None
+        assert m120 is not None
+        self.assertEqual(m110.model_key, "phomemo_m110")
+        self.assertEqual(m120.model_key, "phomemo_m110")
+        self.assertEqual(
+            _model_keys(self.catalog.detect_model("M110")),
+            {"phomemo_m110"},
+        )
+        self.assertEqual(
+            _model_keys(self.catalog.detect_model("M120")),
+            {"phomemo_m110"},
+        )
+        self.assertEqual(
+            _model_keys(self.catalog.detect_model("M220")),
+            {"phomemo_m220"},
+        )
+        m220_prefix = _single_match(self.catalog.detect_model("M220-ABCD"))
+        self.assertIsInstance(m220_prefix, SupportedModelMatch)
+        self.assertEqual(m220_prefix.model.model_key, "phomemo_m220")
+        self.assertEqual(
+            _model_keys(self.catalog.detect_model("P12")),
+            {
+                "unsupported_phomemo_p12_family_p12",
+                "unsupported_printmaster_p12_series",
+            },
+        )
+
+        printmaster_expectations = {
+            "M110C": "unsupported_printmaster_m110_series",
+            "D20": "unsupported_printmaster_d30_series",
+            "CNL-D32": "unsupported_printmaster_q30_series",
+            "CNL-D35": "unsupported_printmaster_d30_series",
+            "M320": "unsupported_printmaster_m200_series",
+            "D68": "unsupported_printmaster_m8_series",
+            "M8-BK": "unsupported_printmaster_m120_series",
+        }
+        for name, model_key in printmaster_expectations.items():
+            match = _single_match(self.catalog.detect_model(name))
+            self.assertIsInstance(match, UnsupportedModelMatch)
+            assert isinstance(match, UnsupportedModelMatch)
+            self.assertEqual(match.model.model_key, model_key)
+            self.assertEqual(
+                match.model.origin_app_packages,
+                ("com.project.aimotech.printmaster",),
+            )
+
     def test_old_small_bucket_shared_names_resolve_to_shared_profile(self) -> None:
         normal = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")
         mac59 = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:59")
@@ -518,14 +850,14 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(mac59.protocol_family, ProtocolFamily.V5X)
 
     def test_dynamic_v5g_rules_expose_helper_metadata(self) -> None:
-        mx06 = self.catalog.detect_device("MX06-ABCD", "AA:BB:CC:DD:EE:58")
-        mx08 = self.catalog.detect_device("MX08-ABCD", "AA:BB:CC:DD:EE:58")
-        mx09 = self.catalog.detect_device("MX09-ABCD", "AA:BB:CC:DD:EE:58")
-        mx10 = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
-        pd01 = self.catalog.detect_device("PD01-ABCD", "AA:BB:CC:DD:EE:58")
-        xopoppy = self.catalog.detect_device("XOPOPPY-ABCD", "AA:BB:CC:DD:EE:58")
-        mx13 = self.catalog.detect_device("MX13-ABCD", "AA:BB:CC:DD:EE:58")
-        mxw010 = self.catalog.detect_device("MXW010-ABCD", "AA:BB:CC:DD:EE:58")
+        mx06 = self.catalog.detect_device("MX06", "AA:BB:CC:DD:EE:58")
+        mx08 = self.catalog.detect_device("MX08", "AA:BB:CC:DD:EE:58")
+        mx09 = self.catalog.detect_device("MX09", "AA:BB:CC:DD:EE:58")
+        mx10 = self.catalog.detect_device("MX10", "AA:BB:CC:DD:EE:58")
+        pd01 = self.catalog.detect_device("PD01", "AA:BB:CC:DD:EE:58")
+        xopoppy = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")
+        mx13 = self.catalog.detect_device("MX13", "AA:BB:CC:DD:EE:58")
+        mxw010 = self.catalog.detect_device("MXW010", "AA:BB:CC:DD:EE:58")
 
         self.assertIsNotNone(mx06)
         self.assert_runtime_settings(mx06, variant="mx06", preset_key="mx06", d2_status=True)
@@ -558,7 +890,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assert_runtime_settings(mxw010, variant="mx10", preset_key="mx10_control")
 
     def test_printer_config_roundtrip_preserves_runtime_fields(self) -> None:
-        resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
+        resolved = self.catalog.detect_device("MX10", "AA:BB:CC:DD:EE:58")
 
         self.assertIsNotNone(resolved)
         printer_config = self.catalog.serialize_printer_config(resolved)
@@ -579,7 +911,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.transport_badge, resolved.transport_badge)
 
     def test_printer_config_runtime_density_override_updates_runtime_preset_only(self) -> None:
-        resolved = self.catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:58")
+        resolved = self.catalog.detect_device("MX10", "AA:BB:CC:DD:EE:58")
         self.assertIsNotNone(resolved)
         printer_config = self.catalog.serialize_printer_config(resolved)
         printer_config["runtime_overrides"]["density"] = {
@@ -740,8 +1072,8 @@ class DevicesModelsTests(unittest.TestCase):
         expected = {
             " X101H-ABCD": ("x101h", ProtocolFamily.TINY),
             "X101H-ABCD": ("x101h", ProtocolFamily.TINY),
-            "K06-ABCD": ("v5g_small_203", ProtocolFamily.V5G),
-            "X2-ABCD": ("v5x", ProtocolFamily.V5X),
+            "K06": ("v5g_small_203", ProtocolFamily.V5G),
+            "X2": ("v5x", ProtocolFamily.V5X),
         }
 
         for name, (profile_key, family) in expected.items():
@@ -759,7 +1091,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(resolved.protocol_family, ProtocolFamily.TINY)
 
     def test_ai01_resolves_to_v5x_family(self) -> None:
-        ai01 = self.catalog.detect_device("AI01-ABCD")
+        ai01 = self.catalog.detect_device("AI01")
 
         self.assertIsNotNone(ai01)
         self.assertEqual(ai01.profile_key, "ai01")
@@ -768,59 +1100,37 @@ class DevicesModelsTests(unittest.TestCase):
     def test_luck_normal_rules_resolve_the_source_backed_models(self) -> None:
         expected = {
             "PPA2_1234": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
-            "A2": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
-            "A2_EY48D": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
-            "A2_LYiN48D_ITSR": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
             "PPA2H_1234": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
-            "A2H": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
-            "A2_LYiN48DH": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
             "PPA2L_1234": ("luck_ppa2l", ProtocolFamily.LUCK_NORMAL, "lujiang_normal", 384),
-            "PPA2L": ("luck_ppa2l", ProtocolFamily.LUCK_NORMAL, "lujiang_normal", 384),
             "PPA2LH_1234": ("luck_ppa2lh", ProtocolFamily.LUCK_NORMAL, "lujiang_normal_h", 576),
-            "PPA2LH": ("luck_ppa2lh", ProtocolFamily.LUCK_NORMAL, "lujiang_normal_h", 576),
             "A40_1234": ("luck_a40", ProtocolFamily.LUCK_NORMAL_A4, None, 1728),
-            "A40": ("luck_a40", ProtocolFamily.LUCK_NORMAL_A4, None, 1728),
             "APA40_1234": ("luck_lujiang_a4", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
-            "APA41_1234": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
             "APA42_1234": ("luck_lujiang_a4", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
             "APA43_1234": ("luck_lujiang_a4", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "APA41_1234": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
             "APA49_1234": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
-            "A49": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
+            "E49_1234": ("luck_lujiang_a4_dense", ProtocolFamily.LUCK_NORMAL_A4, "lujiang_a4", 1728),
             "APA49H_1234": ("luck_a49h", ProtocolFamily.LUCK_NORMAL_A4, "a49h", 2496),
-            "ITP05": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
-            "ITP05H": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
-            "DYA46": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
+            "ITP05_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
             "DP_ITP05_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
-            "ITP06": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
-            "DYA49": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
-            "DP_ITP06_1234": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
-            "APA46Y": ("luck_a4_compressed_tattoo_96", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
-            "APA46Y_1234": ("luck_a4_compressed_tattoo_96", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
-            "TPA46": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
             "TPA46_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
-            "TPA46Pro": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
-            "TPA46Pro_1234": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
             "DP_A4_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
             "DP-A4_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
             "DP_8038_1234": ("luck_a4_compressed_tattoo", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64", 1728),
-            "APL86": ("luck_apl86", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 1728),
+            "ITP06_1234": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "DP_ITP06_1234": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "TPA46Pro_1234": ("luck_a4_compressed_tattoo_96_dense", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
+            "APA46Y_1234": ("luck_a4_compressed_tattoo_96", ProtocolFamily.LUCK_NORMAL_A4, "a4_tattoo_64_endline96", 1728),
             "APL86_1234": ("luck_apl86", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 1728),
-            "L86": ("luck_apl86", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 1728),
-            "APL86H": ("luck_apl86h", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 2496),
             "APL86H_1234": ("luck_apl86h", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 2496),
-            "APL86HL": ("luck_apl86h", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 2496),
-            "U8": ("luck_u8", ProtocolFamily.LUCK_NORMAL_A4, "u8", 1728),
             "U8_1234": ("luck_u8", ProtocolFamily.LUCK_NORMAL_A4, "u8", 1728),
-            "D80": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "D80-1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
+            "D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
             "DP_D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
             "DP-D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
             "E80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
             "CASA-01_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
-            "PeriPage_A40": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
-            "DYD80": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
-            "DYD80H": ("luck_d80h", ProtocolFamily.LUCK_NORMAL_A4, "d80h", 2496),
             "DP_D80H_1234": ("luck_d80h", ProtocolFamily.LUCK_NORMAL_A4, "d80h", 2496),
-            "A80H-HD": ("luck_a80h_way1", ProtocolFamily.LUCK_NORMAL_A4, "a80h_way1", 2496),
             "DP_A80H_1234": ("luck_a80h_way1", ProtocolFamily.LUCK_NORMAL_A4, "a80h_way1", 2496),
             "QIRUI_Q1_1234": ("luck_qirui_q1", ProtocolFamily.LUCK_NORMAL, "qirui_q1", 384),
             "QIRUI_Q2_1234": ("luck_qirui_q2", ProtocolFamily.LUCK_NORMAL, "qirui_q2", 576),
@@ -853,6 +1163,25 @@ class DevicesModelsTests(unittest.TestCase):
                     self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_COMPRESSED)
                 else:
                     self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_RAW)
+
+    def test_luck_types_are_not_advertised_name_matchers(self) -> None:
+        for name in (
+            "A49",
+            "ITP05H",
+            "DYA46",
+            "DYA49",
+            "L86",
+            "L86_Printer",
+            "APL86HL",
+            "L86H_Printer",
+            "D80",
+            "PeriPage_A40",
+            "DYD80",
+            "DYD80H",
+            "A80H-HD",
+        ):
+            with self.subTest(name=name):
+                self.assertIsNone(self.catalog.detect_device(name))
 
     def test_luck_normal_rules_do_not_claim_variants_we_did_not_implement(self) -> None:
         for name in (
@@ -925,9 +1254,9 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(shared.energy.text.high, 20000)
 
     def test_proxy_rules_resolve_to_profiles_not_alias_donors(self) -> None:
-        jk01 = self.catalog.detect_device("JK01-ABCD")
-        c21 = self.catalog.detect_device("C21-ABCD")
-        ytb01 = self.catalog.detect_device("YTB01-ABCD")
+        jk01 = self.catalog.detect_device("JK01")
+        c21 = self.catalog.detect_device("C21")
+        ytb01 = self.catalog.detect_device("YTB01")
 
         self.assertIsNotNone(jk01)
         self.assertEqual(jk01.profile_key, "v5x")
@@ -943,18 +1272,16 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_derived_names_map_to_final_profiles(self) -> None:
         expected = {
-            "MXTP-100-ABCD": "v5g_small_203",
-            "MXPC-100-ABCD": "v5g_small_203",
+            "MXTP-100": "v5g_small_203",
+            "MXPC-100": "v5g_small_203",
             "LY10-ABCD": "ly10",
-            "PD01-ABCD": "v5g_small_203",
-            "AZ-P2108X-ABCD": "v5g_small_203",
-            "MX12-ABCD": "v5g_small_203",
-            "MX13-ABCD": "v5g_small_203",
-            "MX07-ABCD": "mx07",
-            "XOPOPPY-ABCD": "v5g_small_203",
-            "PR20-ABCD": "xw001",
+            "PD01": "v5g_small_203",
+            "AZ-P2108X": "v5g_small_203",
+            "MX12": "v5g_small_203",
+            "MX13": "v5g_small_203",
+            "MX07": "mx07",
+            "XOPOPPY": "v5g_small_203",
             "XW001-ABCD": "xw001",
-            "PR25-ABCD": "m01",
             "XW003-ABCD": "m01",
             "PR30-ABCD": "pr30",
             "XW002-ABCD": "xw002",
@@ -964,18 +1291,17 @@ class DevicesModelsTests(unittest.TestCase):
             "XW007-ABCD": "pr893",
             "XW008-ABCD": "pr02",
             "XW009-ABCD": "m01",
-            "BQ02-ABCD": "bq02",
-            "BQ03-ABCD": "bq02",
-            "BQ17-ABCD": "bq02",
+            "BQ02": "bq02",
+            "BQ03": "bq02",
+            "BQ17": "bq02",
             "MINIPRINTER": "gt02_v5g",
             "JL-BR22": "gt02_v5g",
             "CYLOBTPrinter": "v5g_small_203",
             "EWTTO ET-Z0499": "v5g_small_203",
-            "GV-MA211-ABCD": "v5g_small_203",
+            "GV-MA211": "v5g_small_203",
             "X6": "v5g_small_203",
-            "K06-ABCD": "v5g_small_203",
             "K06": "v5g_small_203",
-            "X2-ABCD": "v5x",
+            "X2": "v5x",
         }
 
         for name, profile_key in expected.items():
@@ -985,7 +1311,7 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertEqual(resolved.profile_key, profile_key)
 
     def test_fun_print_mx06_derived_names_use_runtime_density_defaults(self) -> None:
-        for name in ("MXTP-100-ABCD", "CYLO BT PRINTER", "EWTTO ET-Z0499"):
+        for name in ("MXTP-100", "CYLO BT PRINTER", "EWTTO ET-Z0499"):
             with self.subTest(name=name):
                 resolved = self.catalog.detect_device(name, "AA:BB:CC:DD:EE:58")
 
@@ -1001,9 +1327,8 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_old_ibleem_proxy_buckets_no_longer_resolve(self) -> None:
         for name in (
-            "P100-ABCD",
-            "P100S-ABCD",
-            "LP100-ABCD",
+            "P100",
+            "P100S",
             "LP220S",
             "YINTIBAO-V5PRO",
             "MP300S",
@@ -1014,7 +1339,7 @@ class DevicesModelsTests(unittest.TestCase):
             "M836-ABCD",
             "Q302-ABCD",
             "Q580-ABCD",
-            "MXW-A4-ABCD",
+            "MXW-A4",
         ):
             with self.subTest(name=name):
                 self.assertIsNone(self.catalog.detect_device(name))
