@@ -86,6 +86,36 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(result.devices[0].transport_badge, "[classic+ble]")
         self.assertEqual(result.devices[0].profile_key, "x6h")
 
+    def test_display_candidates_keep_classic_ble_fallback_for_ambiguous_supported_name(self) -> None:
+        classic = DeviceInfo(
+            name="P1",
+            address="AA:BB:CC:DD:EE:01",
+            transport=DeviceTransport.CLASSIC,
+        )
+        ble = DeviceInfo(
+            name="P1",
+            address="UUID-1",
+            transport=DeviceTransport.BLE,
+        )
+        result = BluetoothScanResult(
+            devices=[],
+            failures=[],
+            raw_endpoints=[classic, ble],
+        )
+
+        devices = self.discovery.devices_for_display(result)
+
+        self.assertEqual(
+            {device.model_key for device in devices},
+            {"pocket_printer", "toprint_tspl_p1"},
+        )
+        for device in devices:
+            with self.subTest(model_key=device.model_key):
+                self.assertEqual(device.transport_badge, "[classic+ble]")
+                self.assertIsInstance(device.transport_target, BluetoothTarget)
+                self.assertIsNotNone(device.transport_target.classic_endpoint)
+                self.assertIsNotNone(device.transport_target.ble_endpoint)
+
     def test_resolve_transport_target_allows_unsupported_name(self) -> None:
         classic = DeviceInfo(
             name="PPA2L_3F19",

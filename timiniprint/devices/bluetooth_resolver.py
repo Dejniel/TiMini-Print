@@ -69,8 +69,13 @@ class BluetoothEndpointResolver:
             (device.model_key, device.address, device.transport_badge)
             for device in devices
         }
-        for endpoint in endpoints:
-            candidates = self._candidate_devices_from_endpoint(endpoint)
+        for item in self.transport_targets_from_endpoints(endpoints):
+            candidates = self._catalog.detection_devices(
+                item.display_name,
+                item.transport_target.display_address,
+                display_name=item.display_name,
+                transport_target=item.transport_target,
+            )
             if len(candidates) <= 1:
                 continue
             for candidate in candidates:
@@ -217,19 +222,6 @@ class BluetoothEndpointResolver:
                 )
             )
         return candidates
-
-    def _candidate_devices_from_endpoint(
-        self,
-        endpoint: BluetoothEndpoint,
-    ) -> List[PrinterDevice]:
-        return list(
-            self._catalog.detection_devices(
-                endpoint.name or "",
-                endpoint.address,
-                display_name=endpoint.name or "",
-                transport_target=self.transport_target_from_endpoint(endpoint),
-            )
-        )
 
     @staticmethod
     def _group_candidates(
