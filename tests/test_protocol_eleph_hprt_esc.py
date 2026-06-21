@@ -84,7 +84,7 @@ class HprtEscProtocolTests(unittest.TestCase):
     def test_catalog_detects_toprint_zl1_without_stealing_old_p_series(self) -> None:
         catalog = PrinterCatalog.load()
 
-        for name in ("P11", "P11_F30E", "YHK", "YHK_F30E", "YHK2"):
+        for name in ("P11", "P11_F30E"):
             with self.subTest(name=name):
                 detected = catalog.detect_device(name)
                 self.assertIsNotNone(detected)
@@ -93,6 +93,15 @@ class HprtEscProtocolTests(unittest.TestCase):
                 self.assertEqual(detected.protocol_family, ProtocolFamily.ELEPH_HPRT_ESC)
                 self.assertEqual(detected.protocol_variant, "zl1")
                 self.assertEqual(detected.image_pipeline.encoding, ImageEncoding.ELEPH_HPRT_ESC_RASTER)
+
+        for name in ("YHK", "YHK_F30E", "YHK2"):
+            with self.subTest(name=name):
+                matches = catalog.detect_model(name)
+                self.assertEqual(
+                    {candidate.model.model_key for candidate in matches},
+                    {"toprint_hprt_esc_zl1", "instaprint_ctp500_coreprint"},
+                )
+                self.assertIsNone(catalog.detect_device(name))
 
         for name in ("P2", "P2-1234", "P2_F30E", "P5", "P5-1234", "P5_F30E"):
             with self.subTest(name=name):

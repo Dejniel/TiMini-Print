@@ -2356,9 +2356,6 @@
         "detection": {
           "exact_names": [
             "111"
-          ],
-          "prefixes": [
-            "Q431"
           ]
         }
       },
@@ -2367,9 +2364,6 @@
         "detection": {
           "exact_names": [
             "A42"
-          ],
-          "prefixes": [
-            "Q593"
           ]
         }
       }
