@@ -6233,5 +6233,49 @@
       }
     },
     "a4xii": false
+  },
+  {
+    "profile_key": "printmaster_m_384",
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "has_id": false,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "default_paper_mode": "tag",
+    "protocol_default": {
+      "type": "phomemo_esc",
+      "packets_type": "printmaster_m110"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "phomemo_esc_raster"
+    },
+    "stream": {
+      "chunk_size": 128,
+      "delay_ms": 20
+    },
+    "post_print_feed_count": 0,
+    "print_defaults": {
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      }
+    },
+    "a4xii": false
   }
 ]

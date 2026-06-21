@@ -796,19 +796,15 @@ class DevicesModelsTests(unittest.TestCase):
         m110 = self.catalog.detect_device("M110")
         m120 = self.catalog.detect_device("M120")
 
-        self.assertIsNotNone(m110)
-        self.assertIsNotNone(m120)
-        assert m110 is not None
-        assert m120 is not None
-        self.assertEqual(m110.model_key, "phomemo_m110")
-        self.assertEqual(m120.model_key, "phomemo_m110")
+        self.assertIsNone(m110)
+        self.assertIsNone(m120)
         self.assertEqual(
             _model_keys(self.catalog.detect_model("M110")),
-            {"phomemo_m110"},
+            {"phomemo_m110", "printmaster_m110"},
         )
         self.assertEqual(
             _model_keys(self.catalog.detect_model("M120")),
-            {"phomemo_m110"},
+            {"phomemo_m110", "printmaster_m120"},
         )
         self.assertEqual(
             _model_keys(self.catalog.detect_model("M220")),
@@ -825,8 +821,37 @@ class DevicesModelsTests(unittest.TestCase):
             },
         )
 
+        printmaster_supported_expectations = {
+            "M108": "printmaster_m110",
+            "Q045-ABC": "printmaster_m110",
+            "M108_Z": "printmaster_m110",
+            "M108TA": "printmaster_m110",
+            "M109": "printmaster_m110",
+            "M105": "printmaster_m110",
+            "M110S": "printmaster_m110",
+            "M110R": "printmaster_m110",
+            "Q002-ABC": "printmaster_m110",
+            "M102": "printmaster_m120",
+            "Q306-ABC": "printmaster_m120",
+        }
+        for name, model_key in printmaster_supported_expectations.items():
+            match = _single_match(self.catalog.detect_model(name))
+            self.assertIsInstance(match, SupportedModelMatch)
+            assert isinstance(match, SupportedModelMatch)
+            self.assertEqual(match.model.model_key, model_key)
+            self.assertEqual(match.profile.profile_key, "printmaster_m_384")
+            self.assertEqual(
+                match.model.origin_app_packages,
+                ("com.project.aimotech.printmaster",),
+            )
+
         printmaster_expectations = {
             "M110C": "unsupported_printmaster_m110_series",
+            "Q199-ABC": "unsupported_printmaster_m110_series",
+            "M110SA": "unsupported_printmaster_m110_series",
+            "M120C": "unsupported_printmaster_m120_series",
+            "M126": "unsupported_printmaster_m120_series",
+            "Q274-ABC": "unsupported_printmaster_m120_series",
             "D20": "unsupported_printmaster_d30_series",
             "CNL-D32": "unsupported_printmaster_q30_series",
             "CNL-D35": "unsupported_printmaster_d30_series",

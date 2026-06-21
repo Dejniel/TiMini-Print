@@ -39,7 +39,17 @@ BEHAVIOR = ProtocolBehavior(
     image_encoding_support={
         ImageEncoding.PHOMEMO_ESC_RASTER: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("m02", "m02s", "m02x", "m02_pro", "t02", "m110", "m220"),
+    supported_protocol_variants=(
+        "m02",
+        "m02s",
+        "m02x",
+        "m02_pro",
+        "t02",
+        "m110",
+        "m220",
+        "printmaster_m110",
+        "printmaster_m120",
+    ),
     supported_paper_modes=(PaperMode.PLAIN,),
     supported_paper_modes_resolver=supported_paper_modes,
     advance_paper_builder=advance_paper_cmd,

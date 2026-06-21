@@ -4496,8 +4496,7 @@
             "M110"
           ],
           "prefixes": [
-            "M110-",
-            "M110_"
+            "M110"
           ]
         }
       },
@@ -4508,8 +4507,7 @@
             "M120"
           ],
           "prefixes": [
-            "M120-",
-            "M120_"
+            "M120"
           ]
         }
       }
@@ -4532,14 +4530,176 @@
             "M220"
           ],
           "prefixes": [
-            "M220-",
-            "M220_"
+            "M220"
           ]
         }
       }
     ],
     "origin_app_packages": [
       "com.quyin.phomemo"
+    ]
+  },
+  {
+    "model_key": "printmaster_m110",
+    "profile_key": "printmaster_m_384",
+    "protocol_override": {
+      "packets_type": "printmaster_m110"
+    },
+    "detections": [
+      {
+        "name": "M108",
+        "detection": {
+          "exact_names": [
+            "M108"
+          ],
+          "prefixes": [
+            "Q042",
+            "Q045",
+            "Q061",
+            "Q062",
+            "Q194",
+            "Q431",
+            "Q437"
+          ]
+        }
+      },
+      {
+        "name": "M108_Z",
+        "detection": {
+          "exact_names": [
+            "M108_Z"
+          ],
+          "prefixes": [
+            "Q120"
+          ]
+        }
+      },
+      {
+        "name": "M108TA",
+        "detection": {
+          "exact_names": [
+            "M108TA"
+          ],
+          "prefixes": [
+            "Q524",
+            "Q593"
+          ]
+        }
+      },
+      {
+        "name": "M109",
+        "detection": {
+          "exact_names": [
+            "M109"
+          ],
+          "prefixes": [
+            "Q043"
+          ]
+        }
+      },
+      {
+        "name": "M105",
+        "detection": {
+          "exact_names": [
+            "M105"
+          ],
+          "prefixes": [
+            "Q317"
+          ]
+        }
+      },
+      {
+        "name": "M110",
+        "detection": {
+          "exact_names": [
+            "M110"
+          ],
+          "prefixes": [
+            "M002",
+            "Q002",
+            "Q011",
+            "Q026",
+            "Q034",
+            "Q119",
+            "Q192",
+            "Q468"
+          ]
+        }
+      },
+      {
+        "name": "M110S",
+        "detection": {
+          "exact_names": [
+            "M110S"
+          ]
+        }
+      },
+      {
+        "name": "M110s",
+        "detection": {
+          "exact_names": [
+            "M110s"
+          ]
+        }
+      },
+      {
+        "name": "M110R",
+        "detection": {
+          "exact_names": [
+            "M110R"
+          ]
+        }
+      },
+      {
+        "name": "M110r",
+        "detection": {
+          "exact_names": [
+            "M110r"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
+    ]
+  },
+  {
+    "model_key": "printmaster_m120",
+    "profile_key": "printmaster_m_384",
+    "protocol_override": {
+      "packets_type": "printmaster_m120"
+    },
+    "detections": [
+      {
+        "name": "M102",
+        "detection": {
+          "exact_names": [
+            "M102"
+          ],
+          "prefixes": [
+            "Q306",
+            "Q481",
+            "Q485"
+          ]
+        }
+      },
+      {
+        "name": "M120",
+        "detection": {
+          "exact_names": [
+            "M120"
+          ],
+          "prefixes": [
+            "Q009",
+            "Q244",
+            "Q451",
+            "Q592"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.project.aimotech.printmaster"
     ]
   }
 ]

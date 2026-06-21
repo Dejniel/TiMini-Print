@@ -126,6 +126,82 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             ),
         )
 
+    def test_printmaster_m110_profile_builds_raw_m110_style_raster_job(self) -> None:
+        device = PrinterCatalog.load().device_from_model("printmaster_m110")
+        raster = RasterBuffer(
+            pixels=[
+                1, 0, 0, 0, 0, 0, 0, 0,
+                *([0] * 376),
+                0, 1, 0, 0, 0, 0, 0, 0,
+                *([0] * 376),
+            ],
+            width=384,
+            pixel_format=PixelFormat.BW1,
+        )
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            blackening=3,
+        )
+
+        padded_rows = bytes([0x80] + [0] * 47 + [0x40] + [0] * 47)
+        self.assertEqual(
+            job.payload,
+            b"".join(
+                (
+                    b"\x1b\x40",
+                    b"\x1d\x76\x30\x00\x30\x00\x02\x00",
+                    padded_rows,
+                )
+            ),
+        )
+
+    def test_printmaster_m120_profile_adds_print_multi_before_raster(self) -> None:
+        device = PrinterCatalog.load().device_from_model("printmaster_m120")
+        raster = RasterBuffer(
+            pixels=[
+                1, 0, 0, 0, 0, 0, 0, 0,
+                *([0] * 376),
+                0, 1, 0, 0, 0, 0, 0, 0,
+                *([0] * 376),
+            ],
+            width=384,
+            pixel_format=PixelFormat.BW1,
+        )
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+        )
+
+        padded_rows = bytes([0x80] + [0] * 47 + [0x40] + [0] * 47)
+        self.assertEqual(
+            job.payload,
+            b"".join(
+                (
+                    b"\x1b\x40",
+                    b"\x1f\x11\x21\x01",
+                    b"\x1d\x76\x30\x00\x30\x00\x02\x00",
+                    padded_rows,
+                )
+            ),
+        )
+
+    def test_printmaster_m110_requires_full_width_until_margin_flow_is_modelled(self) -> None:
+        device = PrinterCatalog.load().device_from_model("printmaster_m110")
+        raster = RasterBuffer(
+            pixels=[0] * 8,
+            width=8,
+            pixel_format=PixelFormat.BW1,
+        )
+
+        with self.assertRaisesRegex(ValueError, "384px raster width"):
+            PrinterProtocol(device).build_job(
+                RasterSet.from_single(raster),
+                is_text=False,
+            )
+
     def test_m110_paper_modes_select_media_type(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m110")
         raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
@@ -242,7 +318,24 @@ class PhomemoEscProtocolTests(unittest.TestCase):
     def test_m110_detection_maps_m110_m120_and_m220(self) -> None:
         catalog = PrinterCatalog.load()
 
-        for name in ("M110", "M110-ABCD", "M110_abcd", "M120", "M120-ABCD"):
+        self.assertIsNone(catalog.detect_device("M110"))
+        self.assertIsNone(catalog.detect_device("M120"))
+        self.assertEqual(
+            {match.model.model_key for match in catalog.detect_model("M110")},
+            {"phomemo_m110", "printmaster_m110"},
+        )
+        self.assertEqual(
+            {match.model.model_key for match in catalog.detect_model("M120")},
+            {"phomemo_m110", "printmaster_m120"},
+        )
+
+        for name in (
+            "M110-ABCD",
+            "M110_abcd",
+            "M110ABCD",
+            "M120-ABCD",
+            "M120ABCD",
+        ):
             with self.subTest(name=name):
                 device = catalog.detect_device(name)
                 self.assertIsNotNone(device)
@@ -250,11 +343,13 @@ class PhomemoEscProtocolTests(unittest.TestCase):
                 self.assertEqual(device.profile_key, "phomemo_m110")
                 self.assertEqual(device.protocol_variant, "m110")
 
-        m220 = catalog.detect_device("M220-ABCD")
-        self.assertIsNotNone(m220)
-        assert m220 is not None
-        self.assertEqual(m220.profile_key, "phomemo_m220")
-        self.assertEqual(m220.protocol_variant, "m220")
+        for name in ("M220-ABCD", "M220ABCD"):
+            with self.subTest(name=name):
+                m220 = catalog.detect_device(name)
+                self.assertIsNotNone(m220)
+                assert m220 is not None
+                self.assertEqual(m220.profile_key, "phomemo_m220")
+                self.assertEqual(m220.protocol_variant, "m220")
 
     def test_m02_supports_plain_paper_mode_and_motion(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m02")
@@ -272,6 +367,13 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             protocol.supported_paper_modes(),
             (PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG),
         )
+
+    def test_printmaster_m110_exposes_fixed_paper_mode(self) -> None:
+        catalog = PrinterCatalog.load()
+        for model_key in ("printmaster_m110", "printmaster_m120"):
+            with self.subTest(model_key=model_key):
+                protocol = PrinterProtocol(catalog.device_from_model(model_key))
+                self.assertEqual(protocol.supported_paper_modes(), (PaperMode.TAG,))
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 # TiMini Print Bluetooth Printer Tool
-Alternative [desktop software](https://github.com/Dejniel/TiMini-Print/releases) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “iBleem”, “Luck Jingle”, “Phomemo”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
+Alternative [desktop software](https://github.com/Dejniel/TiMini-Print/releases) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode, plus [custom integrations](#library-integration)
 
@@ -151,6 +151,8 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - M02 Pro and clones: M02PRO
 - M02S and clones: Mr.in_M02S
 - M02X and clones: M02D, M02E, MR2, M02A, KP-Q1
+- M102 and clones: M120
+- M108 and clones: M108_Z, M108TA, M109, M105, M110, M110S, M110s, M110R, M110r
 - M110 and clones: M120
 - MINIPRINTER and clones: JL-BR22
 - MV-B530 and clones: GL-VS9, QDID, X9
@@ -211,8 +213,8 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, M210, M950, MP3
 - M03 and clones: M200, M250, M221, M260
 - M04S and clones: M04AS
 - M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88
-- M110 and clones: M110C, M110S, M110s, M110R, M110r, M108, M108_Z, M108TA, M109, M105, M110SA, 111, A42
-- M120 and clones: M120C, M126, M102, M8-BK
+- M110C and clones: M110SA, 111, A42
+- M120C and clones: M126, M8-BK
 - M150 and clones: M100, M160
 - M200 and clones: M206, M208, M209, M220, M220S, M220C, M219, M200C, M221, M250, M260, M220A, M320, M321, A43, A431
 - M330 and clones: M332
