@@ -5835,6 +5835,62 @@
     "a4xii": false
   },
   {
+    "profile_key": "instaprint_ctp500",
+    "size": 2,
+    "paper_size": 384,
+    "print_size": 384,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "has_id": false,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "default_paper_mode": "plain",
+    "protocol_default": {
+      "type": "instaprint_core",
+      "packets_type": "ctp500"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "instaprint_core_raster"
+    },
+    "stream": {
+      "chunk_size": 180,
+      "delay_ms": 10
+    },
+    "post_print_feed_count": 0,
+    "print_defaults": {
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 12,
+          "middle": 15,
+          "high": 18
+        },
+        "text": {
+          "low": 12,
+          "middle": 15,
+          "high": 18
+        }
+      }
+    },
+    "a4xii": false
+  },
+  {
     "profile_key": "phomemo_m02",
     "size": 2,
     "paper_size": 384,

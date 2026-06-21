@@ -1,5 +1,5 @@
 # TiMini Print Bluetooth Printer Tool
-Alternative [desktop software](https://github.com/Dejniel/TiMini-Print/releases) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
+Alternative [desktop software](https://github.com/Dejniel/TiMini-Print/releases) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “InstaPrint”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode, plus [custom integrations](#library-integration)
 
@@ -130,6 +130,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - BQ02 and clones: BQ03, BQ17
 - C21 and clones: D1, D2, E2, NEWSMY
 - CMT-0510 and clones: SC03, SC04, GV-MA211
+- CorePrint and clones: Teal Printer, Purple Printer, B Pink Printer, Cherry Printer, Floral Printer, Check Printer, Smiley Printer, Stone Printer, P Pink Printer, YHK
 - D11 and clones: D11S
 - D80 and clones: PeriPage_A40, DYD80, DP_D80, DP-D80, E80, CASA-01
 - DL_X2Pro and clones: P5
@@ -190,7 +191,6 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, 
 - BAYPAGE and clones: YINTIBAO-V8S
 - BMW-M3 and clones: YCN-M3
 - CoreLargePrint and clones: Pro Printer
-- CorePrint and clones: Teal Printer, Purple Printer, B Pink Printer, Cherry Printer, Floral Printer, Check Printer, Smiley Printer, Stone Printer, P Pink Printer, YHK
 - D101 and clones: Betty
 - D11_H and clones: Hi-NB-D11, D61, D41, Dxx, Fust, D11_Pro
 - D12 and clones: C2, C3, C16

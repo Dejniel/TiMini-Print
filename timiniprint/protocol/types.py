@@ -20,6 +20,7 @@ class ImageEncoding(str, Enum):
     V5C_A5 = "v5c_a5"
     DCK_DEFAULT = "dck_default"
     ELEPH_HPRT_ESC_RASTER = "eleph_hprt_esc_raster"
+    INSTAPRINT_CORE_RASTER = "instaprint_core_raster"
     NIIMBOT_D110 = "niimbot_d110"
     ELEPH_TSPL_BITMAP = "eleph_tspl_bitmap"
     PHOMEMO_ESC_RASTER = "phomemo_esc_raster"

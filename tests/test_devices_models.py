@@ -870,10 +870,27 @@ class DevicesModelsTests(unittest.TestCase):
                 ("com.project.aimotech.printmaster",),
             )
 
-    def test_instaprint_unsupported_aliases_are_source_specific(self) -> None:
+    def test_instaprint_ctp500_aliases_are_supported_source_specific(self) -> None:
         expectations = {
-            "CorePrint": "unsupported_instaprint_ctp500_coreprint",
-            "Teal Printer": "unsupported_instaprint_ctp500_coreprint",
+            "CorePrint": "instaprint_ctp500_coreprint",
+            "Teal Printer": "instaprint_ctp500_coreprint",
+        }
+        for name, model_key in expectations.items():
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name))
+                self.assertIsInstance(match, SupportedModelMatch)
+                assert isinstance(match, SupportedModelMatch)
+                self.assertEqual(match.model.model_key, model_key)
+                self.assertEqual(match.model.origin_app_packages, ("com.bes.print.insta",))
+                self.assertEqual(match.profile.profile_key, "instaprint_ctp500")
+                self.assertEqual(match.profile.protocol_default.type, ProtocolFamily.INSTAPRINT_CORE)
+                self.assertEqual(
+                    match.profile.default_image_pipeline.encoding,
+                    ImageEncoding.INSTAPRINT_CORE_RASTER,
+                )
+
+    def test_instaprint_unimplemented_families_remain_unsupported(self) -> None:
+        expectations = {
             "CoreLargePrint": "unsupported_instaprint_ctp100lg_corelargeprint",
             "Pro Printer": "unsupported_instaprint_ctp100lg_corelargeprint",
             "Label Printer": "unsupported_instaprint_ctp800bd_label",
@@ -886,15 +903,18 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertEqual(match.model.model_key, model_key)
                 self.assertEqual(match.model.origin_app_packages, ("com.bes.print.insta",))
 
-        instaprint = self.catalog.require_unsupported_model(
-            "unsupported_instaprint_ctp500_coreprint"
-        )
-        self.assertIn("YHK", instaprint.names)
+    def test_yhk_is_explicit_toprint_instaprint_conflict(self) -> None:
+        matches = self.catalog.detect_model("YHK")
 
-        yhk = _single_match(self.catalog.detect_model("YHK"))
-        self.assertIsInstance(yhk, SupportedModelMatch)
-        assert isinstance(yhk, SupportedModelMatch)
-        self.assertEqual(yhk.model.model_key, "toprint_hprt_esc_zl1")
+        self.assertEqual(
+            _model_keys(matches),
+            {
+                "instaprint_ctp500_coreprint",
+                "toprint_hprt_esc_zl1",
+            },
+        )
+        self.assertTrue(all(isinstance(match, SupportedModelMatch) for match in matches))
+        self.assertIsNone(self.catalog.detect_device("YHK"))
 
     def test_old_small_bucket_shared_names_resolve_to_shared_profile(self) -> None:
         normal = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")

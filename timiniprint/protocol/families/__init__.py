@@ -13,6 +13,7 @@ from .base import (
 )
 from .dck import BEHAVIOR as DCK_BEHAVIOR
 from .eleph_hprt_esc import BEHAVIOR as ELEPH_HPRT_ESC_BEHAVIOR
+from .instaprint_core import BEHAVIOR as INSTAPRINT_CORE_BEHAVIOR
 from .tiny import BEHAVIOR as TINY_BEHAVIOR
 from .luck.normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
 from .luck.normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
@@ -95,6 +96,14 @@ _DEFINITIONS = {
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=ELEPH_HPRT_ESC_BEHAVIOR,
+    ),
+    ProtocolFamily.INSTAPRINT_CORE: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.INSTAPRINT_CORE,
+            transport_style=ProtocolTransportStyle.STANDARD,
+        ),
+        behavior=INSTAPRINT_CORE_BEHAVIOR,
     ),
     ProtocolFamily.NIIMBOT: ProtocolDefinition(
         spec=ProtocolSpec(

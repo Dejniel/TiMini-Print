@@ -4701,5 +4701,132 @@
     "origin_app_packages": [
       "com.project.aimotech.printmaster"
     ]
+  },
+  {
+    "model_key": "instaprint_ctp500_coreprint",
+    "profile_key": "instaprint_ctp500",
+    "detections": [
+      {
+        "name": "CorePrint",
+        "detection": {
+          "exact_names": [
+            "CorePrint"
+          ],
+          "prefixes": [
+            "CorePrint"
+          ]
+        }
+      },
+      {
+        "name": "Teal Printer",
+        "detection": {
+          "exact_names": [
+            "Teal Printer"
+          ],
+          "prefixes": [
+            "Teal Printer"
+          ]
+        }
+      },
+      {
+        "name": "Purple Printer",
+        "detection": {
+          "exact_names": [
+            "Purple Printer"
+          ],
+          "prefixes": [
+            "Purple Printer"
+          ]
+        }
+      },
+      {
+        "name": "B Pink Printer",
+        "detection": {
+          "exact_names": [
+            "B Pink Printer"
+          ],
+          "prefixes": [
+            "B Pink Printer"
+          ]
+        }
+      },
+      {
+        "name": "Cherry Printer",
+        "detection": {
+          "exact_names": [
+            "Cherry Printer"
+          ],
+          "prefixes": [
+            "Cherry Printer"
+          ]
+        }
+      },
+      {
+        "name": "Floral Printer",
+        "detection": {
+          "exact_names": [
+            "Floral Printer"
+          ],
+          "prefixes": [
+            "Floral Printer"
+          ]
+        }
+      },
+      {
+        "name": "Check Printer",
+        "detection": {
+          "exact_names": [
+            "Check Printer"
+          ],
+          "prefixes": [
+            "Check Printer"
+          ]
+        }
+      },
+      {
+        "name": "Smiley Printer",
+        "detection": {
+          "exact_names": [
+            "Smiley Printer"
+          ],
+          "prefixes": [
+            "Smiley Printer"
+          ]
+        }
+      },
+      {
+        "name": "Stone Printer",
+        "detection": {
+          "exact_names": [
+            "Stone Printer"
+          ],
+          "prefixes": [
+            "Stone Printer"
+          ]
+        }
+      },
+      {
+        "name": "P Pink Printer",
+        "detection": {
+          "exact_names": [
+            "P Pink Printer"
+          ],
+          "prefixes": [
+            "P Pink Printer"
+          ]
+        }
+      },
+      {
+        "name": "YHK",
+        "detection": {
+          "prefixes": [
+            "YHK"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.bes.print.insta"
+    ]
   }
 ]
