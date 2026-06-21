@@ -198,11 +198,11 @@ class DevicesModelsTests(unittest.TestCase):
         niimbot_d11s = _single_match(self.catalog.detect_model("D11S"))
         luck_d11s = _single_match(self.catalog.detect_model("D11s_1234"))
 
-        self.assertIsInstance(niimbot_d11s, UnsupportedModelMatch)
+        self.assertIsInstance(niimbot_d11s, SupportedModelMatch)
         self.assertIsInstance(luck_d11s, UnsupportedModelMatch)
-        assert isinstance(niimbot_d11s, UnsupportedModelMatch)
+        assert isinstance(niimbot_d11s, SupportedModelMatch)
         assert isinstance(luck_d11s, UnsupportedModelMatch)
-        self.assertEqual(niimbot_d11s.model.model_key, "unsupported_todo_niimbot_candidates_d11s")
+        self.assertEqual(niimbot_d11s.model.model_key, "niimbot_d11")
         self.assertEqual(niimbot_d11s.model.origin_app_packages, ("com.gengcon.android.jccloudprinter",))
         self.assertEqual(luck_d11s.model.model_key, "unsupported_todo_luck_mpl11")
         self.assertEqual(luck_d11s.model.origin_app_packages, ("com.dingdang.newprint",))
@@ -235,7 +235,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_tinyprint_short_tokens_do_not_steal_other_sources(self) -> None:
         expectations = {
-            "D11S": "unsupported_todo_niimbot_candidates_d11s",
+            "D11S": "niimbot_d11",
             "P1_1234": "eleph_tspl_p1",
             "X1": "v5x",
             "X6": "yt01_v5g",

@@ -4,7 +4,7 @@ from ....raster import PixelFormat
 from ...steps import ProtocolStep
 from ...types import ImageEncoding, ImagePipelineConfig
 from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
-from .core import build_d110_job
+from .core import build_niimbot_job
 
 _NIIMBOT_SERVICE_UUID = "e7810a71-73ae-499d-8c15-faa9aef0c3f2"
 _PACKET_INTERVAL_MS = 10
@@ -12,7 +12,7 @@ _STANDARD_CHUNK_CAP = 20
 
 
 def build_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    return build_d110_job(request)
+    return build_niimbot_job(request)
 
 
 TRANSPORT = BleTransportProfile(
@@ -32,6 +32,6 @@ BEHAVIOR = ProtocolBehavior(
     image_encoding_support={
         ImageEncoding.NIIMBOT_D110: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("d110",),
+    supported_protocol_variants=("d11_v1", "d110"),
     job_builder=build_job,
 )

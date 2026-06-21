@@ -8,6 +8,7 @@ from enum import Enum
 class ProtocolStepOperation(str, Enum):
     SEND = "send"
     QUERY = "query"
+    WAIT = "wait"
 
 
 class ProtocolReplyExpectation(str, Enum):
@@ -75,6 +76,24 @@ class ProtocolStep:
             reply_matcher=reply_matcher,
             repeat_interval_sec=repeat_interval_sec,
             repeat_timeout_sec=repeat_timeout_sec,
+        )
+
+    @classmethod
+    def wait(
+        cls,
+        label: str,
+        *,
+        reply_matcher: ProtocolReplyMatcher,
+        timeout_sec: float | None = None,
+    ) -> "ProtocolStep":
+        return cls(
+            label=label,
+            data=b"",
+            operation=ProtocolStepOperation.WAIT,
+            expect=ProtocolReplyExpectation.NONE,
+            timeout_sec=timeout_sec,
+            include_in_payload=False,
+            reply_matcher=reply_matcher,
         )
 
 

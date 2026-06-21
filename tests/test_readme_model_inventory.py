@@ -115,6 +115,8 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertRegex(supported, r"(?<![A-Z0-9_-])M120(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])T02(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])Q02E(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])D11(?![A-Z0-9_-])")
+        self.assertRegex(supported, r"(?<![A-Z0-9_-])D11S(?![A-Z0-9_-])")
 
         self.assertRegex(todo, r"(?<![A-Z0-9_-])JXPRINTER(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])PRINTER(?![A-Z0-9_-])")
@@ -126,7 +128,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertRegex(todo, r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])MXW-A4(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])JX400R06P(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])D11(?![A-Z0-9_-])")
+        self.assertRegex(todo, r"(?<![A-Z0-9_-])D11_H(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])D61(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])Betty(?![A-Z0-9_-])")
         self.assertRegex(todo, r"(?<![A-Z0-9_-])S6_P(?![A-Z0-9_-])")

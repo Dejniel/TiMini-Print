@@ -70,7 +70,7 @@ must pass runtime capabilities/controller data from the printing layer.
 A `ProtocolJob` is what transport sends.
 It contains:
 - `payload: bytes`
-- optional `steps`, a named send/query plan for protocols that need replies during a print job
+- optional `steps`, a named send/query/wait plan for protocols that need replies or passive notifications during a print job
 - optional `runtime_controller`, supplied by the printing/runtime layer for families that need session behavior during transport
 
 ### Connectors
@@ -205,6 +205,7 @@ If you want full support for query-driven families, your connection should also 
 - `attach_runtime_controller(runtime_controller, *, timeout=...)`
 - `send_control_packet(packet, *, timeout=...)`
 - `query_control_packet(packet, *, timeout=...)`
+- `wait_for_notification(label, match, *, timeout=..., required=...)`
 
 If your transport cannot support these operations, you can omit them. Runtime-sensitive
 families will then fall back to degraded behavior when possible.

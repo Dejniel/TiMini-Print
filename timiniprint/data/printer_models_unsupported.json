@@ -1423,40 +1423,6 @@
     ]
   },
   {
-    "model_key": "unsupported_todo_niimbot_candidates_d11",
-    "profile_key_prediction": "d11",
-    "origin_app_packages": [
-      "com.gengcon.android.jccloudprinter"
-    ],
-    "detections": [
-      {
-        "name": "D11",
-        "detection": {
-          "prefixes": [
-            "D11"
-          ]
-        }
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_todo_niimbot_candidates_d11s",
-    "profile_key_prediction": "d11",
-    "origin_app_packages": [
-      "com.gengcon.android.jccloudprinter"
-    ],
-    "detections": [
-      {
-        "name": "D11S",
-        "detection": {
-          "prefixes": [
-            "D11S"
-          ]
-        }
-      }
-    ]
-  },
-  {
     "model_key": "unsupported_todo_niimbot_candidates_d11_h",
     "profile_key_prediction": "d11",
     "origin_app_packages": [

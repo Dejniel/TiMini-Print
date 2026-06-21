@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol import PrinterProtocol
+from timiniprint.protocol import PrinterProtocol, ProtocolStepOperation
 from timiniprint.protocol.families.niimbot.core import (
     NiimbotRequest,
     NiimbotResponse,
@@ -86,6 +86,35 @@ class NiimbotProtocolTests(unittest.TestCase):
             second_status.reply_matcher.matches(frame(NiimbotResponse.PRINT_STATUS, b"\x00\x02"))
         )
 
+    def test_d11_profile_uses_old_d11_page_size_and_page_index_wait(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("niimbot_d11")
+        raster = RasterBuffer(pixels=[0] * 96, width=96, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            page_count=1,
+        )
+
+        labels = [step.label for step in job.steps]
+        self.assertIn("set density", labels)
+        self.assertIn("page index", labels)
+        self.assertNotIn("print status", labels)
+
+        page_size = next(step for step in job.steps if step.label == "set page size")
+        self.assertEqual(page_size.data[2], int(NiimbotRequest.SET_PAGE_SIZE))
+        self.assertEqual(page_size.data[3], 2)
+
+        page_index = next(step for step in job.steps if step.label == "page index")
+        self.assertEqual(page_index.operation, ProtocolStepOperation.WAIT)
+        self.assertFalse(page_index.include_in_payload)
+        self.assertTrue(
+            page_index.reply_matcher.matches(
+                frame(NiimbotResponse.PRINTER_PAGE_INDEX, b"\x00\x01")
+            )
+        )
+        self.assertEqual(job.steps[-1].data[2], int(NiimbotRequest.PRINT_END))
+
     def test_catalog_detects_d110_as_niimbot(self) -> None:
         detected = PrinterCatalog.load().detect_device("D110-1234")
 
@@ -94,6 +123,17 @@ class NiimbotProtocolTests(unittest.TestCase):
         self.assertEqual(detected.profile_key, "niimbot_d110")
         self.assertEqual(detected.protocol_family.value, "niimbot")
         self.assertEqual(detected.protocol_variant, "d110")
+
+    def test_catalog_detects_d11_as_niimbot(self) -> None:
+        for name in ("D11", "D11-1234", "D11_1234", "D11S", "D11S-1234", "D11S_1234"):
+            with self.subTest(name=name):
+                detected = PrinterCatalog.load().detect_device(name)
+
+                self.assertIsNotNone(detected)
+                assert detected is not None
+                self.assertEqual(detected.profile_key, "niimbot_d11")
+                self.assertEqual(detected.protocol_family.value, "niimbot")
+                self.assertEqual(detected.protocol_variant, "d11_v1")
 
     def test_catalog_does_not_treat_d110_m_as_d110(self) -> None:
         detected = PrinterCatalog.load().detect_device("D110_M")

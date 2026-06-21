@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
@@ -10,9 +11,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from timiniprint.devices import PrinterCatalog
+from timiniprint.devices.model_codec import model_from_json
 from timiniprint.devices.profiles import SupportedPrinterModel, UnsupportedPrinterModel
 
 README_PATH = REPO_ROOT / "README.md"
+UNSUPPORTED_MODELS_PATH = REPO_ROOT / "timiniprint/data/printer_models_unsupported.json"
 SUPPORTED_MARKER = "supported-models"
 TODO_MARKER = "todo-models"
 ReadablePrinterModel = SupportedPrinterModel | UnsupportedPrinterModel
@@ -38,15 +41,6 @@ def _dedupe_names(names: list[str]) -> list[str]:
     return ordered
 
 
-def _profile_key_prediction_label(value: str) -> str:
-    tokens = value.split("_")
-    if tokens[-1:] == ["legacy"]:
-        return "-".join(token.upper() for token in tokens[:-1]) + " legacy"
-    if len(tokens) > 1 and tokens[0] in {"pm"}:
-        return "-".join(token.upper() for token in tokens)
-    return "_".join(token.upper() for token in tokens)
-
-
 def _render_model_names(models: list[ReadablePrinterModel]) -> str:
     groups_by_key: dict[str, list[str]] = {}
     for model in models:
@@ -55,9 +49,7 @@ def _render_model_names(models: list[ReadablePrinterModel]) -> str:
             continue
         prediction = getattr(model, "profile_key_prediction", None)
         if prediction:
-            group_key = prediction
-            group = groups_by_key.setdefault(group_key, [_profile_key_prediction_label(prediction)])
-            group.extend(names)
+            groups_by_key.setdefault(f"prediction:{prediction}", []).extend(names)
             continue
         groups_by_key.setdefault(names[0], []).extend(names)
     singles: list[str] = []
@@ -83,14 +75,21 @@ def _render_model_names(models: list[ReadablePrinterModel]) -> str:
     return "\n\n".join(chunks)
 
 
+def _load_unsupported_models_in_file_order() -> list[UnsupportedPrinterModel]:
+    raw_models = json.loads(UNSUPPORTED_MODELS_PATH.read_text(encoding="utf-8"))
+    return [
+        model_from_json(UnsupportedPrinterModel, raw_model, path=f"$[{index}]")
+        for index, raw_model in enumerate(raw_models)
+    ]
+
+
 def render_supported_models_block(models: list[SupportedPrinterModel] | None = None) -> str:
     catalog = PrinterCatalog.load()
     return _render_model_names(catalog.models if models is None else models)
 
 
 def render_todo_models_block(models: list[UnsupportedPrinterModel] | None = None) -> str:
-    catalog = PrinterCatalog.load()
-    return _render_model_names(catalog.unsupported_models if models is None else models)
+    return _render_model_names(_load_unsupported_models_in_file_order() if models is None else models)
 
 
 def _replace_marked_section(text: str, marker: str, replacement: str) -> str:

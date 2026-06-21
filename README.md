@@ -129,6 +129,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - BQ02 and clones: BQ03, BQ17
 - C21 and clones: D1, D2, E2, NEWSMY
 - CMT-0510 and clones: SC03, SC04, GV-MA211
+- D11 and clones: D11S
 - D80 and clones: PeriPage_A40, DYD80, DP_D80, DP-D80, E80, CASA-01
 - DL_X2Pro and clones: P5
 - DYD80H and clones: DP_D80H
@@ -178,33 +179,34 @@ These models or protocol families are not in the supported list yet, but they lo
 <!-- BEGIN todo-models -->
 A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, M210, M950, MP300, MXW-A4, P1000, P15, P3, P5100, PM-201, Q02
 
-- AL200 and clones: RPP02N, AL2
+- AL200 and clones: AL2, RPP02N
 - B1 and clones: B1 Pro, M2_H, N1
 - B18 and clones: B18S
-- B21 and clones: B21S-C2B, B21-C2B, B21-L2B, B21_Pro, B21S
-- B3S and clones: B3S_P, JCB3S, S6_P, B24, S6
+- B21 and clones: B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro
+- B24 and clones: B3S, B3S_P, JCB3S, S6, S6_P
 - BAYPAGE and clones: YINTIBAO-V8S
+- BMW-M3 and clones: YCN-M3
 - D101 and clones: Betty
-- D11 and clones: Hi-NB-D11, D11_Pro, D11_H, D11S, Fust, D61, D41, Dxx
-- D12 and clones: C3, C16, C2
+- D11_H and clones: Hi-NB-D11, D61, D41, Dxx, Fust, D11_Pro
+- D12 and clones: C2, C3, C16
 - D1600 and clones: D1600D
-- D30 and clones: D30S, D30S New, D30S Pro, D30N, D30Pro, D20, D35, D10, D30AT, CNL-D35, Q30S, D50, Q30
-- D400 and clones: ITPP130B, QR_386A, ITPP941, QR380A, Y810BT, TB41, P80S
+- D30 and clones: D35, D50, Q30, Q30S, D30S, D30S New, D30S Pro, D30N, D30Pro, D20, D10, D30AT, CNL-D35
+- D400 and clones: Y810BT, QR380A, TB41, QR_386A, ITPP941, P80S, ITPP130B
 - D480 and clones: D480BT, D480BT PRO
 - D50 and clones: P50
 - D680 and clones: D680BT
-- D82 and clones: FICHERO_6181, D82S, D83, A10
+- D82 and clones: D82S, D83, A10, FICHERO_6181
 - E50 and clones: E50Pro
 - E600S and clones: E6000, E8000, QT-800
 - E9000 and clones: E93, E9000Pro
-- ITP05N and clones: ITP06N, PCPS_D80, DP_A80S, DP_A80W, DP_A80, GD-88, PD_A4
+- ITP05N and clones: ITP06N, PCPS_D80, DP_A80, DP_A80S, DP_A80W, PD_A4, GD-88
 - JXPRINTER and clones: PRINTER
 - LM1600 and clones: LM2800
-- LP100 legacy and clones: LY100_BLE, LP100, LP220
+- LP100 and clones: LP220, LY100_BLE
 - LP100S and clones: LP220S
 - LT12 and clones: LT-110H
-- M02H and clones: M02PRE, M02S-H
-- M02L and clones: M02X/L
+- M02PRE and clones: M02S-H, M02H
+- M02X/L and clones: M02L
 - M03 and clones: M200, M250, M221, M260
 - M04S and clones: M04AS
 - M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88
@@ -212,16 +214,15 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, M210, M950, MP3
 - M120 and clones: M120C, M126, M102, M8-BK
 - M150 and clones: M100, M160
 - M200 and clones: M206, M208, M209, M220, M220S, M220C, M219, M200C, M221, M250, M260, M220A, M320, M321, A43, A431
-- M3 and clones: BMW-M3, YCN-M3
 - M330 and clones: M332
-- M400 and clones: M420, M421
+- M420 and clones: M421
 - M8 and clones: D68, D80
 - M832 and clones: M836
 - M960 and clones: M960D
 - MPL11 and clones: D11s, FICHERO_5836, MULLER_6473
-- P100 and clones: YINTIBAO-V5, AEQ918N4, MP100, MP200, MP220
-- P100S and clones: YINTIBAO-V5PRO, MP100S, MP200S, MP220S
-- P12 and clones: P12 Pro, P12Pro, A30
+- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4
+- P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO
+- P12 and clones: P12 Pro, A30, P12Pro
 - P3100 and clones: P3100D, P3100J, P3100DJ
 - P3200 and clones: P3200D
 - P3S and clones: MP300S
@@ -229,6 +230,6 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, M210, M950, MP3
 - PM-241-BT and clones: PM241, PM 241
 - Q30 and clones: Q31, Q32, Q30S, D31, D32, A10, CNL-D32
 - Q302 and clones: Q580
-- Y02 and clones: Y02C, Y02S
+- Y02C and clones: Y02S
 - YINTIBAO and clones: PAPERGO
 <!-- END todo-models -->

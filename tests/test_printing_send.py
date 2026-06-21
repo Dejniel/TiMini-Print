@@ -98,6 +98,9 @@ class _NotificationConnection(_Connection):
 class _WaitOnlyConnection(_Connection):
     def __init__(self) -> None:
         super().__init__(can_query=False)
+        self.wait_labels: list[str] = []
+        self.wait_timeouts: list[float] = []
+        self.wait_match_results: list[bool] = []
 
     def can_wait_for_notification(self) -> bool:
         return True
@@ -110,7 +113,10 @@ class _WaitOnlyConnection(_Connection):
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        _ = label, match, timeout, required
+        _ = required
+        self.wait_labels.append(label)
+        self.wait_timeouts.append(timeout)
+        self.wait_match_results.append(match(b"ACK"))
         return b"ACK"
 
 
@@ -169,6 +175,29 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(connection.standard_payloads, [b"B"])
         self.assertEqual(connection.sent_jobs, [])
         self.assertTrue(any("Protocol query finalize" in detail for _short, detail in reporter.debugs))
+        self.assertEqual(reporter.warnings, [])
+
+    async def test_send_prepared_job_executes_wait_steps(self) -> None:
+        connection = _WaitOnlyConnection()
+        reporter = _Reporter()
+        matcher = ProtocolReplyMatcher(
+            complete=lambda reply: reply == b"ACK",
+            matches=lambda reply: reply == b"ACK",
+        )
+        steps = (
+            ProtocolStep.send("setup", b"A"),
+            ProtocolStep.wait("page index", reply_matcher=matcher, timeout_sec=0.5),
+            ProtocolStep.send("final", b"B"),
+        )
+        job = ProtocolJob(steps=steps)
+
+        await send_prepared_job(object(), connection, job, timeout=0.1, reporter=reporter)
+
+        self.assertEqual(connection.standard_payloads, [b"A", b"B"])
+        self.assertEqual(connection.wait_labels, ["page index"])
+        self.assertEqual(connection.wait_timeouts, [0.5])
+        self.assertEqual(connection.wait_match_results, [True])
+        self.assertTrue(any("Protocol wait page index" in detail for _short, detail in reporter.debugs))
         self.assertEqual(reporter.warnings, [])
 
     async def test_send_prepared_job_falls_back_when_query_transport_is_unavailable(self) -> None:

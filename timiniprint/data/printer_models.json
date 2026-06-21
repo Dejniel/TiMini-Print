@@ -4233,6 +4233,39 @@
     ]
   },
   {
+    "model_key": "niimbot_d11",
+    "profile_key": "niimbot_d11",
+    "detections": [
+      {
+        "name": "D11",
+        "detection": {
+          "prefixes": [
+            "D11-",
+            "D11_"
+          ],
+          "exact_names": [
+            "D11"
+          ]
+        }
+      },
+      {
+        "name": "D11S",
+        "detection": {
+          "prefixes": [
+            "D11S-",
+            "D11S_"
+          ],
+          "exact_names": [
+            "D11S"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ]
+  },
+  {
     "model_key": "niimbot_d110",
     "profile_key": "niimbot_d110",
     "detections": [

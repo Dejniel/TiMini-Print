@@ -38,6 +38,7 @@ class NiimbotResponse(IntEnum):
     PRINT_QUANTITY = 0x16
     PRINT_CLEAR = 0x30
     PAGE_END = 0xE4
+    PRINTER_PAGE_INDEX = 0xE0
     PRINT_STATUS = 0xB3
     PRINT_END = 0xF4
     PRINT_ERROR = 0xDB
@@ -59,9 +60,11 @@ class NiimbotPacket:
 
 
 @dataclass(frozen=True)
-class NiimbotD110Recipe:
+class NiimbotRecipe:
     protocol_variant: str
     printhead_pixels: int
+    page_size_bytes: int
+    finish_wait: str
     label_type: int = int(NiimbotLabelType.WITH_GAPS)
     packet_timeout_sec: float = 1.0
     page_timeout_sec: float = 10.0
@@ -116,10 +119,7 @@ class NiimbotD110Recipe:
                 ),
                 self._query(
                     "set page size",
-                    frame(
-                        NiimbotRequest.SET_PAGE_SIZE,
-                        _u16be(raster.height) + _u16be(raster.width),
-                    ),
+                    frame(NiimbotRequest.SET_PAGE_SIZE, self._page_size_data(raster)),
                     NiimbotResponse.SET_PAGE_SIZE,
                     timeout_sec=self.page_timeout_sec,
                 ),
@@ -131,14 +131,16 @@ class NiimbotD110Recipe:
             ]
         )
         steps.extend(_image_row_steps(raster, printhead_pixels=self.printhead_pixels))
-        steps.extend(
-            [
-                self._query(
-                    "page end",
-                    frame(NiimbotRequest.PAGE_END),
-                    NiimbotResponse.PAGE_END,
-                    timeout_sec=self.page_timeout_sec,
-                ),
+        steps.append(
+            self._query(
+                "page end",
+                frame(NiimbotRequest.PAGE_END),
+                NiimbotResponse.PAGE_END,
+                timeout_sec=self.page_timeout_sec,
+            )
+        )
+        if self.finish_wait == "status_poll":
+            steps.append(
                 ProtocolStep.query(
                     "print status",
                     frame(NiimbotRequest.PRINT_STATUS),
@@ -148,10 +150,21 @@ class NiimbotD110Recipe:
                     repeat_interval_sec=self.status_poll_interval_sec,
                     repeat_timeout_sec=self.status_timeout_sec,
                     include_in_payload=False,
-                ),
-            ]
-        )
+                )
+            )
         if request.is_last_page:
+            if self.finish_wait == "page_index":
+                # TODO: this mirrors the source D11_V1 flow: wait for page-index
+                # after PageEnd. If hardware shows the notification can arrive
+                # before this waiter is registered, add a NIIMBOT notification
+                # accumulator instead of moving this logic into transport.
+                steps.append(
+                    ProtocolStep.wait(
+                        "page index",
+                        reply_matcher=page_index_done_matcher(request.page_count),
+                        timeout_sec=self.status_timeout_sec,
+                    )
+                )
             steps.append(
                 self._query(
                     "print end",
@@ -161,6 +174,15 @@ class NiimbotD110Recipe:
                 )
             )
         return tuple(steps)
+
+    def _page_size_data(self, raster: RasterBuffer) -> bytes:
+        if self.page_size_bytes == 2:
+            return _u16be(raster.height)
+        if self.page_size_bytes == 4:
+            return _u16be(raster.height) + _u16be(raster.width)
+        raise ValueError(
+            f"Unsupported NIIMBOT page size format: {self.page_size_bytes} bytes"
+        )
 
     def _query(
         self,
@@ -256,6 +278,22 @@ def print_status_done_matcher(expected_page: int) -> ProtocolReplyMatcher:
     return response_matcher(NiimbotResponse.PRINT_STATUS, data_matches=status_done)
 
 
+def page_index_done_matcher(expected_page: int) -> ProtocolReplyMatcher:
+    expected_pages = max(1, int(expected_page))
+
+    def page_done(raw: bytes | None) -> bool:
+        if raw is None:
+            return False
+        for packet in _safe_parse_packets(raw):
+            if packet.command != int(NiimbotResponse.PRINTER_PAGE_INDEX):
+                continue
+            if len(packet.data) >= 2 and int.from_bytes(packet.data[:2], "big") == expected_pages:
+                return True
+        return False
+
+    return ProtocolReplyMatcher(complete=lambda raw: page_done(raw), matches=page_done)
+
+
 def print_end_success_matcher() -> ProtocolReplyMatcher:
     return response_matcher(
         NiimbotResponse.PRINT_END,
@@ -263,8 +301,8 @@ def print_end_success_matcher() -> ProtocolReplyMatcher:
     )
 
 
-def build_d110_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    recipe = D110_RECIPE_BY_VARIANT.get(request.protocol_variant or "d110")
+def build_niimbot_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+    recipe = RECIPE_BY_VARIANT.get(request.protocol_variant or "d110")
     if recipe is None:
         raise ValueError(f"Unsupported NIIMBOT protocol variant: {request.protocol_variant!r}")
     return recipe.build_job(request)
@@ -352,9 +390,9 @@ class _EncodedRow:
 
 def _coalesced_rows(raster: RasterBuffer) -> tuple[_EncodedRow, ...]:
     if raster.pixel_format is not PixelFormat.BW1:
-        raise ValueError("NIIMBOT D110 requires BW1 raster data")
+        raise ValueError("NIIMBOT requires BW1 raster data")
     if raster.width % 8 != 0:
-        raise ValueError("NIIMBOT D110 raster width must be divisible by 8")
+        raise ValueError("NIIMBOT raster width must be divisible by 8")
     rows: list[_EncodedRow] = []
     pixels = list(raster.pixels)
     for row_number in range(raster.height):
@@ -445,7 +483,19 @@ def _u16be(value: int) -> bytes:
     return int(value).to_bytes(2, "big", signed=False)
 
 
-D110_RECIPE = NiimbotD110Recipe(protocol_variant="d110", printhead_pixels=96)
-D110_RECIPE_BY_VARIANT = {
+D11_RECIPE = NiimbotRecipe(
+    protocol_variant="d11_v1",
+    printhead_pixels=96,
+    page_size_bytes=2,
+    finish_wait="page_index",
+)
+D110_RECIPE = NiimbotRecipe(
+    protocol_variant="d110",
+    printhead_pixels=96,
+    page_size_bytes=4,
+    finish_wait="status_poll",
+)
+RECIPE_BY_VARIANT = {
+    D11_RECIPE.protocol_variant: D11_RECIPE,
     D110_RECIPE.protocol_variant: D110_RECIPE,
 }

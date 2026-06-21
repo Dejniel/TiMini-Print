@@ -69,11 +69,32 @@ async def _send_protocol_steps(
                 ),
             )
             return False
+    if any(step.operation is ProtocolStepOperation.WAIT for step in steps):
+        if not session.can_wait_for_notification():
+            session.report_warning(
+                short="Protocol wait unavailable",
+                detail=(
+                    "This job needs a protocol notification wait, but the current transport "
+                    "cannot wait for BLE notifications. Falling back to stream-only send."
+                ),
+            )
+            return False
 
     for step in steps:
         if step.operation is ProtocolStepOperation.SEND:
             session.report_debug(f"Protocol send {step.label}: {_packet_summary(step.data)}")
             await session.send_standard_payload(step.data)
+            continue
+        if step.operation is ProtocolStepOperation.WAIT:
+            reply = await _execute_wait_step(session, step, timeout=timeout)
+            if not _reply_matches_for(step, reply):
+                session.report_warning(
+                    short=f"Protocol {step.label} wait mismatch",
+                    detail=(
+                        f"Protocol wait {step.label!r} did not receive the expected notification, "
+                        f"got {_hex_preview(reply)}. Continuing, but the printer may reject the job."
+                    ),
+                )
             continue
 
         reply = await _execute_query_step(session, step, timeout=timeout)
@@ -86,6 +107,28 @@ async def _send_protocol_steps(
                 ),
             )
     return True
+
+
+async def _execute_wait_step(
+    session: RuntimeConnectionSession,
+    step: ProtocolStep,
+    *,
+    timeout: float,
+) -> bytes | None:
+    reply_complete = _reply_complete_for(step)
+    if reply_complete is None:
+        return None
+    wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
+    reply = await session.wait_for_notification(
+        step.label,
+        reply_complete,
+        timeout=wait_timeout,
+        required=False,
+    )
+    session.report_debug(
+        f"Protocol wait {step.label}: rx={_hex_preview(reply)}"
+    )
+    return reply
 
 
 async def _execute_query_step(

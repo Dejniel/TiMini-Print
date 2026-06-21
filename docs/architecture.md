@@ -98,6 +98,10 @@ If code needs to talk about “this actual printer instance as we currently inte
 
 ### `PrinterProtocol`
 A protocol builder bound to one `PrinterDevice`.
+It may return named protocol steps for families that need interleaved sends,
+queries, or passive notification waits during a print job. The protocol layer
+defines the expected packet/notification semantics; transport adapters only
+provide the primitive I/O operations.
 It turns raster input into a `ProtocolJob`.
 
 Important: `PrinterProtocol` is not a transport object.
