@@ -228,9 +228,10 @@ class DevicesModelsTests(unittest.TestCase):
                     "com.fyhd.toprint",
                     "com.sandu.JxPrinter",
                     "com.project.aimotech.printmaster",
+                    "com.bes.print.insta",
                 )
             ),
-            ("Tiny Print", "ToPrint", "Eleph-label", "Print Master"),
+            ("Tiny Print", "ToPrint", "Eleph-label", "Print Master", "InstaPrint"),
         )
 
     def test_tinyprint_short_tokens_do_not_steal_other_sources(self) -> None:
@@ -868,6 +869,32 @@ class DevicesModelsTests(unittest.TestCase):
                 match.model.origin_app_packages,
                 ("com.project.aimotech.printmaster",),
             )
+
+    def test_instaprint_unsupported_aliases_are_source_specific(self) -> None:
+        expectations = {
+            "CorePrint": "unsupported_instaprint_ctp500_coreprint",
+            "Teal Printer": "unsupported_instaprint_ctp500_coreprint",
+            "CoreLargePrint": "unsupported_instaprint_ctp100lg_corelargeprint",
+            "Pro Printer": "unsupported_instaprint_ctp100lg_corelargeprint",
+            "Label Printer": "unsupported_instaprint_ctp800bd_label",
+        }
+        for name, model_key in expectations.items():
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name))
+                self.assertIsInstance(match, UnsupportedModelMatch)
+                assert isinstance(match, UnsupportedModelMatch)
+                self.assertEqual(match.model.model_key, model_key)
+                self.assertEqual(match.model.origin_app_packages, ("com.bes.print.insta",))
+
+        instaprint = self.catalog.require_unsupported_model(
+            "unsupported_instaprint_ctp500_coreprint"
+        )
+        self.assertIn("YHK", instaprint.names)
+
+        yhk = _single_match(self.catalog.detect_model("YHK"))
+        self.assertIsInstance(yhk, SupportedModelMatch)
+        assert isinstance(yhk, SupportedModelMatch)
+        self.assertEqual(yhk.model.model_key, "toprint_hprt_esc_zl1")
 
     def test_old_small_bucket_shared_names_resolve_to_shared_profile(self) -> None:
         normal = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")

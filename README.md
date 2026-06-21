@@ -180,7 +180,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 ## Potential future support
 These models or protocol families are not in the supported list yet, but they look implementable with [more support](#we-need-you).
 <!-- BEGIN todo-models -->
-A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, M210, M950, MP300, MXW-A4, P1000, P15, P3, P5100, PM-201, Q02
+A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, M210, M950, MP300, MXW-A4, P1000, P15, P3, P5100, PM-201, Q02
 
 - AL200 and clones: AL2, RPP02N
 - B1 and clones: B1 Pro, M2_H, N1
@@ -189,6 +189,8 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, M210, M950, MP3
 - B24 and clones: B3S, B3S_P, JCB3S, S6, S6_P
 - BAYPAGE and clones: YINTIBAO-V8S
 - BMW-M3 and clones: YCN-M3
+- CoreLargePrint and clones: Pro Printer
+- CorePrint and clones: Teal Printer, Purple Printer, B Pink Printer, Cherry Printer, Floral Printer, Check Printer, Smiley Printer, Stone Printer, P Pink Printer, YHK
 - D101 and clones: Betty
 - D11_H and clones: Hi-NB-D11, D61, D41, Dxx, Fust, D11_Pro
 - D12 and clones: C2, C3, C16
