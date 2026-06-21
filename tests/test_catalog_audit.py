@@ -35,12 +35,12 @@ class CatalogAuditTests(unittest.TestCase):
         duplicate_errors = [
             error
             for error in report["errors"]
-            if error["kind"] in {"duplicate_profile_body", "duplicate_model_body", "mergeable_model_group"}
+            if error["kind"] in {"duplicate_profile_body", "duplicate_model_body", "mergeable_model_body"}
         ]
         duplicate_warnings = [
             warning
             for warning in report["warnings"]
-            if warning["kind"] in {"duplicate_profile_body", "duplicate_model_body", "mergeable_model_group"}
+            if warning["kind"] in {"duplicate_profile_body", "duplicate_model_body", "mergeable_model_body"}
         ]
 
         self.assertEqual(duplicate_errors, [])
@@ -131,7 +131,7 @@ class CatalogAuditTests(unittest.TestCase):
             {"generic", "specific"},
         )
 
-    def test_catalog_audit_detects_mergeable_model_group(self) -> None:
+    def test_catalog_audit_detects_mergeable_model_body(self) -> None:
         profiles = [
             {
                 "profile_key": "base",
@@ -184,8 +184,8 @@ class CatalogAuditTests(unittest.TestCase):
 
             report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
 
-        errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_group"]
-        self.assertEqual(errors, [{"kind": "mergeable_model_group", "model_keys": ["first", "second"]}])
+        errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_body"]
+        self.assertEqual(errors, [{"kind": "mergeable_model_body", "model_keys": ["first", "second"]}])
 
     def test_catalog_audit_detects_unsupported_model_that_is_already_supported(self) -> None:
         profiles = [

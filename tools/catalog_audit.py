@@ -256,16 +256,31 @@ def generate_report(
                     "model_key": model["model_key"],
                 }
             )
-        if model.get("model_group") in {
-            detection.get("name")
-            for supported_model in models_raw
-            for detection in supported_model.get("detections", [])
-        }:
+        profile_key_prediction = model.get("profile_key_prediction")
+        if profile_key_prediction is not None and (
+            not isinstance(profile_key_prediction, str)
+            or not profile_key_prediction
+            or profile_key_prediction != profile_key_prediction.lower()
+            or " " in profile_key_prediction
+            or "Print Master" in profile_key_prediction
+            or any(
+                not (char.islower() or char.isdigit() or char == "_")
+                for char in profile_key_prediction
+            )
+        ):
             errors.append(
                 {
-                    "kind": "unsupported_model_group_matches_supported_name",
+                    "kind": "bad_unsupported_profile_key_prediction",
                     "model_key": model["model_key"],
-                    "model_group": model.get("model_group"),
+                    "profile_key_prediction": profile_key_prediction,
+                }
+            )
+        if profile_key_prediction in all_profiles:
+            errors.append(
+                {
+                    "kind": "unsupported_profile_key_prediction_matches_existing_profile",
+                    "model_key": model["model_key"],
+                    "profile_key_prediction": profile_key_prediction,
                 }
             )
         for named_detection in model.get("detections", []):
@@ -352,7 +367,7 @@ def generate_report(
         if len(keys) > 1:
             errors.append(
                 {
-                    "kind": "mergeable_model_group",
+                    "kind": "mergeable_model_body",
                     "model_keys": keys,
                 }
             )

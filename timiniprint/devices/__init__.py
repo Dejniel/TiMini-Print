@@ -10,6 +10,7 @@ from .catalog import PrinterCatalog
 from .profiles import (
     ModelDetection,
     ModelMatch,
+    PrinterModel,
     PrinterProfile,
     RuntimePreset,
     RuntimeCapabilities,
@@ -29,6 +30,7 @@ __all__ = [
     "BluetoothTransportPolicy",
     "ModelDetection",
     "ModelMatch",
+    "PrinterModel",
     "PrinterCatalog",
     "PrinterDevice",
     "PrinterProfile",

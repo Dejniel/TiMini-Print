@@ -1,5 +1,5 @@
 # TiMini Print Bluetooth Printer Tool
-Alternative [desktop software for Chinese Bluetooth thermal printers](https://github.com/Dejniel/TiMini-Print/releases) that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Phomemo”, “Luck Jingle”, “NIIMBOT”, “iBleem”, or “Eleph-label”.
+Alternative [desktop software for Chinese Bluetooth thermal printers](https://github.com/Dejniel/TiMini-Print/releases) that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “iBleem”, “Luck Jingle”, “Phomemo”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode, plus [custom integrations](#library-integration).
 
@@ -176,7 +176,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 ## Potential future support
 These models or protocol families are not in the supported list yet, but they look implementable with [more support](#we-need-you).
 <!-- BEGIN todo-models -->
-D110_M, GT08, GW08, Hi-D110, JX400R, JX400R06P, MP300, MXW-A4, P3, Q02
+A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, M210, M950, MP300, MXW-A4, P1000, P15, P3, P5100, PM-201, Q02
 
 - AL200 and clones: RPP02N, AL2
 - B1 and clones: B1 Pro, M2_H, N1
@@ -187,59 +187,47 @@ D110_M, GT08, GW08, Hi-D110, JX400R, JX400R06P, MP300, MXW-A4, P3, Q02
 - D101 and clones: Betty
 - D11 and clones: Hi-NB-D11, D11_Pro, D11_H, D11S, Fust, D61, D41, Dxx
 - D12 and clones: C3, C16, C2
-- D30 and clones: Q30S, D35, D50, Q30
+- D1600 and clones: D1600D
+- D30 and clones: D30S, D30S New, D30S Pro, D30N, D30Pro, D20, D35, D10, D30AT, CNL-D35, Q30S, D50, Q30
 - D400 and clones: ITPP130B, QR_386A, ITPP941, QR380A, Y810BT, TB41, P80S
+- D480 and clones: D480BT, D480BT PRO
+- D50 and clones: P50
+- D680 and clones: D680BT
 - D82 and clones: FICHERO_6181, D82S, D83, A10
+- E50 and clones: E50Pro
+- E600S and clones: E6000, E8000, QT-800
+- E9000 and clones: E93, E9000Pro
 - ITP05N and clones: ITP06N, PCPS_D80, DP_A80S, DP_A80W, DP_A80, GD-88, PD_A4
 - JXPRINTER and clones: PRINTER
+- LM1600 and clones: LM2800
 - LP100 legacy and clones: LY100_BLE, LP100, LP220
 - LP100S and clones: LP220S
+- LT12 and clones: LT-110H
 - M02H and clones: M02PRE, M02S-H
 - M02L and clones: M02X/L
 - M03 and clones: M200, M250, M221, M260
 - M04S and clones: M04AS
 - M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88
+- M110 and clones: M110C, M110S, M110s, M110R, M110r, M108, M108_Z, M108TA, M109, M105, M110SA, 111, A42
+- M120 and clones: M120C, M126, M102, M8-BK
+- M150 and clones: M100, M160
+- M200 and clones: M206, M208, M209, M220, M220S, M220C, M219, M200C, M221, M250, M260, M220A, M320, M321, A43, A431
+- M3 and clones: BMW-M3, YCN-M3
+- M330 and clones: M332
+- M400 and clones: M420, M421
+- M8 and clones: D68, D80
 - M832 and clones: M836
+- M960 and clones: M960D
 - MPL11 and clones: D11s, FICHERO_5836, MULLER_6473
 - P100 and clones: YINTIBAO-V5, AEQ918N4, MP100, MP200, MP220
 - P100S and clones: YINTIBAO-V5PRO, MP100S, MP200S, MP220S
-- P12 and clones: P12 Pro, A30
+- P12 and clones: P12 Pro, P12Pro, A30
 - P3100 and clones: P3100D, P3100J, P3100DJ
+- P3200 and clones: P3200D
 - P3S and clones: MP300S
+- P780 and clones: P780BT, P780BT PRO, P24, P580
 - PM-241-BT and clones: PM241, PM 241
-- Print Master A30 and clones: A30
-- Print Master B246D and clones: B246D
-- Print Master D1600 and clones: D1600, D1600D
-- Print Master D30 and clones: D30, D30S, D30S New, D30S Pro, D30N, D30Pro, D20, D35, D10, D30AT, CNL-D35
-- Print Master D480 and clones: D480, D480BT, D480BT PRO
-- Print Master D50 and clones: D50, P50
-- Print Master D680 and clones: D680, D680BT
-- Print Master E50 and clones: E50, E50Pro
-- Print Master E600S and clones: E600S, E6000, E8000, QT-800
-- Print Master E9000 and clones: E9000, E93, E9000Pro
-- Print Master F12 and clones: F12
-- Print Master LM1600 and clones: LM1600, LM2800
-- Print Master LT12 and clones: LT12, LT-110H
-- Print Master M110 and clones: M110, M110C, M110S, M110s, M110R, M110r, M108, M108_Z, M108TA, M109, M105, M110SA, 111, A42
-- Print Master M120 and clones: M120, M120C, M126, M102, M8-BK
-- Print Master M150 and clones: M150, M100, M160
-- Print Master M200 and clones: M200, M206, M208, M209, M220, M220S, M220C, M219, M200C, M221, M250, M260, M220A, M320, M321, A43, A431
-- Print Master M210 and clones: M210
-- Print Master M3 and clones: BMW-M3, YCN-M3
-- Print Master M330 and clones: M330, M332
-- Print Master M400 and clones: M420, M421
-- Print Master M8 and clones: M8, D68, D80
-- Print Master M950 and clones: M950
-- Print Master M960 and clones: M960, M960D
-- Print Master P1000 and clones: P1000
-- Print Master P12 and clones: P12, P12Pro
-- Print Master P15 and clones: P15
-- Print Master P3100 and clones: P3100D, P3100DJ
-- Print Master P3200 and clones: P3200, P3200D
-- Print Master P5100 and clones: P5100
-- Print Master P780 and clones: P780, P780BT, P780BT PRO, P24, P580
-- Print Master PM-201 and clones: PM-201
-- Print Master Q30 and clones: Q30, Q31, Q32, Q30S, D31, D32, A10, CNL-D32
+- Q30 and clones: Q31, Q32, Q30S, D31, D32, A10, CNL-D32
 - Q302 and clones: Q580
 - Y02 and clones: Y02C, Y02S
 - YINTIBAO and clones: PAPERGO

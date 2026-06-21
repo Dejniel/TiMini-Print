@@ -10,7 +10,7 @@ from timiniprint.devices import (
     UnsupportedModelMatch,
 )
 from timiniprint.devices.model_codec import model_from_json, model_to_json
-from timiniprint.devices.profiles import PrinterProfile, SupportedPrinterModel
+from timiniprint.devices.profiles import PrinterModel, PrinterProfile, SupportedPrinterModel
 from timiniprint.protocol import PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding, PaperMode
@@ -147,6 +147,8 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertGreater(len(self.catalog.profiles), 0)
         self.assertGreater(len(self.catalog.models), 0)
         self.assertGreater(len(self.catalog.unsupported_models), 0)
+        self.assertIsInstance(self.catalog.models[0], PrinterModel)
+        self.assertIsInstance(self.catalog.unsupported_models[0], PrinterModel)
         profile = self.catalog.require_profile("x6h")
         self.assertEqual(profile.stream.chunk_size, 180)
         self.assertEqual(profile.stream.delay_ms, 4)
@@ -173,15 +175,19 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIn("P12", unsupported.names)
 
     def test_unsupported_models_keep_source_origins_and_detection_triggers(self) -> None:
-        supported_names = {
-            name
-            for model in self.catalog.models
-            for name in model.names
-        }
+        profile_keys = {profile.profile_key for profile in self.catalog.profiles}
         for model in self.catalog.unsupported_models:
             with self.subTest(model=model.model_key):
+                self.assertIsInstance(model, PrinterModel)
                 self.assertTrue(model.origin_app_packages)
-                self.assertNotIn(model.model_group, supported_names)
+                if model.profile_key_prediction is not None:
+                    self.assertNotIn(model.profile_key_prediction, profile_keys)
+                    self.assertNotIn("Print Master", model.profile_key_prediction)
+                    self.assertEqual(
+                        model.profile_key_prediction,
+                        model.profile_key_prediction.lower(),
+                    )
+                    self.assertNotIn(" ", model.profile_key_prediction)
                 for detection in model.detections:
                     self.assertTrue(
                         detection.detection.prefixes

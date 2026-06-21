@@ -279,15 +279,11 @@ class NamedModelDetection:
         return self.normalize_public_name(self.name)
 
 
-@dataclass(frozen=True)
-class SupportedPrinterModel:
+@dataclass(frozen=True, kw_only=True)
+class PrinterModel:
     model_key: str
-    profile_key: str
     detections: tuple[NamedModelDetection, ...]
     origin_app_packages: tuple[str, ...] = ()
-    protocol_override: ProtocolOverride | None = None
-    image_pipeline: ImagePipelineConfig | None = None
-    profile_runtime_preset_key: str | None = None
 
     def __post_init__(self) -> None:
         if not self.model_key:
@@ -300,23 +296,23 @@ class SupportedPrinterModel:
         return tuple(detection.name for detection in self.detections)
 
 
-@dataclass(frozen=True)
-class UnsupportedPrinterModel:
-    model_key: str
-    detections: tuple[NamedModelDetection, ...]
-    origin_app_packages: tuple[str, ...] = ()
-    model_group: str | None = None
-    notes: str | None = None
+@dataclass(frozen=True, kw_only=True)
+class SupportedPrinterModel(PrinterModel):
+    profile_key: str
+    protocol_override: ProtocolOverride | None = None
+    image_pipeline: ImagePipelineConfig | None = None
+    profile_runtime_preset_key: str | None = None
 
     def __post_init__(self) -> None:
-        if not self.model_key:
-            raise ValueError("Unsupported printer model requires model_key")
-        if not self.detections:
-            raise ValueError(f"Unsupported printer model {self.model_key} requires detections")
+        super().__post_init__()
+        if not self.profile_key:
+            raise ValueError(f"Printer model {self.model_key} requires profile_key")
 
-    @property
-    def names(self) -> tuple[str, ...]:
-        return tuple(detection.name for detection in self.detections)
+
+@dataclass(frozen=True, kw_only=True)
+class UnsupportedPrinterModel(PrinterModel):
+    profile_key_prediction: str | None = None
+    notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -343,6 +339,7 @@ __all__ = [
     "ModeLevelProfile",
     "NamedModelDetection",
     "PrintDefaults",
+    "PrinterModel",
     "PrinterProfile",
     "ProtocolDefault",
     "ProtocolOverride",

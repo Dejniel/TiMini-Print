@@ -39,12 +39,16 @@ It does not say:
 - which runtime control algorithm, preset, and capabilities are active right now
 - which transport target is active right now
 
-### `SupportedPrinterModel`
-Catalog model data.
-It describes a source-backed printer model or clone:
+### `PrinterModel`
+Shared catalog model data.
+It describes source-backed model identity and detection metadata:
 - named Bluetooth detections, where each public model name is attached to its
   own exact names, prefixes, and optional MAC suffix constraints
 - original Android app package names
+
+### `SupportedPrinterModel`
+Printable catalog model data.
+It extends `PrinterModel` with:
 - the shared `PrinterProfile` key to use
 - optional protocol/runtime overrides for this model
 
@@ -60,15 +64,14 @@ fields. Raw profile-based configs are low-level diagnostics only.
 
 ### `UnsupportedPrinterModel`
 Catalog model data for known-but-not-implemented printers.
-It has named detections and optional source app packages, but no
-`PrinterProfile`.
+It extends `PrinterModel`, but has no implemented `PrinterProfile`.
 
 Use it to recognize reports and future-support candidates without pretending the
 printer is printable. `catalog.detect_model(...)` may include these records in
 its match tuple; `catalog.detect_device(...)` must not return them.
-`model_group`, when present, is only a public inventory grouping hint for
-clone-like TODO names. It is not a profile key and must not route unsupported
-hardware to an implemented protocol.
+`profile_key_prediction`, when present, is only a technical grouping hint for
+future profile extraction and README grouping. It is not an implemented
+`PrinterProfile` reference and must not route unsupported hardware to a protocol.
 
 ### `RuntimeSettings`
 Runtime catalog data.
@@ -174,6 +177,7 @@ Owns printer description and detection.
 
 It contains:
 - `PrinterDevice`
+- `PrinterModel`
 - `PrinterProfile`
 - `SupportedPrinterModel`
 - `UnsupportedPrinterModel`

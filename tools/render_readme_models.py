@@ -38,26 +38,33 @@ def _dedupe_names(names: list[str]) -> list[str]:
     return ordered
 
 
-def _render_model_entry(model: ReadablePrinterModel) -> str:
-    names = _dedupe_names(list(model.names))
-    if len(names) <= 1:
-        return names[0] if names else ""
-    return f"{names[0]} and clones: {', '.join(names[1:])}"
+def _profile_key_prediction_label(value: str) -> str:
+    tokens = value.split("_")
+    if tokens[-1:] == ["legacy"]:
+        return "-".join(token.upper() for token in tokens[:-1]) + " legacy"
+    if len(tokens) > 1 and tokens[0] in {"pm"}:
+        return "-".join(token.upper() for token in tokens)
+    return "_".join(token.upper() for token in tokens)
 
 
 def _render_model_names(models: list[ReadablePrinterModel]) -> str:
-    groups_by_primary: dict[str, list[str]] = {}
+    groups_by_key: dict[str, list[str]] = {}
     for model in models:
         names = _dedupe_names(list(model.names))
         if not names:
             continue
-        primary = getattr(model, "model_group", None) or names[0]
-        group = groups_by_primary.setdefault(primary, [primary])
-        group.extend(name for name in names if name != primary)
+        prediction = getattr(model, "profile_key_prediction", None)
+        if prediction:
+            group_key = prediction
+            group = groups_by_key.setdefault(group_key, [_profile_key_prediction_label(prediction)])
+            group.extend(names)
+            continue
+        groups_by_key.setdefault(names[0], []).extend(names)
     singles: list[str] = []
     clone_entries: list[str] = []
-    for primary, names in groups_by_primary.items():
+    for names in groups_by_key.values():
         names = _dedupe_names(names)
+        primary = names[0]
         if len(names) <= 1:
             singles.append(primary)
             continue
