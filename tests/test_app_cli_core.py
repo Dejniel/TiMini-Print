@@ -21,7 +21,7 @@ class AppCliCoreTests(unittest.TestCase):
             text_columns=12,
             text_hard_wrap=False,
             pdf_pages="1,2",
-            pdf_page_gap=3,
+            page_gap=3,
             trim_side_margins=True,
             trim_top_bottom_margins=False,
             feed=False,
@@ -34,7 +34,7 @@ class AppCliCoreTests(unittest.TestCase):
         self.assertEqual(cli._resolve_text_columns(args), 12)
         self.assertTrue(cli._resolve_text_wrap(args))
         self.assertEqual(cli._resolve_pdf_pages(args), "1,2")
-        self.assertEqual(cli._resolve_pdf_page_gap(args), 3)
+        self.assertEqual(cli._resolve_page_gap(args), 3)
         self.assertTrue(cli._resolve_trim_side_margins(args))
         self.assertFalse(cli._resolve_trim_top_bottom_margins(args))
         self.assertEqual(cli._resolve_paper_motion_action(args), "retract")

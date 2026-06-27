@@ -47,7 +47,7 @@ class AppCliFlowsTests(unittest.TestCase):
             trim_side_margins=True,
             trim_top_bottom_margins=True,
             pdf_pages=None,
-            pdf_page_gap=None,
+            page_gap=None,
             paper_mode=None,
         )
         base.update(kwargs)

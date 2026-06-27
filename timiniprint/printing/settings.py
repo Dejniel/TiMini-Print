@@ -26,7 +26,7 @@ class PrintSettings:
     trim_side_margins: bool = True
     trim_top_bottom_margins: bool = True
     pdf_pages: Optional[str] = None
-    pdf_page_gap_mm: int = 5
+    page_gap_mm: int = 5
     paper_mode: Optional[PaperMode] = None
     image_encoding_override: Optional[ImageEncoding] = None
     pixel_format_override: Optional[PixelFormat] = None

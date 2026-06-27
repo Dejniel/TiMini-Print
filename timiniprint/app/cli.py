@@ -64,7 +64,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--text-columns", type=int, metavar="N", help="Target number of characters per line for text rendering")
     parser.add_argument("--text-hard-wrap", action="store_true", help="Disable whitespace word wrapping (enable hard-wrap by width) for text rendering (.txt or --text)")
     parser.add_argument("--pdf-pages", metavar="PAGES", help="PDF pages to print (e.g. 1,3-5). Default: all pages")
-    parser.add_argument("--pdf-page-gap", type=int, metavar="MM", help="Extra vertical gap between PDF pages in millimeters (default: 5)")
+    parser.add_argument("--page-gap", type=int, metavar="MM", help="Extra vertical gap between document pages in millimeters (default: 5)")
     parser.add_argument("--no-trim-side-margins", action="store_false", dest="trim_side_margins", help="Disable auto-trimming white side margins for images and PDFs")
     parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins", help="Disable auto-trimming white top/bottom margins for images and PDFs")
     parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
@@ -236,7 +236,7 @@ def create_print_job_builder(
     trim_side_margins: bool = True,
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
-    pdf_page_gap_mm: int = 5,
+    page_gap_mm: int = 5,
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
@@ -253,7 +253,7 @@ def create_print_job_builder(
         trim_side_margins=trim_side_margins,
         trim_top_bottom_margins=trim_top_bottom_margins,
         pdf_pages=pdf_pages,
-        pdf_page_gap_mm=pdf_page_gap_mm,
+        page_gap_mm=page_gap_mm,
         paper_mode=paper_mode,
         image_encoding_override=image_encoding_override,
         debug_row_markers_interval=debug_row_markers_interval,
@@ -280,7 +280,7 @@ def build_print_job(
     trim_side_margins: bool = True,
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
-    pdf_page_gap_mm: int = 5,
+    page_gap_mm: int = 5,
     paper_mode: Optional[PaperMode] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
@@ -297,7 +297,7 @@ def build_print_job(
         trim_side_margins=trim_side_margins,
         trim_top_bottom_margins=trim_top_bottom_margins,
         pdf_pages=pdf_pages,
-        pdf_page_gap_mm=pdf_page_gap_mm,
+        page_gap_mm=page_gap_mm,
         paper_mode=paper_mode,
         runtime_context=runtime_context,
         image_encoding_override=image_encoding_override,
@@ -492,12 +492,12 @@ def _resolve_pdf_pages(args: argparse.Namespace) -> Optional[str]:
     return args.pdf_pages
 
 
-def _resolve_pdf_page_gap(args: argparse.Namespace) -> int:
-    if args.pdf_page_gap is None:
+def _resolve_page_gap(args: argparse.Namespace) -> int:
+    if args.page_gap is None:
         return 5
-    if args.pdf_page_gap < 0:
-        raise ValueError("PDF page gap must be >= 0 mm")
-    return args.pdf_page_gap
+    if args.page_gap < 0:
+        raise ValueError("Page gap must be >= 0 mm")
+    return args.page_gap
 
 
 def _resolve_paper_mode(args: argparse.Namespace) -> PaperMode | None:
@@ -561,7 +561,7 @@ def print_bluetooth(
                 trim_side_margins=_resolve_trim_side_margins(args),
                 trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
                 pdf_pages=_resolve_pdf_pages(args),
-                pdf_page_gap_mm=_resolve_pdf_page_gap(args),
+                page_gap_mm=_resolve_page_gap(args),
                 paper_mode=_resolve_paper_mode(args),
                 runtime_context=runtime_context,
                 debug_row_markers_interval=args.debug_row_markers,
@@ -598,7 +598,7 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
                 trim_side_margins=_resolve_trim_side_margins(args),
                 trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
                 pdf_pages=_resolve_pdf_pages(args),
-                pdf_page_gap_mm=_resolve_pdf_page_gap(args),
+                page_gap_mm=_resolve_page_gap(args),
                 paper_mode=_resolve_paper_mode(args),
                 runtime_context=runtime_context,
                 debug_row_markers_interval=args.debug_row_markers,

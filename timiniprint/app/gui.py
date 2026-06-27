@@ -785,10 +785,10 @@ class TiMiniPrintGUI(tk.Tk):
             return
         ext = os.path.splitext(path)[1].lower()
         pdf_pages = None
-        pdf_page_gap_mm = 0
+        page_gap_mm = 0
         if ext == ".pdf":
             pdf_pages = self.pdf_pages_var.get().strip() or None
-            pdf_page_gap_mm = int(self.pdf_gap_var.get())
+            page_gap_mm = int(self.pdf_gap_var.get())
         settings = PrintSettings(
             text_mode=self.text_mode_var.get(),
             rotate_90_clockwise=self.rotate_90_var.get(),
@@ -800,7 +800,7 @@ class TiMiniPrintGUI(tk.Tk):
             trim_side_margins=self.trim_margins_var.get(),
             trim_top_bottom_margins=self.trim_top_bottom_margins_var.get(),
             pdf_pages=pdf_pages,
-            pdf_page_gap_mm=pdf_page_gap_mm,
+            page_gap_mm=page_gap_mm,
             debug_row_markers_interval=None,
         )
         builder = PrintJobBuilder(

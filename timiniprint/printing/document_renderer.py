@@ -236,7 +236,7 @@ class DocumentRenderer:
         if kind == "pdf":
             return PdfConverter(
                 page_selection=settings.pdf_pages,
-                page_gap_px=mm_to_px(settings.pdf_page_gap_mm, device.profile.dev_dpi),
+                page_gap_px=mm_to_px(settings.page_gap_mm, device.profile.dev_dpi),
                 trim_side_margins=settings.trim_side_margins,
                 trim_top_bottom_margins=settings.trim_top_bottom_margins,
                 pdf_renderer=self.pdf_renderer,

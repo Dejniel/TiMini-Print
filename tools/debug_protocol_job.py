@@ -40,7 +40,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--text-columns", type=int, metavar="N")
     parser.add_argument("--text-hard-wrap", action="store_true")
     parser.add_argument("--pdf-pages", metavar="PAGES")
-    parser.add_argument("--pdf-page-gap", type=int, metavar="MM")
+    parser.add_argument("--page-gap", type=int, metavar="MM")
     parser.add_argument("--no-trim-side-margins", action="store_false", dest="trim_side_margins")
     parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins")
     parser.add_argument("--paper-mode", choices=[mode.value for mode in PaperMode])
@@ -220,7 +220,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         trim_side_margins=cli._resolve_trim_side_margins(args),
         trim_top_bottom_margins=cli._resolve_trim_top_bottom_margins(args),
         pdf_pages=cli._resolve_pdf_pages(args),
-        pdf_page_gap_mm=cli._resolve_pdf_page_gap(args),
+        page_gap_mm=cli._resolve_page_gap(args),
         paper_mode=_paper_mode(args),
         image_encoding_override=image_encoding_override,
         debug_row_markers_interval=args.debug_row_markers,

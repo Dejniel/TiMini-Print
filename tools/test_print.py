@@ -188,7 +188,7 @@ def _build_print_job(device: PrinterDevice, path: str, darkness: int) -> Protoco
         trim_side_margins=False,
         trim_top_bottom_margins=False,
         pdf_pages=None,
-        pdf_page_gap_mm=0,
+        page_gap_mm=0,
     )
 
 
