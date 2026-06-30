@@ -7,9 +7,31 @@ from unittest.mock import patch
 from timiniprint import reporting
 from timiniprint.app.gui import ManualBluetoothSelection, TiMiniPrintGUI
 from timiniprint.devices import PrinterCatalog
+from timiniprint.devices.profiles import PaperPreset
+from timiniprint.rendering.converters.text import TextConverter
+from timiniprint.rendering.formats import normalized_width
 from timiniprint.transport.bluetooth import BluetoothDiscovery, BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 from timiniprint.update_check import UpdateCheckResult
+
+
+class _Value:
+    def __init__(self, value):
+        self.value = value
+
+    def get(self):
+        return self.value
+
+    def set(self, value) -> None:
+        self.value = value
+
+
+class _Scale:
+    def __init__(self) -> None:
+        self.options = {}
+
+    def configure(self, **kwargs) -> None:
+        self.options.update(kwargs)
 
 
 class GuiPaperMotionStatusTests(unittest.TestCase):
@@ -39,7 +61,32 @@ class GuiPaperChoiceTests(unittest.TestCase):
         catalog = PrinterCatalog.load()
         device = catalog.device_from_profile("x6h")
 
-        self.assertEqual(TiMiniPrintGUI._paper_choices_for_device(device), (("Default", "default"),))
+        self.assertEqual(TiMiniPrintGUI._paper_choices_for_device(device), (("Default", "default_384r"),))
+
+    def test_paper_choices_disambiguate_duplicate_labels(self) -> None:
+        device = SimpleNamespace(
+            profile=SimpleNamespace(
+                paper_presets=(
+                    PaperPreset(
+                        key="plain_384r",
+                        label="Plain roll",
+                        paper_width_px=384,
+                        render_width_px=384,
+                    ),
+                    PaperPreset(
+                        key="plain_576r",
+                        label="Plain roll",
+                        paper_width_px=576,
+                        render_width_px=576,
+                    ),
+                )
+            )
+        )
+
+        self.assertEqual(
+            TiMiniPrintGUI._paper_choices_for_device(device),
+            (("Plain roll (384px)", "plain_384r"), ("Plain roll (576px)", "plain_576r")),
+        )
 
     def test_paper_choices_are_exposed_for_luck_normal_a4(self) -> None:
         catalog = PrinterCatalog.load()
@@ -61,6 +108,40 @@ class GuiPaperChoiceTests(unittest.TestCase):
         device = catalog.device_from_profile("luck_ppa2l")
 
         self.assertEqual(TiMiniPrintGUI._default_paper_label_for_device(device), "Tag")
+
+    def test_text_columns_follow_selected_paper_width(self) -> None:
+        narrow = PaperPreset(
+            key="narrow",
+            label="Narrow",
+            paper_width_px=384,
+            render_width_px=384,
+        )
+        wide = PaperPreset(
+            key="wide",
+            label="Wide",
+            paper_width_px=576,
+            render_width_px=576,
+        )
+        device = SimpleNamespace(
+            profile=SimpleNamespace(
+                default_paper_preset=narrow,
+                paper_preset=lambda key: wide if key == "wide" else narrow,
+            )
+        )
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui._paper_choice_map = {"Wide": "wide"}
+        gui.paper_var = _Value("Wide")
+        gui.text_columns_var = _Value(999)
+        gui.text_columns_scale = _Scale()
+
+        gui._configure_text_columns(device, reset=False)
+
+        default_columns = TextConverter.default_columns_for_width(normalized_width(576))
+        min_columns = max(5, int(round(default_columns * 0.5)))
+        max_columns = max(min_columns + 1, int(round(default_columns * 1.5)))
+        self.assertEqual(gui.text_columns_scale.options["from_"], min_columns)
+        self.assertEqual(gui.text_columns_scale.options["to"], max_columns)
+        self.assertEqual(gui.text_columns_var.get(), gui.text_columns_scale.options["to"])
 
 
 class GuiDeviceListTests(unittest.TestCase):

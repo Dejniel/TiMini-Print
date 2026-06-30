@@ -271,6 +271,7 @@ class TiMiniPrintGUI(tk.Tk):
             state="readonly",
         )
         self.paper_combo.grid(row=2, column=1, sticky="w", **padding)
+        self.paper_combo.bind("<<ComboboxSelected>>", self._on_paper_selection_changed)
         options_frame.columnconfigure(1, weight=1)
 
         self.text_frame = ttk.LabelFrame(self, text="Txt Options")
@@ -620,6 +621,10 @@ class TiMiniPrintGUI(tk.Tk):
         self._refresh_profile_label()
         self._refresh_paper_controls()
 
+    def _on_paper_selection_changed(self, _event=None) -> None:
+        device = self.connected_device or self._effective_selected_device()
+        self._configure_text_columns(device, reset=False)
+
     def _on_show_unknown_devices_changed(self) -> None:
         self._refresh_device_list()
 
@@ -742,7 +747,25 @@ class TiMiniPrintGUI(tk.Tk):
     def _paper_choices_for_device(device) -> tuple[tuple[str, str], ...]:
         if device is None:
             return ()
-        return tuple((preset.label, preset.key) for preset in paper_presets_for_device(device))
+        presets = paper_presets_for_device(device)
+        labels = [preset.label for preset in presets]
+        duplicate_labels = {label for label in labels if labels.count(label) > 1}
+        display_labels: list[str] = []
+        for preset in presets:
+            label = preset.label
+            if label in duplicate_labels:
+                label = f"{label} ({preset.render_width_px}px)"
+            display_labels.append(label)
+        duplicate_display_labels = {
+            label for label in display_labels if display_labels.count(label) > 1
+        }
+        return tuple(
+            (
+                f"{label} [{preset.key}]" if label in duplicate_display_labels else label,
+                preset.key,
+            )
+            for label, preset in zip(display_labels, presets)
+        )
 
     @staticmethod
     def _default_paper_label_for_device(device) -> str | None:
@@ -751,20 +774,27 @@ class TiMiniPrintGUI(tk.Tk):
             return None
         return preset.label
 
+    @staticmethod
+    def _default_paper_key_for_device(device) -> str | None:
+        preset = default_paper_preset_for_device(device)
+        if preset is None:
+            return None
+        return preset.key
+
     def _selected_paper_key(self) -> str | None:
         return self._paper_choice_map.get(self.paper_var.get())
 
     def _refresh_paper_controls(self) -> None:
         device = self.connected_device or self._effective_selected_device()
+        selected_key = self._selected_paper_key()
         choices = self._paper_choices_for_device(device)
         self._paper_choice_map = dict(choices)
-        labels = [label for label, _key in choices]
+        display_by_key = {key: label for label, key in choices}
+        labels = list(self._paper_choice_map.keys())
         self.paper_combo["values"] = labels
         if len(labels) > 1:
-            if self.paper_var.get() not in self._paper_choice_map:
-                self.paper_var.set(
-                    self._default_paper_label_for_device(device) or labels[0]
-                )
+            target_key = selected_key or self._default_paper_key_for_device(device) or choices[0][1]
+            self.paper_var.set(display_by_key.get(target_key, labels[0]))
             self.paper_label.grid()
             self.paper_combo.grid()
         else:
@@ -930,9 +960,9 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.retract_button, True)
             self._set_widget_state(self.print_button, True)
             self._set_connection_button("Disconnect", True)
-            self._configure_text_columns(device.profile)
             self._refresh_manual_model_controls()
             self._refresh_paper_controls()
+            self._configure_text_columns(device, reset=True)
             return
 
         self.profile_var.set("")
@@ -966,13 +996,26 @@ class TiMiniPrintGUI(tk.Tk):
         self._refresh_profile_label()
         self._refresh_paper_controls()
 
-    def _configure_text_columns(self, profile) -> None:
-        width = normalized_width(profile.width)
+    def _configure_text_columns(self, device, *, reset: bool) -> None:
+        if device is None:
+            return
+        paper_key = self._selected_paper_key()
+        paper = device.profile.paper_preset(paper_key) if paper_key is not None else None
+        if paper is None:
+            paper = device.profile.default_paper_preset
+        width = normalized_width(paper.render_width_px)
         default_columns = TextConverter.default_columns_for_width(width)
         min_columns = max(5, int(round(default_columns * 0.5)))
         max_columns = max(min_columns + 1, int(round(default_columns * 1.5)))
         self.text_columns_scale.configure(from_=min_columns, to=max_columns)
-        self.text_columns_var.set(default_columns)
+        if reset:
+            self.text_columns_var.set(default_columns)
+            return
+        current_columns = self.text_columns_var.get()
+        if current_columns < min_columns:
+            self.text_columns_var.set(min_columns)
+        elif current_columns > max_columns:
+            self.text_columns_var.set(max_columns)
 
     def _set_connecting_state(self, connecting: bool) -> None:
         self._connecting = connecting

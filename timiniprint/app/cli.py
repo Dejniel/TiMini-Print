@@ -35,28 +35,10 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("path", nargs="?", help="File to print (.png/.jpg/.pdf/.txt)")
     parser.add_argument("--bluetooth", help="Bluetooth name or address (default: first supported printer)")
     parser.add_argument("--serial", metavar="PATH", help="Serial port path to bypass Bluetooth (e.g. /dev/rfcomm0)")
-    parser.add_argument(
-        "--printer-config",
-        metavar="PATH",
-        help="Editable printer config JSON path used for manual overrides",
-    )
-    parser.add_argument(
-        "--printer-model",
-        metavar="KEY",
-        help="Known printer model key used for manual model selection",
-    )
-    parser.add_argument(
-        "--export-printer-config",
-        nargs=2,
-        metavar=("KEY", "PATH"),
-        help="Write a fresh editable printer config JSON for a known printer model key or public model name and exit",
-    )
-    parser.add_argument(
-        "--debug-row-markers",
-        type=int,
-        metavar="N",
-        help="Debug only: add side row markers every N raster rows",
-    )
+    parser.add_argument("--printer-config", metavar="PATH", help="Editable printer config JSON path used for manual overrides")
+    parser.add_argument("--printer-model", metavar="KEY", help="Known printer model key used for manual model selection")
+    parser.add_argument("--export-printer-config", nargs=2, metavar=("KEY", "PATH"), help="Write a fresh editable printer config JSON for a known printer model key or public model name and exit")
+    parser.add_argument("--debug-row-markers", type=int, metavar="N", help="Debug only: add side row markers every N raster rows")
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-models", action="store_true", help="List known printer model keys and public names and exit")
     parser.add_argument("--text", metavar="TEXT", help="Print raw text instead of a file path")
@@ -68,11 +50,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--no-trim-side-margins", action="store_false", dest="trim_side_margins", help="Disable auto-trimming white side margins for images and PDFs")
     parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins", help="Disable auto-trimming white top/bottom margins for images and PDFs")
     parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
-    parser.add_argument(
-        "--paper",
-        metavar="KEY",
-        help="Select the paper/paper preset for this printer model",
-    )
+    parser.add_argument("--paper", metavar="KEY", help="Select an exact paper preset key supported by this printer model")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug logs (CLI only)")
     parser.set_defaults(trim_side_margins=True)
     parser.set_defaults(trim_top_bottom_margins=True)

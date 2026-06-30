@@ -38,15 +38,9 @@ or raster on a white canvas before building the protocol job. If `left_padding_p
 is set, the protocol builder adds that padding instead and the input raster stays
 at `render_width_px`.
 
-For high-level file printing, use `PrintSettings(paper_preset_key=...)` to
-select loaded paper. Every profile references at least one paper preset from
-`printer_paper_presets.json`. A paper preset is the user-facing paper choice:
-it may change render width and may also map to a low-level protocol
-`paper_mode`.
+For high-level file printing, use `PrintSettings(paper_preset_key=...)` to select loaded paper. The key is the exact preset key from `printer_paper_presets.json`, for example `plain_1600r_1632p_32pl`, not the low-level `paper_mode`. A paper preset is the user-facing paper choice: it may change render width and may also map to a low-level protocol `paper_mode`.
 
-`paper_mode` remains a low-level protocol parameter for callers that already
-know the protocol family supports it. GUI, CLI, and high-level file printing
-should use paper preset keys instead.
+`paper_mode` remains a low-level protocol parameter for callers that already know the protocol family supports it. GUI, CLI, and high-level file printing should use exact paper preset keys instead.
 
 Runtime settings are separate from the static profile:
 - `control_algorithm` selects the stateful runtime algorithm, when a family needs one

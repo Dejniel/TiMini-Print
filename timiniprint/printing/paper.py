@@ -57,7 +57,8 @@ def _selected_preset(device: PrinterDevice, settings: PrintSettings) -> PaperPre
         if preset is None:
             raise ValueError(
                 f"{device.display_name or device.profile_key} does not support paper "
-                f"{settings.paper_preset_key!r}"
+                f"{settings.paper_preset_key!r}."
+                f"{_available_paper_presets_message(presets)}"
             )
         return preset
     default_preset = default_paper_preset_for_device(device)
@@ -68,6 +69,14 @@ def _selected_preset(device: PrinterDevice, settings: PrintSettings) -> PaperPre
 
 def _preset_by_key(presets: tuple[PaperPreset, ...], key: str) -> PaperPreset | None:
     return next((preset for preset in presets if preset.key == key), None)
+
+
+def _available_paper_presets_message(presets: tuple[PaperPreset, ...]) -> str:
+    if not presets:
+        return ""
+    lines = ["", "Available paper presets:"]
+    lines.extend(f"  {preset.key} - {preset.label}" for preset in presets)
+    return "\n".join(lines)
 
 
 def apply_paper_layout_to_raster_set(raster_set: RasterSet, paper: ResolvedPaper) -> RasterSet:

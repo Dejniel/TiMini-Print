@@ -313,22 +313,10 @@ class PrinterCatalog:
                     f"profile {payload.get('profile_key', '<unknown>')} references unknown paper preset {reference!r}"
                 )
             resolved_preset = dict(preset)
-            resolved_preset["key"] = PrinterCatalog._profile_paper_preset_key(
-                reference,
-                preset,
-            )
+            resolved_preset["key"] = reference
             resolved.append(resolved_preset)
         payload["paper_presets"] = resolved
         return payload
-
-    @staticmethod
-    def _profile_paper_preset_key(reference: str, preset: Mapping[str, object]) -> str:
-        paper_mode = preset.get("paper_mode")
-        if isinstance(paper_mode, str) and paper_mode:
-            return paper_mode
-        if reference.startswith("default_"):
-            return "default"
-        return reference
 
     def _validate_speed_requirements(self) -> None:
         for profile in self._profiles:

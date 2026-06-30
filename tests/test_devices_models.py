@@ -452,10 +452,10 @@ class DevicesModelsTests(unittest.TestCase):
         ppa2lh = self.catalog.require_profile("luck_ppa2lh")
 
         self.assertIsNone(ppa2l.default_paper_preset_key)
-        self.assertEqual(ppa2l.default_paper_preset.key, "tag")
+        self.assertEqual(ppa2l.default_paper_preset.key, "tag_384r")
         self.assertEqual(ppa2l.default_paper_mode, PaperMode.TAG)
         self.assertIsNone(ppa2lh.default_paper_preset_key)
-        self.assertEqual(ppa2lh.default_paper_preset.key, "tag")
+        self.assertEqual(ppa2lh.default_paper_preset.key, "tag_576r")
         self.assertEqual(ppa2lh.default_paper_mode, PaperMode.TAG)
 
     def test_catalog_rejects_missing_speed_for_speed_family(self) -> None:

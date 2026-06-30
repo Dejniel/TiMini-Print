@@ -99,7 +99,7 @@ class PrintingJobTests(unittest.TestCase):
         )
         builder = self.job_mod.PrintJobBuilder(
             device,
-            settings=self.job_mod.PrintSettings(paper_preset_key="tag"),
+            settings=self.job_mod.PrintSettings(paper_preset_key="tag_384r"),
             document_renderer=renderer,
         )
         with tempfile.TemporaryDirectory() as tmp:

@@ -17,11 +17,11 @@ class PrintingPaperPresetTests(unittest.TestCase):
     def test_plain_profile_resolves_explicit_default_preset(self) -> None:
         device = PrinterCatalog.load().device_from_profile("x6h")
 
-        self.assertEqual([preset.key for preset in paper_presets_for_device(device)], ["default"])
+        self.assertEqual([preset.key for preset in paper_presets_for_device(device)], ["default_384r"])
 
         paper = resolve_paper(device, PrintSettings())
 
-        self.assertEqual(paper.key, "default")
+        self.assertEqual(paper.key, "default_384r")
         self.assertEqual(paper.render_width_px, device.profile.width)
         self.assertIsNone(paper.paper_mode)
 
@@ -32,17 +32,18 @@ class PrintingPaperPresetTests(unittest.TestCase):
         default_preset = default_paper_preset_for_device(device)
 
         self.assertEqual(presets, device.profile.paper_presets)
-        self.assertEqual([preset.key for preset in presets], ["tag", "plain"])
+        self.assertEqual([preset.key for preset in presets], ["tag_384r", "plain_384r"])
         self.assertIsNotNone(default_preset)
         assert default_preset is not None
-        self.assertEqual(default_preset.key, "tag")
+        self.assertEqual(default_preset.key, "tag_384r")
         self.assertEqual(default_preset.paper_mode, PaperMode.TAG)
 
-    def test_paper_preset_key_resolves_paper_mode(self) -> None:
+    def test_paper_preset_key_resolves_exact_catalog_key(self) -> None:
         device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
 
-        paper = resolve_paper(device, PrintSettings(paper_preset_key="plain"))
+        paper = resolve_paper(device, PrintSettings(paper_preset_key="plain_384r"))
 
+        self.assertEqual(paper.key, "plain_384r")
         self.assertEqual(paper.paper_mode, PaperMode.PLAIN)
 
     def test_profile_paper_preset_can_override_render_width(self) -> None:
@@ -77,7 +78,10 @@ class PrintingPaperPresetTests(unittest.TestCase):
     def test_unknown_paper_preset_key_fails(self) -> None:
         device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
 
-        with self.assertRaisesRegex(ValueError, "does not support paper"):
+        with self.assertRaisesRegex(
+            ValueError,
+            "(?s)does not support paper.*Available paper presets:.*tag_384r - Tag.*plain_384r - Plain roll",
+        ):
             resolve_paper(device, PrintSettings(paper_preset_key="missing"))
 
 

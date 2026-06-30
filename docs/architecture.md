@@ -22,19 +22,9 @@ That is why the public model is built from:
 Static catalog data.
 It describes printer capabilities and print defaults.
 
-`paper_presets` lists the paper choices supported by the profile. In JSON these
-are keys into `printer_paper_presets.json`; at runtime the catalog resolves them
-to `PaperPreset` objects. A resolved preset contains the full paper/protocol
-width, actual render width, and any protocol-side paper parameters such as
-`paper_mode`, left padding, or maximum sheet height. If the full width is wider
-than the render width and no protocol-side left padding is configured, the
-printing layer centers the rendered page or prepared raster before protocol
-encoding. `profile.width` is only a shortcut to the default preset's render
-width; it is not a separate catalog field.
+`paper_presets` lists the paper choices supported by the profile. In JSON these are exact keys into `printer_paper_presets.json`; at runtime the catalog resolves them to `PaperPreset` objects and keeps the same keys. A resolved preset contains the full paper/protocol width, actual render width, and any protocol-side paper parameters such as `paper_mode`, left padding, or maximum sheet height. If the full width is wider than the render width and no protocol-side left padding is configured, the printing layer centers the rendered page or prepared raster before protocol encoding. `profile.width` is only a shortcut to the default preset's render width; it is not a separate catalog field.
 
-TinyPrint size-8 paper handling is exposed through paper presets: `plain` keeps
-the roll-paper feed recipe, while `a4_sheet` maps to the original A4-sheet feed
-recipe for that protocol variant.
+TinyPrint size-8 paper handling is exposed through paper presets whose `paper_mode` selects the low-level recipe: `plain` keeps the roll-paper feed recipe, while `a4_sheet` maps to the original A4-sheet feed recipe for that protocol variant.
 
 A `PrinterProfile` is not enough to print by itself.
 It does not say:
@@ -110,10 +100,7 @@ provide the primitive I/O operations.
 It turns raster input into a `ProtocolJob`.
 
 ### `PaperPreset` and `ResolvedPaper`
-`PaperPreset` is shared catalog data for a user-facing paper choice.
-Profiles refer to these presets by key, so repeated width/render/padding
-geometry is not copied across every profile. It answers “what paper is loaded?”
-rather than exposing protocol internals.
+`PaperPreset` is shared catalog data for a user-facing paper choice. Profiles refer to these presets by exact key, so repeated width/render/padding geometry is not copied across every profile. It answers “what paper is loaded?” rather than exposing protocol internals.
 
 The printing layer resolves a selected preset into:
 - render width
