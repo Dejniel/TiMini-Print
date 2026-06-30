@@ -90,7 +90,7 @@ def _resolve_width(printer_config_value: str | None, printer_model: str | None) 
         try:
             return max(
                 32,
-                catalog.device_from_printer_config(printer_config, transport_target=None).profile.width,
+                catalog.device_from_printer_config(printer_config, transport_target=None).profile.default_paper_preset.render_width_px,
             )
         except RuntimeError as exc:
             print(f"Warning: invalid printer config width source: {exc}", file=sys.stderr)
@@ -101,7 +101,7 @@ def _resolve_width(printer_config_value: str | None, printer_model: str | None) 
         except RuntimeError:
             print(f"Warning: unknown printer model '{printer_model}', using default width.", file=sys.stderr)
         else:
-            return max(32, device.profile.width)
+            return max(32, device.profile.default_paper_preset.render_width_px)
     return DEFAULT_WIDTH
 
 

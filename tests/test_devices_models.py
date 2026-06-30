@@ -584,7 +584,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(dl_x7pro)
         self.assertEqual(dl_x7pro.profile_key, "dl_x7pro")
         self.assertEqual(dl_x7pro.protocol_family, ProtocolFamily.TINY)
-        self.assertEqual(dl_x7pro.profile.width, 1280)
+        self.assertEqual(dl_x7pro.profile.default_paper_preset.render_width_px, 1280)
         self.assertEqual(dl_x7pro.profile.default_paper_preset.paper_width_px, 1280)
         self.assertEqual(dl_x7pro.profile.dev_dpi, 300)
 
@@ -595,7 +595,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(p4.protocol_variant, "line_eight")
         self.assertEqual(p4.profile.default_paper_preset.paper_width_px, 1624)
         self.assertEqual(p4.profile.default_paper_preset.render_width_px, 1600)
-        self.assertEqual(p4.profile.width, 1600)
+        self.assertEqual(p4.profile.default_paper_preset.render_width_px, 1600)
 
     def test_tiny_profiles_keep_source_defaults(self) -> None:
         d1 = self.catalog.require_profile("d1")
@@ -655,7 +655,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(x9)
         self.assertEqual(x9.profile_key, "x9")
         self.assertEqual(x9.protocol_variant, "line_eight")
-        self.assertEqual(x9.profile.width, 1600)
+        self.assertEqual(x9.profile.default_paper_preset.render_width_px, 1600)
         plain_preset = x9.profile.paper_preset_for_mode(PaperMode.PLAIN)
         a4_preset = x9.profile.paper_preset_for_mode(PaperMode.A4_SHEET)
         self.assertEqual(plain_preset.left_padding_px, 32)
@@ -1340,7 +1340,7 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertEqual(resolved.profile_key, profile_key)
                 self.assertEqual(resolved.protocol_family, family)
                 self.assertEqual(resolved.protocol_variant, protocol_variant)
-                self.assertEqual(resolved.profile.width, width)
+                self.assertEqual(resolved.profile.default_paper_preset.render_width_px, width)
                 if profile_key in {
                     "luck_lujiang_a4",
                     "luck_lujiang_a4_dense",

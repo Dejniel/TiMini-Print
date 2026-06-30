@@ -22,7 +22,7 @@ class PrintingPaperPresetTests(unittest.TestCase):
         paper = resolve_paper(device, PrintSettings())
 
         self.assertEqual(paper.key, "default_384r")
-        self.assertEqual(paper.render_width_px, device.profile.width)
+        self.assertEqual(paper.render_width_px, device.profile.default_paper_preset.render_width_px)
         self.assertIsNone(paper.paper_mode)
 
     def test_profile_paper_presets_are_exposed_directly(self) -> None:

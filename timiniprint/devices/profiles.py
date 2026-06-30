@@ -252,10 +252,6 @@ class PrinterProfile:
         return self.default_paper_preset.paper_mode
 
     @property
-    def width(self) -> int:
-        return self.default_paper_preset.render_width_px
-
-    @property
     def speed(self) -> SpeedProfile | None:
         return self.print_defaults.speed
 

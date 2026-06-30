@@ -30,13 +30,12 @@ It carries the resolved:
 A `PrinterDevice` is the one object that both protocol code and transport code agree on.
 
 When rendering your own raster data, start from the resolved paper preset.
-`device.profile.width` is only a shortcut for the default paper preset's
-`render_width_px`. High-level file printing renders to `render_width_px`, and
-`build_raster_job()` expects the same input width. If the preset has a wider
-`paper_width_px` and no `left_padding_px`, the printing layer centers that image
-or raster on a white canvas before building the protocol job. If `left_padding_px`
-is set, the protocol builder adds that padding instead and the input raster stays
-at `render_width_px`.
+High-level file printing renders to `render_width_px`, and `build_raster_job()`
+expects the same input width. If the preset has a wider `paper_width_px` and no
+`left_padding_px`, the printing layer centers that image or raster on a white
+canvas before building the protocol job. If `left_padding_px` is set, the
+protocol builder adds that padding instead and the input raster stays at
+`render_width_px`.
 
 For high-level file printing, use `PrintSettings(paper_preset_key=...)` to select loaded paper. The key is the exact preset key from `printer_paper_presets.json`, for example `plain_1600r_1632p_32pl`, not the low-level `paper_mode`. A paper preset is the user-facing paper choice: it may change render width and may also map to a low-level protocol `paper_mode`.
 
