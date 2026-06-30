@@ -24,6 +24,7 @@ class AppCliCoreTests(unittest.TestCase):
             page_gap=3,
             trim_side_margins=True,
             trim_top_bottom_margins=False,
+            paper="tag",
             feed=False,
             retract=True,
         )
@@ -37,6 +38,7 @@ class AppCliCoreTests(unittest.TestCase):
         self.assertEqual(cli._resolve_page_gap(args), 3)
         self.assertTrue(cli._resolve_trim_side_margins(args))
         self.assertFalse(cli._resolve_trim_top_bottom_margins(args))
+        self.assertEqual(cli._resolve_paper_preset_key(args), "tag")
         self.assertEqual(cli._resolve_paper_motion_action(args), "retract")
 
     def test_text_columns_validation(self) -> None:

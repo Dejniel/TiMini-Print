@@ -8,6 +8,7 @@ from .bluetooth_policy import (
 from .device import BluetoothEndpoint, BluetoothTarget, PrinterDevice, SerialTarget, TransportTarget
 from .catalog import PrinterCatalog
 from .profiles import (
+    PaperPreset,
     ModelDetection,
     ModelMatch,
     PrinterModel,
@@ -28,6 +29,7 @@ __all__ = [
     "BluetoothConnectionPlan",
     "BluetoothTarget",
     "BluetoothTransportPolicy",
+    "PaperPreset",
     "ModelDetection",
     "ModelMatch",
     "PrinterModel",

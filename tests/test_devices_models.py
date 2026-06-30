@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import unittest
+from pathlib import Path
 
 from tests.helpers import reset_registry_cache
 from timiniprint.devices import (
@@ -16,14 +18,15 @@ from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding, PaperMode
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
 def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) -> dict:
     if speed is None:
         speed = {"image": 10, "text": 8}
     return {
         "profile_key": profile_key,
         "size": 1,
-        "paper_size": 1,
-        "print_size": 384,
         "one_length": 8,
         "dev_dpi": 203,
         "has_id": False,
@@ -50,6 +53,15 @@ def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) ->
                 "text": {"low": 8000, "middle": 8000, "high": 8000},
             },
         },
+        "paper_presets": [
+            {
+                "key": "default",
+                "label": "Default",
+                "paper_width_px": 384,
+                "print_width_px": 384,
+                "render_width_px": 384,
+            }
+        ],
     }
 
 
@@ -220,6 +232,27 @@ class DevicesModelsTests(unittest.TestCase):
             with self.subTest(model=model.model_key):
                 self.assertFalse(model.model_key.startswith("model_"))
 
+    def test_all_profiles_define_explicit_paper_presets(self) -> None:
+        for profile in self.catalog.profiles:
+            with self.subTest(profile=profile.profile_key):
+                self.assertTrue(profile.paper_presets)
+                self.assertIn(profile.default_paper_preset, profile.paper_presets)
+
+    def test_catalog_profile_data_references_global_paper_presets(self) -> None:
+        profiles = json.loads(
+            (REPO_ROOT / "timiniprint/data/printer_profiles.json").read_text()
+        )
+        paper_presets = json.loads(
+            (REPO_ROOT / "timiniprint/data/printer_paper_presets.json").read_text()
+        )
+        self.assertTrue(paper_presets)
+        for profile in profiles:
+            with self.subTest(profile=profile["profile_key"]):
+                self.assertTrue(profile["paper_presets"])
+                for preset_key in profile["paper_presets"]:
+                    self.assertIsInstance(preset_key, str)
+                    self.assertIn(preset_key, paper_presets)
+
     def test_origin_app_names_are_loaded_from_catalog_data(self) -> None:
         self.assertEqual(
             self.catalog.origin_app_names(
@@ -337,14 +370,39 @@ class DevicesModelsTests(unittest.TestCase):
 
         self.assertIsNone(profile.speed)
 
-    def test_model_codec_accepts_default_paper_mode(self) -> None:
+    def test_model_codec_accepts_paper_presets(self) -> None:
         payload = _with_optional_speed(_profile_payload(), None)
         payload["protocol_default"]["type"] = "luck_normal"
-        payload["default_paper_mode"] = "tag"
+        payload["paper_presets"] = [
+            {
+                "key": "plain",
+                "label": "Plain roll",
+                "paper_width_px": 384,
+                "print_width_px": 384,
+                "render_width_px": 384,
+                "paper_mode": "plain",
+            },
+            {
+                "key": "tag",
+                "label": "Tag",
+                "paper_width_px": 384,
+                "print_width_px": 384,
+                "render_width_px": 384,
+                "paper_mode": "tag",
+            },
+        ]
+        payload["default_paper_preset_key"] = "tag"
 
         profile = model_from_json(PrinterProfile, payload)
 
         self.assertEqual(profile.default_paper_mode, PaperMode.TAG)
+
+    def test_model_codec_rejects_missing_paper_presets(self) -> None:
+        payload = _profile_payload()
+        payload.pop("paper_presets")
+
+        with self.assertRaisesRegex(ValueError, "requires at least one paper preset"):
+            model_from_json(PrinterProfile, payload)
 
     def test_model_codec_rejects_unknown_catalog_fields(self) -> None:
         payload = _profile_payload()
@@ -361,7 +419,10 @@ class DevicesModelsTests(unittest.TestCase):
 
         self.assertEqual(payload["profile_key"], "demo")
         self.assertEqual(payload["protocol_default"]["packets_type"], None)
-        self.assertEqual(payload["default_paper_mode"], None)
+        self.assertEqual(payload["default_paper_preset_key"], None)
+        self.assertEqual(payload["paper_presets"][0]["key"], "default")
+        self.assertEqual(payload["paper_presets"][0]["paper_mode"], None)
+        self.assertEqual(payload["paper_presets"][0]["render_width_px"], 384)
         self.assertEqual(payload["ble_mtu_request"], 512)
         self.assertEqual(payload["print_defaults"]["speed"]["image"], 10)
 
@@ -389,11 +450,15 @@ class DevicesModelsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ble_mtu_request"):
             model_from_json(PrinterProfile, payload)
 
-    def test_ppa2l_profiles_default_to_tag_mode(self) -> None:
+    def test_ppa2l_profiles_default_to_tag_paper_preset(self) -> None:
         ppa2l = self.catalog.require_profile("luck_ppa2l")
         ppa2lh = self.catalog.require_profile("luck_ppa2lh")
 
+        self.assertIsNone(ppa2l.default_paper_preset_key)
+        self.assertEqual(ppa2l.default_paper_preset.key, "tag")
         self.assertEqual(ppa2l.default_paper_mode, PaperMode.TAG)
+        self.assertIsNone(ppa2lh.default_paper_preset_key)
+        self.assertEqual(ppa2lh.default_paper_preset.key, "tag")
         self.assertEqual(ppa2lh.default_paper_mode, PaperMode.TAG)
 
     def test_catalog_rejects_missing_speed_for_speed_family(self) -> None:
@@ -522,7 +587,8 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(dl_x7pro)
         self.assertEqual(dl_x7pro.profile_key, "dl_x7pro")
         self.assertEqual(dl_x7pro.protocol_family, ProtocolFamily.TINY)
-        self.assertEqual(dl_x7pro.profile.print_size, 1280)
+        self.assertEqual(dl_x7pro.profile.width, 1280)
+        self.assertEqual(dl_x7pro.profile.default_paper_preset.print_width_px, 1280)
         self.assertEqual(dl_x7pro.profile.dev_dpi, 300)
 
         p4 = self.catalog.detect_device("P4-1234")
@@ -530,8 +596,8 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(p4.profile_key, "p4")
         self.assertEqual(p4.protocol_family, ProtocolFamily.TINY)
         self.assertEqual(p4.protocol_variant, "line_eight")
-        self.assertEqual(p4.profile.paper_size, 1600)
-        self.assertEqual(p4.profile.print_size, 1728)
+        self.assertEqual(p4.profile.default_paper_preset.paper_width_px, 1600)
+        self.assertEqual(p4.profile.default_paper_preset.print_width_px, 1728)
         self.assertEqual(p4.profile.width, 1600)
 
     def test_tiny_profiles_keep_source_defaults(self) -> None:
@@ -585,9 +651,15 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x9.profile_key, "x9")
         self.assertEqual(x9.protocol_variant, "line_eight")
         self.assertEqual(x9.profile.width, 1600)
-        self.assertEqual(x9.profile.left_padding_pixels, 32)
-        self.assertEqual(x9.profile.effective_left_padding_pixels, 32)
-        self.assertEqual(x9.profile.a4_sheet_max_height, 2460)
+        plain_preset = x9.profile.paper_preset("plain")
+        a4_preset = x9.profile.paper_preset("a4_sheet")
+        self.assertIsNotNone(plain_preset)
+        self.assertIsNotNone(a4_preset)
+        assert plain_preset is not None
+        assert a4_preset is not None
+        self.assertEqual(plain_preset.protocol_left_padding_px, 32)
+        self.assertEqual(a4_preset.protocol_left_padding_px, 32)
+        self.assertEqual(a4_preset.a4_sheet_max_height_px, 2460)
         self.assertEqual(
             PrinterProtocol(x9).supported_paper_modes(),
             (PaperMode.PLAIN, PaperMode.A4_SHEET),

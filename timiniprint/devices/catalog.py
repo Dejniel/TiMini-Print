@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 from ..protocol.families import (
     get_protocol_behavior,
@@ -25,6 +25,7 @@ from .profiles import (
     DetectionNormalizer,
     ModelMatch,
     NamedModelDetection,
+    PaperPreset,
     PrinterProfile,
     RuntimePreset,
     RuntimeSettings,
@@ -38,13 +39,14 @@ PROFILE_DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "printer_p
 MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models.json")
 UNSUPPORTED_MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models_unsupported.json")
 ORIGIN_APP_DATA_PATH = PROFILE_DATA_PATH.with_name("origin_apps.json")
+PAPER_PRESET_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_paper_presets.json")
 _UNSET = object()
 
 
 class PrinterCatalog:
     """Load printer profiles and detect runtime devices from catalog data."""
 
-    _cache: Dict[Tuple[Path, Path, Path, Path | None], "PrinterCatalog"] = {}
+    _cache: Dict[tuple[Path, Path, Path, Path, Path | None], "PrinterCatalog"] = {}
 
     def __init__(
         self,
@@ -76,7 +78,7 @@ class PrinterCatalog:
             self._unsupported_models
         )
         self._validate_speed_requirements()
-        self._validate_default_paper_modes()
+        self._validate_paper_presets()
         self._validate_model_keys()
         self._validate_runtime_presets()
         self._validate_unsupported_model_keys()
@@ -216,16 +218,24 @@ class PrinterCatalog:
         profile_path: Path = PROFILE_DATA_PATH,
         model_path: Path = MODEL_DATA_PATH,
         unsupported_model_path: Path = UNSUPPORTED_MODEL_DATA_PATH,
+        paper_preset_path: Path = PAPER_PRESET_DATA_PATH,
         origin_app_path: Path | None = ORIGIN_APP_DATA_PATH,
     ) -> "PrinterCatalog":
         """Load the shared catalog instance from JSON profile and model files."""
-        cache_key = (profile_path, model_path, unsupported_model_path, origin_app_path)
+        cache_key = (
+            profile_path,
+            model_path,
+            unsupported_model_path,
+            paper_preset_path,
+            origin_app_path,
+        )
         cached = cls._cache.get(cache_key)
         if cached is not None:
             return cached
         profiles_raw = json.loads(profile_path.read_text(encoding="utf-8"))
         models_raw = json.loads(model_path.read_text(encoding="utf-8"))
         unsupported_models_raw = json.loads(unsupported_model_path.read_text(encoding="utf-8"))
+        paper_presets_raw = json.loads(paper_preset_path.read_text(encoding="utf-8"))
         origin_app_names_raw = (
             {}
             if origin_app_path is None
@@ -237,9 +247,18 @@ class PrinterCatalog:
             raise ValueError("Model file must contain a JSON list")
         if not isinstance(unsupported_models_raw, list):
             raise ValueError("Unsupported model file must contain a JSON list")
+        if not isinstance(paper_presets_raw, dict):
+            raise ValueError("Paper preset file must contain a JSON object")
         if not isinstance(origin_app_names_raw, dict):
             raise ValueError("Origin app file must contain a JSON object")
-        profiles = [model_from_json(PrinterProfile, entry) for entry in profiles_raw]
+        paper_presets = cls._load_paper_presets(paper_presets_raw)
+        profiles = [
+            model_from_json(
+                PrinterProfile,
+                cls._resolve_profile_paper_presets(entry, paper_presets),
+            )
+            for entry in profiles_raw
+        ]
         models = [model_from_json(SupportedPrinterModel, entry) for entry in models_raw]
         unsupported_models = [
             model_from_json(UnsupportedPrinterModel, entry)
@@ -257,6 +276,59 @@ class PrinterCatalog:
         )
         cls._cache[cache_key] = catalog
         return catalog
+
+    @staticmethod
+    def _load_paper_presets(raw: Mapping[str, object]) -> dict[str, dict[str, object]]:
+        presets: dict[str, dict[str, object]] = {}
+        for key, value in raw.items():
+            if not isinstance(value, Mapping):
+                raise ValueError(f"Paper preset {key} must be an object")
+            payload = dict(value)
+            payload["key"] = key
+            # Validate once here; profiles get independent instances below.
+            model_from_json(PaperPreset, payload, path=f"$.{key}")
+            presets[str(key)] = payload
+        return presets
+
+    @staticmethod
+    def _resolve_profile_paper_presets(
+        entry: object,
+        paper_presets: Mapping[str, Mapping[str, object]],
+    ) -> object:
+        if not isinstance(entry, Mapping):
+            return entry
+        payload = dict(entry)
+        references = payload.get("paper_presets")
+        if not isinstance(references, list):
+            raise ValueError(f"profile {payload.get('profile_key', '<unknown>')} paper_presets must be an array")
+        resolved = []
+        for reference in references:
+            if not isinstance(reference, str):
+                raise ValueError(
+                    f"profile {payload.get('profile_key', '<unknown>')} paper_presets must contain preset keys"
+                )
+            preset = paper_presets.get(reference)
+            if preset is None:
+                raise ValueError(
+                    f"profile {payload.get('profile_key', '<unknown>')} references unknown paper preset {reference!r}"
+                )
+            resolved_preset = dict(preset)
+            resolved_preset["key"] = PrinterCatalog._profile_paper_preset_key(
+                reference,
+                preset,
+            )
+            resolved.append(resolved_preset)
+        payload["paper_presets"] = resolved
+        return payload
+
+    @staticmethod
+    def _profile_paper_preset_key(reference: str, preset: Mapping[str, object]) -> str:
+        paper_mode = preset.get("paper_mode")
+        if isinstance(paper_mode, str) and paper_mode:
+            return paper_mode
+        if reference.startswith("default_"):
+            return "default"
+        return reference
 
     def _validate_speed_requirements(self) -> None:
         for profile in self._profiles:
@@ -291,9 +363,9 @@ class PrinterCatalog:
             f"{context} requires speed defaults, but profile {profile.profile_key} does not define it"
         )
 
-    def _validate_default_paper_modes(self) -> None:
+    def _validate_paper_presets(self) -> None:
         for profile in self._profiles:
-            self._validate_profile_default_paper_mode(profile)
+            self._validate_profile_paper_presets(profile)
 
     def _validate_model_keys(self) -> None:
         duplicate_keys = self._duplicate_keys(model.model_key for model in self._models)
@@ -375,22 +447,34 @@ class PrinterCatalog:
         return sorted(duplicates)
 
     @staticmethod
-    def _validate_profile_default_paper_mode(profile: PrinterProfile) -> None:
-        if profile.default_paper_mode is None:
+    def _validate_profile_paper_presets(profile: PrinterProfile) -> None:
+        paper_modes = {
+            preset.paper_mode
+            for preset in profile.paper_presets
+            if preset.paper_mode is not None
+        }
+        if not paper_modes:
             return
+        supported_modes = PrinterCatalog._profile_supported_paper_modes(profile)
+        unsupported_modes = sorted(
+            mode.value
+            for mode in paper_modes
+            if mode not in supported_modes
+        )
+        if unsupported_modes:
+            raise ValueError(
+                f"profile {profile.profile_key} paper presets use unsupported paper mode(s): "
+                + ", ".join(unsupported_modes)
+            )
+
+    @staticmethod
+    def _profile_supported_paper_modes(profile: PrinterProfile):
         behavior = get_protocol_behavior(profile.protocol_default.type)
         if behavior.supported_paper_modes_resolver is not None:
-            supported_modes = behavior.supported_paper_modes_resolver(
+            return behavior.supported_paper_modes_resolver(
                 profile.protocol_default.packets_type
             )
-        else:
-            supported_modes = behavior.supported_paper_modes
-        if profile.default_paper_mode not in supported_modes:
-            raise ValueError(
-                f"profile {profile.profile_key} default_paper_mode "
-                f"{profile.default_paper_mode.value} is not supported by "
-                f"{profile.protocol_default.type.value}"
-            )
+        return behavior.supported_paper_modes
 
     @property
     def profiles(self) -> List[PrinterProfile]:
@@ -795,7 +879,6 @@ class PrinterCatalog:
             protocol_family=protocol_family,
             context=f"device {display_name}",
         )
-        self._validate_profile_default_paper_mode(profile)
         return PrinterDevice(
             display_name=display_name,
             profile=profile,
@@ -881,5 +964,6 @@ __all__ = [
     "PROFILE_DATA_PATH",
     "MODEL_DATA_PATH",
     "UNSUPPORTED_MODEL_DATA_PATH",
+    "PAPER_PRESET_DATA_PATH",
     "PrinterCatalog",
 ]

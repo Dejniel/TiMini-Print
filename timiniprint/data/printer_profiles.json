@@ -2,8 +2,6 @@
   {
     "profile_key": "15p3",
     "size": 1,
-    "paper_size": 90,
-    "print_size": 96,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -43,13 +41,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_render96_print96_paper90"
+    ]
   },
   {
     "profile_key": "wq02",
     "size": 1,
-    "paper_size": 90,
-    "print_size": 96,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -89,13 +88,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_render96_print96_paper90"
+    ]
   },
   {
     "profile_key": "l1_u2",
     "size": 1,
-    "paper_size": 90,
-    "print_size": 96,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -135,13 +135,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_render96_print96_paper90"
+    ]
   },
   {
     "profile_key": "58p5",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -181,13 +182,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "a200",
     "size": 8,
-    "paper_size": 1648,
-    "print_size": 1664,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -229,13 +231,14 @@
       }
     },
     "a4xii": true,
-    "render_to_paper_width": false
+    "paper_presets": [
+      "plain_render1664_print1664_paper1648",
+      "a4_sheet_render1664_print1664_paper1648"
+    ]
   },
   {
     "profile_key": "luck_a2",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -285,13 +288,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384",
+      "tag_384"
+    ]
   },
   {
     "profile_key": "luck_a2h",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -341,13 +346,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_576",
+      "tag_576"
+    ]
   },
   {
     "profile_key": "luck_ppa2l",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -355,7 +362,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "luck_normal",
       "packets_type": "lujiang_normal"
@@ -399,13 +405,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_384",
+      "plain_384"
+    ]
   },
   {
     "profile_key": "luck_ppa2lh",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -413,7 +421,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "luck_normal",
       "packets_type": "lujiang_normal_h"
@@ -457,13 +464,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_576",
+      "plain_576"
+    ]
   },
   {
     "profile_key": "a33",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -503,13 +512,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "luck_a40",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -559,13 +569,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_lujiang_a4",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -616,13 +631,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_lujiang_a4_dense",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -673,13 +693,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_a49h",
     "size": 8,
-    "paper_size": 2400,
-    "print_size": 2496,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -730,13 +755,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render2496_print2496_paper2400",
+      "tag_render2496_print2496_paper2400",
+      "black_tag_render2496_print2496_paper2400",
+      "folder_render2496_print2496_paper2400",
+      "tattoo_render2496_print2496_paper2400"
+    ]
   },
   {
     "profile_key": "luck_a4_compressed_tattoo",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -787,13 +817,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_a4_compressed_tattoo_96",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -844,13 +879,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_a4_compressed_tattoo_96_dense",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -901,13 +941,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_u8",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -958,13 +1003,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_apl86",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1015,13 +1065,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_apl86h",
     "size": 8,
-    "paper_size": 2400,
-    "print_size": 2496,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -1072,13 +1127,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render2496_print2496_paper2400",
+      "tag_render2496_print2496_paper2400",
+      "black_tag_render2496_print2496_paper2400",
+      "folder_render2496_print2496_paper2400",
+      "tattoo_render2496_print2496_paper2400"
+    ]
   },
   {
     "profile_key": "luck_d80",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1129,13 +1189,17 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_d80h",
     "size": 8,
-    "paper_size": 2400,
-    "print_size": 2496,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -1186,13 +1250,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render2496_print2496_paper2400",
+      "tag_render2496_print2496_paper2400",
+      "black_tag_render2496_print2496_paper2400",
+      "folder_render2496_print2496_paper2400",
+      "tattoo_render2496_print2496_paper2400"
+    ]
   },
   {
     "profile_key": "luck_a80h_way1",
     "size": 8,
-    "paper_size": 2400,
-    "print_size": 2496,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -1243,13 +1312,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render2496_print2496_paper2400",
+      "tag_render2496_print2496_paper2400",
+      "black_tag_render2496_print2496_paper2400",
+      "folder_render2496_print2496_paper2400",
+      "tattoo_render2496_print2496_paper2400"
+    ]
   },
   {
     "profile_key": "luck_qirui_q1",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1300,13 +1374,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384",
+      "tag_384"
+    ]
   },
   {
     "profile_key": "luck_qirui_q2",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -1357,13 +1433,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_576",
+      "tag_576"
+    ]
   },
   {
     "profile_key": "luck_a41_luckp",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1414,13 +1492,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "luck_a42_luckp",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1471,13 +1554,18 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "tag_render1728_print1728_paper1600",
+      "black_tag_render1728_print1728_paper1600",
+      "folder_render1728_print1728_paper1600",
+      "tattoo_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "a41iii",
     "size": 8,
-    "paper_size": 1648,
-    "print_size": 1664,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -1519,13 +1607,14 @@
       }
     },
     "a4xii": true,
-    "render_to_paper_width": false
+    "paper_presets": [
+      "plain_render1664_print1664_paper1648",
+      "a4_sheet_render1664_print1664_paper1648"
+    ]
   },
   {
     "profile_key": "a43",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1567,14 +1656,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 32
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad32",
+      "a4_sheet_render1600_print1728_paper1600_pad32"
+    ]
   },
   {
     "profile_key": "a4300",
     "size": 8,
-    "paper_size": 2400,
-    "print_size": 2496,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -1616,13 +1705,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": false
+    "paper_presets": [
+      "plain_render2496_print2496_paper2400",
+      "a4_sheet_render2496_print2496_paper2400"
+    ]
   },
   {
     "profile_key": "ai01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -1661,13 +1751,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "an01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -1707,13 +1798,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "bq02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -1763,13 +1855,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "cp01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1809,13 +1902,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "d1",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1855,13 +1949,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "d100",
     "size": 4,
-    "paper_size": 864,
-    "print_size": 864,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1901,13 +1996,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_864"
+    ]
   },
   {
     "profile_key": "dl_x2",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1947,13 +2043,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "dl_x7",
     "size": 4,
-    "paper_size": 864,
-    "print_size": 864,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -1993,13 +2090,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_864"
+    ]
   },
   {
     "profile_key": "dl_x7pro",
     "size": 4,
-    "paper_size": 1280,
-    "print_size": 1280,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": true,
@@ -2039,13 +2137,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_1280"
+    ]
   },
   {
     "profile_key": "fc02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2085,13 +2184,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "fl01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -2131,13 +2231,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -2177,13 +2278,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -2223,13 +2325,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb02sh",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2269,13 +2372,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb03",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2315,13 +2419,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb03_2",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2361,13 +2466,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb03ph",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2407,13 +2513,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb03sl",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2453,13 +2560,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb04",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2499,13 +2607,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gb05",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2545,13 +2654,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gt01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2591,13 +2701,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gt02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2637,13 +2748,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gt04",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2683,13 +2795,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gt08",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2730,13 +2843,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "a4_sheet_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "gt09",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2778,13 +2893,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad64",
+      "a4_sheet_render1600_print1728_paper1600_pad64"
+    ]
   },
   {
     "profile_key": "gw09",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2825,13 +2941,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_render1728_print1728_paper1600",
+      "a4_sheet_render1728_print1728_paper1600"
+    ]
   },
   {
     "profile_key": "hd1",
     "size": 3,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2871,13 +2989,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "jx001",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -2918,13 +3037,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "jxm800",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -2966,13 +3086,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad64",
+      "a4_sheet_render1600_print1728_paper1600_pad64"
+    ]
   },
   {
     "profile_key": "label_printer",
     "size": 1,
-    "paper_size": 90,
-    "print_size": 96,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3012,13 +3133,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_render96_print96_paper90"
+    ]
   },
   {
     "profile_key": "lt01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3058,13 +3180,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "ly01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -3105,13 +3228,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "ly02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -3152,13 +3276,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "ly03",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3198,13 +3323,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "ly05",
     "size": 3,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3244,13 +3370,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "ly10",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3291,13 +3418,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "lp100",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3338,13 +3466,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "ly11",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 12,
     "dev_dpi": 300,
     "has_id": true,
@@ -3385,13 +3514,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "m01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -3432,13 +3562,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "m2",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3478,13 +3609,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "mini_printer",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3524,13 +3656,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "mpa81",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3572,14 +3705,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 32
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad32",
+      "a4_sheet_render1600_print1728_paper1600_pad32"
+    ]
   },
   {
     "profile_key": "mx02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3617,13 +3750,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "mx03",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3661,13 +3795,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "mx07",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -3717,13 +3852,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "p10",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3763,13 +3899,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "p4",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3811,14 +3948,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 24
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad24",
+      "a4_sheet_render1600_print1728_paper1600_pad24"
+    ]
   },
   {
     "profile_key": "p5",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 12,
     "dev_dpi": 300,
     "has_id": true,
@@ -3858,13 +3995,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "p6",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3904,13 +4042,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "p7",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3950,13 +4089,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "pr02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -3996,13 +4136,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "pr30",
     "size": 3,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4042,13 +4183,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "pr35",
     "size": 3,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 12,
     "dev_dpi": 200,
     "has_id": true,
@@ -4088,13 +4230,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "pr89",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4136,14 +4279,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 32
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad32",
+      "a4_sheet_render1600_print1728_paper1600_pad32"
+    ]
   },
   {
     "profile_key": "pr893",
     "size": 8,
-    "paper_size": 2400,
-    "print_size": 2592,
     "one_length": 12,
     "dev_dpi": 300,
     "has_id": true,
@@ -4185,14 +4328,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 48
+    "paper_presets": [
+      "plain_render2400_print2592_paper2400_pad48",
+      "a4_sheet_render2400_print2592_paper2400_pad48"
+    ]
   },
   {
     "profile_key": "professional_printer",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4234,14 +4377,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 32
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad32",
+      "a4_sheet_render1600_print1728_paper1600_pad32"
+    ]
   },
   {
     "profile_key": "pt001",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4281,13 +4424,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "s01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -4328,13 +4472,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "s101",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4374,13 +4519,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "s102_2",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4420,13 +4566,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "shipping_printer",
     "size": 4,
-    "paper_size": 864,
-    "print_size": 800,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -4466,13 +4613,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_render800_print800_paper864"
+    ]
   },
   {
     "profile_key": "u1",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4512,13 +4660,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "gt02_v5g",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -4568,13 +4717,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "v5g_small_203",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": false,
@@ -4758,13 +4908,14 @@
         "key": "mx10_control",
         "control_algorithm": "mx10"
       }
+    ],
+    "paper_presets": [
+      "default_384"
     ]
   },
   {
     "profile_key": "v5x",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": true,
@@ -4802,13 +4953,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x1",
     "size": 3,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4848,13 +5000,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "x101h",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4894,13 +5047,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x16",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4940,13 +5094,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x5",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -4986,13 +5141,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x5_2",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5032,13 +5188,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x6",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5078,13 +5235,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x6h",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5124,13 +5282,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x7",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5170,13 +5329,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x7hp",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5216,13 +5376,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "x8",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5264,13 +5425,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad64",
+      "a4_sheet_render1600_print1728_paper1600_pad64"
+    ]
   },
   {
     "profile_key": "x9",
     "size": 8,
-    "paper_size": 1600,
-    "print_size": 1728,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5312,15 +5474,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 32,
-    "a4_sheet_max_height": 2460
+    "paper_presets": [
+      "plain_render1600_print1728_paper1600_pad32",
+      "a4_sheet_render1600_print1728_paper1600_pad32_a4h2460"
+    ]
   },
   {
     "profile_key": "xw001",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -5361,13 +5522,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "xw002",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 12,
     "dev_dpi": 300,
     "ble_mtu_request": 23,
@@ -5408,13 +5570,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_576"
+    ]
   },
   {
     "profile_key": "ytb01",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 200,
     "has_id": true,
@@ -5450,13 +5613,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "zhhc",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 12,
     "dev_dpi": 200,
     "ble_mtu_request": 23,
@@ -5497,13 +5661,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_384"
+    ]
   },
   {
     "profile_key": "zp802",
     "size": 8,
-    "paper_size": 2400,
-    "print_size": 2496,
     "one_length": 12,
     "dev_dpi": 300,
     "has_id": true,
@@ -5545,14 +5710,14 @@
       }
     },
     "a4xii": false,
-    "render_to_paper_width": true,
-    "left_padding_pixels": 36
+    "paper_presets": [
+      "plain_render2400_print2496_paper2400_pad36",
+      "a4_sheet_render2400_print2496_paper2400_pad36"
+    ]
   },
   {
     "profile_key": "eleph_tspl_p1",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -5560,7 +5725,6 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "eleph_tspl",
       "packets_type": "p1"
@@ -5606,13 +5770,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_384",
+      "plain_384"
+    ]
   },
   {
     "profile_key": "toprint_tspl_p1",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -5620,7 +5786,6 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "eleph_tspl",
       "packets_type": "p1"
@@ -5666,13 +5831,15 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_384",
+      "plain_384"
+    ]
   },
   {
     "profile_key": "toprint_hprt_esc_zl1",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -5680,7 +5847,6 @@
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "eleph_hprt_esc",
       "packets_type": "zl1"
@@ -5722,13 +5888,16 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_384",
+      "plain_384",
+      "black_tag_384"
+    ]
   },
   {
     "profile_key": "niimbot_d11",
     "size": 1,
-    "paper_size": 96,
-    "print_size": 96,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": true,
@@ -5777,13 +5946,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_96"
+    ]
   },
   {
     "profile_key": "niimbot_d110",
     "size": 1,
-    "paper_size": 96,
-    "print_size": 96,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": true,
@@ -5832,13 +6002,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "default_96"
+    ]
   },
   {
     "profile_key": "instaprint_ctp500",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -5846,7 +6017,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "plain",
     "protocol_default": {
       "type": "instaprint_core",
       "packets_type": "ctp500"
@@ -5888,13 +6058,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384"
+    ]
   },
   {
     "profile_key": "phomemo_m02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -5902,7 +6073,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "plain",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "m02"
@@ -5944,13 +6114,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384"
+    ]
   },
   {
     "profile_key": "phomemo_m02s",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -5958,7 +6129,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "plain",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "m02s"
@@ -6000,13 +6170,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384"
+    ]
   },
   {
     "profile_key": "phomemo_m02x",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -6014,7 +6185,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "plain",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "m02x"
@@ -6056,13 +6226,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384"
+    ]
   },
   {
     "profile_key": "phomemo_t02",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -6070,7 +6241,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "plain",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "t02"
@@ -6112,13 +6282,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384"
+    ]
   },
   {
     "profile_key": "phomemo_m02_pro",
     "size": 2,
-    "paper_size": 624,
-    "print_size": 624,
     "one_length": 8,
     "dev_dpi": 300,
     "has_id": false,
@@ -6126,7 +6297,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "plain",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "m02_pro"
@@ -6168,13 +6338,14 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "plain_624"
+    ]
   },
   {
     "profile_key": "phomemo_m110",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -6182,7 +6353,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "m110"
@@ -6228,13 +6398,16 @@
         "text": 5
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_384",
+      "plain_384",
+      "black_tag_384"
+    ]
   },
   {
     "profile_key": "phomemo_m220",
     "size": 2,
-    "paper_size": 576,
-    "print_size": 576,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -6242,7 +6415,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "m220"
@@ -6288,13 +6460,16 @@
         "text": 5
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_576",
+      "plain_576",
+      "black_tag_576"
+    ]
   },
   {
     "profile_key": "printmaster_m_384",
     "size": 2,
-    "paper_size": 384,
-    "print_size": 384,
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
@@ -6302,7 +6477,6 @@
     "can_print_label": false,
     "label_value": "0",
     "back_paper_num": 0,
-    "default_paper_mode": "tag",
     "protocol_default": {
       "type": "phomemo_esc",
       "packets_type": "printmaster_m110"
@@ -6332,6 +6506,9 @@
         }
       }
     },
-    "a4xii": false
+    "a4xii": false,
+    "paper_presets": [
+      "tag_384"
+    ]
   }
 ]

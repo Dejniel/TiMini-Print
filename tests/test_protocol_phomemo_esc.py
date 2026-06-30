@@ -75,7 +75,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             is_text=False,
         )
 
-        self.assertEqual(device.profile.print_size, 624)
+        self.assertEqual(device.profile.default_paper_preset.print_width_px, 624)
         self.assertEqual(device.profile.dev_dpi, 300)
         self.assertEqual(device.protocol_variant, "m02_pro")
         self.assertIn(b"\x1d\x76\x30\x00\x4e\x00\x01\x00", job.payload)
@@ -90,7 +90,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             is_text=False,
         )
 
-        self.assertEqual(device.profile.print_size, 384)
+        self.assertEqual(device.profile.default_paper_preset.print_width_px, 384)
         self.assertEqual(device.profile.dev_dpi, 203)
         self.assertEqual(device.protocol_variant, "m02x")
         self.assertIn(b"\x1d\x76\x30\x00\x30\x00\x01\x00", job.payload)
@@ -229,7 +229,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             is_text=False,
         )
 
-        self.assertEqual(device.profile.print_size, 576)
+        self.assertEqual(device.profile.default_paper_preset.print_width_px, 576)
         self.assertEqual(device.profile.dev_dpi, 203)
         self.assertEqual(device.protocol_variant, "m220")
         self.assertIn(b"\x1d\x76\x30\x00\x48\x00\x01\x00", job.payload)

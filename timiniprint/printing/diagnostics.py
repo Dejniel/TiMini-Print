@@ -7,6 +7,7 @@ from ..raster import PixelFormat, RasterBuffer, RasterSet
 from ..rendering.converters import Page
 from .settings import DitherMode
 from .debug_dump import build_protocol_packet_summary
+from .paper import resolve_paper
 from .settings import PrintSettings
 
 
@@ -75,6 +76,7 @@ def report_protocol_job_build(
     head_ops = ",".join(str(op or "raw") for op in packet_summary["head_ops"])
     tail_ops = ",".join(str(op or "raw") for op in packet_summary["tail_ops"])
     parse_errors = packet_summary["parse_errors"]
+    paper = resolve_paper(device, settings)
     reporter.debug(
         short="Job",
         detail=reporting.format_kv(
@@ -91,7 +93,8 @@ def report_protocol_job_build(
             formats=[pixel_format.value for pixel_format in pipeline.formats],
             pages=page_count,
             blackening=settings.blackening,
-            paper_mode="<default>" if settings.paper_mode is None else settings.paper_mode.value,
+            paper_preset=paper.key,
+            paper_mode="<none>" if paper.paper_mode is None else paper.paper_mode.value,
             payload_bytes=len(job.payload),
             segments=len(job.payload_segments),
             steps=len(job.steps),

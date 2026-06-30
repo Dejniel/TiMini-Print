@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from PIL import Image
+
 from ..devices.device import PrinterDevice
 from ..protocol import ImagePipelineConfig
 from ..protocol.job import PrinterProtocol
@@ -13,8 +15,9 @@ from ..rendering.converters.base import ImageLoader, PageSource
 from ..rendering.converters.image import ImageConverter
 from ..rendering.converters.pdf import PdfConverter, PdfRenderer
 from ..rendering.converters.text import TextConverter
-from ..rendering.formats import document_kind, mm_to_px, normalized_width
+from ..rendering.formats import document_kind, mm_to_px
 from ..rendering.renderer import PrintImageRenderer
+from .paper import ResolvedPaper, resolve_paper
 from .settings import PrintSettings, resolve_gray_preprocessing
 
 TextFontResolver = Callable[[str | None], str | None]
@@ -208,7 +211,8 @@ class DocumentRenderer:
         with self._open_source(plan.document, plan.kind, device, settings) as source:
             if page.index < 0 or page.index >= source.page_count:
                 raise IndexError(f"Document page out of range: {page.number}")
-            return source.page(page.index)
+            paper = resolve_paper(device, settings)
+            return self._apply_paper_layout(source.page(page.index), paper)
 
     def _open_source(
         self,
@@ -217,7 +221,7 @@ class DocumentRenderer:
         device: PrinterDevice,
         settings: PrintSettings,
     ) -> PageSource:
-        width = normalized_width(device.profile.width)
+        width = resolve_paper(device, settings).render_width_px
         if kind == "text":
             return TextConverter(
                 font_path=self.text_font_resolver(settings.text_font),
@@ -243,6 +247,35 @@ class DocumentRenderer:
                 rotate_90_clockwise=settings.rotate_90_clockwise,
             ).open(document.source, width)
         raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
+
+    @staticmethod
+    def _apply_paper_layout(page: Page, paper: ResolvedPaper) -> Page:
+        left_padding = paper.left_margin_px or 0
+        right_padding = paper.right_padding_px or 0
+        target_width = paper.output_width_px
+        if target_width is None:
+            target_width = page.image.width + left_padding + right_padding
+        else:
+            target_width = max(target_width, page.image.width + left_padding + right_padding)
+        if target_width == page.image.width and left_padding == 0 and right_padding == 0:
+            return page
+
+        available_padding = target_width - page.image.width
+        if paper.alignment == "right":
+            left = available_padding - right_padding
+        elif paper.alignment == "center":
+            left = available_padding // 2
+        else:
+            left = left_padding
+        left = max(0, min(available_padding, left))
+
+        canvas = Image.new(page.image.mode, (target_width, page.image.height), "white")
+        canvas.paste(page.image, (left, 0))
+        return Page(
+            image=canvas,
+            dither=page.dither,
+            is_text=page.is_text,
+        )
 
     def _render_options(
         self,

@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "com.frogtosea.tinyPrint.apk_Decompiler.com" / "sources" / "com" / "Utils" / "PrintModelUtils.java"
 OUT = ROOT / "emx_040256_printer" / "timiniprint" / "data" / "printer_models.json"
+PAPER_OUT = OUT.with_name("printer_paper_presets.json")
 
 CONSTANTS = {
     "OS2WindowsMetricsTable.WEIGHT_CLASS_LIGHT": 300,
@@ -107,11 +108,24 @@ def parse_token(tok: str):
     raise ValueError(f"Unknown token: {tok}")
 
 
+def paper_preset_key(preset: dict) -> str:
+    paper_width = preset["paper_width_px"]
+    print_width = preset["print_width_px"]
+    render_width = preset["render_width_px"]
+    if paper_width == print_width == render_width:
+        return f"default_{render_width}"
+    key = f"default_render{render_width}_print{print_width}_paper{paper_width}"
+    if preset.get("protocol_left_padding_px"):
+        key += f"_pad{preset['protocol_left_padding_px']}"
+    return key
+
+
 def main() -> None:
     text = SOURCE.read_text(encoding="utf-8")
     pattern = re.compile(r"new\s+PrinterModel\.DataBean\(")
     starts = [m.end() for m in pattern.finditer(text)]
     models = []
+    paper_presets = {}
 
     for start in starts:
         args_str = extract_args(text, start)
@@ -120,12 +134,13 @@ def main() -> None:
         if len(args) < 25:
             raise ValueError(f"Unexpected arg count: {len(args)} for {raw_args[:3]}")
 
+        paper_size = int(args[3])
+        print_size = int(args[4])
+        render_to_paper_width = None
         model = {
             "model_no": args[0],
             "model": int(args[1]),
             "size": int(args[2]),
-            "paper_size": int(args[3]),
-            "print_size": int(args[4]),
             "one_length": int(args[5]),
             "head_name": args[6],
             "dev_dpi": int(args[8]),
@@ -146,21 +161,41 @@ def main() -> None:
             "label_value": str(args[23]),
             "back_paper_num": int(args[24]),
             "a4xii": False,
-            "render_to_paper_width": None,
         }
         if not bool(args[7]):
             model["ble_mtu_request"] = 23
 
         # A4XII models are the only ones using the signature that ends with two booleans.
         if len(args) == 29 and isinstance(args[-1], bool) and isinstance(args[-2], bool):
-            model["render_to_paper_width"] = args[-2]
+            render_to_paper_width = args[-2]
             model["a4xii"] = args[-1]
+        preset = {
+            "key": "default",
+            "label": "Default",
+            "paper_width_px": paper_size,
+            "print_width_px": print_size,
+            "render_width_px": paper_size if render_to_paper_width is True else print_size,
+        }
+        if render_to_paper_width is True:
+            preset["protocol_left_padding_px"] = 64
+        preset_key = paper_preset_key(preset)
+        paper_presets[preset_key] = preset
+        model["paper_presets"] = [preset_key]
 
         models.append(model)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(models, indent=2, ensure_ascii=True), encoding="utf-8")
+    PAPER_OUT.write_text(
+        json.dumps(
+            {key: paper_presets[key] for key in sorted(paper_presets)},
+            indent=2,
+            ensure_ascii=True,
+        ),
+        encoding="utf-8",
+    )
     print(f"Wrote {len(models)} models to {OUT}")
+    print(f"Wrote {len(paper_presets)} paper presets to {PAPER_OUT}")
 
 
 if __name__ == "__main__":

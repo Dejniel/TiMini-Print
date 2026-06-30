@@ -132,11 +132,52 @@ class RuntimeSettings:
 
 
 @dataclass(frozen=True)
+class PaperPreset:
+    key: str
+    label: str
+    paper_width_px: int
+    print_width_px: int
+    render_width_px: int
+    paper_mode: PaperMode | None = None
+    output_width_px: int | None = None
+    protocol_left_padding_px: int = 0
+    a4_sheet_max_height_px: int | None = None
+    page_width_mm: int | None = None
+    page_height_mm: int | None = None
+    left_margin_px: int | None = None
+    right_padding_px: int | None = None
+    gap_mm: int | None = None
+    alignment: str | None = None
+
+    def __post_init__(self) -> None:
+        if not self.key:
+            raise ValueError("paper preset requires key")
+        if not self.label:
+            raise ValueError(f"paper preset {self.key} requires label")
+        for field_name in (
+            "paper_width_px",
+            "print_width_px",
+            "render_width_px",
+            "output_width_px",
+            "protocol_left_padding_px",
+            "a4_sheet_max_height_px",
+            "page_width_mm",
+            "page_height_mm",
+            "left_margin_px",
+            "right_padding_px",
+            "gap_mm",
+        ):
+            value = getattr(self, field_name)
+            if value is not None and value < 0:
+                raise ValueError(f"paper preset {self.key} {field_name} must not be negative")
+        if self.alignment not in (None, "left", "center", "right", "source"):
+            raise ValueError(f"paper preset {self.key} has unsupported alignment {self.alignment!r}")
+
+
+@dataclass(frozen=True)
 class PrinterProfile:
     profile_key: str
     size: int
-    paper_size: int
-    print_size: int
     one_length: int
     dev_dpi: int
     has_id: bool
@@ -149,31 +190,60 @@ class PrinterProfile:
     stream: StreamProfile
     print_defaults: PrintDefaults
     runtime_presets: tuple[RuntimePreset, ...] = ()
+    paper_presets: tuple[PaperPreset, ...] = ()
+    default_paper_preset_key: str | None = None
     ble_mtu_request: int = 512
-    default_paper_mode: PaperMode | None = None
     post_print_feed_count: int = 2
     a4xii: bool = False
-    render_to_paper_width: Optional[bool] = None
-    left_padding_pixels: Optional[int] = None
-    a4_sheet_max_height: Optional[int] = None
 
     def __post_init__(self) -> None:
         if self.ble_mtu_request < 23:
             raise ValueError("ble_mtu_request must be at least 23")
+        if not self.paper_presets:
+            raise ValueError(f"profile {self.profile_key} requires at least one paper preset")
+        preset_keys = [preset.key for preset in self.paper_presets]
+        duplicate_keys = sorted({key for key in preset_keys if preset_keys.count(key) > 1})
+        if duplicate_keys:
+            raise ValueError(
+                f"profile {self.profile_key} repeats paper preset keys: "
+                + ", ".join(duplicate_keys)
+            )
+        if self.default_paper_preset_key is not None and self.default_paper_preset_key not in preset_keys:
+            raise ValueError(
+                f"profile {self.profile_key} default_paper_preset_key "
+                f"{self.default_paper_preset_key} is not defined"
+            )
+
+    def paper_preset(self, key: str) -> PaperPreset | None:
+        return next((preset for preset in self.paper_presets if preset.key == key), None)
+
+    @property
+    def default_paper_preset(self) -> PaperPreset:
+        if self.default_paper_preset_key is not None:
+            preset = self.paper_preset(self.default_paper_preset_key)
+            if preset is not None:
+                return preset
+        return self.paper_presets[0]
+
+    def paper_preset_for_mode(self, paper_mode: PaperMode | None) -> PaperPreset:
+        if paper_mode is None:
+            return self.default_paper_preset
+        return next(
+            (
+                preset
+                for preset in self.paper_presets
+                if preset.paper_mode == paper_mode
+            ),
+            self.default_paper_preset,
+        )
+
+    @property
+    def default_paper_mode(self) -> PaperMode | None:
+        return self.default_paper_preset.paper_mode
 
     @property
     def width(self) -> int:
-        if self.render_to_paper_width is True:
-            return self.paper_size
-        return self.print_size
-
-    @property
-    def effective_left_padding_pixels(self) -> int:
-        if self.render_to_paper_width is not True:
-            return 0
-        if self.left_padding_pixels is not None and self.left_padding_pixels >= 0:
-            return self.left_padding_pixels
-        return 64
+        return self.default_paper_preset.render_width_px
 
     @property
     def speed(self) -> SpeedProfile | None:
@@ -334,6 +404,7 @@ ModelMatch = SupportedModelMatch | UnsupportedModelMatch
 __all__ = [
     "DetectionNormalizer",
     "LevelProfile",
+    "PaperPreset",
     "ModelMatch",
     "ModelDetection",
     "ModeLevelProfile",

@@ -17,11 +17,12 @@ from .diagnostics import emit_startup_warnings
 from .. import reporting
 from ..devices import PrinterCatalog, PrinterDevice, ResolvedBluetoothTarget
 from ..printing.builder import PrintJobBuilder
+from ..printing.paper import default_paper_preset_for_device, paper_presets_for_device
 from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
 from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
-from ..protocol import PaperMode, PrinterProtocol
+from ..protocol import PrinterProtocol
 from ..rendering.converters.text import TextConverter
 from ..rendering.formats import normalized_width
 from ..transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
@@ -140,7 +141,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.text_mode_var = tk.BooleanVar(value=False)
         self.rotate_90_var = tk.BooleanVar(value=False)
         self.darkness_var = tk.IntVar(value=3)
-        self.paper_mode_var = tk.StringVar(value="")
+        self.paper_var = tk.StringVar(value="")
         self.text_font_var = tk.StringVar()
         self.text_columns_var = tk.IntVar(value=35)
         self.text_wrap_var = tk.BooleanVar(value=True)
@@ -160,7 +161,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._scan_busy = False
         self._layout_ready = False
         self._closing = False
-        self._paper_mode_choice_map: dict[str, PaperMode] = {}
+        self._paper_choice_map: dict[str, str] = {}
         self._manual_model_choice_map = self._build_manual_model_choice_map()
         self._update_release_url: str | None = None
         self.file_var.trace_add("write", self._on_file_path_change)
@@ -261,15 +262,15 @@ class TiMiniPrintGUI(tk.Tk):
         self.darkness_scale.grid(row=1, column=1, sticky="ew", **padding)
         self.darkness_value_label = ttk.Label(options_frame, textvariable=self.darkness_var, width=2)
         self.darkness_value_label.grid(row=1, column=2, sticky="w", **padding)
-        self.paper_mode_label = ttk.Label(options_frame, text="Paper mode:")
-        self.paper_mode_label.grid(row=2, column=0, sticky="w", **padding)
-        self.paper_mode_combo = ttk.Combobox(
+        self.paper_label = ttk.Label(options_frame, text="Paper:")
+        self.paper_label.grid(row=2, column=0, sticky="w", **padding)
+        self.paper_combo = ttk.Combobox(
             options_frame,
-            textvariable=self.paper_mode_var,
+            textvariable=self.paper_var,
             width=24,
             state="readonly",
         )
-        self.paper_mode_combo.grid(row=2, column=1, sticky="w", **padding)
+        self.paper_combo.grid(row=2, column=1, sticky="w", **padding)
         options_frame.columnconfigure(1, weight=1)
 
         self.text_frame = ttk.LabelFrame(self, text="Txt Options")
@@ -351,7 +352,7 @@ class TiMiniPrintGUI(tk.Tk):
         ttk.Label(status_frame, textvariable=self.status_var).pack(side="left", padx=6, fill="x", expand=True)
 
         self._update_option_sections(self.file_var.get())
-        self._refresh_paper_mode_controls()
+        self._refresh_paper_controls()
 
     def _process_queue(self) -> None:
         if self._closing:
@@ -472,7 +473,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._reset_manual_model_if_target_changed()
         self._refresh_manual_model_controls()
         self._refresh_profile_label()
-        self._refresh_paper_mode_controls()
+        self._refresh_paper_controls()
 
     def _queue_status(self, key: str, **ctx) -> None:
         self.reporter.status(key, **ctx)
@@ -612,12 +613,12 @@ class TiMiniPrintGUI(tk.Tk):
         self._reset_manual_model_if_target_changed()
         self._refresh_manual_model_controls()
         self._refresh_profile_label()
-        self._refresh_paper_mode_controls()
+        self._refresh_paper_controls()
 
     def _on_manual_model_selection_changed(self, _event=None) -> None:
         self._refresh_manual_model_controls()
         self._refresh_profile_label()
-        self._refresh_paper_mode_controls()
+        self._refresh_paper_controls()
 
     def _on_show_unknown_devices_changed(self) -> None:
         self._refresh_device_list()
@@ -738,40 +739,38 @@ class TiMiniPrintGUI(tk.Tk):
         return choices
 
     @staticmethod
-    def _paper_mode_choices_for_device(device) -> tuple[tuple[str, PaperMode], ...]:
+    def _paper_choices_for_device(device) -> tuple[tuple[str, str], ...]:
         if device is None:
             return ()
-        return tuple((mode.label, mode) for mode in PrinterProtocol(device).supported_paper_modes())
+        return tuple((preset.label, preset.key) for preset in paper_presets_for_device(device))
 
     @staticmethod
-    def _default_paper_mode_label_for_device(device) -> str | None:
-        if device is None or device.profile.default_paper_mode is None:
+    def _default_paper_label_for_device(device) -> str | None:
+        preset = default_paper_preset_for_device(device)
+        if preset is None:
             return None
-        supported_modes = {mode for _label, mode in TiMiniPrintGUI._paper_mode_choices_for_device(device)}
-        if device.profile.default_paper_mode not in supported_modes:
-            return None
-        return device.profile.default_paper_mode.label
+        return preset.label
 
-    def _selected_paper_mode(self) -> PaperMode | None:
-        return self._paper_mode_choice_map.get(self.paper_mode_var.get())
+    def _selected_paper_key(self) -> str | None:
+        return self._paper_choice_map.get(self.paper_var.get())
 
-    def _refresh_paper_mode_controls(self) -> None:
+    def _refresh_paper_controls(self) -> None:
         device = self.connected_device or self._effective_selected_device()
-        choices = self._paper_mode_choices_for_device(device)
-        self._paper_mode_choice_map = dict(choices)
-        labels = [label for label, _mode in choices]
-        self.paper_mode_combo["values"] = labels
-        if labels:
-            if self.paper_mode_var.get() not in self._paper_mode_choice_map:
-                self.paper_mode_var.set(
-                    self._default_paper_mode_label_for_device(device) or labels[0]
+        choices = self._paper_choices_for_device(device)
+        self._paper_choice_map = dict(choices)
+        labels = [label for label, _key in choices]
+        self.paper_combo["values"] = labels
+        if len(labels) > 1:
+            if self.paper_var.get() not in self._paper_choice_map:
+                self.paper_var.set(
+                    self._default_paper_label_for_device(device) or labels[0]
                 )
-            self.paper_mode_label.grid()
-            self.paper_mode_combo.grid()
+            self.paper_label.grid()
+            self.paper_combo.grid()
         else:
-            self.paper_mode_var.set("")
-            self.paper_mode_label.grid_remove()
-            self.paper_mode_combo.grid_remove()
+            self.paper_var.set("")
+            self.paper_label.grid_remove()
+            self.paper_combo.grid_remove()
         self._refresh_min_height()
 
     def print_file(self) -> None:
@@ -793,7 +792,7 @@ class TiMiniPrintGUI(tk.Tk):
             text_mode=self.text_mode_var.get(),
             rotate_90_clockwise=self.rotate_90_var.get(),
             blackening=self.darkness_var.get(),
-            paper_mode=self._selected_paper_mode(),
+            paper_preset_key=self._selected_paper_key(),
             text_font=self.text_font_var.get().strip() or None,
             text_columns=self.text_columns_var.get(),
             text_wrap=self.text_wrap_var.get(),
@@ -913,7 +912,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_widget_state(self.rotate_90_check, True)
             self._set_widget_state(self.darkness_scale, True)
             self._set_widget_state(self.darkness_value_label, True)
-            self._set_widget_state(self.paper_mode_combo, True)
+            self._set_widget_state(self.paper_combo, True)
             self._set_widget_state(self.show_unknown_check, False)
             self._set_widget_state(self.manual_model_combo, False)
             self._set_widget_state(self.text_font_entry, True)
@@ -933,7 +932,7 @@ class TiMiniPrintGUI(tk.Tk):
             self._set_connection_button("Disconnect", True)
             self._configure_text_columns(device.profile)
             self._refresh_manual_model_controls()
-            self._refresh_paper_mode_controls()
+            self._refresh_paper_controls()
             return
 
         self.profile_var.set("")
@@ -946,7 +945,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._set_widget_state(self.rotate_90_check, False)
         self._set_widget_state(self.darkness_scale, False)
         self._set_widget_state(self.darkness_value_label, False)
-        self._set_widget_state(self.paper_mode_combo, False)
+        self._set_widget_state(self.paper_combo, False)
         self._set_widget_state(self.text_font_entry, False)
         self._set_widget_state(self.text_font_browse, False)
         self._set_widget_state(self.text_font_clear, False)
@@ -965,7 +964,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._stop_paper_motion()
         self._refresh_manual_model_controls()
         self._refresh_profile_label()
-        self._refresh_paper_mode_controls()
+        self._refresh_paper_controls()
 
     def _configure_text_columns(self, profile) -> None:
         width = normalized_width(profile.width)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from ..protocol import ImageEncoding, PaperMode
+from ..protocol import ImageEncoding
 from ..protocol.family import ProtocolFamily
 from ..raster import DitherMode, PixelFormat
 
@@ -27,7 +27,7 @@ class PrintSettings:
     trim_top_bottom_margins: bool = True
     pdf_pages: Optional[str] = None
     page_gap_mm: int = 5
-    paper_mode: Optional[PaperMode] = None
+    paper_preset_key: Optional[str] = None
     image_encoding_override: Optional[ImageEncoding] = None
     pixel_format_override: Optional[PixelFormat] = None
     debug_row_markers_interval: Optional[int] = None

@@ -48,7 +48,7 @@ class AppCliFlowsTests(unittest.TestCase):
             trim_top_bottom_margins=True,
             pdf_pages=None,
             page_gap=None,
-            paper_mode=None,
+            paper=None,
         )
         base.update(kwargs)
         return argparse.Namespace(**base)
@@ -182,10 +182,6 @@ class AppCliFlowsTests(unittest.TestCase):
         settings_cls.assert_called_once()
         self.assertEqual(settings_cls.call_args.kwargs["debug_row_markers_interval"], 10)
         builder_cls.assert_called_once()
-
-    def test_resolve_paper_mode_returns_enum(self) -> None:
-        self.assertIsNone(cli._resolve_paper_mode(self._args()))
-        self.assertEqual(cli._resolve_paper_mode(self._args(paper_mode="tag")).value, "tag")
 
     def test_print_and_motion_flows_use_connectors(self) -> None:
         args = self._args(path="x.txt", bluetooth="X6H")

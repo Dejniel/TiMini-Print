@@ -18,7 +18,7 @@ from ..printing.runtime.base import PreparedRuntimeContext
 from ..printing.runtime.prepare import prepare_connection_runtime
 from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
-from ..protocol import ImageEncoding, PaperMode, PrinterProtocol, ProtocolJob
+from ..protocol import ImageEncoding, PrinterProtocol, ProtocolJob
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 from ..transport.bluetooth.types import DeviceTransport
 from ..transport.serial import SerialConnector
@@ -69,9 +69,9 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins", help="Disable auto-trimming white top/bottom margins for images and PDFs")
     parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
     parser.add_argument(
-        "--paper-mode",
-        choices=[mode.value for mode in PaperMode],
-        help="Override media mode for protocol families that support it",
+        "--paper",
+        metavar="KEY",
+        help="Select the paper/paper preset for this printer model",
     )
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug logs (CLI only)")
     parser.set_defaults(trim_side_margins=True)
@@ -237,7 +237,7 @@ def create_print_job_builder(
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
     page_gap_mm: int = 5,
-    paper_mode: Optional[PaperMode] = None,
+    paper_preset_key: Optional[str] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
     debug_row_markers_interval: Optional[int] = None,
@@ -254,7 +254,7 @@ def create_print_job_builder(
         trim_top_bottom_margins=trim_top_bottom_margins,
         pdf_pages=pdf_pages,
         page_gap_mm=page_gap_mm,
-        paper_mode=paper_mode,
+        paper_preset_key=paper_preset_key,
         image_encoding_override=image_encoding_override,
         debug_row_markers_interval=debug_row_markers_interval,
     )
@@ -281,7 +281,7 @@ def build_print_job(
     trim_top_bottom_margins: bool = True,
     pdf_pages: Optional[str] = None,
     page_gap_mm: int = 5,
-    paper_mode: Optional[PaperMode] = None,
+    paper_preset_key: Optional[str] = None,
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
     debug_row_markers_interval: Optional[int] = None,
@@ -298,7 +298,7 @@ def build_print_job(
         trim_top_bottom_margins=trim_top_bottom_margins,
         pdf_pages=pdf_pages,
         page_gap_mm=page_gap_mm,
-        paper_mode=paper_mode,
+        paper_preset_key=paper_preset_key,
         runtime_context=runtime_context,
         image_encoding_override=image_encoding_override,
         debug_row_markers_interval=debug_row_markers_interval,
@@ -500,10 +500,10 @@ def _resolve_page_gap(args: argparse.Namespace) -> int:
     return args.page_gap
 
 
-def _resolve_paper_mode(args: argparse.Namespace) -> PaperMode | None:
-    if not args.paper_mode:
+def _resolve_paper_preset_key(args: argparse.Namespace) -> str | None:
+    if not args.paper:
         return None
-    return PaperMode(args.paper_mode)
+    return str(args.paper)
 
 
 def _resolve_trim_side_margins(args: argparse.Namespace) -> bool:
@@ -562,7 +562,7 @@ def print_bluetooth(
                 trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
                 pdf_pages=_resolve_pdf_pages(args),
                 page_gap_mm=_resolve_page_gap(args),
-                paper_mode=_resolve_paper_mode(args),
+                paper_preset_key=_resolve_paper_preset_key(args),
                 runtime_context=runtime_context,
                 debug_row_markers_interval=args.debug_row_markers,
                 reporter=reporter if args.verbose else None,
@@ -599,7 +599,7 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
                 trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
                 pdf_pages=_resolve_pdf_pages(args),
                 page_gap_mm=_resolve_page_gap(args),
-                paper_mode=_resolve_paper_mode(args),
+                paper_preset_key=_resolve_paper_preset_key(args),
                 runtime_context=runtime_context,
                 debug_row_markers_interval=args.debug_row_markers,
                 reporter=reporter if args.verbose else None,
@@ -688,6 +688,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             or args.serial
             or args.printer_config
             or args.printer_model
+            or args.paper
             or args.debug_row_markers is not None
         ):
             reporter.error(

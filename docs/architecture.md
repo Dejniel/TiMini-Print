@@ -22,13 +22,16 @@ That is why the public model is built from:
 Static catalog data.
 It describes printer capabilities and print defaults.
 
-`print_size` is the source catalog value.
-`profile.width` is the raster width the rendering layer should produce.
-For some TinyPrint A4-style models these differ because the original app renders
-to `paper_size` and the protocol recipe adds left-side padding before packing
-the wire payload.
-TinyPrint size-8 paper handling is modeled as `paper_mode`: `plain` keeps the
-roll-paper feed recipe, while `a4_sheet` applies the original A4-sheet feed
+`paper_presets` lists the paper choices supported by the profile. In JSON these
+are keys into `printer_paper_presets.json`; at runtime the catalog resolves them
+to `PaperPreset` objects. A resolved preset contains the source paper width,
+source print width, actual render width, and any protocol-side paper parameters
+such as `paper_mode`, left padding, or A4 sheet height. `profile.width` is only
+a shortcut to the default preset's render width; it is not a separate catalog
+field.
+
+TinyPrint size-8 paper handling is exposed through paper presets: `plain` keeps
+the roll-paper feed recipe, while `a4_sheet` maps to the original A4-sheet feed
 recipe for that protocol variant.
 
 A `PrinterProfile` is not enough to print by itself.
@@ -103,6 +106,22 @@ queries, or passive notification waits during a print job. The protocol layer
 defines the expected packet/notification semantics; transport adapters only
 provide the primitive I/O operations.
 It turns raster input into a `ProtocolJob`.
+
+### `PaperPreset` and `ResolvedPaper`
+`PaperPreset` is shared catalog data for a user-facing paper choice.
+Profiles refer to these presets by key, so repeated width/render/padding
+geometry is not copied across every profile. It answers “what paper is loaded?”
+rather than exposing protocol internals.
+
+The printing layer resolves a selected preset into:
+- render width
+- optional protocol `paper_mode`
+- future page-size, gap, margin, and padding values
+
+Rendering uses the resolved render width. Protocol families receive the resolved
+low-level values they already understand. Transport does not receive media data.
+Protocol-level `PaperMode` remains an internal/low-level recipe value; it should
+not be used as the GUI or CLI data source.
 
 Important: `PrinterProtocol` is not a transport object.
 It builds jobs; it does not connect, send, or create runtime controllers.

@@ -63,6 +63,7 @@ class PrinterProtocol:
         is_text: bool,
         blackening: int = 3,
         feed_padding: int = 0,
+        paper_preset_key: str | None = None,
         paper_mode: PaperMode | None = None,
         lsb_first: bool | None = None,
         image_pipeline: ImagePipelineConfig | None = None,
@@ -74,6 +75,15 @@ class PrinterProtocol:
         runtime_controller: object | None = None,
     ) -> ProtocolJob:
         """Build a printable job from raster input for this device."""
+        if paper_preset_key is not None:
+            paper_preset = self.device.profile.paper_preset(paper_preset_key)
+            if paper_preset is None:
+                raise ValueError(
+                    f"{self.device.display_name or self.device.profile_key} does not support paper "
+                    f"{paper_preset_key!r}"
+                )
+        else:
+            paper_preset = self.device.profile.paper_preset_for_mode(paper_mode)
         resolved_pipeline = self.resolve_image_pipeline(
             image_pipeline=image_pipeline,
             image_encoding_override=image_encoding_override,
@@ -81,7 +91,7 @@ class PrinterProtocol:
             runtime_capabilities=runtime_capabilities,
         )
         resolved_paper_mode = (
-            paper_mode if paper_mode is not None else self.device.profile.default_paper_mode
+            paper_mode if paper_mode is not None else paper_preset.paper_mode
         )
         runtime_density = (
             None
@@ -113,10 +123,10 @@ class PrinterProtocol:
             dev_dpi=self.device.profile.dev_dpi,
             can_print_label=self.device.profile.can_print_label,
             post_print_feed_count=self.device.profile.post_print_feed_count,
-            left_padding_pixels=self.device.profile.effective_left_padding_pixels,
+            left_padding_pixels=paper_preset.protocol_left_padding_px,
             one_length=self.device.profile.one_length,
             a4xii=self.device.profile.a4xii,
-            a4_sheet_max_height=self.device.profile.a4_sheet_max_height,
+            a4_sheet_max_height=paper_preset.a4_sheet_max_height_px,
             image_pipeline=resolved_pipeline,
             paper_mode=resolved_paper_mode,
             page_index=page_index,
@@ -203,7 +213,7 @@ class PrinterProtocol:
         return self._apply_runtime_capabilities(pipeline, runtime_capabilities)
 
     def supported_paper_modes(self) -> tuple[PaperMode, ...]:
-        """Return user-selectable paper modes supported by this device recipe."""
+        """Return low-level paper recipes supported by this protocol variant."""
         behavior = get_protocol_behavior(self.device.protocol_family)
         if behavior.supported_paper_modes_resolver is not None:
             return behavior.supported_paper_modes_resolver(self.device.protocol_variant)

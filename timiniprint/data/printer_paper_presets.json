@@ -1,0 +1,280 @@
+{
+  "a4_sheet_render1600_print1728_paper1600_pad24": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1600,
+    "protocol_left_padding_px": 24
+  },
+  "a4_sheet_render1600_print1728_paper1600_pad32": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1600,
+    "protocol_left_padding_px": 32
+  },
+  "a4_sheet_render1600_print1728_paper1600_pad32_a4h2460": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1600,
+    "protocol_left_padding_px": 32,
+    "a4_sheet_max_height_px": 2460
+  },
+  "a4_sheet_render1600_print1728_paper1600_pad64": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1600,
+    "protocol_left_padding_px": 64
+  },
+  "a4_sheet_render1664_print1664_paper1648": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 1648,
+    "print_width_px": 1664,
+    "render_width_px": 1664
+  },
+  "a4_sheet_render1728_print1728_paper1600": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1728
+  },
+  "a4_sheet_render2400_print2496_paper2400_pad36": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2400,
+    "protocol_left_padding_px": 36
+  },
+  "a4_sheet_render2400_print2592_paper2400_pad48": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 2400,
+    "print_width_px": 2592,
+    "render_width_px": 2400,
+    "protocol_left_padding_px": 48
+  },
+  "a4_sheet_render2496_print2496_paper2400": {
+    "label": "A4 sheet",
+    "paper_mode": "a4_sheet",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2496
+  },
+  "black_tag_384": {
+    "label": "Black tag",
+    "paper_mode": "black_tag",
+    "paper_width_px": 384,
+    "print_width_px": 384,
+    "render_width_px": 384
+  },
+  "black_tag_576": {
+    "label": "Black tag",
+    "paper_mode": "black_tag",
+    "paper_width_px": 576,
+    "print_width_px": 576,
+    "render_width_px": 576
+  },
+  "black_tag_render1728_print1728_paper1600": {
+    "label": "Black tag",
+    "paper_mode": "black_tag",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1728
+  },
+  "black_tag_render2496_print2496_paper2400": {
+    "label": "Black tag",
+    "paper_mode": "black_tag",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2496
+  },
+  "default_1280": {
+    "label": "Default",
+    "paper_width_px": 1280,
+    "print_width_px": 1280,
+    "render_width_px": 1280
+  },
+  "default_384": {
+    "label": "Default",
+    "paper_width_px": 384,
+    "print_width_px": 384,
+    "render_width_px": 384
+  },
+  "default_576": {
+    "label": "Default",
+    "paper_width_px": 576,
+    "print_width_px": 576,
+    "render_width_px": 576
+  },
+  "default_864": {
+    "label": "Default",
+    "paper_width_px": 864,
+    "print_width_px": 864,
+    "render_width_px": 864
+  },
+  "default_96": {
+    "label": "Default",
+    "paper_width_px": 96,
+    "print_width_px": 96,
+    "render_width_px": 96
+  },
+  "default_render800_print800_paper864": {
+    "label": "Default",
+    "paper_width_px": 864,
+    "print_width_px": 800,
+    "render_width_px": 800
+  },
+  "default_render96_print96_paper90": {
+    "label": "Default",
+    "paper_width_px": 90,
+    "print_width_px": 96,
+    "render_width_px": 96
+  },
+  "folder_render1728_print1728_paper1600": {
+    "label": "Folder",
+    "paper_mode": "folder",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1728
+  },
+  "folder_render2496_print2496_paper2400": {
+    "label": "Folder",
+    "paper_mode": "folder",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2496
+  },
+  "plain_384": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 384,
+    "print_width_px": 384,
+    "render_width_px": 384
+  },
+  "plain_576": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 576,
+    "print_width_px": 576,
+    "render_width_px": 576
+  },
+  "plain_624": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 624,
+    "print_width_px": 624,
+    "render_width_px": 624
+  },
+  "plain_render1600_print1728_paper1600_pad24": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1600,
+    "protocol_left_padding_px": 24
+  },
+  "plain_render1600_print1728_paper1600_pad32": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1600,
+    "protocol_left_padding_px": 32
+  },
+  "plain_render1600_print1728_paper1600_pad64": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1600,
+    "protocol_left_padding_px": 64
+  },
+  "plain_render1664_print1664_paper1648": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 1648,
+    "print_width_px": 1664,
+    "render_width_px": 1664
+  },
+  "plain_render1728_print1728_paper1600": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1728
+  },
+  "plain_render2400_print2496_paper2400_pad36": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2400,
+    "protocol_left_padding_px": 36
+  },
+  "plain_render2400_print2592_paper2400_pad48": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 2400,
+    "print_width_px": 2592,
+    "render_width_px": 2400,
+    "protocol_left_padding_px": 48
+  },
+  "plain_render2496_print2496_paper2400": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2496
+  },
+  "tag_384": {
+    "label": "Tag",
+    "paper_mode": "tag",
+    "paper_width_px": 384,
+    "print_width_px": 384,
+    "render_width_px": 384
+  },
+  "tag_576": {
+    "label": "Tag",
+    "paper_mode": "tag",
+    "paper_width_px": 576,
+    "print_width_px": 576,
+    "render_width_px": 576
+  },
+  "tag_render1728_print1728_paper1600": {
+    "label": "Tag",
+    "paper_mode": "tag",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1728
+  },
+  "tag_render2496_print2496_paper2400": {
+    "label": "Tag",
+    "paper_mode": "tag",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2496
+  },
+  "tattoo_render1728_print1728_paper1600": {
+    "label": "Tattoo",
+    "paper_mode": "tattoo",
+    "paper_width_px": 1600,
+    "print_width_px": 1728,
+    "render_width_px": 1728
+  },
+  "tattoo_render2496_print2496_paper2400": {
+    "label": "Tattoo",
+    "paper_mode": "tattoo",
+    "paper_width_px": 2400,
+    "print_width_px": 2496,
+    "render_width_px": 2496
+  }
+}

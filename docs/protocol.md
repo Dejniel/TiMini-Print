@@ -29,13 +29,21 @@ It carries the resolved:
 
 A `PrinterDevice` is the one object that both protocol code and transport code agree on.
 
-When rendering your own raster data, use `device.profile.width` as the target
-width. Do not assume it is always identical to `device.profile.print_size`.
-Some TinyPrint variants render to a narrower source width and add
-protocol-level padding when building the job.
-For TinyPrint size-8 variants, `paper_mode=PaperMode.A4_SHEET` selects the
-original app's A4-sheet feed recipe. `PaperMode.PLAIN` keeps roll-paper feed
-behavior.
+When rendering your own raster data, use a resolved paper preset as the target
+width. `device.profile.width` is only a shortcut for the default paper preset's
+`render_width_px`. Do not assume the rendered width is identical to the source
+`print_width_px`; some TinyPrint variants render to the physical paper width
+and add protocol-level padding when building the job.
+
+For high-level file printing, use `PrintSettings(paper_preset_key=...)` to
+select loaded paper. Every profile references at least one paper preset from
+`printer_paper_presets.json`. A paper preset is the user-facing paper choice:
+it may change render width and may also map to a low-level protocol
+`paper_mode`.
+
+`paper_mode` remains a low-level protocol parameter for callers that already
+know the protocol family supports it. GUI, CLI, and high-level file printing
+should use paper preset keys instead.
 
 Runtime settings are separate from the static profile:
 - `control_algorithm` selects the stateful runtime algorithm, when a family needs one

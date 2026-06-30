@@ -20,6 +20,41 @@ def _load_module():
     return module
 
 
+def _profile_payload(profile_key: str) -> dict:
+    return {
+        "profile_key": profile_key,
+        "size": 1,
+        "one_length": 8,
+        "dev_dpi": 203,
+        "ble_mtu_request": 23,
+        "has_id": False,
+        "use_spp": False,
+        "can_print_label": False,
+        "label_value": "",
+        "back_paper_num": 0,
+        "protocol_default": {"type": "tiny"},
+        "default_image_pipeline": {"formats": ["bw1"], "encoding": "tiny_raw"},
+        "stream": {"chunk_size": 180, "delay_ms": 4},
+        "post_print_feed_count": 2,
+        "print_defaults": {
+            "speed": {"image": 10, "text": 8},
+            "energy": {
+                "image": {"low": 5000, "middle": 5000, "high": 5000},
+                "text": {"low": 8000, "middle": 8000, "high": 8000},
+            },
+        },
+        "paper_presets": [
+            {
+                "key": "default",
+                "label": "Default",
+                "paper_width_px": 384,
+                "print_width_px": 384,
+                "render_width_px": 384,
+            }
+        ],
+    }
+
+
 class CatalogAuditTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -48,56 +83,8 @@ class CatalogAuditTests(unittest.TestCase):
 
     def test_catalog_audit_detects_shadowed_model(self) -> None:
         profiles = [
-            {
-                "profile_key": "base",
-                "size": 1,
-                "paper_size": 1,
-                "print_size": 384,
-                "one_length": 8,
-                "dev_dpi": 203,
-                "ble_mtu_request": 23,
-                "has_id": False,
-                "use_spp": False,
-                "can_print_label": False,
-                "label_value": "",
-                "back_paper_num": 0,
-                "protocol_default": {"type": "tiny"},
-                "default_image_pipeline": {"formats": ["bw1"], "encoding": "tiny_raw"},
-                "stream": {"chunk_size": 180, "delay_ms": 4},
-                "post_print_feed_count": 2,
-                "print_defaults": {
-                    "speed": {"image": 10, "text": 8},
-                    "energy": {
-                        "image": {"low": 5000, "middle": 5000, "high": 5000},
-                        "text": {"low": 8000, "middle": 8000, "high": 8000},
-                    },
-                },
-            },
-            {
-                "profile_key": "specific_profile",
-                "size": 1,
-                "paper_size": 1,
-                "print_size": 384,
-                "one_length": 8,
-                "dev_dpi": 203,
-                "ble_mtu_request": 23,
-                "has_id": False,
-                "use_spp": False,
-                "can_print_label": False,
-                "label_value": "",
-                "back_paper_num": 0,
-                "protocol_default": {"type": "tiny"},
-                "default_image_pipeline": {"formats": ["bw1"], "encoding": "tiny_raw"},
-                "stream": {"chunk_size": 180, "delay_ms": 4},
-                "post_print_feed_count": 2,
-                "print_defaults": {
-                    "speed": {"image": 10, "text": 8},
-                    "energy": {
-                        "image": {"low": 5000, "middle": 5000, "high": 5000},
-                        "text": {"low": 8000, "middle": 8000, "high": 8000},
-                    },
-                },
-            },
+            _profile_payload("base"),
+            _profile_payload("specific_profile"),
         ]
         models = [
             {
@@ -132,33 +119,7 @@ class CatalogAuditTests(unittest.TestCase):
         )
 
     def test_catalog_audit_detects_mergeable_model_body(self) -> None:
-        profiles = [
-            {
-                "profile_key": "base",
-                "size": 1,
-                "paper_size": 1,
-                "print_size": 384,
-                "one_length": 8,
-                "dev_dpi": 203,
-                "ble_mtu_request": 23,
-                "has_id": False,
-                "use_spp": False,
-                "can_print_label": False,
-                "label_value": "",
-                "back_paper_num": 0,
-                "protocol_default": {"type": "tiny"},
-                "default_image_pipeline": {"formats": ["bw1"], "encoding": "tiny_raw"},
-                "stream": {"chunk_size": 180, "delay_ms": 4},
-                "post_print_feed_count": 2,
-                "print_defaults": {
-                    "speed": {"image": 10, "text": 8},
-                    "energy": {
-                        "image": {"low": 5000, "middle": 5000, "high": 5000},
-                        "text": {"low": 8000, "middle": 8000, "high": 8000},
-                    },
-                },
-            },
-        ]
+        profiles = [_profile_payload("base")]
         models = [
             {
                 "model_key": "first",
@@ -188,33 +149,7 @@ class CatalogAuditTests(unittest.TestCase):
         self.assertEqual(errors, [{"kind": "mergeable_model_body", "model_keys": ["first", "second"]}])
 
     def test_catalog_audit_detects_unsupported_model_that_is_already_supported(self) -> None:
-        profiles = [
-            {
-                "profile_key": "base",
-                "size": 1,
-                "paper_size": 1,
-                "print_size": 384,
-                "one_length": 8,
-                "dev_dpi": 203,
-                "ble_mtu_request": 23,
-                "has_id": False,
-                "use_spp": False,
-                "can_print_label": False,
-                "label_value": "",
-                "back_paper_num": 0,
-                "protocol_default": {"type": "tiny"},
-                "default_image_pipeline": {"formats": ["bw1"], "encoding": "tiny_raw"},
-                "stream": {"chunk_size": 180, "delay_ms": 4},
-                "post_print_feed_count": 2,
-                "print_defaults": {
-                    "speed": {"image": 10, "text": 8},
-                    "energy": {
-                        "image": {"low": 5000, "middle": 5000, "high": 5000},
-                        "text": {"low": 8000, "middle": 8000, "high": 8000},
-                    },
-                },
-            },
-        ]
+        profiles = [_profile_payload("base")]
         models = [
             {
                 "model_key": "supported",

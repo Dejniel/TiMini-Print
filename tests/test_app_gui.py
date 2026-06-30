@@ -7,8 +7,6 @@ from unittest.mock import patch
 from timiniprint import reporting
 from timiniprint.app.gui import ManualBluetoothSelection, TiMiniPrintGUI
 from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol.family import ProtocolFamily
-from timiniprint.protocol.families import get_protocol_definition
 from timiniprint.transport.bluetooth import BluetoothDiscovery, BluetoothScanResult
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 from timiniprint.update_check import UpdateCheckResult
@@ -36,43 +34,33 @@ class GuiPaperMotionStatusTests(unittest.TestCase):
         self.assertEqual(seen, [reporting.STATUS_IDLE])
 
 
-class GuiPaperModeChoiceTests(unittest.TestCase):
-    def test_paper_mode_choices_are_empty_for_unsupported_family(self) -> None:
+class GuiPaperChoiceTests(unittest.TestCase):
+    def test_paper_choices_use_profile_presets(self) -> None:
         catalog = PrinterCatalog.load()
         device = catalog.device_from_profile("x6h")
 
-        self.assertEqual(TiMiniPrintGUI._paper_mode_choices_for_device(device), ())
+        self.assertEqual(TiMiniPrintGUI._paper_choices_for_device(device), (("Default", "default"),))
 
-    def test_paper_mode_choices_are_exposed_for_luck_normal_a4(self) -> None:
+    def test_paper_choices_are_exposed_for_luck_normal_a4(self) -> None:
         catalog = PrinterCatalog.load()
-        base = catalog.device_from_profile("x6h")
-        device = base.__class__(
-            display_name=base.display_name,
-            profile=base.profile,
-            protocol_family=ProtocolFamily.LUCK_NORMAL_A4,
-            protocol_variant=base.protocol_variant,
-            image_pipeline=get_protocol_definition(ProtocolFamily.LUCK_NORMAL_A4).behavior.default_image_pipeline,
-            runtime_settings=base.runtime_settings,
-            transport_target=base.transport_target,
-            model_key=base.model_key,
-        )
+        device = catalog.device_from_profile("luck_a40")
 
-        labels = [label for label, _mode in TiMiniPrintGUI._paper_mode_choices_for_device(device)]
+        labels = [label for label, _key in TiMiniPrintGUI._paper_choices_for_device(device)]
         self.assertEqual(labels, ["Plain roll", "Tag", "Black tag", "Folder", "Tattoo"])
 
-    def test_paper_mode_choices_follow_qirui_variant_subset(self) -> None:
+    def test_paper_choices_follow_qirui_variant_subset(self) -> None:
         catalog = PrinterCatalog.load()
         device = catalog.detect_device("QIRUI_Q2_1234")
 
         self.assertIsNotNone(device)
-        labels = [label for label, _mode in TiMiniPrintGUI._paper_mode_choices_for_device(device)]
+        labels = [label for label, _key in TiMiniPrintGUI._paper_choices_for_device(device)]
         self.assertEqual(labels, ["Plain roll", "Tag"])
 
-    def test_default_paper_mode_label_uses_profile_default(self) -> None:
+    def test_default_paper_label_uses_profile_default(self) -> None:
         catalog = PrinterCatalog.load()
         device = catalog.device_from_profile("luck_ppa2l")
 
-        self.assertEqual(TiMiniPrintGUI._default_paper_mode_label_for_device(device), "Tag")
+        self.assertEqual(TiMiniPrintGUI._default_paper_label_for_device(device), "Tag")
 
 
 class GuiDeviceListTests(unittest.TestCase):

@@ -89,7 +89,8 @@ class PrintingJobTests(unittest.TestCase):
             builder.build_from_file("missing.txt")
 
     def test_build_from_file_uses_document_renderer_and_build_job(self) -> None:
-        pipeline = PrinterProtocol(self.device).resolve_image_pipeline()
+        device = self.catalog.device_from_key("luck_ppa2l")
+        pipeline = PrinterProtocol(device).resolve_image_pipeline()
         renderer = _FakeDocumentRenderer(
             [
                 _rendered_page(pipeline=pipeline, is_text=False),
@@ -97,8 +98,8 @@ class PrintingJobTests(unittest.TestCase):
             ]
         )
         builder = self.job_mod.PrintJobBuilder(
-            self.device,
-            settings=self.job_mod.PrintSettings(paper_mode=PaperMode.TAG),
+            device,
+            settings=self.job_mod.PrintSettings(paper_preset_key="tag"),
             document_renderer=renderer,
         )
         with tempfile.TemporaryDirectory() as tmp:
