@@ -103,12 +103,6 @@ class GuiPaperChoiceTests(unittest.TestCase):
         labels = [label for label, _key in TiMiniPrintGUI._paper_choices_for_device(device)]
         self.assertEqual(labels, ["Plain roll", "Tag"])
 
-    def test_default_paper_label_uses_profile_default(self) -> None:
-        catalog = PrinterCatalog.load()
-        device = catalog.device_from_profile("luck_ppa2l")
-
-        self.assertEqual(TiMiniPrintGUI._default_paper_label_for_device(device), "Tag")
-
     def test_text_columns_follow_selected_paper_width(self) -> None:
         narrow = PaperPreset(
             key="narrow",

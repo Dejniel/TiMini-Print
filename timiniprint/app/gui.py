@@ -768,13 +768,6 @@ class TiMiniPrintGUI(tk.Tk):
         )
 
     @staticmethod
-    def _default_paper_label_for_device(device) -> str | None:
-        preset = default_paper_preset_for_device(device)
-        if preset is None:
-            return None
-        return preset.label
-
-    @staticmethod
     def _default_paper_key_for_device(device) -> str | None:
         preset = default_paper_preset_for_device(device)
         if preset is None:

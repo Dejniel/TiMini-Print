@@ -217,23 +217,35 @@ class PrinterProfile:
 
     @property
     def default_paper_preset(self) -> PaperPreset:
-        if self.default_paper_preset_key is not None:
-            preset = self.paper_preset(self.default_paper_preset_key)
-            if preset is not None:
-                return preset
-        return self.paper_presets[0]
+        if self.default_paper_preset_key is None:
+            return self.paper_presets[0]
+        preset = self.paper_preset(self.default_paper_preset_key)
+        if preset is None:
+            raise ValueError(
+                f"profile {self.profile_key} default_paper_preset_key "
+                f"{self.default_paper_preset_key} is not defined"
+            )
+        return preset
 
     def paper_preset_for_mode(self, paper_mode: PaperMode | None) -> PaperPreset:
         if paper_mode is None:
             return self.default_paper_preset
-        return next(
-            (
-                preset
-                for preset in self.paper_presets
-                if preset.paper_mode == paper_mode
-            ),
-            self.default_paper_preset,
+        preset = next(
+            (preset for preset in self.paper_presets if preset.paper_mode == paper_mode),
+            None,
         )
+        if preset is None:
+            available = ", ".join(
+                preset.paper_mode.value
+                for preset in self.paper_presets
+                if preset.paper_mode is not None
+            )
+            suffix = f"; available: {available}" if available else ""
+            raise ValueError(
+                f"profile {self.profile_key} does not define paper mode "
+                f"{paper_mode.value}{suffix}"
+            )
+        return preset
 
     @property
     def default_paper_mode(self) -> PaperMode | None:

@@ -27,14 +27,9 @@ def paper_presets_for_device(device: PrinterDevice | None) -> tuple[PaperPreset,
 
 
 def default_paper_preset_for_device(device: PrinterDevice | None) -> PaperPreset | None:
-    presets = paper_presets_for_device(device)
-    if device is None or not presets:
+    if device is None:
         return None
-    if device.profile.default_paper_preset_key is not None:
-        preset = _preset_by_key(presets, device.profile.default_paper_preset_key)
-        if preset is not None:
-            return preset
-    return presets[0]
+    return device.profile.default_paper_preset
 
 
 def resolve_paper(device: PrinterDevice, settings: PrintSettings) -> ResolvedPaper:

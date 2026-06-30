@@ -436,6 +436,17 @@ class ProtocolJobTests(unittest.TestCase):
 
         self.assertNotIn(bytes([0x1F, 0x80, 0x01, 0x20]), job.payload)
 
+    def test_ppa2l_rejects_paper_mode_without_profile_preset(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
+        raster_set = self._raster_set(self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0]))
+
+        with self.assertRaisesRegex(ValueError, "profile luck_ppa2l does not define paper mode tattoo"):
+            PrinterProtocol(device).build_job(
+                raster_set,
+                is_text=False,
+                paper_mode=self.types.PaperMode.TATTOO,
+            )
+
     def test_build_luck_normal_gray_job_uses_gray_bitmap_header(self) -> None:
         raster_set = self._raster_set(
             self._bw_raster([1, 0], width=2),
