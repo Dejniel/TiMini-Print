@@ -1,12 +1,8 @@
 #!/usr/bin/env python3
+import argparse
 import json
 import re
 from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "com.frogtosea.tinyPrint.apk_Decompiler.com" / "sources" / "com" / "Utils" / "PrintModelUtils.java"
-OUT = ROOT / "emx_040256_printer" / "timiniprint" / "data" / "printer_models.json"
-PAPER_OUT = OUT.with_name("printer_paper_presets.json")
 
 CONSTANTS = {
     "OS2WindowsMetricsTable.WEIGHT_CLASS_LIGHT": 300,
@@ -14,6 +10,7 @@ CONSTANTS = {
     "OS2WindowsMetricsTable.WEIGHT_CLASS_BOLD": 700,
     "OS2WindowsMetricsTable.WEIGHT_CLASS_EXTRA_BOLD": 800,
     "OS2WindowsMetricsTable.WEIGHT_CLASS_BLACK": 900,
+    "Constants.CP_MAC_ROMAN": 10000,
     "Shape.MASTER_DPI": 576,
     "BannerConfig.LOOP_TIME": 3000,
     "AccessibilityNodeInfoCompat.EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_MAX_LENGTH": 20000,
@@ -110,18 +107,67 @@ def parse_token(tok: str):
 
 def paper_preset_key(preset: dict) -> str:
     paper_width = preset["paper_width_px"]
-    print_width = preset["print_width_px"]
     render_width = preset["render_width_px"]
-    if paper_width == print_width == render_width:
-        return f"default_{render_width}"
-    key = f"default_render{render_width}_print{print_width}_paper{paper_width}"
-    if preset.get("protocol_left_padding_px"):
-        key += f"_pad{preset['protocol_left_padding_px']}"
+    key = f"default_{render_width}r"
+    if paper_width != render_width or preset.get("left_padding_px"):
+        key += f"_{paper_width}p"
+    if preset.get("left_padding_px"):
+        key += f"_{preset['left_padding_px']}pl"
     return key
 
 
-def main() -> None:
-    text = SOURCE.read_text(encoding="utf-8")
+def source_left_padding_px(model_no: str, add_more_pix_num: int) -> int:
+    if add_more_pix_num >= 0:
+        return add_more_pix_num
+    if model_no in {"X8-L", "X8-W"}:
+        return 40
+    return 64
+
+
+def paper_preset_from_args(args: list[object]) -> dict[str, object]:
+    model_no = str(args[0])
+    size = int(args[2])
+    paper_size = int(args[3])
+    print_size = int(args[4])
+    add_mor_pix, add_more_pix_num = paper_padding_flags_from_args(args)
+
+    preset: dict[str, object] = {
+        "key": "default",
+        "label": "Default",
+        "paper_width_px": max(print_size, paper_size),
+        "render_width_px": paper_size,
+    }
+    if size == 8 and add_mor_pix:
+        left_padding = source_left_padding_px(model_no, add_more_pix_num)
+        preset["paper_width_px"] = paper_size + left_padding
+        preset["left_padding_px"] = left_padding
+    return preset
+
+
+def paper_padding_flags_from_args(args: list[object]) -> tuple[bool, int]:
+    # TinyPrint overloads store addMorPix/addMorePixNum near the constructor tail.
+    # Keep this source-shaped so generated data does not infer padding from widths.
+    rem = args[25:]
+    if _matches(rem, bool, int, int, int, bool, int):
+        return bool(rem[4]), int(rem[5])
+    if _matches(rem, bool, int, int, bool, int):
+        return bool(rem[3]), int(rem[4])
+    if _matches(rem, bool, int, int, bool):
+        return bool(rem[3]), -1
+    if _matches(rem, bool, int, bool, bool):
+        return bool(rem[2]), -1
+    if _matches(rem, int, int, bool, bool):
+        return bool(rem[2]), -1
+    return True, -1
+
+
+def _matches(values: list[object], *types: type) -> bool:
+    if len(values) < len(types):
+        return False
+    return all(type(value) is expected for value, expected in zip(values, types))
+
+
+def generate_models(text: str) -> tuple[list[dict], dict[str, dict]]:
     pattern = re.compile(r"new\s+PrinterModel\.DataBean\(")
     starts = [m.end() for m in pattern.finditer(text)]
     models = []
@@ -134,9 +180,6 @@ def main() -> None:
         if len(args) < 25:
             raise ValueError(f"Unexpected arg count: {len(args)} for {raw_args[:3]}")
 
-        paper_size = int(args[3])
-        print_size = int(args[4])
-        render_to_paper_width = None
         model = {
             "model_no": args[0],
             "model": int(args[1]),
@@ -166,27 +209,28 @@ def main() -> None:
             model["ble_mtu_request"] = 23
 
         # A4XII models are the only ones using the signature that ends with two booleans.
-        if len(args) == 29 and isinstance(args[-1], bool) and isinstance(args[-2], bool):
-            render_to_paper_width = args[-2]
+        if len(args) == 29 and type(args[-1]) is bool and type(args[-2]) is bool:
             model["a4xii"] = args[-1]
-        preset = {
-            "key": "default",
-            "label": "Default",
-            "paper_width_px": paper_size,
-            "print_width_px": print_size,
-            "render_width_px": paper_size if render_to_paper_width is True else print_size,
-        }
-        if render_to_paper_width is True:
-            preset["protocol_left_padding_px"] = 64
+        preset = paper_preset_from_args(args)
         preset_key = paper_preset_key(preset)
         paper_presets[preset_key] = preset
         model["paper_presets"] = [preset_key]
 
         models.append(model)
+    return models, paper_presets
 
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(models, indent=2, ensure_ascii=True), encoding="utf-8")
-    PAPER_OUT.write_text(
+
+def write_outputs(
+    models: list[dict],
+    paper_presets: dict[str, dict],
+    *,
+    models_out: Path,
+    paper_presets_out: Path,
+) -> None:
+    models_out.parent.mkdir(parents=True, exist_ok=True)
+    paper_presets_out.parent.mkdir(parents=True, exist_ok=True)
+    models_out.write_text(json.dumps(models, indent=2, ensure_ascii=True), encoding="utf-8")
+    paper_presets_out.write_text(
         json.dumps(
             {key: paper_presets[key] for key in sorted(paper_presets)},
             indent=2,
@@ -194,8 +238,43 @@ def main() -> None:
         ),
         encoding="utf-8",
     )
-    print(f"Wrote {len(models)} models to {OUT}")
-    print(f"Wrote {len(paper_presets)} paper presets to {PAPER_OUT}")
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Extract TinyPrint model rows from a decompiled PrintModelUtils.java file.",
+    )
+    parser.add_argument(
+        "source",
+        type=Path,
+        help="Path to decompiled com/Utils/PrintModelUtils.java",
+    )
+    parser.add_argument(
+        "--models-out",
+        type=Path,
+        required=True,
+        help="Output JSON path for extracted source model rows.",
+    )
+    parser.add_argument(
+        "--paper-presets-out",
+        type=Path,
+        required=True,
+        help="Output JSON path for extracted source paper presets.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> None:
+    args = parse_args(argv)
+    models, paper_presets = generate_models(args.source.read_text(encoding="utf-8"))
+    write_outputs(
+        models,
+        paper_presets,
+        models_out=args.models_out,
+        paper_presets_out=args.paper_presets_out,
+    )
+    print(f"Wrote {len(models)} models to {args.models_out}")
+    print(f"Wrote {len(paper_presets)} paper presets to {args.paper_presets_out}")
 
 
 if __name__ == "__main__":

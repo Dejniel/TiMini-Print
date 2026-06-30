@@ -48,7 +48,6 @@ def _profile_payload(profile_key: str) -> dict:
                 "key": "default",
                 "label": "Default",
                 "paper_width_px": 384,
-                "print_width_px": 384,
                 "render_width_px": 384,
             }
         ],

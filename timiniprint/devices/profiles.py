@@ -136,18 +136,10 @@ class PaperPreset:
     key: str
     label: str
     paper_width_px: int
-    print_width_px: int
     render_width_px: int
     paper_mode: PaperMode | None = None
-    output_width_px: int | None = None
-    protocol_left_padding_px: int = 0
-    a4_sheet_max_height_px: int | None = None
-    page_width_mm: int | None = None
-    page_height_mm: int | None = None
-    left_margin_px: int | None = None
-    right_padding_px: int | None = None
-    gap_mm: int | None = None
-    alignment: str | None = None
+    left_padding_px: int = 0
+    max_height_px: int | None = None
 
     def __post_init__(self) -> None:
         if not self.key:
@@ -156,22 +148,28 @@ class PaperPreset:
             raise ValueError(f"paper preset {self.key} requires label")
         for field_name in (
             "paper_width_px",
-            "print_width_px",
             "render_width_px",
-            "output_width_px",
-            "protocol_left_padding_px",
-            "a4_sheet_max_height_px",
-            "page_width_mm",
-            "page_height_mm",
-            "left_margin_px",
-            "right_padding_px",
-            "gap_mm",
+            "left_padding_px",
+            "max_height_px",
         ):
             value = getattr(self, field_name)
             if value is not None and value < 0:
                 raise ValueError(f"paper preset {self.key} {field_name} must not be negative")
-        if self.alignment not in (None, "left", "center", "right", "source"):
-            raise ValueError(f"paper preset {self.key} has unsupported alignment {self.alignment!r}")
+        if self.paper_width_px <= 0:
+            raise ValueError(f"paper preset {self.key} paper_width_px must be greater than zero")
+        if self.render_width_px <= 0:
+            raise ValueError(f"paper preset {self.key} render_width_px must be greater than zero")
+        if self.paper_width_px % 8 != 0:
+            raise ValueError(f"paper preset {self.key} paper_width_px must be divisible by 8")
+        if self.paper_width_px < self.render_width_px:
+            raise ValueError(
+                f"paper preset {self.key} paper_width_px must not be smaller than render_width_px"
+            )
+        if self.left_padding_px and self.paper_width_px != self.render_width_px + self.left_padding_px:
+            raise ValueError(
+                f"paper preset {self.key} paper_width_px must equal render_width_px "
+                "plus left_padding_px"
+            )
 
 
 @dataclass(frozen=True)

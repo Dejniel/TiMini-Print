@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImagePipelineConfig
 from ..raster import RasterSet
-from .paper import resolve_paper
+from .paper import apply_paper_layout_to_raster_set, resolve_paper
 from .runtime.base import PreparedRuntimeContext
 from .runtime.factory import runtime_controller_for_device
 from .settings import PrintSettings
@@ -29,6 +29,7 @@ def build_raster_page_job(
     """Build one protocol page from an already prepared raster."""
     effective_settings = settings or PrintSettings()
     paper = resolve_paper(device, effective_settings)
+    raster_set = apply_paper_layout_to_raster_set(raster_set, paper)
     return PrinterProtocol(device).build_job(
         raster_set,
         is_text=is_text,

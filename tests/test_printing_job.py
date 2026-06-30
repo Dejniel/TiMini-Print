@@ -147,7 +147,18 @@ class PrintingJobTests(unittest.TestCase):
         combine_mock.assert_not_called()
 
     def test_build_from_file_applies_debug_row_markers_before_protocol_build(self) -> None:
-        pipeline = PrinterProtocol(self.device).resolve_image_pipeline()
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=16,
+                    render_width_px=16,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        pipeline = PrinterProtocol(device).resolve_image_pipeline()
         raster_set = RasterSet(
             rasters={
                 PixelFormat.BW1: RasterBuffer(
@@ -158,7 +169,7 @@ class PrintingJobTests(unittest.TestCase):
             }
         )
         builder = self.job_mod.PrintJobBuilder(
-            self.device,
+            device,
             settings=self.job_mod.PrintSettings(debug_row_markers_interval=10),
             document_renderer=_FakeDocumentRenderer(
                 [_rendered_page(pipeline=pipeline, raster_set=raster_set)]

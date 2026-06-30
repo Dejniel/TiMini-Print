@@ -66,6 +66,14 @@ class PrintingPaperPresetTests(unittest.TestCase):
         self.assertEqual(paper.key, "narrow")
         self.assertEqual(paper.render_width_px, 128)
 
+    def test_resolve_paper_keeps_source_render_width_when_final_width_is_byte_aligned(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("15p3")
+
+        paper = resolve_paper(device, PrintSettings())
+
+        self.assertEqual(paper.render_width_px, 90)
+        self.assertEqual(paper.paper_width_px, 96)
+
     def test_unknown_paper_preset_key_fails(self) -> None:
         device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
 

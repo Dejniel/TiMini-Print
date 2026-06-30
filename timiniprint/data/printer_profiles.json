@@ -43,7 +43,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_render96_print96_paper90"
+      "default_90r_96p"
     ]
   },
   {
@@ -90,7 +90,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_render96_print96_paper90"
+      "default_90r_96p"
     ]
   },
   {
@@ -137,7 +137,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_render96_print96_paper90"
+      "default_90r_96p"
     ]
   },
   {
@@ -184,7 +184,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -232,8 +232,8 @@
     },
     "a4xii": true,
     "paper_presets": [
-      "plain_render1664_print1664_paper1648",
-      "a4_sheet_render1664_print1664_paper1648"
+      "plain_1648r_1664p",
+      "a4sheet_1648r_1664p"
     ]
   },
   {
@@ -290,8 +290,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384",
-      "tag_384"
+      "plain_384r",
+      "tag_384r"
     ]
   },
   {
@@ -348,8 +348,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_576",
-      "tag_576"
+      "plain_576r",
+      "tag_576r"
     ]
   },
   {
@@ -407,8 +407,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_384",
-      "plain_384"
+      "tag_384r",
+      "plain_384r"
     ]
   },
   {
@@ -466,8 +466,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_576",
-      "plain_576"
+      "tag_576r",
+      "plain_576r"
     ]
   },
   {
@@ -514,7 +514,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -571,11 +571,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -633,11 +633,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -695,11 +695,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -757,11 +757,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render2496_print2496_paper2400",
-      "tag_render2496_print2496_paper2400",
-      "black_tag_render2496_print2496_paper2400",
-      "folder_render2496_print2496_paper2400",
-      "tattoo_render2496_print2496_paper2400"
+      "plain_2496r",
+      "tag_2496r",
+      "blacktag_2496r",
+      "folder_2496r",
+      "tattoo_2496r"
     ]
   },
   {
@@ -819,11 +819,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -881,11 +881,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -943,11 +943,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -1005,11 +1005,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -1067,11 +1067,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -1129,11 +1129,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render2496_print2496_paper2400",
-      "tag_render2496_print2496_paper2400",
-      "black_tag_render2496_print2496_paper2400",
-      "folder_render2496_print2496_paper2400",
-      "tattoo_render2496_print2496_paper2400"
+      "plain_2496r",
+      "tag_2496r",
+      "blacktag_2496r",
+      "folder_2496r",
+      "tattoo_2496r"
     ]
   },
   {
@@ -1191,10 +1191,10 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r"
     ]
   },
   {
@@ -1252,11 +1252,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render2496_print2496_paper2400",
-      "tag_render2496_print2496_paper2400",
-      "black_tag_render2496_print2496_paper2400",
-      "folder_render2496_print2496_paper2400",
-      "tattoo_render2496_print2496_paper2400"
+      "plain_2496r",
+      "tag_2496r",
+      "blacktag_2496r",
+      "folder_2496r",
+      "tattoo_2496r"
     ]
   },
   {
@@ -1314,11 +1314,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render2496_print2496_paper2400",
-      "tag_render2496_print2496_paper2400",
-      "black_tag_render2496_print2496_paper2400",
-      "folder_render2496_print2496_paper2400",
-      "tattoo_render2496_print2496_paper2400"
+      "plain_2496r",
+      "tag_2496r",
+      "blacktag_2496r",
+      "folder_2496r",
+      "tattoo_2496r"
     ]
   },
   {
@@ -1376,8 +1376,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384",
-      "tag_384"
+      "plain_384r",
+      "tag_384r"
     ]
   },
   {
@@ -1435,8 +1435,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_576",
-      "tag_576"
+      "plain_576r",
+      "tag_576r"
     ]
   },
   {
@@ -1494,11 +1494,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -1556,11 +1556,11 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "tag_render1728_print1728_paper1600",
-      "black_tag_render1728_print1728_paper1600",
-      "folder_render1728_print1728_paper1600",
-      "tattoo_render1728_print1728_paper1600"
+      "plain_1728r",
+      "tag_1728r",
+      "blacktag_1728r",
+      "folder_1728r",
+      "tattoo_1728r"
     ]
   },
   {
@@ -1608,8 +1608,8 @@
     },
     "a4xii": true,
     "paper_presets": [
-      "plain_render1664_print1664_paper1648",
-      "a4_sheet_render1664_print1664_paper1648"
+      "plain_1648r_1664p",
+      "a4sheet_1648r_1664p"
     ]
   },
   {
@@ -1657,8 +1657,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad32",
-      "a4_sheet_render1600_print1728_paper1600_pad32"
+      "plain_1600r_1632p_32pl",
+      "a4sheet_1600r_1632p_32pl"
     ]
   },
   {
@@ -1706,8 +1706,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render2496_print2496_paper2400",
-      "a4_sheet_render2496_print2496_paper2400"
+      "plain_2400r_2496p",
+      "a4sheet_2400r_2496p"
     ]
   },
   {
@@ -1753,7 +1753,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -1800,7 +1800,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -1857,7 +1857,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -1904,7 +1904,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -1951,7 +1951,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -1998,7 +1998,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_864"
+      "default_864r"
     ]
   },
   {
@@ -2045,7 +2045,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2092,7 +2092,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_864"
+      "default_864r"
     ]
   },
   {
@@ -2139,7 +2139,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_1280"
+      "default_1280r"
     ]
   },
   {
@@ -2186,7 +2186,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2233,7 +2233,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2280,7 +2280,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2327,7 +2327,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2374,7 +2374,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2421,7 +2421,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2468,7 +2468,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2515,7 +2515,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2562,7 +2562,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2609,7 +2609,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2656,7 +2656,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2703,7 +2703,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2750,7 +2750,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2797,7 +2797,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -2845,8 +2845,57 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "a4_sheet_render1728_print1728_paper1600"
+      "plain_1600r_1728p",
+      "a4sheet_1600r_1728p"
+    ]
+  },
+  {
+    "profile_key": "pr88",
+    "size": 8,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "tiny_rle"
+    },
+    "stream": {
+      "chunk_size": 512,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 30,
+        "text": 22
+      },
+      "energy": {
+        "image": {
+          "low": 5000,
+          "middle": 3500,
+          "high": 4000
+        },
+        "text": {
+          "low": 4500,
+          "middle": 4500,
+          "high": 4500
+        }
+      }
+    },
+    "a4xii": false,
+    "paper_presets": [
+      "plain_1600r_1664p_64pl",
+      "a4sheet_1600r_1664p_64pl"
     ]
   },
   {
@@ -2894,8 +2943,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad64",
-      "a4_sheet_render1600_print1728_paper1600_pad64"
+      "plain_1600r_1664p_64pl",
+      "a4sheet_1600r_1664p_64pl"
     ]
   },
   {
@@ -2943,8 +2992,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1728_print1728_paper1600",
-      "a4_sheet_render1728_print1728_paper1600"
+      "plain_1600r_1728p",
+      "a4sheet_1600r_1728p"
     ]
   },
   {
@@ -2991,7 +3040,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -3039,7 +3088,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3087,8 +3136,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad64",
-      "a4_sheet_render1600_print1728_paper1600_pad64"
+      "plain_1600r_1664p_64pl",
+      "a4sheet_1600r_1664p_64pl"
     ]
   },
   {
@@ -3135,7 +3184,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_render96_print96_paper90"
+      "default_90r_96p"
     ]
   },
   {
@@ -3182,7 +3231,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3230,7 +3279,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3278,7 +3327,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3325,7 +3374,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3372,7 +3421,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -3420,7 +3469,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3468,7 +3517,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3516,7 +3565,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -3564,7 +3613,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3611,7 +3660,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3658,7 +3707,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3706,8 +3755,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad32",
-      "a4_sheet_render1600_print1728_paper1600_pad32"
+      "plain_1600r_1632p_32pl",
+      "a4sheet_1600r_1632p_32pl"
     ]
   },
   {
@@ -3752,7 +3801,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3797,7 +3846,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -3854,7 +3903,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3901,7 +3950,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -3949,8 +3998,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad24",
-      "a4_sheet_render1600_print1728_paper1600_pad24"
+      "plain_1600r_1624p_24pl",
+      "a4sheet_1600r_1624p_24pl"
     ]
   },
   {
@@ -3997,7 +4046,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -4044,7 +4093,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4091,7 +4140,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4138,7 +4187,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4185,7 +4234,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -4232,7 +4281,56 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
+    ]
+  },
+  {
+    "profile_key": "zpa4z1",
+    "size": 8,
+    "one_length": 8,
+    "dev_dpi": 200,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "protocol_default": {
+      "type": "tiny",
+      "packets_type": "line_eight"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "tiny_rle"
+    },
+    "stream": {
+      "chunk_size": 512,
+      "delay_ms": 4
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 40,
+        "text": 30
+      },
+      "energy": {
+        "image": {
+          "low": 27000,
+          "middle": 27000,
+          "high": 27000
+        },
+        "text": {
+          "low": 30000,
+          "middle": 30000,
+          "high": 30000
+        }
+      }
+    },
+    "a4xii": false,
+    "paper_presets": [
+      "plain_1600r_1664p_64pl",
+      "a4sheet_1600r_1664p_64pl"
     ]
   },
   {
@@ -4280,8 +4378,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad32",
-      "a4_sheet_render1600_print1728_paper1600_pad32"
+      "plain_1600r_1632p_32pl",
+      "a4sheet_1600r_1632p_32pl"
     ]
   },
   {
@@ -4329,8 +4427,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render2400_print2592_paper2400_pad48",
-      "a4_sheet_render2400_print2592_paper2400_pad48"
+      "plain_2400r_2448p_48pl",
+      "a4sheet_2400r_2448p_48pl"
     ]
   },
   {
@@ -4378,8 +4476,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad32",
-      "a4_sheet_render1600_print1728_paper1600_pad32"
+      "plain_1600r_1632p_32pl",
+      "a4sheet_1600r_1632p_32pl"
     ]
   },
   {
@@ -4426,7 +4524,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4474,7 +4572,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4521,7 +4619,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4568,7 +4666,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4615,7 +4713,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_render800_print800_paper864"
+      "default_864r"
     ]
   },
   {
@@ -4662,7 +4760,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4719,7 +4817,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4910,7 +5008,7 @@
       }
     ],
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -4955,7 +5053,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5002,7 +5100,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -5049,7 +5147,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5096,7 +5194,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5143,7 +5241,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5190,7 +5288,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5237,7 +5335,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5284,7 +5382,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5331,7 +5429,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5378,7 +5476,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5426,8 +5524,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad64",
-      "a4_sheet_render1600_print1728_paper1600_pad64"
+      "plain_1600r_1664p_64pl",
+      "a4sheet_1600r_1664p_64pl"
     ]
   },
   {
@@ -5475,8 +5573,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render1600_print1728_paper1600_pad32",
-      "a4_sheet_render1600_print1728_paper1600_pad32_a4h2460"
+      "plain_1600r_1632p_32pl",
+      "a4sheet_1600r_1632p_32pl_2460mh"
     ]
   },
   {
@@ -5524,7 +5622,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5572,7 +5670,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_576"
+      "default_576r"
     ]
   },
   {
@@ -5615,7 +5713,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5663,7 +5761,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384"
+      "default_384r"
     ]
   },
   {
@@ -5711,8 +5809,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_render2400_print2496_paper2400_pad36",
-      "a4_sheet_render2400_print2496_paper2400_pad36"
+      "plain_2400r_2496p",
+      "a4sheet_2400r_2496p"
     ]
   },
   {
@@ -5772,8 +5870,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_384",
-      "plain_384"
+      "tag_384r",
+      "plain_384r"
     ]
   },
   {
@@ -5833,8 +5931,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_384",
-      "plain_384"
+      "tag_384r",
+      "plain_384r"
     ]
   },
   {
@@ -5890,9 +5988,9 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_384",
-      "plain_384",
-      "black_tag_384"
+      "tag_384r",
+      "plain_384r",
+      "blacktag_384r"
     ]
   },
   {
@@ -5948,7 +6046,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_96"
+      "default_96r"
     ]
   },
   {
@@ -6004,7 +6102,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_96"
+      "default_96r"
     ]
   },
   {
@@ -6060,7 +6158,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384"
+      "plain_384r"
     ]
   },
   {
@@ -6116,7 +6214,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384"
+      "plain_384r"
     ]
   },
   {
@@ -6172,7 +6270,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384"
+      "plain_384r"
     ]
   },
   {
@@ -6228,7 +6326,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384"
+      "plain_384r"
     ]
   },
   {
@@ -6284,7 +6382,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384"
+      "plain_384r"
     ]
   },
   {
@@ -6340,7 +6438,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_624"
+      "plain_624r"
     ]
   },
   {
@@ -6400,9 +6498,9 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_384",
-      "plain_384",
-      "black_tag_384"
+      "tag_384r",
+      "plain_384r",
+      "blacktag_384r"
     ]
   },
   {
@@ -6462,9 +6560,9 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_576",
-      "plain_576",
-      "black_tag_576"
+      "tag_576r",
+      "plain_576r",
+      "blacktag_576r"
     ]
   },
   {
@@ -6508,7 +6606,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_384"
+      "tag_384r"
     ]
   }
 ]

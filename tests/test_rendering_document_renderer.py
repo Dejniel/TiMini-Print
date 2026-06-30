@@ -83,6 +83,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
                     self.device.profile.default_paper_preset,
                     key="narrow",
                     label="Narrow roll",
+                    paper_width_px=128,
                     render_width_px=128,
                 ),
             ),
@@ -102,7 +103,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(preview.width, 128)
         self.assertEqual(rendered.raster_set.width, 128)
 
-    def test_paper_preset_can_place_content_on_output_width(self) -> None:
+    def test_paper_preset_centers_render_width_on_full_paper_width(self) -> None:
         renderer = DocumentRenderer(
             image_loader=lambda _path: _test_image(),
         )
@@ -113,9 +114,8 @@ class RenderingDocumentRendererTests(unittest.TestCase):
                     self.device.profile.default_paper_preset,
                     key="narrow",
                     label="Narrow on full roll",
+                    paper_width_px=384,
                     render_width_px=128,
-                    output_width_px=384,
-                    left_margin_px=64,
                 ),
             ),
             default_paper_preset_key="narrow",
@@ -130,15 +130,47 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         preview = renderer.preview_page(plan, plan.pages[0], device, settings)
         rendered = renderer.print_page(plan, plan.pages[0], device, settings)
-        image = Image.open(io.BytesIO(preview.png)).convert("L")
+        preview_image = Image.open(io.BytesIO(preview.png))
 
         self.assertEqual(preview.width, 384)
         self.assertEqual(rendered.raster_set.width, 384)
-        self.assertEqual(image.getpixel((0, 0)), 255)
-        self.assertEqual(image.getpixel((63, 0)), 255)
-        self.assertEqual(image.getpixel((64, 0)), 0)
-        self.assertEqual(image.getpixel((191, 0)), 0)
-        self.assertEqual(image.getpixel((192, 0)), 255)
+        self.assertEqual(preview_image.getpixel((0, 0)), 255)
+        self.assertEqual(preview_image.getpixel((127, 0)), 255)
+        self.assertEqual(preview_image.getpixel((128, 0)), 0)
+        self.assertEqual(preview_image.getpixel((255, 0)), 0)
+        self.assertEqual(preview_image.getpixel((256, 0)), 255)
+
+    def test_paper_preset_left_padding_stays_protocol_side(self) -> None:
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image(),
+        )
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    key="narrow",
+                    label="Narrow with protocol padding",
+                    paper_width_px=192,
+                    render_width_px=128,
+                    left_padding_px=64,
+                ),
+            ),
+            default_paper_preset_key="narrow",
+        )
+        device = replace(self.device, profile=profile)
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], device, settings)
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+
+        self.assertEqual(preview.width, 128)
+        self.assertEqual(rendered.raster_set.width, 128)
 
     def test_print_render_uses_runtime_capabilities(self) -> None:
         image_renderer = _RecordingImageRenderer()

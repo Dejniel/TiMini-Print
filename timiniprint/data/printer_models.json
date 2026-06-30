@@ -1362,7 +1362,7 @@
   },
   {
     "model_key": "zpa4z1",
-    "profile_key": "pr89",
+    "profile_key": "zpa4z1",
     "detections": [
       {
         "name": "ZPA4Z1",
@@ -1371,7 +1371,16 @@
             "ZPA4Z1"
           ]
         }
-      },
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "pr89",
+    "profile_key": "pr89",
+    "detections": [
       {
         "name": "ZP801",
         "detection": {
@@ -2061,7 +2070,16 @@
             "XW005"
           ]
         }
-      },
+      }
+    ],
+    "origin_app_packages": [
+      "com.frogtosea.tinyPrint"
+    ]
+  },
+  {
+    "model_key": "pr88",
+    "profile_key": "pr88",
+    "detections": [
       {
         "name": "PR88",
         "detection": {

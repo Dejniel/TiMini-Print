@@ -29,11 +29,14 @@ It carries the resolved:
 
 A `PrinterDevice` is the one object that both protocol code and transport code agree on.
 
-When rendering your own raster data, use a resolved paper preset as the target
-width. `device.profile.width` is only a shortcut for the default paper preset's
-`render_width_px`. Do not assume the rendered width is identical to the source
-`print_width_px`; some TinyPrint variants render to the physical paper width
-and add protocol-level padding when building the job.
+When rendering your own raster data, start from the resolved paper preset.
+`device.profile.width` is only a shortcut for the default paper preset's
+`render_width_px`. High-level file printing renders to `render_width_px`, and
+`build_raster_job()` expects the same input width. If the preset has a wider
+`paper_width_px` and no `left_padding_px`, the printing layer centers that image
+or raster on a white canvas before building the protocol job. If `left_padding_px`
+is set, the protocol builder adds that padding instead and the input raster stays
+at `render_width_px`.
 
 For high-level file printing, use `PrintSettings(paper_preset_key=...)` to
 select loaded paper. Every profile references at least one paper preset from

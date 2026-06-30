@@ -208,11 +208,22 @@ class DocumentRenderer:
         device: PrinterDevice,
         settings: PrintSettings,
     ) -> Page:
+        paper = resolve_paper(device, settings)
         with self._open_source(plan.document, plan.kind, device, settings) as source:
             if page.index < 0 or page.index >= source.page_count:
                 raise IndexError(f"Document page out of range: {page.number}")
-            paper = resolve_paper(device, settings)
             return self._apply_paper_layout(source.page(page.index), paper)
+
+    def _apply_paper_layout(self, page: Page, paper: ResolvedPaper) -> Page:
+        if paper.left_padding_px or paper.paper_width_px <= page.image.width:
+            return page
+        canvas = Image.new(
+            page.image.mode,
+            (paper.paper_width_px, page.image.height),
+            _white_for_mode(page.image.mode),
+        )
+        canvas.paste(page.image, ((paper.paper_width_px - page.image.width) // 2, 0))
+        return Page(canvas, dither=page.dither, is_text=page.is_text)
 
     def _open_source(
         self,
@@ -247,35 +258,6 @@ class DocumentRenderer:
                 rotate_90_clockwise=settings.rotate_90_clockwise,
             ).open(document.source, width)
         raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
-
-    @staticmethod
-    def _apply_paper_layout(page: Page, paper: ResolvedPaper) -> Page:
-        left_padding = paper.left_margin_px or 0
-        right_padding = paper.right_padding_px or 0
-        target_width = paper.output_width_px
-        if target_width is None:
-            target_width = page.image.width + left_padding + right_padding
-        else:
-            target_width = max(target_width, page.image.width + left_padding + right_padding)
-        if target_width == page.image.width and left_padding == 0 and right_padding == 0:
-            return page
-
-        available_padding = target_width - page.image.width
-        if paper.alignment == "right":
-            left = available_padding - right_padding
-        elif paper.alignment == "center":
-            left = available_padding // 2
-        else:
-            left = left_padding
-        left = max(0, min(available_padding, left))
-
-        canvas = Image.new(page.image.mode, (target_width, page.image.height), "white")
-        canvas.paste(page.image, (left, 0))
-        return Page(
-            image=canvas,
-            dither=page.dither,
-            is_text=page.is_text,
-        )
 
     def _render_options(
         self,
@@ -316,3 +298,13 @@ def _text_document(text: str) -> RenderDocument:
 def _load_text(path: str) -> str:
     with open(path, "r", encoding="utf-8-sig", errors="replace") as handle:
         return handle.read()
+
+
+def _white_for_mode(mode: str) -> str | int | tuple[int, ...]:
+    if mode == "1":
+        return 1
+    if mode == "L":
+        return 255
+    if mode == "RGBA":
+        return (255, 255, 255, 255)
+    return "white"

@@ -58,7 +58,6 @@ def _profile_payload(profile_key: str = "demo", *, speed: dict | None = None) ->
                 "key": "default",
                 "label": "Default",
                 "paper_width_px": 384,
-                "print_width_px": 384,
                 "render_width_px": 384,
             }
         ],
@@ -310,8 +309,8 @@ class DevicesModelsTests(unittest.TestCase):
     def test_tinyprint_overlapping_model_no_uses_most_specific_detection(self) -> None:
         expectations = {
             "X8-1234": ("x8", "X8"),
-            "X8-L-1234": ("zpa4z1", "X8-L"),
-            "X8-W-1234": ("zpa4z1", "X8-W"),
+            "X8-L-1234": ("pr89", "X8-L"),
+            "X8-W-1234": ("pr89", "X8-W"),
             "X18-1234": ("pocket_printer", "X18"),
             "XC9-FL01-1234": ("pocket_printer", "XC9-FL01"),
         }
@@ -378,7 +377,6 @@ class DevicesModelsTests(unittest.TestCase):
                 "key": "plain",
                 "label": "Plain roll",
                 "paper_width_px": 384,
-                "print_width_px": 384,
                 "render_width_px": 384,
                 "paper_mode": "plain",
             },
@@ -386,7 +384,6 @@ class DevicesModelsTests(unittest.TestCase):
                 "key": "tag",
                 "label": "Tag",
                 "paper_width_px": 384,
-                "print_width_px": 384,
                 "render_width_px": 384,
                 "paper_mode": "tag",
             },
@@ -588,7 +585,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(dl_x7pro.profile_key, "dl_x7pro")
         self.assertEqual(dl_x7pro.protocol_family, ProtocolFamily.TINY)
         self.assertEqual(dl_x7pro.profile.width, 1280)
-        self.assertEqual(dl_x7pro.profile.default_paper_preset.print_width_px, 1280)
+        self.assertEqual(dl_x7pro.profile.default_paper_preset.paper_width_px, 1280)
         self.assertEqual(dl_x7pro.profile.dev_dpi, 300)
 
         p4 = self.catalog.detect_device("P4-1234")
@@ -596,8 +593,8 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(p4.profile_key, "p4")
         self.assertEqual(p4.protocol_family, ProtocolFamily.TINY)
         self.assertEqual(p4.protocol_variant, "line_eight")
-        self.assertEqual(p4.profile.default_paper_preset.paper_width_px, 1600)
-        self.assertEqual(p4.profile.default_paper_preset.print_width_px, 1728)
+        self.assertEqual(p4.profile.default_paper_preset.paper_width_px, 1624)
+        self.assertEqual(p4.profile.default_paper_preset.render_width_px, 1600)
         self.assertEqual(p4.profile.width, 1600)
 
     def test_tiny_profiles_keep_source_defaults(self) -> None:
@@ -616,10 +613,18 @@ class DevicesModelsTests(unittest.TestCase):
         label_printer = self.catalog.require_profile("label_printer")
         self.assertEqual(label_printer.energy.image.middle, 1400)
         self.assertEqual(label_printer.energy.text.middle, 1400)
+        self.assertEqual(label_printer.default_paper_preset.render_width_px, 90)
+        self.assertEqual(label_printer.default_paper_preset.paper_width_px, 96)
 
         tiny_15p3 = self.catalog.require_profile("15p3")
         self.assertEqual(tiny_15p3.energy.image.middle, 5000)
         self.assertEqual(tiny_15p3.energy.text.middle, 8000)
+        self.assertEqual(tiny_15p3.default_paper_preset.render_width_px, 90)
+        self.assertEqual(tiny_15p3.default_paper_preset.paper_width_px, 96)
+
+        shipping = self.catalog.require_profile("shipping_printer")
+        self.assertEqual(shipping.default_paper_preset.render_width_px, 864)
+        self.assertEqual(shipping.default_paper_preset.paper_width_px, 864)
 
         self.assertEqual(self.catalog.require_profile("gt08").energy.image.low, 5000)
         self.assertEqual(self.catalog.require_profile("gt09").energy.image.low, 5000)
@@ -651,15 +656,13 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x9.profile_key, "x9")
         self.assertEqual(x9.protocol_variant, "line_eight")
         self.assertEqual(x9.profile.width, 1600)
-        plain_preset = x9.profile.paper_preset("plain")
-        a4_preset = x9.profile.paper_preset("a4_sheet")
-        self.assertIsNotNone(plain_preset)
-        self.assertIsNotNone(a4_preset)
-        assert plain_preset is not None
-        assert a4_preset is not None
-        self.assertEqual(plain_preset.protocol_left_padding_px, 32)
-        self.assertEqual(a4_preset.protocol_left_padding_px, 32)
-        self.assertEqual(a4_preset.a4_sheet_max_height_px, 2460)
+        plain_preset = x9.profile.paper_preset_for_mode(PaperMode.PLAIN)
+        a4_preset = x9.profile.paper_preset_for_mode(PaperMode.A4_SHEET)
+        self.assertEqual(plain_preset.left_padding_px, 32)
+        self.assertEqual(plain_preset.paper_width_px, 1632)
+        self.assertEqual(plain_preset.render_width_px, 1600)
+        self.assertEqual(a4_preset.left_padding_px, 32)
+        self.assertEqual(a4_preset.max_height_px, 2460)
         self.assertEqual(
             PrinterProtocol(x9).supported_paper_modes(),
             (PaperMode.PLAIN, PaperMode.A4_SHEET),
@@ -674,6 +677,48 @@ class DevicesModelsTests(unittest.TestCase):
             PrinterProtocol(jxm800).supported_paper_modes(),
             (PaperMode.PLAIN, PaperMode.A4_SHEET),
         )
+        self.assertEqual(jxm800.profile.default_paper_preset.left_padding_px, 64)
+        self.assertEqual(jxm800.profile.default_paper_preset.paper_width_px, 1664)
+
+        gt08 = self.catalog.detect_device("GT08-1234")
+        self.assertIsNotNone(gt08)
+        self.assertEqual(gt08.profile_key, "gt08")
+        self.assertEqual(gt08.profile.default_paper_preset.left_padding_px, 0)
+        self.assertEqual(gt08.profile.default_paper_preset.render_width_px, 1600)
+        self.assertEqual(gt08.profile.default_paper_preset.paper_width_px, 1728)
+
+        pr88 = self.catalog.detect_device("PR88-1234")
+        self.assertIsNotNone(pr88)
+        self.assertEqual(pr88.profile_key, "pr88")
+        self.assertEqual(pr88.profile.default_paper_preset.left_padding_px, 64)
+        self.assertEqual(pr88.profile.default_paper_preset.render_width_px, 1600)
+        self.assertEqual(pr88.profile.default_paper_preset.paper_width_px, 1664)
+
+        pr89 = self.catalog.detect_device("PR89-1234")
+        self.assertIsNotNone(pr89)
+        self.assertEqual(pr89.profile_key, "pr89")
+        self.assertEqual(pr89.profile.default_paper_preset.left_padding_px, 32)
+        self.assertEqual(pr89.profile.default_paper_preset.render_width_px, 1600)
+        self.assertEqual(pr89.profile.default_paper_preset.paper_width_px, 1632)
+
+        x8_l = self.catalog.detect_device("X8-L-1234")
+        self.assertIsNotNone(x8_l)
+        self.assertEqual(x8_l.profile_key, "pr89")
+        self.assertEqual(x8_l.profile.default_paper_preset.left_padding_px, 32)
+
+        zpa4z1 = self.catalog.detect_device("ZPA4Z1-1234")
+        self.assertIsNotNone(zpa4z1)
+        self.assertEqual(zpa4z1.profile_key, "zpa4z1")
+        self.assertEqual(zpa4z1.profile.default_paper_preset.left_padding_px, 64)
+        self.assertEqual(zpa4z1.profile.default_paper_preset.render_width_px, 1600)
+        self.assertEqual(zpa4z1.profile.default_paper_preset.paper_width_px, 1664)
+
+        zp802 = self.catalog.detect_device("ZP802-1234")
+        self.assertIsNotNone(zp802)
+        self.assertEqual(zp802.profile_key, "zp802")
+        self.assertEqual(zp802.profile.default_paper_preset.left_padding_px, 0)
+        self.assertEqual(zp802.profile.default_paper_preset.render_width_px, 2400)
+        self.assertEqual(zp802.profile.default_paper_preset.paper_width_px, 2496)
 
         ly10 = self.catalog.detect_device("LY10-1234")
         self.assertIsNotNone(ly10)

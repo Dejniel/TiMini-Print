@@ -3,6 +3,7 @@ from __future__ import annotations
 import subprocess
 import sys
 import unittest
+from dataclasses import replace
 from unittest.mock import patch
 
 from timiniprint.devices import PrinterCatalog
@@ -56,6 +57,63 @@ class RasterJobTests(unittest.TestCase):
         self.assertEqual(build_job_mock.call_args.kwargs["feed_padding"], 7)
         self.assertEqual(build_job_mock.call_args.kwargs["blackening"], 5)
         self.assertFalse(build_job_mock.call_args.kwargs["is_text"])
+
+    def test_build_raster_job_centers_raw_raster_on_wider_paper(self) -> None:
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=16,
+                    render_width_px=8,
+                    left_padding_px=0,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        raster = RasterSet.from_single(
+            RasterBuffer(
+                pixels=[1] * 8,
+                width=8,
+                pixel_format=PixelFormat.BW1,
+            )
+        )
+
+        with patch(
+            "timiniprint.protocol.job._build_job_model_from_raster_set",
+            return_value=(b"C", ()),
+        ) as build_job_mock:
+            job = build_raster_job(device, raster, is_text=False)
+
+        raster_set = build_job_mock.call_args.kwargs["raster_set"]
+        bw = raster_set.require(PixelFormat.BW1)
+        self.assertEqual(job.payload, b"C")
+        self.assertEqual(bw.width, 16)
+        self.assertEqual(list(bw.pixels), [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0])
+
+    def test_build_raster_job_keeps_protocol_left_padding_out_of_raster(self) -> None:
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=16,
+                    render_width_px=8,
+                    left_padding_px=8,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+
+        with patch(
+            "timiniprint.protocol.job._build_job_model_from_raster_set",
+            return_value=(b"D", ()),
+        ) as build_job_mock:
+            job = build_raster_job(device, self.raster, is_text=False)
+
+        raster_set = build_job_mock.call_args.kwargs["raster_set"]
+        self.assertEqual(job.payload, b"D")
+        self.assertEqual(raster_set.width, 8)
 
     def test_raster_job_import_does_not_load_rendering_layer(self) -> None:
         script = """

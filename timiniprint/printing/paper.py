@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from ..devices.device import PrinterDevice
 from ..devices.profiles import PaperPreset
 from ..protocol.types import PaperMode
+from ..raster import PixelFormat, RasterBuffer, RasterSet
 from .settings import PrintSettings
 
 
@@ -14,17 +15,9 @@ class ResolvedPaper:
     label: str
     paper_mode: PaperMode | None
     paper_width_px: int
-    print_width_px: int
     render_width_px: int
-    output_width_px: int | None = None
-    protocol_left_padding_px: int = 0
-    a4_sheet_max_height_px: int | None = None
-    page_width_mm: int | None = None
-    page_height_mm: int | None = None
-    left_margin_px: int | None = None
-    right_padding_px: int | None = None
-    gap_mm: int | None = None
-    alignment: str | None = None
+    left_padding_px: int = 0
+    max_height_px: int | None = None
 
 
 def paper_presets_for_device(device: PrinterDevice | None) -> tuple[PaperPreset, ...]:
@@ -46,28 +39,14 @@ def default_paper_preset_for_device(device: PrinterDevice | None) -> PaperPreset
 
 def resolve_paper(device: PrinterDevice, settings: PrintSettings) -> ResolvedPaper:
     preset = _selected_preset(device, settings)
-    render_width = _normalized_width(preset.render_width_px)
-    output_width = (
-        None
-        if preset.output_width_px is None
-        else _normalized_width(preset.output_width_px)
-    )
     return ResolvedPaper(
         key=preset.key,
         label=preset.label,
         paper_mode=preset.paper_mode,
-        paper_width_px=_normalized_width(preset.paper_width_px),
-        print_width_px=_normalized_width(preset.print_width_px),
-        render_width_px=render_width,
-        output_width_px=output_width,
-        protocol_left_padding_px=preset.protocol_left_padding_px,
-        a4_sheet_max_height_px=preset.a4_sheet_max_height_px,
-        page_width_mm=preset.page_width_mm,
-        page_height_mm=preset.page_height_mm,
-        left_margin_px=preset.left_margin_px,
-        right_padding_px=preset.right_padding_px,
-        gap_mm=preset.gap_mm,
-        alignment=preset.alignment,
+        paper_width_px=preset.paper_width_px,
+        render_width_px=preset.render_width_px,
+        left_padding_px=preset.left_padding_px,
+        max_height_px=preset.max_height_px,
     )
 
 
@@ -91,12 +70,43 @@ def _preset_by_key(presets: tuple[PaperPreset, ...], key: str) -> PaperPreset | 
     return next((preset for preset in presets if preset.key == key), None)
 
 
-def _normalized_width(width: int) -> int:
-    return width if width % 8 == 0 else width - (width % 8)
+def apply_paper_layout_to_raster_set(raster_set: RasterSet, paper: ResolvedPaper) -> RasterSet:
+    if paper.left_padding_px or paper.paper_width_px <= raster_set.width:
+        return raster_set
+    left_padding = (paper.paper_width_px - raster_set.width) // 2
+    right_padding = paper.paper_width_px - raster_set.width - left_padding
+    return RasterSet(
+        rasters={
+            pixel_format: _pad_raster_buffer(raster, left_padding, right_padding)
+            for pixel_format, raster in raster_set.rasters.items()
+        }
+    )
+
+
+def _pad_raster_buffer(raster: RasterBuffer, left_padding: int, right_padding: int) -> RasterBuffer:
+    white = _white_pixel_for_format(raster.pixel_format)
+    padded: list[int] = []
+    for row in range(raster.height):
+        start = row * raster.width
+        padded.extend([white] * left_padding)
+        padded.extend(raster.pixels[start : start + raster.width])
+        padded.extend([white] * right_padding)
+    return RasterBuffer(
+        pixels=padded,
+        width=raster.width + left_padding + right_padding,
+        pixel_format=raster.pixel_format,
+    )
+
+
+def _white_pixel_for_format(pixel_format: PixelFormat) -> int:
+    if pixel_format == PixelFormat.GRAY8:
+        return 255
+    return 0
 
 
 __all__ = [
     "ResolvedPaper",
+    "apply_paper_layout_to_raster_set",
     "default_paper_preset_for_device",
     "paper_presets_for_device",
     "resolve_paper",
