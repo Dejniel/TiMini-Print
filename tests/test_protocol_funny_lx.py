@@ -101,7 +101,14 @@ class FunnyLxProtocolTests(unittest.TestCase):
 
     def test_catalog_detects_funny_lx_exact_names(self) -> None:
         catalog = PrinterCatalog.load()
-        for name in ("LX-D01", "LX-D02", "LX-D2"):
+        names = (
+            "LX-D01",
+            "LX-D02",
+            "LX-D2",
+            *(f"LX-D{index}" for index in range(3, 10)),
+            *(f"LX-D0{index}" for index in range(3, 10)),
+        )
+        for name in names:
             with self.subTest(name=name):
                 detected = catalog.detect_device(name)
 

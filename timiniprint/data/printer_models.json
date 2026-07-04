@@ -4874,6 +4874,118 @@
             "LX-D2"
           ]
         }
+      },
+      {
+        "name": "LX-D3",
+        "detection": {
+          "exact_names": [
+            "LX-D3"
+          ]
+        }
+      },
+      {
+        "name": "LX-D4",
+        "detection": {
+          "exact_names": [
+            "LX-D4"
+          ]
+        }
+      },
+      {
+        "name": "LX-D5",
+        "detection": {
+          "exact_names": [
+            "LX-D5"
+          ]
+        }
+      },
+      {
+        "name": "LX-D6",
+        "detection": {
+          "exact_names": [
+            "LX-D6"
+          ]
+        }
+      },
+      {
+        "name": "LX-D7",
+        "detection": {
+          "exact_names": [
+            "LX-D7"
+          ]
+        }
+      },
+      {
+        "name": "LX-D8",
+        "detection": {
+          "exact_names": [
+            "LX-D8"
+          ]
+        }
+      },
+      {
+        "name": "LX-D9",
+        "detection": {
+          "exact_names": [
+            "LX-D9"
+          ]
+        }
+      },
+      {
+        "name": "LX-D03",
+        "detection": {
+          "exact_names": [
+            "LX-D03"
+          ]
+        }
+      },
+      {
+        "name": "LX-D04",
+        "detection": {
+          "exact_names": [
+            "LX-D04"
+          ]
+        }
+      },
+      {
+        "name": "LX-D05",
+        "detection": {
+          "exact_names": [
+            "LX-D05"
+          ]
+        }
+      },
+      {
+        "name": "LX-D06",
+        "detection": {
+          "exact_names": [
+            "LX-D06"
+          ]
+        }
+      },
+      {
+        "name": "LX-D07",
+        "detection": {
+          "exact_names": [
+            "LX-D07"
+          ]
+        }
+      },
+      {
+        "name": "LX-D08",
+        "detection": {
+          "exact_names": [
+            "LX-D08"
+          ]
+        }
+      },
+      {
+        "name": "LX-D09",
+        "detection": {
+          "exact_names": [
+            "LX-D09"
+          ]
+        }
       }
     ],
     "origin_app_packages": [

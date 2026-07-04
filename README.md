@@ -148,7 +148,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - JX001 and clones: JX002, JX003, JX004, JX005, JX006
 - L1 and clones: U2
 - LGM01 and clones: X7HP
-- LX-D01 and clones: LX-D02, LX-D2
+- LX-D01 and clones: LX-D02, LX-D2, LX-D3, LX-D4, LX-D5, LX-D6, LX-D7, LX-D8, LX-D9, LX-D03, LX-D04, LX-D05, LX-D06, LX-D07, LX-D08, LX-D09
 - M02 and clones: Mr.in, Mr.in_M02
 - M02 Pro and clones: M02PRO
 - M02S and clones: Mr.in_M02S
@@ -182,8 +182,9 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 ## Potential future support
 These models or protocol families are not in the supported list yet, but they look implementable with [more support](#we-need-you).
 <!-- BEGIN todo-models -->
-A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, M210, M950, MP300, MXW-A4, P1000, P15, P3, P5100, PM-201, Q02
+A30, B246D, D110_M, DL-T1, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, LX-P01, M210, M950, MP300, MXW-A4, P1000, P15, P3, P5100, PM-201, Q02
 
+- A80 and clones: A80H
 - AL200 and clones: AL2, RPP02N
 - B1 and clones: B1 Pro, M2_H, N1
 - B18 and clones: B18S
@@ -202,6 +203,7 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, 
 - D50 and clones: P50
 - D680 and clones: D680BT
 - D82 and clones: D82S, D83, A10, FICHERO_6181
+- DL-P01 and clones: DL-T01, LX-D05-PRO
 - E50 and clones: E50Pro
 - E600S and clones: E6000, E8000, QT-800
 - E9000 and clones: E93, E9000Pro
@@ -211,6 +213,8 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, 
 - LP100 and clones: LP220, LY100_BLE
 - LP100S and clones: LP220S
 - LT12 and clones: LT-110H
+- LX-D003 and clones: LX-D004, LX-D005, LX-D006, LX-D007, LX-D008, LX-D009
+- LX-D02-TEST and clones: ITW14302, SWS-PT1, AH-M2
 - M02PRE and clones: M02S-H, M02H
 - M02X/L and clones: M02L
 - M03 and clones: M200, M250, M221, M260
@@ -236,6 +240,7 @@ A30, B246D, D110_M, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, 
 - PM-241-BT and clones: PM241, PM 241
 - Q30 and clones: Q31, Q32, Q30S, D31, D32, A10, CNL-D32
 - Q302 and clones: Q580
+- TD-11308 and clones: T02, ZH-P06, LX-D002
 - Y02C and clones: Y02S
 - YINTIBAO and clones: PAPERGO
 <!-- END todo-models -->

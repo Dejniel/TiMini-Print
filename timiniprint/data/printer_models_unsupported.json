@@ -3715,5 +3715,237 @@
         }
       }
     ]
+  },
+  {
+    "model_key": "unsupported_funny_lx_default",
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ],
+    "detections": [
+      {
+        "name": "LX-D02-TEST",
+        "detection": {
+          "exact_names": [
+            "LX-D02-TEST"
+          ]
+        }
+      },
+      {
+        "name": "ITW14302",
+        "detection": {
+          "exact_names": [
+            "ITW14302"
+          ]
+        }
+      },
+      {
+        "name": "SWS-PT1",
+        "detection": {
+          "exact_names": [
+            "SWS-PT1"
+          ]
+        }
+      },
+      {
+        "name": "AH-M2",
+        "detection": {
+          "exact_names": [
+            "AH-M2"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_funny_lx_type1",
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ],
+    "detections": [
+      {
+        "name": "TD-11308",
+        "detection": {
+          "exact_names": [
+            "TD-11308"
+          ]
+        }
+      },
+      {
+        "name": "T02",
+        "detection": {
+          "exact_names": [
+            "T02"
+          ]
+        }
+      },
+      {
+        "name": "ZH-P06",
+        "detection": {
+          "exact_names": [
+            "ZH-P06"
+          ]
+        }
+      },
+      {
+        "name": "LX-D002",
+        "detection": {
+          "exact_names": [
+            "LX-D002"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_funny_lx_zero_padded",
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ],
+    "detections": [
+      {
+        "name": "LX-D003",
+        "detection": {
+          "exact_names": [
+            "LX-D003"
+          ]
+        }
+      },
+      {
+        "name": "LX-D004",
+        "detection": {
+          "exact_names": [
+            "LX-D004"
+          ]
+        }
+      },
+      {
+        "name": "LX-D005",
+        "detection": {
+          "exact_names": [
+            "LX-D005"
+          ]
+        }
+      },
+      {
+        "name": "LX-D006",
+        "detection": {
+          "exact_names": [
+            "LX-D006"
+          ]
+        }
+      },
+      {
+        "name": "LX-D007",
+        "detection": {
+          "exact_names": [
+            "LX-D007"
+          ]
+        }
+      },
+      {
+        "name": "LX-D008",
+        "detection": {
+          "exact_names": [
+            "LX-D008"
+          ]
+        }
+      },
+      {
+        "name": "LX-D009",
+        "detection": {
+          "exact_names": [
+            "LX-D009"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_funny_lx_tb_multiprint",
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ],
+    "detections": [
+      {
+        "name": "DL-P01",
+        "detection": {
+          "exact_names": [
+            "DL-P01"
+          ]
+        }
+      },
+      {
+        "name": "DL-T01",
+        "detection": {
+          "prefixes": [
+            "DL-T01"
+          ]
+        }
+      },
+      {
+        "name": "LX-D05-PRO",
+        "detection": {
+          "prefixes": [
+            "LX-D05-PRO"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_funny_lx_dl_t1",
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ],
+    "detections": [
+      {
+        "name": "DL-T1",
+        "detection": {
+          "exact_names": [
+            "DL-T1"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_funny_lx_p01",
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ],
+    "detections": [
+      {
+        "name": "LX-P01",
+        "detection": {
+          "exact_names": [
+            "LX-P01"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "model_key": "unsupported_funny_m2_a80_spp",
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ],
+    "detections": [
+      {
+        "name": "A80",
+        "detection": {
+          "exact_names": [
+            "A80"
+          ]
+        }
+      },
+      {
+        "name": "A80H",
+        "detection": {
+          "exact_names": [
+            "A80H"
+          ]
+        }
+      }
+    ]
   }
 ]

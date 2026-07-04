@@ -987,6 +987,43 @@ class DevicesModelsTests(unittest.TestCase):
                 ("com.project.aimotech.printmaster",),
             )
 
+    def test_funny_print_td11308_exact_conflict_keeps_source_detection(self) -> None:
+        match = _single_match(self.catalog.detect_model("TD-11308"))
+        suffix_match = _single_match(self.catalog.detect_model("TD-11308-1234"))
+        funny_model = self.catalog.require_unsupported_model("unsupported_funny_lx_type1")
+        funny_td = next(
+            detection
+            for detection in funny_model.detections
+            if detection.name == "TD-11308"
+        )
+
+        self.assertIsInstance(match, UnsupportedModelMatch)
+        assert isinstance(match, UnsupportedModelMatch)
+        self.assertEqual(match.model.model_key, "unsupported_funny_lx_type1")
+        self.assertEqual(funny_td.detection.exact_names, ("TD-11308",))
+        self.assertEqual(funny_td.detection.prefixes, ())
+        self.assertIsInstance(suffix_match, SupportedModelMatch)
+        assert isinstance(suffix_match, SupportedModelMatch)
+        self.assertEqual(suffix_match.model.model_key, "pocket_printer")
+
+    def test_funny_print_unsupported_detection_avoids_route_prefix_overmatch(self) -> None:
+        exact_expectations = {
+            "LX-D002": "unsupported_funny_lx_type1",
+            "DL-T1": "unsupported_funny_lx_dl_t1",
+            "A80": "unsupported_funny_m2_a80_spp",
+            "A80H": "unsupported_funny_m2_a80_spp",
+        }
+        for name, model_key in exact_expectations.items():
+            with self.subTest(name=name):
+                match = _single_match(self.catalog.detect_model(name))
+                self.assertIsInstance(match, UnsupportedModelMatch)
+                assert isinstance(match, UnsupportedModelMatch)
+                self.assertEqual(match.model.model_key, model_key)
+
+        for name in ("LX-D0028", "DL-T10", "A80_BLE", "A80-LE", "A80H_BLE"):
+            with self.subTest(name=name):
+                self.assertEqual(self.catalog.detect_model(name), ())
+
     def test_instaprint_ctp500_aliases_are_supported_source_specific(self) -> None:
         expectations = {
             "CorePrint": "instaprint_ctp500_coreprint",
