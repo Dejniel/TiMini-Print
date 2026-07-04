@@ -126,6 +126,9 @@ It contains:
 `payload` is the stream-only representation.
 `steps` is the named protocol operation plan for families that need request/response control flow during a print job.
 The transport still sees only generic sends and queries; it does not learn family-specific command meaning.
+If a family needs dynamic resend behavior while executing those steps, the runtime
+controller may execute the step plan itself; transport adapters still only expose
+send/query/wait primitives.
 
 ### Connectors
 Connectors handle real I/O.

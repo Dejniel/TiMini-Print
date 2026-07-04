@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 import unittest
 
+from timiniprint.printing.runtime.base import RuntimeController
 from timiniprint.printing.send import send_prepared_job
 from timiniprint.protocol import ProtocolJob, ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
 
@@ -35,6 +36,16 @@ class _Connection:
         self.standard_payloads: list[bytes] = []
         self.sent_jobs: list[ProtocolJob] = []
         self.notification_query_packets: list[bytes] = []
+        self.attached_runtime_controllers: list[RuntimeController] = []
+
+    async def attach_runtime_controller(
+        self,
+        runtime_controller: RuntimeController,
+        *,
+        timeout: float = 1.0,
+    ) -> None:
+        _ = timeout
+        self.attached_runtime_controllers.append(runtime_controller)
 
     def can_query_control_packet(self) -> bool:
         return self.can_query
@@ -131,6 +142,17 @@ class _SendOnlyConnection:
         return None
 
 
+class _RuntimeStepController(RuntimeController):
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def send_protocol_steps(self, session, steps, *, timeout: float) -> bool:
+        _ = steps, timeout
+        self.calls += 1
+        await session.send_standard_payload(b"runtime")
+        return True
+
+
 class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
     async def test_protocol_job_can_be_step_only(self) -> None:
         steps = (
@@ -176,6 +198,21 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(connection.sent_jobs, [])
         self.assertTrue(any("Protocol query finalize" in detail for _short, detail in reporter.debugs))
         self.assertEqual(reporter.warnings, [])
+
+    async def test_send_prepared_job_allows_runtime_controller_to_execute_steps(self) -> None:
+        connection = _Connection()
+        controller = _RuntimeStepController()
+        job = ProtocolJob(
+            steps=(ProtocolStep.send("bitmap", b"B"),),
+            runtime_controller=controller,
+        )
+
+        await send_prepared_job(object(), connection, job, timeout=0.1)
+
+        self.assertEqual(controller.calls, 1)
+        self.assertEqual(connection.attached_runtime_controllers, [controller])
+        self.assertEqual(connection.standard_payloads, [b"runtime"])
+        self.assertEqual(connection.sent_jobs, [])
 
     async def test_send_prepared_job_executes_wait_steps(self) -> None:
         connection = _WaitOnlyConnection()

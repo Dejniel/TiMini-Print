@@ -25,11 +25,15 @@ async def send_prepared_job(
     """Send a prepared protocol job, executing named protocol steps when present."""
     session = RuntimeConnectionSession(device, connection, reporter=reporter)
     sent_via_steps = False
+    controller = job.runtime_controller
 
     if job.steps:
-        if session.can_send_standard_payload():
+        if controller is not None:
+            await session.attach_runtime_controller(controller, timeout=timeout)
+            sent_via_steps = await controller.send_protocol_steps(session, job.steps, timeout=timeout)
+        if not sent_via_steps and session.can_send_standard_payload():
             sent_via_steps = await _send_protocol_steps(session, job.steps, timeout=timeout)
-        else:
+        elif not sent_via_steps:
             session.report_warning(
                 short="Protocol step send unavailable",
                 detail=(
@@ -45,7 +49,6 @@ async def send_prepared_job(
     # (e.g. V5X/MXW01) keep printing for several seconds afterwards. Give the
     # runtime controller a chance to wait for the device to finish before the
     # caller closes the connection, so we don't truncate the output.
-    controller = job.runtime_controller
     if controller is not None:
         await controller.wait_for_completion(session, timeout=timeout)
 

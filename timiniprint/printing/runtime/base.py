@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 from ...protocol.runtime import RuntimePrintCapabilities
+
+if TYPE_CHECKING:
+    from ...protocol import ProtocolStep
 
 
 @dataclass(frozen=True)
@@ -34,6 +37,7 @@ class RuntimeSessionApi(Protocol):
     def can_query_control_packet(self) -> bool: ...
     def can_wait_for_notification(self) -> bool: ...
     def can_send_control_packet_wait_notification(self) -> bool: ...
+    def can_send_standard_payload(self) -> bool: ...
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool: ...
 
@@ -95,6 +99,15 @@ class RuntimeController:
         transport early does not truncate the output.
         """
         return None
+
+    async def send_protocol_steps(
+        self,
+        session: RuntimeSessionApi,
+        steps: tuple["ProtocolStep", ...],
+        *,
+        timeout: float,
+    ) -> bool:
+        return False
 
     async def probe_capabilities(self, session: RuntimeSessionApi, *, timeout: float) -> None:
         return None

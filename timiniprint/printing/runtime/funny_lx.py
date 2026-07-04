@@ -1,13 +1,21 @@
 from __future__ import annotations
 
-import secrets
+from collections import deque
 from collections.abc import Callable
+import secrets
 
 from ...devices.profiles import DetectionNormalizer
 from ...protocol.families.funny_lx.core import challenge_crc
+from ...protocol.steps import (
+    ProtocolReplyExpectation,
+    ProtocolStep,
+    ProtocolStepOperation,
+    reply_matches_expectation,
+)
 from .base import RuntimeController, RuntimeSessionApi
 
 _HANDSHAKE_RANDOM_BYTES = 10
+_MAX_RETRY_REQUESTS = 10
 
 
 class FunnyLxRuntimeController(RuntimeController):
@@ -20,6 +28,7 @@ class FunnyLxRuntimeController(RuntimeController):
         self._bluetooth_address = bluetooth_address
         self._random_bytes_factory = random_bytes_factory or _random_challenge
         self._verified = False
+        self._retry_requests: deque[int] = deque()
 
     def adopt_previous(self, previous: RuntimeController | None) -> None:
         if isinstance(previous, FunnyLxRuntimeController):
@@ -76,6 +85,125 @@ class FunnyLxRuntimeController(RuntimeController):
             f"mtu_payload={mtu_size} mac={mac_bytes.hex(':')} mac_source={mac_source}"
         )
 
+    async def send_protocol_steps(
+        self,
+        session: RuntimeSessionApi,
+        steps: tuple[ProtocolStep, ...],
+        *,
+        timeout: float,
+    ) -> bool:
+        if not any(_is_image_packet(step) for step in steps):
+            return False
+        if not session.can_send_standard_payload() or not session.can_wait_for_notification():
+            return False
+        if any(
+            step.operation is ProtocolStepOperation.QUERY for step in steps
+        ) and not (
+            session.can_query_control_packet()
+            or session.can_send_control_packet_wait_notification()
+        ):
+            return False
+
+        self._retry_requests.clear()
+        index = 0
+        while index < len(steps):
+            step = steps[index]
+            if _is_image_packet(step):
+                image_steps = _image_step_run(steps, index)
+                accepted_step = _next_step(steps, index + len(image_steps))
+                consume_accepted_step = (
+                    accepted_step is not None
+                    and accepted_step.operation is ProtocolStepOperation.WAIT
+                )
+                await self._send_image_steps_with_retry(
+                    session,
+                    image_steps,
+                    accepted_step=accepted_step if consume_accepted_step else None,
+                    timeout=timeout,
+                )
+                index += len(image_steps) + (1 if consume_accepted_step else 0)
+                continue
+            await _execute_step(session, step, timeout=timeout)
+            index += 1
+        return True
+
+    async def _send_image_steps_with_retry(
+        self,
+        session: RuntimeSessionApi,
+        image_steps: tuple[ProtocolStep, ...],
+        *,
+        accepted_step: ProtocolStep | None,
+        timeout: float,
+    ) -> None:
+        _ = timeout
+        image_index = 0
+        retry_count = 0
+        while True:
+            while image_index < len(image_steps) or self._retry_requests:
+                retry_index = self._pop_retry_request()
+                if retry_index is not None:
+                    retry_count, image_index = _apply_retry_request(
+                        session,
+                        retry_index=retry_index,
+                        retry_count=retry_count,
+                        packet_count=len(image_steps),
+                        current_index=image_index,
+                    )
+                    continue
+
+                if image_index >= len(image_steps):
+                    break
+                step = image_steps[image_index]
+                packet_index = _image_packet_index(step.data)
+                session.report_debug(f"Funny LX image send {step.label}: packet={packet_index}")
+                await session.send_standard_payload(step.data)
+                image_index += 1
+
+            if accepted_step is None:
+                return
+            reply = await _wait_for_image_accepted_or_retry(
+                session,
+                accepted_step,
+                timeout=timeout,
+            )
+            retry_index = _retry_index_from_notification(reply or b"")
+            if retry_index is None:
+                if not _reply_matches_for(accepted_step, reply):
+                    session.report_warning(
+                        short=f"Funny LX {accepted_step.label} reply mismatch",
+                        detail=(
+                            f"Expected protocol reply for {accepted_step.label!r}, "
+                            f"got {_hex_preview(reply)}."
+                        ),
+                    )
+                return
+            self._remove_retry_request(retry_index)
+            retry_count, image_index = _apply_retry_request(
+                session,
+                retry_index=retry_index,
+                retry_count=retry_count,
+                packet_count=len(image_steps),
+                current_index=image_index,
+            )
+
+    def _pop_retry_request(self) -> int | None:
+        if not self._retry_requests:
+            return None
+        return self._retry_requests.popleft()
+
+    def _remove_retry_request(self, retry_index: int) -> None:
+        try:
+            self._retry_requests.remove(retry_index)
+        except ValueError:
+            return
+
+    def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
+        retry_index = _retry_index_from_notification(payload)
+        if retry_index is None:
+            return
+        self._retry_requests.append(retry_index)
+        session.report_debug(f"Funny LX retry requested packet={retry_index}")
+
     def debug_snapshot(self) -> dict[str, object]:
         return {
             "verified": self._verified,
@@ -97,3 +225,188 @@ def _mac_bytes_from_status(status: bytes) -> bytes | None:
     if len(status) < 10:
         return None
     return bytes(status[4:10])
+
+
+def _is_image_packet(step: ProtocolStep) -> bool:
+    return (
+        step.operation is ProtocolStepOperation.SEND
+        and len(step.data) >= 3
+        and step.data[0] == 0x55
+    )
+
+
+def _image_step_run(steps: tuple[ProtocolStep, ...], start: int) -> tuple[ProtocolStep, ...]:
+    end = start
+    while end < len(steps) and _is_image_packet(steps[end]):
+        end += 1
+    return steps[start:end]
+
+
+def _next_step(steps: tuple[ProtocolStep, ...], index: int) -> ProtocolStep | None:
+    if index >= len(steps):
+        return None
+    return steps[index]
+
+
+def _image_packet_index(packet: bytes) -> int:
+    return int.from_bytes(packet[1:3], "big")
+
+
+def _retry_index_from_notification(payload: bytes) -> int | None:
+    if len(payload) < 4 or payload[:2] != b"\x5A\x05":
+        return None
+    return int.from_bytes(payload[2:4], "big")
+
+
+def _resume_image_index(requested_index: int, packet_count: int) -> int:
+    if packet_count <= 0:
+        return 0
+    return max(0, min(requested_index - 1, packet_count - 1))
+
+
+def _apply_retry_request(
+    session: RuntimeSessionApi,
+    *,
+    retry_index: int,
+    retry_count: int,
+    packet_count: int,
+    current_index: int,
+) -> tuple[int, int]:
+    if retry_count >= _MAX_RETRY_REQUESTS:
+        session.report_warning(
+            short="Funny LX retry limit exceeded",
+            detail="Printer kept requesting image packet resend; continuing without more rewinds.",
+        )
+        return retry_count, current_index
+    retry_count += 1
+    image_index = _resume_image_index(retry_index, packet_count)
+    session.report_debug(f"Funny LX retry request packet={retry_index} resume={image_index}")
+    return retry_count, image_index
+
+
+async def _execute_step(
+    session: RuntimeSessionApi,
+    step: ProtocolStep,
+    *,
+    timeout: float,
+) -> None:
+    # TODO: This deliberately duplicates part of printing.send's generic step
+    # executor so Funny LX can keep `5A 05` resend policy in runtime, not
+    # transport. If another runtime needs custom step execution, extract a small
+    # shared executor that accepts family hooks instead of growing this copy.
+    if step.operation is ProtocolStepOperation.SEND:
+        session.report_debug(f"Funny LX protocol send {step.label}: {step.data.hex(' ')}")
+        await session.send_standard_payload(step.data)
+        return
+    if step.operation is ProtocolStepOperation.WAIT:
+        reply = await _wait_step(session, step, timeout=timeout)
+    elif step.operation is ProtocolStepOperation.QUERY:
+        reply = await _query_step(session, step, timeout=timeout)
+    else:
+        raise ValueError(f"Unsupported Funny LX protocol step operation: {step.operation.value}")
+    if not _reply_matches_for(step, reply):
+        session.report_warning(
+            short=f"Funny LX {step.label} reply mismatch",
+            detail=f"Expected protocol reply for {step.label!r}, got {_hex_preview(reply)}.",
+        )
+
+
+async def _wait_step(
+    session: RuntimeSessionApi,
+    step: ProtocolStep,
+    *,
+    timeout: float,
+) -> bytes | None:
+    reply_complete = _reply_complete_for(step)
+    if reply_complete is None:
+        return None
+    wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
+    reply = await session.wait_for_notification(
+        step.label,
+        reply_complete,
+        timeout=wait_timeout,
+        required=False,
+    )
+    session.report_debug(f"Funny LX wait {step.label}: rx={_hex_preview(reply)}")
+    return reply
+
+
+async def _wait_for_image_accepted_or_retry(
+    session: RuntimeSessionApi,
+    step: ProtocolStep,
+    *,
+    timeout: float,
+) -> bytes | None:
+    reply_complete = _reply_complete_for(step)
+    if reply_complete is None:
+        return None
+
+    def complete(reply: bytes) -> bool:
+        return _retry_index_from_notification(reply) is not None or reply_complete(reply)
+
+    wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
+    reply = await session.wait_for_notification(
+        step.label,
+        complete,
+        timeout=wait_timeout,
+        required=False,
+    )
+    session.report_debug(f"Funny LX wait {step.label}: rx={_hex_preview(reply)}")
+    return reply
+
+
+async def _query_step(
+    session: RuntimeSessionApi,
+    step: ProtocolStep,
+    *,
+    timeout: float,
+) -> bytes | None:
+    query_timeout = timeout if step.timeout_sec is None else step.timeout_sec
+    reply_complete = _reply_complete_for(step)
+    if session.can_query_control_packet():
+        reply = await session.query_control_packet(
+            step.data,
+            timeout=query_timeout,
+            reply_complete=reply_complete,
+        )
+    elif reply_complete is not None:
+        reply = await session.send_control_packet_wait_notification(
+            step.data,
+            label=step.label,
+            match=reply_complete,
+            timeout=query_timeout,
+            required=False,
+        )
+    else:
+        await session.send_standard_payload(step.data)
+        reply = None
+    session.report_debug(
+        f"Funny LX query {step.label}: tx={step.data.hex(' ')} rx={_hex_preview(reply)}"
+    )
+    return reply
+
+
+def _reply_complete_for(step: ProtocolStep):
+    if step.reply_matcher is not None:
+        return step.reply_matcher.complete
+    if step.expect is ProtocolReplyExpectation.NONE:
+        return None
+    return lambda reply: reply_matches_expectation(step.expect, reply)
+
+
+def _reply_matches_for(step: ProtocolStep, reply: bytes | None) -> bool:
+    if step.reply_matcher is not None:
+        if step.reply_matcher.matches is not None:
+            return step.reply_matcher.matches(reply)
+        return bool(reply and step.reply_matcher.complete(reply))
+    return reply_matches_expectation(step.expect, reply)
+
+
+def _hex_preview(data: bytes | None) -> str:
+    if data is None:
+        return "<none>"
+    if not data:
+        return "<empty>"
+    if len(data) <= 32:
+        return data.hex(" ")
+    return f"{data[:16].hex(' ')} ... {data[-16:].hex(' ')} ({len(data)} bytes)"
