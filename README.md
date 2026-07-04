@@ -1,5 +1,5 @@
 # TiMini Print Bluetooth Printer Tool
-Alternative [desktop software](https://github.com/Dejniel/TiMini-Print/releases) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “InstaPrint”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
+Alternative [desktop software](https://github.com/Dejniel/TiMini-Print/releases) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Funny Print”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “InstaPrint”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode, plus [custom integrations](#library-integration)
 
@@ -148,6 +148,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - JX001 and clones: JX002, JX003, JX004, JX005, JX006
 - L1 and clones: U2
 - LGM01 and clones: X7HP
+- LX-D01 and clones: LX-D02, LX-D2
 - M02 and clones: Mr.in, Mr.in_M02
 - M02 Pro and clones: M02PRO
 - M02S and clones: Mr.in_M02S

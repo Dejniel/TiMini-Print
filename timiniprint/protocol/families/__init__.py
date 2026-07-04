@@ -13,6 +13,7 @@ from .base import (
 )
 from .dck import BEHAVIOR as DCK_BEHAVIOR
 from .eleph_hprt_esc import BEHAVIOR as ELEPH_HPRT_ESC_BEHAVIOR
+from .funny_lx import BEHAVIOR as FUNNY_LX_BEHAVIOR
 from .instaprint_core import BEHAVIOR as INSTAPRINT_CORE_BEHAVIOR
 from .tiny import BEHAVIOR as TINY_BEHAVIOR
 from .luck.normal import BEHAVIOR as LUCK_NORMAL_BEHAVIOR
@@ -128,6 +129,14 @@ _DEFINITIONS = {
             transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=PHOMEMO_ESC_BEHAVIOR,
+    ),
+    ProtocolFamily.FUNNY_LX: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.FUNNY_LX,
+            transport_style=ProtocolTransportStyle.STANDARD,
+        ),
+        behavior=FUNNY_LX_BEHAVIOR,
     ),
 }
 

@@ -241,6 +241,48 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         asyncio.run(run())
 
+    def test_notification_wait_matches_recent_payload(self) -> None:
+        session, _ = self._make_session(ProtocolFamily.V5G)
+        _enable_notification_waits(session)
+        expected = make_packet(0xD3, bytes([60]), ProtocolFamily.V5G)
+        session.handle_notification(expected)
+
+        async def run() -> None:
+            reply = await session.wait_for_notification(
+                "temperature",
+                lambda payload: payload == expected,
+                timeout=0.01,
+            )
+            self.assertEqual(reply, expected)
+
+        asyncio.run(run())
+
+    def test_notification_query_does_not_match_recent_payload(self) -> None:
+        session, client = self._make_session(ProtocolFamily.V5G)
+        _enable_notification_waits(session)
+        expected = make_packet(0xD3, bytes([60]), ProtocolFamily.V5G)
+        session.handle_notification(expected)
+        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session._client = client
+        session.bindings.write_char = cmd
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = cmd.uuid
+
+        async def run() -> None:
+            with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                reply = await session.send_control_packet_wait_notification(
+                    b"\x01",
+                    label="fresh temperature",
+                    match=lambda payload: payload == expected,
+                    timeout=0.01,
+                    required=False,
+                )
+                self.assertIsNone(reply)
+                write_chunks.assert_awaited_once()
+
+        asyncio.run(run())
+
     def test_notification_wait_keeps_unmatched_payload_for_runtime_state(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5G)
         _enable_notification_waits(session)

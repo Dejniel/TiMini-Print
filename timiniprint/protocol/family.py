@@ -16,6 +16,7 @@ class ProtocolCommandSet(str, Enum):
     NIIMBOT = "niimbot"
     ELEPH_TSPL = "eleph_tspl"
     PHOMEMO_ESC = "phomemo_esc"
+    FUNNY_LX = "funny_lx"
 
 
 class ProtocolTransportStyle(str, Enum):
@@ -45,6 +46,7 @@ class ProtocolFamily(str, Enum):
     NIIMBOT = "niimbot"
     ELEPH_TSPL = "eleph_tspl"
     PHOMEMO_ESC = "phomemo_esc"
+    FUNNY_LX = "funny_lx"
 
     @classmethod
     def from_value(cls, value: "ProtocolFamily | str | None") -> "ProtocolFamily":

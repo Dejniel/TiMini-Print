@@ -6608,5 +6608,50 @@
     "paper_presets": [
       "tag_384r"
     ]
+  },
+  {
+    "profile_key": "funny_lx_384",
+    "size": 2,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "has_id": false,
+    "use_spp": false,
+    "can_print_label": false,
+    "label_value": "0",
+    "back_paper_num": 0,
+    "protocol_default": {
+      "type": "funny_lx",
+      "packets_type": "lx_d_direct"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "funny_lx_raster"
+    },
+    "stream": {
+      "chunk_size": 100,
+      "delay_ms": 10
+    },
+    "post_print_feed_count": 0,
+    "ble_mtu_request": 511,
+    "print_defaults": {
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      }
+    },
+    "a4xii": false,
+    "paper_presets": [
+      "plain_384r"
+    ]
   }
 ]

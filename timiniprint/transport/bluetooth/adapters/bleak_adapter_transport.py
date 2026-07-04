@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
@@ -22,6 +23,10 @@ from .bleak_adapter_diagnostics import (
     report_ble_write_summary,
 )
 from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSelection
+
+
+_NOTIFICATION_HISTORY_LIMIT = 16
+_NOTIFICATION_HISTORY_TTL_SEC = 5.0
 
 
 @dataclass
@@ -66,6 +71,9 @@ class _BleakTransportSession:
         self._client: Any = None
         self._runtime_controller = _runtime_controller_for_family(protocol_family)
         self._notification_waiters: list[_NotificationWaiter] = []
+        self._notification_history: deque[tuple[float, bytes]] = deque(
+            maxlen=_NOTIFICATION_HISTORY_LIMIT
+        )
         self._notification_count = 0
         self._flow_pause_count = 0
         self._flow_resume_count = 0
@@ -532,7 +540,9 @@ class _BleakTransportSession:
 
     def handle_notification(self, payload: bytes) -> None:
         self._notification_count += 1
-        self._last_notification_monotonic = time.monotonic()
+        now = time.monotonic()
+        self._last_notification_monotonic = now
+        self._remember_notification(now, payload)
         self._match_notification_waiters(payload)
         flow_control = self._transport_profile.flow_control
         if flow_control is not None:
@@ -749,6 +759,12 @@ class _BleakTransportSession:
                 raise RuntimeError(f"BLE notification wait unavailable: {label}")
             self.report_debug(f"optional notification wait unavailable: {label}")
             return None
+        # Some protocols send an ACK immediately after the last data write; keep
+        # passive waits from missing a notification that arrived just before the waiter.
+        historical = self._match_notification_history(match)
+        if historical is not None:
+            self.report_debug(f"notification matched recent {label}: {historical.hex()}")
+            return historical
         waiter = self._register_notification_waiter(label, match)
         try:
             return await self._wait_for_registered_notification(
@@ -830,6 +846,25 @@ class _BleakTransportSession:
         )
         self._notification_waiters.append(waiter)
         return waiter
+
+    def _remember_notification(self, now: float, payload: bytes) -> None:
+        self._notification_history.append((now, bytes(payload)))
+        self._trim_notification_history(now)
+
+    def _match_notification_history(self, match: Callable[[bytes], bool]) -> bytes | None:
+        now = time.monotonic()
+        self._trim_notification_history(now)
+        for _timestamp, payload in reversed(self._notification_history):
+            if match(payload):
+                return payload
+        return None
+
+    def _trim_notification_history(self, now: float) -> None:
+        while (
+            self._notification_history
+            and now - self._notification_history[0][0] > _NOTIFICATION_HISTORY_TTL_SEC
+        ):
+            self._notification_history.popleft()
 
     async def _wait_for_registered_notification(
         self,

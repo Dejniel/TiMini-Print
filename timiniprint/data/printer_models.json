@@ -4846,5 +4846,38 @@
     "origin_app_packages": [
       "com.bes.print.insta"
     ]
+  },
+  {
+    "model_key": "funny_lx_d",
+    "profile_key": "funny_lx_384",
+    "detections": [
+      {
+        "name": "LX-D01",
+        "detection": {
+          "exact_names": [
+            "LX-D01"
+          ]
+        }
+      },
+      {
+        "name": "LX-D02",
+        "detection": {
+          "exact_names": [
+            "LX-D02"
+          ]
+        }
+      },
+      {
+        "name": "LX-D2",
+        "detection": {
+          "exact_names": [
+            "LX-D2"
+          ]
+        }
+      }
+    ],
+    "origin_app_packages": [
+      "com.lailaixiong.funnyprint"
+    ]
   }
 ]
