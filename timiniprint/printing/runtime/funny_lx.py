@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from collections import deque
-from collections.abc import Callable
+import asyncio
 import secrets
+from collections import deque
+from collections.abc import Awaitable, Callable
 
 from ...devices.profiles import DetectionNormalizer
 from ...protocol.families.funny_lx.core import challenge_crc
@@ -16,6 +17,7 @@ from .base import RuntimeController, RuntimeSessionApi
 
 _HANDSHAKE_RANDOM_BYTES = 10
 _MAX_RETRY_REQUESTS = 10
+_MAX_PACKET_DELAY_HINT_SEC = 0.5
 
 
 class FunnyLxRuntimeController(RuntimeController):
@@ -24,15 +26,19 @@ class FunnyLxRuntimeController(RuntimeController):
         *,
         bluetooth_address: str,
         random_bytes_factory: Callable[[], bytes] | None = None,
+        sleep: Callable[[float], Awaitable[None]] | None = None,
     ) -> None:
         self._bluetooth_address = bluetooth_address
         self._random_bytes_factory = random_bytes_factory or _random_challenge
+        self._sleep = sleep or asyncio.sleep
         self._verified = False
         self._retry_requests: deque[int] = deque()
+        self._packet_delay_hint_sec = 0.0
 
     def adopt_previous(self, previous: RuntimeController | None) -> None:
         if isinstance(previous, FunnyLxRuntimeController):
             self._verified = previous._verified
+            self._packet_delay_hint_sec = previous._packet_delay_hint_sec
 
     async def initialize_connection(
         self,
@@ -155,6 +161,7 @@ class FunnyLxRuntimeController(RuntimeController):
                     break
                 step = image_steps[image_index]
                 packet_index = _image_packet_index(step.data)
+                await self._sleep_before_image_packet(session)
                 session.report_debug(f"Funny LX image send {step.label}: packet={packet_index}")
                 await session.send_standard_payload(step.data)
                 image_index += 1
@@ -166,6 +173,10 @@ class FunnyLxRuntimeController(RuntimeController):
                 accepted_step,
                 timeout=timeout,
             )
+            delay_hint = _delay_hint_from_notification(reply or b"")
+            if delay_hint is not None:
+                self._set_packet_delay_hint(session, delay_hint)
+                continue
             retry_index = _retry_index_from_notification(reply or b"")
             if retry_index is None:
                 if not _reply_matches_for(accepted_step, reply):
@@ -186,6 +197,12 @@ class FunnyLxRuntimeController(RuntimeController):
                 current_index=image_index,
             )
 
+    async def _sleep_before_image_packet(self, session: RuntimeSessionApi) -> None:
+        if self._packet_delay_hint_sec <= 0:
+            return
+        session.report_debug(f"Funny LX packet delay: {self._packet_delay_hint_sec:.3f}s")
+        await self._sleep(self._packet_delay_hint_sec)
+
     def _pop_retry_request(self) -> int | None:
         if not self._retry_requests:
             return None
@@ -200,14 +217,24 @@ class FunnyLxRuntimeController(RuntimeController):
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
         retry_index = _retry_index_from_notification(payload)
         if retry_index is None:
+            delay_hint = _delay_hint_from_notification(payload)
+            if delay_hint is not None:
+                self._set_packet_delay_hint(session, delay_hint)
             return
         self._retry_requests.append(retry_index)
         session.report_debug(f"Funny LX retry requested packet={retry_index}")
+
+    def _set_packet_delay_hint(self, session: RuntimeSessionApi, delay_sec: float) -> None:
+        clamped = max(0.0, min(delay_sec, _MAX_PACKET_DELAY_HINT_SEC))
+        if clamped != self._packet_delay_hint_sec:
+            session.report_debug(f"Funny LX packet delay hint: {clamped:.3f}s")
+        self._packet_delay_hint_sec = clamped
 
     def debug_snapshot(self) -> dict[str, object]:
         return {
             "verified": self._verified,
             "bluetooth_address": self._bluetooth_address,
+            "packet_delay_hint_sec": self._packet_delay_hint_sec,
         }
 
 
@@ -256,6 +283,12 @@ def _retry_index_from_notification(payload: bytes) -> int | None:
     if len(payload) < 4 or payload[:2] != b"\x5A\x05":
         return None
     return int.from_bytes(payload[2:4], "big")
+
+
+def _delay_hint_from_notification(payload: bytes) -> float | None:
+    if len(payload) < 3 or payload[:2] != b"\x5A\x07":
+        return None
+    return payload[2] / 1000.0
 
 
 def _resume_image_index(requested_index: int, packet_count: int) -> int:
@@ -342,7 +375,11 @@ async def _wait_for_image_accepted_or_retry(
         return None
 
     def complete(reply: bytes) -> bool:
-        return _retry_index_from_notification(reply) is not None or reply_complete(reply)
+        return (
+            _retry_index_from_notification(reply) is not None
+            or _delay_hint_from_notification(reply) is not None
+            or reply_complete(reply)
+        )
 
     wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
     reply = await session.wait_for_notification(

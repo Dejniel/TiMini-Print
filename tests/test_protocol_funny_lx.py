@@ -309,6 +309,89 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(session.packets, [bytes.fromhex("5a 04 00 02 01")])
         self.assertEqual(session.warnings, [])
 
+    async def test_runtime_applies_5a07_packet_delay_hint_to_next_image_packets(self) -> None:
+        device = PrinterCatalog.load().device_from_model("funny_lx_d")
+        raster = RasterBuffer(
+            pixels=[0] * (384 * 6),
+            width=384,
+            pixel_format=PixelFormat.BW1,
+        )
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+        )
+        session = _FunnyLxSession([bytes.fromhex("5a 04 00 03 01")])
+        session.wait_replies = [bytes.fromhex("5a 06 00")]
+        sleeps: list[float] = []
+
+        async def record_sleep(delay: float) -> None:
+            sleeps.append(delay)
+
+        controller = FunnyLxRuntimeController(
+            bluetooth_address="C0:00:00:00:04:60",
+            sleep=record_sleep,
+        )
+        delay_sent = False
+
+        def set_delay_after_first_packet(payload: bytes) -> None:
+            nonlocal delay_sent
+            if delay_sent or not payload.startswith(bytes.fromhex("55 00 00")):
+                return
+            delay_sent = True
+            controller.handle_notification(session, bytes.fromhex("5a 07 14"))
+
+        session.on_standard_payload = set_delay_after_first_packet
+
+        sent = await controller.send_protocol_steps(session, job.steps, timeout=0.1)
+
+        image_packets = [payload for payload in session.standard_payloads if payload.startswith(b"\x55")]
+        self.assertTrue(sent)
+        self.assertEqual([packet[1:3] for packet in image_packets], [
+            bytes.fromhex("00 00"),
+            bytes.fromhex("00 01"),
+            bytes.fromhex("00 02"),
+        ])
+        self.assertEqual(sleeps, [0.02, 0.02])
+        self.assertEqual(controller.debug_snapshot()["packet_delay_hint_sec"], 0.02)
+        self.assertEqual(session.warnings, [])
+
+    async def test_runtime_stores_5a07_packet_delay_hint_as_seconds(self) -> None:
+        session = _FunnyLxSession([])
+        controller = FunnyLxRuntimeController(bluetooth_address="C0:00:00:00:04:60")
+
+        controller.handle_notification(session, bytes.fromhex("5a 07 ff"))
+
+        self.assertEqual(controller.debug_snapshot()["packet_delay_hint_sec"], 0.255)
+
+    async def test_runtime_ignores_5a07_while_waiting_for_image_accepted(self) -> None:
+        device = PrinterCatalog.load().device_from_model("funny_lx_d")
+        raster = RasterBuffer(
+            pixels=[0] * (384 * 4),
+            width=384,
+            pixel_format=PixelFormat.BW1,
+        )
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+        )
+        session = _FunnyLxSession([bytes.fromhex("5a 04 00 02 01")])
+        session.wait_replies = [
+            bytes.fromhex("5a 07 14"),
+            bytes.fromhex("5a 06 00"),
+        ]
+        controller = FunnyLxRuntimeController(bluetooth_address="C0:00:00:00:04:60")
+
+        sent = await controller.send_protocol_steps(session, job.steps, timeout=0.1)
+
+        image_packets = [payload for payload in session.standard_payloads if payload.startswith(b"\x55")]
+        self.assertTrue(sent)
+        self.assertEqual([packet[1:3] for packet in image_packets], [
+            bytes.fromhex("00 00"),
+            bytes.fromhex("00 01"),
+        ])
+        self.assertEqual(controller.debug_snapshot()["packet_delay_hint_sec"], 0.02)
+        self.assertEqual(session.warnings, [])
+
 
 if __name__ == "__main__":
     unittest.main()
