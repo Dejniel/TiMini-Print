@@ -12,6 +12,8 @@ _WRITE_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
 _NOTIFY_UUID = "0000ffe2-0000-1000-8000-00805f9b34fb"
 _PACKET_WRITE_BYTES = 100
 _WRITE_DELAY_MS = 10
+_MOVE_PAPER_CMD = bytes.fromhex("5a 03 82 00 04 00 00 00 00 00 00 00")
+_RETRACT_PAPER_GUESS_CMD = bytes.fromhex("5a 03 81 00 04 00 00 00 00 00 00 00")
 
 
 def build_job(request: PrintJobRequest):
@@ -19,11 +21,13 @@ def build_job(request: PrintJobRequest):
 
 
 def advance_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None = None) -> bytes:
-    return b""
+    # Source app exposes one paper-motion command; direction/retract is not modeled there.
+    return _MOVE_PAPER_CMD
 
 
 def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None = None) -> bytes:
-    return b""
+    # TODO: experimental guess only. Source confirms 5A 03 82 paper motion, not retract.
+    return _RETRACT_PAPER_GUESS_CMD
 
 
 TRANSPORT = BleTransportProfile(
