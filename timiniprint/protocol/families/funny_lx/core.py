@@ -93,8 +93,8 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
             reply_matcher=_footer_matcher(total),
         )
     )
-    # TODO: implement `5A 05 <packet-index>` retry/resume. The source app backs
-    # up to the requested image packet and resumes after the printer asks for it.
+    # Packet retry (`5A 05 <packet-index>`) is handled by FunnyLxRuntimeController
+    # while executing these image steps.
     return tuple(steps)
 
 

@@ -16,6 +16,7 @@ class _FunnyLxSession:
     def __init__(self, replies: list[bytes]) -> None:
         self.replies = list(replies)
         self.packets: list[bytes] = []
+        self.control_packets: list[bytes] = []
         self.standard_payloads: list[bytes] = []
         self.wait_replies: list[bytes] = []
         self.debugs: list[str] = []
@@ -24,6 +25,9 @@ class _FunnyLxSession:
         self.on_standard_payload = None
 
     def can_send_control_packet_wait_notification(self) -> bool:
+        return True
+
+    def can_send_control_packet(self) -> bool:
         return True
 
     def can_send_standard_payload(self) -> bool:
@@ -50,6 +54,11 @@ class _FunnyLxSession:
         if not match(reply):
             raise AssertionError(f"reply did not match: {reply.hex()}")
         return reply
+
+    async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
+        _ = timeout
+        self.control_packets.append(bytes(packet))
+        return True
 
     async def wait_for_notification(
         self,
@@ -202,6 +211,7 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
             b"\x5A\x0A" + random_bytes,
             b"\x5A\x0B" + crc.high,
         ])
+        self.assertEqual(session.control_packets, [])
         self.assertTrue(controller.debug_snapshot()["verified"])
 
     async def test_runtime_can_take_mac_from_status_reply(self) -> None:
@@ -221,6 +231,9 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
         await controller.initialize_connection(session, mtu_size=508, timeout=0.1)
 
         self.assertEqual(session.packets[1], b"\x5A\x0A" + random_bytes)
+        self.assertEqual(session.control_packets, [bytes.fromhex("5a 0c 03")])
+        self.assertEqual(controller.debug_snapshot()["darkness_code"], 3)
+        self.assertTrue(controller.debug_snapshot()["supports_darkness"])
 
     async def test_runtime_prefers_status_mac_over_os_address(self) -> None:
         random_bytes = bytes.fromhex("f7 cf 01 02 03 04 05 06 07 08")
@@ -240,6 +253,66 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(session.packets[1], b"\x5A\x0A" + random_bytes)
         self.assertIn("mac_source=status", session.debugs[-1])
+
+    async def test_runtime_skips_duplicate_default_darkness_step_after_handshake(self) -> None:
+        random_bytes = bytes.fromhex("f7 cf 01 02 03 04 05 06 07 08")
+        mac = bytes.fromhex("c00000000460")
+        crc = challenge_crc(random_bytes, mac)
+        device = PrinterCatalog.load().device_from_model("funny_lx_d")
+        raster = RasterBuffer(pixels=[0] * (384 * 2), width=384, pixel_format=PixelFormat.BW1)
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            blackening=4,
+        )
+        session = _FunnyLxSession([
+            bytes.fromhex("5a 01 00 03 c0 00 00 00 04 60"),
+            b"\x5A\x0A" + crc.low,
+            bytes.fromhex("5a 0b 01"),
+            bytes.fromhex("5a 04 00 01 01"),
+        ])
+        session.wait_replies = [bytes.fromhex("5a 06 00")]
+        controller = FunnyLxRuntimeController(
+            bluetooth_address="not-a-mac",
+            random_bytes_factory=lambda: random_bytes,
+        )
+
+        await controller.initialize_connection(session, mtu_size=508, timeout=0.1)
+        sent = await controller.send_protocol_steps(session, job.steps, timeout=0.1)
+
+        self.assertTrue(sent)
+        self.assertEqual(session.control_packets, [bytes.fromhex("5a 0c 03")])
+        self.assertNotIn(bytes.fromhex("5a 0c 03"), session.standard_payloads)
+
+    async def test_runtime_sends_non_default_darkness_step_after_handshake(self) -> None:
+        random_bytes = bytes.fromhex("f7 cf 01 02 03 04 05 06 07 08")
+        mac = bytes.fromhex("c00000000460")
+        crc = challenge_crc(random_bytes, mac)
+        device = PrinterCatalog.load().device_from_model("funny_lx_d")
+        raster = RasterBuffer(pixels=[0] * (384 * 2), width=384, pixel_format=PixelFormat.BW1)
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            blackening=5,
+        )
+        session = _FunnyLxSession([
+            bytes.fromhex("5a 01 00 03 c0 00 00 00 04 60"),
+            b"\x5A\x0A" + crc.low,
+            bytes.fromhex("5a 0b 01"),
+            bytes.fromhex("5a 04 00 01 01"),
+        ])
+        session.wait_replies = [bytes.fromhex("5a 06 00")]
+        controller = FunnyLxRuntimeController(
+            bluetooth_address="not-a-mac",
+            random_bytes_factory=lambda: random_bytes,
+        )
+
+        await controller.initialize_connection(session, mtu_size=508, timeout=0.1)
+        sent = await controller.send_protocol_steps(session, job.steps, timeout=0.1)
+
+        self.assertTrue(sent)
+        self.assertIn(bytes.fromhex("5a 0c 04"), session.standard_payloads)
+        self.assertEqual(controller.debug_snapshot()["darkness_code"], 4)
 
     async def test_runtime_resends_from_previous_image_packet_on_5a05_retry(self) -> None:
         device = PrinterCatalog.load().device_from_model("funny_lx_d")

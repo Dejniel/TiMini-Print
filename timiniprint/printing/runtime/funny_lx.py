@@ -18,6 +18,7 @@ from .base import RuntimeController, RuntimeSessionApi
 _HANDSHAKE_RANDOM_BYTES = 10
 _MAX_RETRY_REQUESTS = 10
 _MAX_PACKET_DELAY_HINT_SEC = 0.5
+_DEFAULT_DARKNESS_CODE = 3
 
 
 class FunnyLxRuntimeController(RuntimeController):
@@ -34,11 +35,15 @@ class FunnyLxRuntimeController(RuntimeController):
         self._verified = False
         self._retry_requests: deque[int] = deque()
         self._packet_delay_hint_sec = 0.0
+        self._supports_darkness = False
+        self._darkness_code: int | None = None
 
     def adopt_previous(self, previous: RuntimeController | None) -> None:
         if isinstance(previous, FunnyLxRuntimeController):
             self._verified = previous._verified
             self._packet_delay_hint_sec = previous._packet_delay_hint_sec
+            self._supports_darkness = previous._supports_darkness
+            self._darkness_code = previous._darkness_code
 
     async def initialize_connection(
         self,
@@ -58,6 +63,7 @@ class FunnyLxRuntimeController(RuntimeController):
             match=lambda reply: reply.startswith(b"\x5A\x01"),
             timeout=timeout,
         )
+        self._supports_darkness = _status_supports_darkness(status or b"")
         mac_bytes = _mac_bytes_from_status(status) if status is not None else None
         mac_source = "status"
         if mac_bytes is None:
@@ -86,10 +92,31 @@ class FunnyLxRuntimeController(RuntimeController):
             timeout=timeout,
         )
         self._verified = True
+        if self._supports_darkness:
+            await self._send_default_darkness(session, timeout=timeout)
         session.report_debug(
             "Funny LX verification complete "
             f"mtu_payload={mtu_size} mac={mac_bytes.hex(':')} mac_source={mac_source}"
         )
+
+    async def _send_default_darkness(
+        self,
+        session: RuntimeSessionApi,
+        *,
+        timeout: float,
+    ) -> None:
+        if self._darkness_code == _DEFAULT_DARKNESS_CODE:
+            return
+        if not session.can_send_control_packet():
+            session.report_debug("Funny LX default darkness skipped: control send unavailable")
+            return
+        sent = await session.send_control_packet(
+            b"\x5A\x0C" + bytes([_DEFAULT_DARKNESS_CODE]),
+            timeout=timeout,
+        )
+        if sent:
+            self._darkness_code = _DEFAULT_DARKNESS_CODE
+            session.report_debug("Funny LX default darkness set: level=4")
 
     async def send_protocol_steps(
         self,
@@ -129,9 +156,26 @@ class FunnyLxRuntimeController(RuntimeController):
                 )
                 index += len(image_steps) + (1 if consume_accepted_step else 0)
                 continue
-            await _execute_step(session, step, timeout=timeout)
+            await self._execute_non_image_step(session, step, timeout=timeout)
             index += 1
         return True
+
+    async def _execute_non_image_step(
+        self,
+        session: RuntimeSessionApi,
+        step: ProtocolStep,
+        *,
+        timeout: float,
+    ) -> None:
+        darkness_code = _darkness_code_from_step(step)
+        if darkness_code is None:
+            await _execute_step(session, step, timeout=timeout)
+            return
+        if self._darkness_code == darkness_code:
+            session.report_debug(f"Funny LX darkness already set: level={darkness_code + 1}")
+            return
+        await _execute_step(session, step, timeout=timeout)
+        self._darkness_code = darkness_code
 
     async def _send_image_steps_with_retry(
         self,
@@ -235,6 +279,8 @@ class FunnyLxRuntimeController(RuntimeController):
             "verified": self._verified,
             "bluetooth_address": self._bluetooth_address,
             "packet_delay_hint_sec": self._packet_delay_hint_sec,
+            "supports_darkness": self._supports_darkness,
+            "darkness_code": self._darkness_code,
         }
 
 
@@ -254,12 +300,26 @@ def _mac_bytes_from_status(status: bytes) -> bytes | None:
     return bytes(status[4:10])
 
 
+def _status_supports_darkness(status: bytes) -> bool:
+    return len(status) >= 4 and status[2:4] == b"\x00\x03"
+
+
 def _is_image_packet(step: ProtocolStep) -> bool:
     return (
         step.operation is ProtocolStepOperation.SEND
         and len(step.data) >= 3
         and step.data[0] == 0x55
     )
+
+
+def _darkness_code_from_step(step: ProtocolStep) -> int | None:
+    if (
+        step.operation is ProtocolStepOperation.SEND
+        and len(step.data) == 3
+        and step.data[:2] == b"\x5A\x0C"
+    ):
+        return step.data[2]
+    return None
 
 
 def _image_step_run(steps: tuple[ProtocolStep, ...], start: int) -> tuple[ProtocolStep, ...]:
