@@ -13,6 +13,8 @@ _PRINTHEAD_WIDTH_PX = 384
 _PACKET_DATA_BYTES = 96
 _PACKET_HALF_BYTES = 48
 _DEFAULT_DARKNESS_LEVEL = 4
+_IMAGE_ACCEPT_TIMEOUT_SEC = 10.0
+_PRINT_FOOTER_TIMEOUT_SEC = 10.0
 _DIRECT_VARIANT = "lx_d_direct"
 _REVERSED_VARIANT = "lx_d_reversed"
 _SUPPORTED_VARIANTS = frozenset({_DIRECT_VARIANT, _REVERSED_VARIANT})
@@ -79,9 +81,9 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
     )
     steps.append(
         ProtocolStep.wait(
-            "image accepted",
-            reply_matcher=_prefix_matcher(b"\x5A\x06"),
-            timeout_sec=2.0,
+            "image transfer ready",
+            reply_matcher=_image_transfer_ready_matcher(),
+            timeout_sec=_IMAGE_ACCEPT_TIMEOUT_SEC,
         )
     )
     steps.append(
@@ -89,7 +91,7 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
             "print footer",
             b"\x5A\x04" + total + b"\x01",
             expect=ProtocolReplyExpectation.NONE,
-            timeout_sec=2.0,
+            timeout_sec=_PRINT_FOOTER_TIMEOUT_SEC,
             reply_matcher=_footer_matcher(total),
         )
     )
@@ -122,9 +124,11 @@ def _u16be(value: int) -> bytes:
     return value.to_bytes(2, "big")
 
 
-def _prefix_matcher(prefix: bytes) -> ProtocolReplyMatcher:
+def _image_transfer_ready_matcher() -> ProtocolReplyMatcher:
     def complete(raw: bytes) -> bool:
-        return raw.startswith(prefix)
+        # Source marks 5A08 as "pause"; in long transfers it can be the
+        # practical signal to stop image writes and wait for footer status.
+        return raw.startswith(b"\x5A\x06") or raw.startswith(b"\x5A\x08")
 
     def matches(raw: bytes | None) -> bool:
         return bool(raw and complete(raw))

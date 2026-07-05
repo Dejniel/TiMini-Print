@@ -18,6 +18,7 @@ from .base import RuntimeController, RuntimeSessionApi
 _HANDSHAKE_RANDOM_BYTES = 10
 _MAX_RETRY_REQUESTS = 10
 _MAX_PACKET_DELAY_HINT_SEC = 0.5
+_DEFAULT_PACKET_DELAY_HINT_SEC = 0.02
 _DEFAULT_DARKNESS_CODE = 3
 
 
@@ -34,7 +35,7 @@ class FunnyLxRuntimeController(RuntimeController):
         self._sleep = sleep or asyncio.sleep
         self._verified = False
         self._retry_requests: deque[int] = deque()
-        self._packet_delay_hint_sec = 0.0
+        self._packet_delay_hint_sec = _DEFAULT_PACKET_DELAY_HINT_SEC
         self._supports_darkness = False
         self._darkness_code: int | None = None
 
@@ -212,7 +213,7 @@ class FunnyLxRuntimeController(RuntimeController):
 
             if accepted_step is None:
                 return
-            reply = await _wait_for_image_accepted_or_retry(
+            reply = await _wait_for_image_transfer_ready_or_retry(
                 session,
                 accepted_step,
                 timeout=timeout,
@@ -424,7 +425,7 @@ async def _wait_step(
     return reply
 
 
-async def _wait_for_image_accepted_or_retry(
+async def _wait_for_image_transfer_ready_or_retry(
     session: RuntimeSessionApi,
     step: ProtocolStep,
     *,

@@ -143,7 +143,7 @@ class FunnyLxProtocolTests(unittest.TestCase):
             "darkness",
             "print header",
             "image packet 1",
-            "image accepted",
+            "image transfer ready",
             "print footer",
         ])
         self.assertEqual(job.steps[0].data, bytes.fromhex("5a 0c 03"))
@@ -154,8 +154,11 @@ class FunnyLxProtocolTests(unittest.TestCase):
         self.assertEqual(job.steps[2].data[-1], 0)
         self.assertEqual(job.steps[3].operation, ProtocolStepOperation.WAIT)
         self.assertTrue(job.steps[3].reply_matcher.matches(bytes.fromhex("5a 06 00")))
+        self.assertTrue(job.steps[3].reply_matcher.matches(bytes.fromhex("5a 08 00")))
+        self.assertEqual(job.steps[3].timeout_sec, 10.0)
         self.assertEqual(job.steps[4].data, bytes.fromhex("5a 04 00 01 01"))
         self.assertTrue(job.steps[4].reply_matcher.matches(bytes.fromhex("5a 04 00 01 01")))
+        self.assertEqual(job.steps[4].timeout_sec, 10.0)
 
     def test_builds_reversed_lx_image_job_for_legacy_variant(self) -> None:
         device = replace(PrinterCatalog.load().device_from_model("funny_lx_d"), protocol_variant="lx_d_reversed")
@@ -358,7 +361,7 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(session.packets, [bytes.fromhex("5a 04 00 02 01")])
         self.assertEqual(session.warnings, [])
 
-    async def test_runtime_handles_5a05_retry_while_waiting_for_image_accepted(self) -> None:
+    async def test_runtime_handles_5a05_retry_while_waiting_for_image_transfer_ready(self) -> None:
         device = PrinterCatalog.load().device_from_model("funny_lx_d")
         raster = RasterBuffer(
             pixels=[0] * (384 * 4),
@@ -387,6 +390,36 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
             bytes.fromhex("00 01"),
         ])
         self.assertEqual(session.packets, [bytes.fromhex("5a 04 00 02 01")])
+        self.assertEqual(session.warnings, [])
+
+    async def test_runtime_accepts_5a08_as_image_done(self) -> None:
+        device = PrinterCatalog.load().device_from_model("funny_lx_d")
+        raster = RasterBuffer(
+            pixels=[0] * (384 * 2),
+            width=384,
+            pixel_format=PixelFormat.BW1,
+        )
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+        )
+        session = _FunnyLxSession([bytes.fromhex("5a 04 00 01 01")])
+        session.wait_replies = [bytes.fromhex("5a 08 00")]
+        sleeps: list[float] = []
+
+        async def record_sleep(delay: float) -> None:
+            sleeps.append(delay)
+
+        controller = FunnyLxRuntimeController(
+            bluetooth_address="C0:00:00:00:04:60",
+            sleep=record_sleep,
+        )
+
+        sent = await controller.send_protocol_steps(session, job.steps, timeout=0.1)
+
+        self.assertTrue(sent)
+        self.assertEqual(sleeps, [0.02])
+        self.assertEqual(session.packets, [bytes.fromhex("5a 04 00 01 01")])
         self.assertEqual(session.warnings, [])
 
     async def test_runtime_applies_5a07_packet_delay_hint_to_next_image_packets(self) -> None:
@@ -418,7 +451,7 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
             if delay_sent or not payload.startswith(bytes.fromhex("55 00 00")):
                 return
             delay_sent = True
-            controller.handle_notification(session, bytes.fromhex("5a 07 14"))
+            controller.handle_notification(session, bytes.fromhex("5a 07 28"))
 
         session.on_standard_payload = set_delay_after_first_packet
 
@@ -431,8 +464,8 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
             bytes.fromhex("00 01"),
             bytes.fromhex("00 02"),
         ])
-        self.assertEqual(sleeps, [0.02, 0.02])
-        self.assertEqual(controller.debug_snapshot()["packet_delay_hint_sec"], 0.02)
+        self.assertEqual(sleeps, [0.02, 0.04, 0.04])
+        self.assertEqual(controller.debug_snapshot()["packet_delay_hint_sec"], 0.04)
         self.assertEqual(session.warnings, [])
 
     async def test_runtime_stores_5a07_packet_delay_hint_as_seconds(self) -> None:
@@ -443,7 +476,7 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(controller.debug_snapshot()["packet_delay_hint_sec"], 0.255)
 
-    async def test_runtime_ignores_5a07_while_waiting_for_image_accepted(self) -> None:
+    async def test_runtime_ignores_5a07_while_waiting_for_image_transfer_ready(self) -> None:
         device = PrinterCatalog.load().device_from_model("funny_lx_d")
         raster = RasterBuffer(
             pixels=[0] * (384 * 4),
