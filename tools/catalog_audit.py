@@ -184,7 +184,7 @@ def _model_merge_key(model: dict[str, Any]) -> str:
         {
             key: value
             for key, value in model.items()
-            if key not in {"model_key", "detections", "origin_app_packages"}
+            if key not in {"model_key", "marketing_name", "detections", "origin_app_packages"}
         },
         sort_keys=True,
     )

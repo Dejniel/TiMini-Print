@@ -358,12 +358,18 @@ class NamedModelDetection:
 @dataclass(frozen=True, kw_only=True)
 class PrinterModel:
     model_key: str
+    marketing_name: str | None = None
     detections: tuple[NamedModelDetection, ...]
     origin_app_packages: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.model_key:
             raise ValueError("Printer model requires model_key")
+        if self.marketing_name is not None:
+            marketing_name = self.marketing_name.strip()
+            if not marketing_name:
+                raise ValueError(f"Printer model {self.model_key} has blank marketing_name")
+            object.__setattr__(self, "marketing_name", marketing_name)
         if not self.detections:
             raise ValueError(f"Printer model {self.model_key} requires detections")
 

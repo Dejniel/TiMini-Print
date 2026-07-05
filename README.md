@@ -127,10 +127,11 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - APA41 and clones: APA49, A49, E49
 - APL86 and clones: L86, L86_Printer
 - APL86H and clones: APL86HL, L86H_Printer
+- BH-01 and clones: LX-D01, LX-D02, LX-D2, LX-D3, LX-D4, LX-D5, LX-D6, LX-D7, LX-D8, LX-D9, LX-D03, LX-D04, LX-D05, LX-D06, LX-D07, LX-D08, LX-D09
 - BQ02 and clones: BQ03, BQ17
 - C21 and clones: D1, D2, E2, NEWSMY
 - CMT-0510 and clones: SC03, SC04, GV-MA211
-- CorePrint and clones: Teal Printer, Purple Printer, B Pink Printer, Cherry Printer, Floral Printer, Check Printer, Smiley Printer, Stone Printer, P Pink Printer, YHK
+- CTP-500 and clones: CorePrint, Teal Printer, Purple Printer, B Pink Printer, Cherry Printer, Floral Printer, Check Printer, Smiley Printer, Stone Printer, P Pink Printer, YHK
 - D11 and clones: D11S
 - D80 and clones: PeriPage_A40, DYD80, DP_D80, DP-D80, E80, CASA-01
 - DL_X2Pro and clones: P5
@@ -148,7 +149,6 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - JX001 and clones: JX002, JX003, JX004, JX005, JX006
 - L1 and clones: U2
 - LGM01 and clones: X7HP
-- LX-D01 and clones: LX-D02, LX-D2, LX-D3, LX-D4, LX-D5, LX-D6, LX-D7, LX-D8, LX-D9, LX-D03, LX-D04, LX-D05, LX-D06, LX-D07, LX-D08, LX-D09
 - M02 and clones: Mr.in, Mr.in_M02
 - M02 Pro and clones: M02PRO
 - M02S and clones: Mr.in_M02S

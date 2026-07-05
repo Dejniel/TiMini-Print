@@ -4723,6 +4723,7 @@
   {
     "model_key": "instaprint_ctp500_coreprint",
     "profile_key": "instaprint_ctp500",
+    "marketing_name": "CTP-500",
     "detections": [
       {
         "name": "CorePrint",
@@ -4850,6 +4851,7 @@
   {
     "model_key": "funny_lx_d",
     "profile_key": "funny_lx_384",
+    "marketing_name": "BH-01",
     "detections": [
       {
         "name": "LX-D01",

@@ -41,10 +41,21 @@ def _dedupe_names(names: list[str]) -> list[str]:
     return ordered
 
 
+def _readme_names(model: ReadablePrinterModel) -> list[str]:
+    names = list(model.names)
+    if model.marketing_name is None:
+        return names
+    if len(names) <= 1:
+        if not names or model.marketing_name == names[0]:
+            return [model.marketing_name]
+        return [f"{model.marketing_name} ({names[0]})"]
+    return list(dict.fromkeys([model.marketing_name, *names]))
+
+
 def _render_model_names(models: list[ReadablePrinterModel]) -> str:
     groups_by_key: dict[str, list[str]] = {}
     for model in models:
-        names = _dedupe_names(list(model.names))
+        names = _dedupe_names(_readme_names(model))
         if not names:
             continue
         prediction = getattr(model, "profile_key_prediction", None)

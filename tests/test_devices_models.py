@@ -408,6 +408,15 @@ class DevicesModelsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown PrinterProfile field"):
             model_from_json(PrinterProfile, payload)
 
+    def test_model_marketing_name_is_presentation_only(self) -> None:
+        payload = _model_payload()
+        payload["marketing_name"] = "Friendly Cat Printer"
+
+        model = model_from_json(SupportedPrinterModel, payload)
+
+        self.assertEqual(model.names, ("DEMO",))
+        self.assertEqual(model.marketing_name, "Friendly Cat Printer")
+
     def test_model_codec_profile_roundtrip_keeps_normalized_shape(self) -> None:
         payload = _profile_payload()
         profile = model_from_json(PrinterProfile, payload)

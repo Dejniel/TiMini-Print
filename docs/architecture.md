@@ -37,9 +37,14 @@ It does not say:
 ### `PrinterModel`
 Shared catalog model data.
 It describes source-backed model identity and detection metadata:
+- optional `marketing_name` metadata for product/store/manual names shown in
+  generated README lists
 - named Bluetooth detections, where each public model name is attached to its
   own exact names, prefixes, and optional MAC suffix constraints
 - original Android app package names
+
+`marketing_name` is README-only presentation metadata. It must not be used as a
+Bluetooth detection trigger, routing hint, CLI alias, or GUI model selector name.
 
 ### `SupportedPrinterModel`
 Printable catalog model data.

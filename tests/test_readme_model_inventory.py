@@ -4,7 +4,13 @@ import re
 import unittest
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.devices.profiles import SupportedModelMatch, UnsupportedModelMatch
+from timiniprint.devices.profiles import (
+    ModelDetection,
+    NamedModelDetection,
+    SupportedModelMatch,
+    SupportedPrinterModel,
+    UnsupportedModelMatch,
+)
 from tools.render_readme_models import (
     render_supported_models_block,
     render_todo_models_block,
@@ -139,6 +145,37 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])", todo))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100S(?![A-Z0-9_-])", supported))
+
+    def test_marketing_name_renders_as_primary_clone_group_name(self) -> None:
+        model = SupportedPrinterModel(
+            model_key="demo",
+            profile_key="demo",
+            marketing_name="Friendly Cat Printer",
+            detections=(
+                NamedModelDetection("BT-01", ModelDetection(exact_names=("BT-01",))),
+                NamedModelDetection("BT-02", ModelDetection(exact_names=("BT-02",))),
+            ),
+        )
+
+        self.assertEqual(
+            render_supported_models_block([model]),
+            "- Friendly Cat Printer and clones: BT-01, BT-02",
+        )
+
+    def test_single_detection_marketing_name_renders_with_detection_in_parentheses(self) -> None:
+        model = SupportedPrinterModel(
+            model_key="demo",
+            profile_key="demo",
+            marketing_name="Friendly Cat Printer",
+            detections=(
+                NamedModelDetection("BT-01", ModelDetection(exact_names=("BT-01",))),
+            ),
+        )
+
+        self.assertEqual(
+            render_supported_models_block([model]),
+            "Friendly Cat Printer (BT-01)",
+        )
 
 
 if __name__ == "__main__":
