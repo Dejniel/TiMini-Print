@@ -126,9 +126,9 @@ def _u16be(value: int) -> bytes:
 
 def _image_transfer_ready_matcher() -> ProtocolReplyMatcher:
     def complete(raw: bytes) -> bool:
-        # Source marks 5A08 as "pause"; in long transfers it can be the
-        # practical signal to stop image writes and wait for footer status.
-        return raw.startswith(b"\x5A\x06") or raw.startswith(b"\x5A\x08")
+        # Source flow sends the footer only after 5A06; 5A08 is a pause signal
+        # handled by the runtime as an intermediate notification.
+        return raw.startswith(b"\x5A\x06")
 
     def matches(raw: bytes | None) -> bool:
         return bool(raw and complete(raw))

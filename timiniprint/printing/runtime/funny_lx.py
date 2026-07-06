@@ -149,12 +149,17 @@ class FunnyLxRuntimeController(RuntimeController):
                     accepted_step is not None
                     and accepted_step.operation is ProtocolStepOperation.WAIT
                 )
-                await self._send_image_steps_with_retry(
+                transfer_ready = await self._send_image_steps_with_retry(
                     session,
                     image_steps,
                     accepted_step=accepted_step if consume_accepted_step else None,
                     timeout=timeout,
                 )
+                if consume_accepted_step and not transfer_ready:
+                    raise RuntimeError(
+                        "Funny LX image transfer did not reach printer-ready state "
+                        "before the footer step"
+                    )
                 index += len(image_steps) + (1 if consume_accepted_step else 0)
                 continue
             await self._execute_non_image_step(session, step, timeout=timeout)
@@ -185,8 +190,7 @@ class FunnyLxRuntimeController(RuntimeController):
         *,
         accepted_step: ProtocolStep | None,
         timeout: float,
-    ) -> None:
-        _ = timeout
+    ) -> bool:
         image_index = 0
         retry_count = 0
         while True:
@@ -212,19 +216,16 @@ class FunnyLxRuntimeController(RuntimeController):
                 image_index += 1
 
             if accepted_step is None:
-                return
+                return True
             reply = await _wait_for_image_transfer_ready_or_retry(
                 session,
                 accepted_step,
                 timeout=timeout,
             )
-            delay_hint = _delay_hint_from_notification(reply or b"")
-            if delay_hint is not None:
-                self._set_packet_delay_hint(session, delay_hint)
-                continue
             retry_index = _retry_index_from_notification(reply or b"")
             if retry_index is None:
-                if not _reply_matches_for(accepted_step, reply):
+                transfer_ready = _reply_matches_for(accepted_step, reply)
+                if not transfer_ready:
                     session.report_warning(
                         short=f"Funny LX {accepted_step.label} reply mismatch",
                         detail=(
@@ -232,7 +233,7 @@ class FunnyLxRuntimeController(RuntimeController):
                             f"got {_hex_preview(reply)}."
                         ),
                     )
-                return
+                return transfer_ready
             self._remove_retry_request(retry_index)
             retry_count, image_index = _apply_retry_request(
                 session,
@@ -265,6 +266,9 @@ class FunnyLxRuntimeController(RuntimeController):
             delay_hint = _delay_hint_from_notification(payload)
             if delay_hint is not None:
                 self._set_packet_delay_hint(session, delay_hint)
+                return
+            if _is_pause_notification(payload):
+                session.report_debug(f"Funny LX pause notification: {payload.hex(' ')}")
             return
         self._retry_requests.append(retry_index)
         session.report_debug(f"Funny LX retry requested packet={retry_index}")
@@ -350,6 +354,10 @@ def _delay_hint_from_notification(payload: bytes) -> float | None:
     if len(payload) < 3 or payload[:2] != b"\x5A\x07":
         return None
     return payload[2] / 1000.0
+
+
+def _is_pause_notification(payload: bytes) -> bool:
+    return payload.startswith(b"\x5A\x08")
 
 
 def _resume_image_index(requested_index: int, packet_count: int) -> int:
@@ -438,7 +446,6 @@ async def _wait_for_image_transfer_ready_or_retry(
     def complete(reply: bytes) -> bool:
         return (
             _retry_index_from_notification(reply) is not None
-            or _delay_hint_from_notification(reply) is not None
             or reply_complete(reply)
         )
 
