@@ -145,43 +145,29 @@ class AppCliFlowsTests(unittest.TestCase):
             self.assertEqual(cli.main(["--debug-row-markers", "10", "--text", "hello"]), 0)
         print_bluetooth.assert_called_once()
 
-    def test_build_print_job_text_path_and_cleanup(self) -> None:
-        device = MagicMock()
+    def test_print_cli_input_delegates_text_to_connected_printer(self) -> None:
+        connected = types.SimpleNamespace(print_file=AsyncMock(), print_text=AsyncMock())
+        args = self._args(text="hello")
 
-        class _B:
-            def __init__(self, *_args, **_kwargs):
-                pass
+        asyncio.run(cli.print_cli_input(connected, args))
 
-            def build_from_file(self, path: str):
-                from timiniprint.protocol import ProtocolJob
+        connected.print_text.assert_awaited_once()
+        self.assertEqual(connected.print_text.await_args.args[0], "hello")
+        connected.print_file.assert_not_awaited()
 
-                return ProtocolJob(payload=("OK:" + path.split("/")[-1]).encode("utf-8"))
-
-        with patch.object(cli, "PrintJobBuilder", _B), patch.object(
-            cli,
-            "PrintSettings",
-            lambda **_kwargs: types.SimpleNamespace(blackening=3),
-        ):
-            job = cli.build_print_job(device, path=None, text_input="hello")
-        self.assertTrue(job.payload.startswith(b"OK:"))
-
-    def test_create_print_job_builder_passes_debug_row_markers_to_settings(self) -> None:
-        device = MagicMock()
-
-        with patch.object(cli, "PrintJobBuilder") as builder_cls, patch.object(
+    def test_create_print_settings_passes_debug_row_markers_to_settings(self) -> None:
+        with patch.object(
             cli,
             "PrintSettings",
         ) as settings_cls:
             settings = types.SimpleNamespace(blackening=3)
             settings_cls.return_value = settings
-            cli.create_print_job_builder(
-                device,
+            cli.create_print_settings(
                 debug_row_markers_interval=10,
             )
 
         settings_cls.assert_called_once()
         self.assertEqual(settings_cls.call_args.kwargs["debug_row_markers_interval"], 10)
-        builder_cls.assert_called_once()
 
     def test_print_and_motion_flows_use_connectors(self) -> None:
         args = self._args(path="x.txt", bluetooth="X6H")
@@ -192,36 +178,37 @@ class AppCliFlowsTests(unittest.TestCase):
         device.address = "AA"
         device.transport_badge = "[classic]"
         device.protocol_family = "tiny"
-        connection = MagicMock()
-        connection.send = AsyncMock()
-        connection.disconnect = AsyncMock()
-        builder = MagicMock()
-        job = types.SimpleNamespace(payload=b"123", runtime_controller=object())
-        builder.build_from_file.return_value = job
+        connected = types.SimpleNamespace(
+            print_file=AsyncMock(),
+            print_text=AsyncMock(),
+            feed=AsyncMock(),
+            retract=AsyncMock(),
+            disconnect=AsyncMock(),
+        )
 
         with patch("timiniprint.app.cli.PrinterCatalog.load"), patch(
             "timiniprint.app.cli._resolve_bluetooth_device",
             new=AsyncMock(return_value=device),
         ), patch(
             "timiniprint.app.cli.BleakBluetoothConnector"
-        ) as connector_cls, patch(
-            "timiniprint.app.cli.create_print_job_builder", return_value=builder
-        ), patch("timiniprint.app.cli.send_prepared_job", new=AsyncMock()) as send_job:
-            connector_cls.return_value.connect = AsyncMock(return_value=connection)
+        ) as connector_cls, patch("timiniprint.app.cli.connect_printer", new=AsyncMock(return_value=connected)) as connect_printer:
 
             code = cli.print_bluetooth(args, cli._build_cli_reporter(verbose=False))
             self.assertEqual(code, 0)
-            connector_cls.return_value.connect.assert_awaited_once_with(device)
-            send_job.assert_awaited_once()
-            self.assertIs(send_job.await_args.args[0], device)
-            self.assertIs(send_job.await_args.args[1], connection)
-            self.assertIs(send_job.await_args.args[2], job)
-            connection.disconnect.assert_awaited_once()
+            connect_printer.assert_awaited_once()
+            self.assertIs(connect_printer.await_args.args[0], device)
+            self.assertIs(connect_printer.await_args.args[1], connector_cls.return_value)
+            connected.print_file.assert_awaited_once()
+            self.assertEqual(connected.print_file.await_args.args[0], "x.txt")
+            connected.disconnect.assert_awaited_once()
 
             motion = self._args(feed=True, bluetooth="X6H")
             code = cli.paper_motion_bluetooth(motion, "feed", cli._build_cli_reporter(verbose=False))
             self.assertEqual(code, 0)
-            connection.send.assert_awaited_once()
+            self.assertEqual(connect_printer.await_count, 2)
+            connected.feed.assert_awaited_once_with()
+            connected.retract.assert_not_awaited()
+            self.assertEqual(connected.disconnect.await_count, 2)
 
     def test_export_printer_config_writes_full_editable_profile_overrides(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -8,11 +8,12 @@ This document is the second step: it explains why the public API looks the way i
 The codebase is built around three different concerns that stay separate on purpose:
 
 1. describe a concrete printer
-2. build a printable job for that printer
-3. send that job over some transport
+2. connect it through some transport
+3. print or send through the prepared connection
 
 That is why the public model is built from:
 - `PrinterDevice`
+- `ConnectedPrinter`
 - `PrinterProtocol`
 - connectors
 
@@ -121,6 +122,19 @@ Important: `PrinterProtocol` is not a transport object.
 It builds jobs; it does not connect, send, or create runtime controllers.
 Stateful runtime controllers are attached by the `printing` layer.
 
+### `ConnectedPrinter`
+The high-level object for an active printer session.
+It combines:
+- a `PrinterDevice`
+- an active transport connection
+- prepared runtime state
+- file/text printing
+- already-built `ProtocolJob` sending
+- manual paper motion
+
+CLI and GUI code should use `ConnectedPrinter` instead of manually combining
+`PrintJobBuilder`, runtime preparation, and `send_prepared_job`.
+
 ### `ProtocolJob`
 A unit of work that transport can send.
 It contains:
@@ -141,7 +155,11 @@ Repo implementations include:
 - `BleakBluetoothConnector`
 - `SerialConnector`
 
-A connector connects using `PrinterDevice` and sends `ProtocolJob`.
+A connector connects using `PrinterDevice` and exposes a low-level connection
+that can send `ProtocolJob`.
+Most app-level code should pass a connector to `connect_printer(...)` and use
+the returned `ConnectedPrinter`; direct connector use is lower-level transport
+plumbing.
 
 ## Detecting versus discovering
 
@@ -178,10 +196,10 @@ Transport code owns scanning; devices code owns turning raw endpoints into logic
 This split is the important architectural decision.
 
 It allows these combinations:
-- repo discovery + repo transport
-- repo discovery + custom transport
-- explicit `PrinterDevice` + repo transport
-- explicit `PrinterDevice` + custom transport
+- repo discovery + repo transport + `ConnectedPrinter`
+- repo discovery + custom transport + `ConnectedPrinter`
+- explicit `PrinterDevice` + repo transport + `ConnectedPrinter`
+- explicit `PrinterDevice` + custom transport + `ConnectedPrinter`
 - `PrinterProtocol` only, with no repo transport at all
 
 That is why the code does not use a model like `Protocol(connector).send(...)`.
@@ -189,6 +207,8 @@ Doing that would collapse packet building and transport into one object and make
 
 Instead, the shared object is `PrinterDevice`.
 That keeps protocol and transport aligned without making either one own the other.
+`ConnectedPrinter` sits above both: it coordinates a resolved printer and a
+chosen connector without moving protocol semantics into transport.
 
 ## Package roles
 
@@ -236,17 +256,23 @@ It contains:
 Owns the higher-level file pipeline and stateful runtime logic.
 
 It contains:
+- `ConnectedPrinter` and `connect_printer`
 - `PrintJobBuilder`
 - `DocumentRenderer`, the printing-layer bridge from documents to raster pages
 - `PrintSettings`
+- job sending helpers
 - streaming page-job assembly for memory-sensitive callers
 - runtime controllers in `printing.runtime`
 
+`ConnectedPrinter` is the public app-facing boundary for an active session.
+`PrintJobBuilder` is lower-level: it builds a `ProtocolJob` from a file, but it
+does not own connection lifetime or runtime preparation.
+
 `DocumentRenderer` uses `timiniprint.rendering` converters, but it lives in
 `printing` because it also needs printer settings, resolved protocol image
-pipeline choices, and runtime capabilities. `PrintJobBuilder` does not own file
-conversion directly; it asks `DocumentRenderer` for rendered pages, applies any
-print-job-only debug markers, and builds `ProtocolJob` pages.
+pipeline choices, and runtime capabilities. `PrintJobBuilder` asks
+`DocumentRenderer` for rendered pages, applies any print-job-only debug markers,
+and builds `ProtocolJob` pages.
 
 ### `timiniprint.transport`
 Owns actual I/O.
@@ -265,6 +291,7 @@ The intended flow is:
 - `printing -> devices`
 - `printing -> rendering`
 - `printing -> protocol`
+- `printing -> transport`
 - `transport -> devices`
 - `transport -> protocol`
 

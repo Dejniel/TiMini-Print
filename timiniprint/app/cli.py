@@ -6,19 +6,15 @@ import json
 import os
 import platform
 import sys
-import tempfile
 from pathlib import Path
 from typing import Mapping
 from typing import Optional, Sequence
 
 from .. import __version__, reporting
 from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarget
-from ..printing.builder import PrintJobBuilder
-from ..printing.runtime.base import PreparedRuntimeContext
-from ..printing.runtime.prepare import prepare_connection_runtime
-from ..printing.send import send_prepared_job
+from ..printing.connected import connect_printer
 from ..printing.settings import PrintSettings
-from ..protocol import ImageEncoding, PrinterProtocol, ProtocolJob
+from ..protocol import ImageEncoding
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 from ..transport.bluetooth.types import DeviceTransport
 from ..transport.serial import SerialConnector
@@ -204,8 +200,7 @@ def scan_devices(reporter: reporting.Reporter) -> int:
     return 0
 
 
-def create_print_job_builder(
-    device: PrinterDevice,
+def create_print_settings(
     text_mode: Optional[bool] = None,
     blackening: Optional[int] = None,
     text_font: Optional[str] = None,
@@ -216,11 +211,9 @@ def create_print_job_builder(
     pdf_pages: Optional[str] = None,
     page_gap_mm: int = 5,
     paper_preset_key: Optional[str] = None,
-    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     image_encoding_override: Optional[ImageEncoding] = None,
     debug_row_markers_interval: Optional[int] = None,
-    reporter: reporting.Reporter | None = None,
-) -> PrintJobBuilder:
+) -> PrintSettings:
     if debug_row_markers_interval is not None and debug_row_markers_interval <= 0:
         raise ValueError("Debug row marker interval must be positive")
     settings = PrintSettings(
@@ -238,67 +231,43 @@ def create_print_job_builder(
     )
     if blackening is not None:
         settings.blackening = blackening
-    return PrintJobBuilder(
-        device,
-        settings=settings,
-        runtime_context=runtime_context,
-        reporter=reporter,
+    return settings
+
+
+def create_print_settings_from_args(args: argparse.Namespace) -> PrintSettings:
+    return create_print_settings(
+        text_mode=_resolve_text_mode(args),
+        blackening=_resolve_blackening(args),
+        text_font=_resolve_text_font(args),
+        text_columns=_resolve_text_columns(args),
+        text_wrap=_resolve_text_wrap(args),
+        trim_side_margins=_resolve_trim_side_margins(args),
+        trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
+        pdf_pages=_resolve_pdf_pages(args),
+        page_gap_mm=_resolve_page_gap(args),
+        paper_preset_key=_resolve_paper_preset_key(args),
+        debug_row_markers_interval=args.debug_row_markers,
     )
 
 
-def build_print_job(
-    device: PrinterDevice,
-    path: Optional[str],
-    text_mode: Optional[bool] = None,
-    blackening: Optional[int] = None,
-    text_input: Optional[str] = None,
-    text_font: Optional[str] = None,
-    text_columns: Optional[int] = None,
-    text_wrap: bool = True,
-    trim_side_margins: bool = True,
-    trim_top_bottom_margins: bool = True,
-    pdf_pages: Optional[str] = None,
-    page_gap_mm: int = 5,
-    paper_preset_key: Optional[str] = None,
-    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
-    image_encoding_override: Optional[ImageEncoding] = None,
-    debug_row_markers_interval: Optional[int] = None,
-    reporter: reporting.Reporter | None = None,
-) -> ProtocolJob:
-    builder = create_print_job_builder(
-        device=device,
-        text_mode=text_mode,
-        blackening=blackening,
-        text_font=text_font,
-        text_columns=text_columns,
-        text_wrap=text_wrap,
-        trim_side_margins=trim_side_margins,
-        trim_top_bottom_margins=trim_top_bottom_margins,
-        pdf_pages=pdf_pages,
-        page_gap_mm=page_gap_mm,
-        paper_preset_key=paper_preset_key,
-        runtime_context=runtime_context,
-        image_encoding_override=image_encoding_override,
-        debug_row_markers_interval=debug_row_markers_interval,
-        reporter=reporter,
-    )
-    if text_input is None:
-        if not path:
-            raise RuntimeError("Missing file path")
-        return builder.build_from_file(path)
-    temp_path = None
-    try:
-        with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as handle:
-            handle.write(text_input)
-            temp_path = handle.name
-        return builder.build_from_file(temp_path)
-    finally:
-        if temp_path and os.path.exists(temp_path):
-            os.remove(temp_path)
+async def run_paper_motion(connected, action: str) -> None:
+    if action == "feed":
+        await connected.feed()
+    elif action == "retract":
+        await connected.retract()
+    else:
+        raise ValueError(f"Unknown paper motion action: {action}")
 
 
-def build_paper_motion_job(device: PrinterDevice, action: str) -> ProtocolJob:
-    return PrinterProtocol(device).build_paper_motion(action)
+async def print_cli_input(connected, args: argparse.Namespace) -> None:
+    settings = create_print_settings_from_args(args)
+    text_input = _resolve_text_input(args)
+    if text_input is not None:
+        await connected.print_text(text_input, settings=settings)
+        return
+    if not args.path:
+        raise RuntimeError("Missing file path")
+    await connected.print_file(args.path, settings=settings)
 
 
 async def _resolve_bluetooth_device(
@@ -517,6 +486,9 @@ def print_bluetooth(
 ) -> int:
     catalog = PrinterCatalog.load()
 
+    def log_disconnect_error(exc: Exception) -> None:
+        reporter.debug(short="Bluetooth", detail=f"Disconnect cleanup failed: {exc}")
+
     async def run() -> None:
         device = await _resolve_bluetooth_device(
             args,
@@ -524,33 +496,18 @@ def print_bluetooth(
             reporter=reporter if args.verbose else None,
         )
         _debug_resolved_device(reporter, device, action="print")
-        connection = await BleakBluetoothConnector(reporter=reporter).connect(device)
+        connected = await connect_printer(
+            device,
+            BleakBluetoothConnector(reporter=reporter),
+            reporter=reporter,
+        )
         try:
-            runtime_context = await prepare_connection_runtime(device, connection, reporter=reporter)
-            job = build_print_job(
-                device,
-                args.path,
-                text_mode=_resolve_text_mode(args),
-                blackening=_resolve_blackening(args),
-                text_input=_resolve_text_input(args),
-                text_font=_resolve_text_font(args),
-                text_columns=_resolve_text_columns(args),
-                text_wrap=_resolve_text_wrap(args),
-                trim_side_margins=_resolve_trim_side_margins(args),
-                trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
-                pdf_pages=_resolve_pdf_pages(args),
-                page_gap_mm=_resolve_page_gap(args),
-                paper_preset_key=_resolve_paper_preset_key(args),
-                runtime_context=runtime_context,
-                debug_row_markers_interval=args.debug_row_markers,
-                reporter=reporter if args.verbose else None,
-            )
-            await send_prepared_job(device, connection, job, reporter=reporter)
+            await print_cli_input(connected, args)
         finally:
             try:
-                await connection.disconnect()
+                await connected.disconnect()
             except Exception as exc:
-                reporter.debug(short="Bluetooth", detail=f"Disconnect cleanup failed: {exc}")
+                log_disconnect_error(exc)
 
     asyncio.run(run())
     return 0
@@ -561,30 +518,12 @@ def print_serial(args: argparse.Namespace, reporter: reporting.Reporter) -> int:
     device = _resolve_serial_device(args, catalog)
 
     async def run() -> None:
-        connection = await SerialConnector(reporter=reporter).connect(device)
-        try:
-            runtime_context = await prepare_connection_runtime(device, connection, reporter=reporter)
-            job = build_print_job(
-                device,
-                args.path,
-                text_mode=_resolve_text_mode(args),
-                blackening=_resolve_blackening(args),
-                text_input=_resolve_text_input(args),
-                text_font=_resolve_text_font(args),
-                text_columns=_resolve_text_columns(args),
-                text_wrap=_resolve_text_wrap(args),
-                trim_side_margins=_resolve_trim_side_margins(args),
-                trim_top_bottom_margins=_resolve_trim_top_bottom_margins(args),
-                pdf_pages=_resolve_pdf_pages(args),
-                page_gap_mm=_resolve_page_gap(args),
-                paper_preset_key=_resolve_paper_preset_key(args),
-                runtime_context=runtime_context,
-                debug_row_markers_interval=args.debug_row_markers,
-                reporter=reporter if args.verbose else None,
-            )
-            await send_prepared_job(device, connection, job, reporter=reporter)
-        finally:
-            await connection.disconnect()
+        async with await connect_printer(
+            device,
+            SerialConnector(reporter=reporter),
+            reporter=reporter,
+        ) as connected:
+            await print_cli_input(connected, args)
 
     asyncio.run(run())
     return 0
@@ -597,6 +536,9 @@ def paper_motion_bluetooth(
 ) -> int:
     catalog = PrinterCatalog.load()
 
+    def log_disconnect_error(exc: Exception) -> None:
+        reporter.debug(short="Bluetooth", detail=f"Disconnect cleanup failed: {exc}")
+
     async def run() -> None:
         device = await _resolve_bluetooth_device(
             args,
@@ -604,15 +546,18 @@ def paper_motion_bluetooth(
             reporter=reporter if args.verbose else None,
         )
         _debug_resolved_device(reporter, device, action=action)
-        job = build_paper_motion_job(device, action)
-        connection = await BleakBluetoothConnector(reporter=reporter).connect(device)
+        connected = await connect_printer(
+            device,
+            BleakBluetoothConnector(reporter=reporter),
+            reporter=reporter,
+        )
         try:
-            await connection.send(job)
+            await run_paper_motion(connected, action)
         finally:
             try:
-                await connection.disconnect()
+                await connected.disconnect()
             except Exception as exc:
-                reporter.debug(short="Bluetooth", detail=f"Disconnect cleanup failed: {exc}")
+                log_disconnect_error(exc)
 
     asyncio.run(run())
     return 0
@@ -621,14 +566,14 @@ def paper_motion_bluetooth(
 def paper_motion_serial(args: argparse.Namespace, action: str, reporter: reporting.Reporter) -> int:
     catalog = PrinterCatalog.load()
     device = _resolve_serial_device(args, catalog)
-    job = build_paper_motion_job(device, action)
 
     async def run() -> None:
-        connection = await SerialConnector(reporter=reporter).connect(device)
-        try:
-            await connection.send(job)
-        finally:
-            await connection.disconnect()
+        async with await connect_printer(
+            device,
+            SerialConnector(reporter=reporter),
+            reporter=reporter,
+        ) as connected:
+            await run_paper_motion(connected, action)
 
     asyncio.run(run())
     return 0

@@ -16,13 +16,9 @@ from tkinter import filedialog, ttk
 from .diagnostics import emit_startup_warnings
 from .. import reporting
 from ..devices import PrinterCatalog, PrinterDevice, ResolvedBluetoothTarget
-from ..printing.builder import PrintJobBuilder
+from ..printing.connected import ConnectedPrinter, connect_printer
 from ..printing.paper import default_paper_preset_for_device, paper_presets_for_device
-from ..printing.runtime.base import PreparedRuntimeContext
-from ..printing.runtime.prepare import prepare_connection_runtime
-from ..printing.send import send_prepared_job
 from ..printing.settings import PrintSettings
-from ..protocol import PrinterProtocol
 from ..rendering.converters.text import TextConverter
 from ..rendering.formats import normalized_width
 from ..transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
@@ -126,8 +122,7 @@ class TiMiniPrintGUI(tk.Tk):
         )
         self.discovery = BluetoothDiscovery(self.catalog, reporter=self.reporter)
         self.connector = BleakBluetoothConnector(reporter=self.reporter)
-        self.connection = None
-        self.runtime_context = PreparedRuntimeContext()
+        self.connected_printer: ConnectedPrinter | None = None
 
         self.devices = []
         self.device_map = {}
@@ -528,7 +523,7 @@ class TiMiniPrintGUI(tk.Tk):
 
         def done(fut):
             try:
-                self.connection, self.runtime_context = fut.result()
+                self.connected_printer = fut.result()
                 self._queue_status(reporting.STATUS_CONNECT_DONE)
                 self.queue.put(("connected", device))
             except Exception as exc:
@@ -536,20 +531,7 @@ class TiMiniPrintGUI(tk.Tk):
                 self.queue.put(("connecting", False))
 
         async def run():
-            connection = await self.connector.connect(device)
-            try:
-                runtime_context = await prepare_connection_runtime(
-                    device,
-                    connection,
-                    reporter=self.reporter,
-                )
-            except Exception:
-                try:
-                    await connection.disconnect()
-                except Exception:
-                    pass
-                raise
-            return connection, runtime_context
+            return await connect_printer(device, self.connector, reporter=self.reporter)
 
         self.ble_loop.submit(run(), callback=done)
 
@@ -563,22 +545,21 @@ class TiMiniPrintGUI(tk.Tk):
 
     def disconnect(self) -> None:
         self._queue_status(reporting.STATUS_DISCONNECT_START)
-        connection = self.connection
+        connected = self.connected_printer
 
         def done(fut):
             try:
                 fut.result()
-                self.connection = None
-                self.runtime_context = PreparedRuntimeContext()
+                self.connected_printer = None
                 self._queue_status(reporting.STATUS_DISCONNECT_DONE)
                 self.queue.put(("disconnected", None))
             except Exception as exc:
                 self._queue_error(reporting.ERROR_DISCONNECT_FAILED, detail=str(exc), exc=exc)
 
-        if connection is None:
+        if connected is None:
             self.queue.put(("disconnected", None))
             return
-        self.ble_loop.submit(connection.disconnect(), callback=done)
+        self.ble_loop.submit(connected.disconnect(), callback=done)
 
     def browse(self) -> None:
         path = filedialog.askopenfilename(
@@ -801,8 +782,8 @@ class TiMiniPrintGUI(tk.Tk):
         if not path:
             self._queue_error(reporting.ERROR_NO_FILE)
             return
-        connected_device = self.connected_device
-        if not connected_device or self.connection is None:
+        connected = self.connected_printer
+        if connected is None:
             self._queue_error(reporting.ERROR_PROFILE_NOT_DETECTED)
             return
         ext = os.path.splitext(path)[1].lower()
@@ -825,12 +806,6 @@ class TiMiniPrintGUI(tk.Tk):
             page_gap_mm=page_gap_mm,
             debug_row_markers_interval=None,
         )
-        builder = PrintJobBuilder(
-            connected_device,
-            settings=settings,
-            runtime_context=self.runtime_context,
-        )
-
         def done(fut):
             try:
                 fut.result()
@@ -840,13 +815,7 @@ class TiMiniPrintGUI(tk.Tk):
 
         async def run() -> None:
             self._queue_status(reporting.STATUS_PRINTING)
-            job = builder.build_from_file(path)
-            await send_prepared_job(
-                connected_device,
-                self.connection,
-                job,
-                reporter=self.reporter,
-            )
+            await connected.print_file(path, settings=settings)
 
         self._queue_status(reporting.STATUS_PRINTING)
         self.ble_loop.submit(run(), callback=done)
@@ -886,19 +855,20 @@ class TiMiniPrintGUI(tk.Tk):
         if self._paper_motion_busy:
             return
         connected_device = self.connected_device
-        if not connected_device or self.connection is None:
+        connected = self.connected_printer
+        if not connected_device or connected is None:
             self._queue_error(reporting.ERROR_PROFILE_NOT_DETECTED)
             self._stop_paper_motion()
             return
-        job = PrinterProtocol(connected_device).build_paper_motion(action)
         self._paper_motion_busy = True
 
         async def run() -> None:
             if action == "feed":
                 self._queue_status(reporting.STATUS_PAPER_FEED)
+                await connected.feed()
             else:
                 self._queue_status(reporting.STATUS_PAPER_RETRACT)
-            await self.connection.send(job)
+                await connected.retract()
 
         def done(fut):
             self._paper_motion_busy = False
@@ -1051,8 +1021,8 @@ class TiMiniPrintGUI(tk.Tk):
         self._closing = True
         self._stop_paper_motion()
         try:
-            if self.connection is not None:
-                future = self.ble_loop.submit(self.connection.disconnect())
+            if self.connected_printer is not None:
+                future = self.ble_loop.submit(self.connected_printer.disconnect())
                 future.result(timeout=2.0)
         except Exception:
             pass

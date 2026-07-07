@@ -10,8 +10,8 @@ It answers one question first:
 Read it in this order:
 
 1. get or create a `PrinterDevice`
-2. build a `ProtocolJob`
-3. send that job through a connector
+2. connect it through a connector
+3. print through `ConnectedPrinter`
 
 If you want package boundaries and internal placement after that, read [architecture.md](architecture.md).
 
@@ -50,9 +50,24 @@ Editable JSON configs keep this separation too: `profile_overrides` edits the
 static profile, while `runtime_overrides` edits runtime control algorithm,
 preset key, density, and capabilities.
 
+### `ConnectedPrinter`
+`ConnectedPrinter` is the normal high-level entry point once you have a resolved
+`PrinterDevice` and a connector. It owns the active connection, prepared runtime
+state, file-to-job building, send path, and manual paper motion.
+
+Use:
+- `print_file(...)` for `.png`, `.jpg`, `.pdf`, or `.txt`
+- `print_text(...)` for raw text
+- `feed()` / `retract()` for manual paper motion
+- `send_job(...)` only when you already built a `ProtocolJob` yourself
+
+Create it with `connect_printer(device, connector, ...)`.
+
 ### `PrintJobBuilder`
-`PrintJobBuilder(device, settings=...)` is the normal high-level entry point.
-Use it when you start from a file such as `.png`, `.jpg`, `.pdf`, or `.txt`.
+`PrintJobBuilder(device, settings=...)` is the lower-level file-to-job builder
+used by `ConnectedPrinter`.
+Use it directly only when you want to build a `ProtocolJob` without sending it,
+or when you want one-page-at-a-time job construction.
 
 It handles:
 - file-to-page rendering through the printing-layer `DocumentRenderer`
@@ -83,7 +98,9 @@ The repo provides:
 - `BleakBluetoothConnector`
 - `SerialConnector`
 
-A connector accepts a `PrinterDevice`, opens a connection, and sends a `ProtocolJob`.
+A connector accepts a `PrinterDevice` and opens a low-level connection.
+Most callers should pass that connector to `connect_printer(...)` instead of
+manually preparing runtime state and sending jobs.
 
 ## First example: print a file over Bluetooth
 
@@ -91,9 +108,7 @@ This is the best first contact with the API.
 
 ```python
 from timiniprint.devices import PrinterCatalog
-from timiniprint.printing.builder import PrintJobBuilder
-from timiniprint.printing.runtime.prepare import prepare_connection_runtime
-from timiniprint.printing.send import send_prepared_job
+from timiniprint.printing.connected import connect_printer
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 
@@ -106,30 +121,23 @@ if not devices:
     raise RuntimeError("No supported printers found")
 device = devices[0]
 
-# Open a connection, prepare any live runtime capabilities, then build and send.
-connection = await BleakBluetoothConnector().connect(device)
-try:
-    runtime_context = await prepare_connection_runtime(device, connection)
-    job = PrintJobBuilder(
-        device,
+# Open a connection, prepare live runtime state, then build and send.
+async with await connect_printer(device, BleakBluetoothConnector()) as printer:
+    await printer.print_file(
+        "example.png",
         settings=PrintSettings(
             blackening=3,
             rotate_90_clockwise=False,
         ),
-        runtime_context=runtime_context,
-    ).build_from_file("example.png")
-    await send_prepared_job(device, connection, job)
-finally:
-    await connection.disconnect()
+    )
 ```
 
 What this does:
 - `BluetoothDiscovery` finds reachable printers and returns `PrinterDevice` objects
-- `PrintJobBuilder` turns the file into a `ProtocolJob`
-- `prepare_connection_runtime` and `PrintJobBuilder` attach runtime controller state when the selected family needs it
 - `BleakBluetoothConnector` uses `device.transport_target`, `device.profile.stream`, and BLE MTU hints from the profile
-- `send_prepared_job` executes named protocol steps when needed and waits for runtime completion
-- the caller does not manually pass `chunk_size`, `delay_ms`, or `runtime_controller`
+- `connect_printer` opens the connection and prepares runtime state when the selected family needs it
+- `ConnectedPrinter.print_file(...)` turns the file into a `ProtocolJob`, sends it, executes named protocol steps when needed, and waits for runtime completion
+- the caller does not manually pass `chunk_size`, `delay_ms`, `runtime_context`, or `runtime_controller`
 
 Use this path when:
 - you want the repo file pipeline
@@ -168,9 +176,7 @@ Use this when Bluetooth discovery is not involved and you already know what prin
 
 ```python
 from timiniprint.devices import PrinterCatalog, SerialTarget
-from timiniprint.printing.builder import PrintJobBuilder
-from timiniprint.printing.runtime.prepare import prepare_connection_runtime
-from timiniprint.printing.send import send_prepared_job
+from timiniprint.printing.connected import connect_printer
 from timiniprint.transport.serial import SerialConnector
 
 catalog = PrinterCatalog.load()
@@ -181,13 +187,8 @@ device = catalog.device_from_profile(
     transport_target=SerialTarget("/dev/rfcomm0"),
 )
 
-connection = await SerialConnector().connect(device)
-try:
-    runtime_context = await prepare_connection_runtime(device, connection)
-    job = PrintJobBuilder(device, runtime_context=runtime_context).build_from_file("example.pdf")
-    await send_prepared_job(device, connection, job)
-finally:
-    await connection.disconnect()
+async with await connect_printer(device, SerialConnector()) as printer:
+    await printer.print_file("example.pdf")
 ```
 
 Use this path when:
@@ -218,9 +219,7 @@ A minimal sketch looks like this:
 
 ```python
 from timiniprint.devices import PrinterCatalog
-from timiniprint.printing.builder import PrintJobBuilder
-from timiniprint.printing.runtime.prepare import prepare_connection_runtime
-from timiniprint.printing.send import send_prepared_job
+from timiniprint.printing.connected import connect_printer
 
 
 class MyConnection:
@@ -277,19 +276,14 @@ class MyConnector:
 catalog = PrinterCatalog.load()
 device = catalog.device_from_profile("x6h")
 
-connection = await MyConnector().connect(device)
-try:
-    runtime_context = await prepare_connection_runtime(device, connection)
-    job = PrintJobBuilder(device, runtime_context=runtime_context).build_from_file("example.png")
-    await send_prepared_job(device, connection, job)
-finally:
-    await connection.disconnect()
+async with await connect_printer(device, MyConnector()) as printer:
+    await printer.print_file("example.png")
 ```
 
 This is the main reason protocol and transport stay separate in the architecture.
 The repo should make it easy to reuse protocol logic without forcing one Bluetooth stack.
 If you want probe warnings to go somewhere visible, pass your own reporter into
-`prepare_connection_runtime(..., reporter=...)`.
+`connect_printer(..., reporter=...)`.
 
 If your platform already has its own Bluetooth scanner, such as a mobile native bridge,
 convert raw scan results to `BluetoothEndpoint` and pass them to `BluetoothEndpointResolver`.
@@ -424,7 +418,8 @@ Supported public pixel formats are:
 - `PixelFormat.GRAY8`
   - grayscale values `0..255`
 
-Most callers do not need to build these manually, because `PrintJobBuilder` and the rendering pipeline already do it.
+Most callers do not need to build these manually, because `ConnectedPrinter`,
+`PrintJobBuilder`, and the rendering pipeline already do it.
 
 If you do want the low-level path, it looks like this:
 
@@ -466,9 +461,10 @@ They still exist for internal composition and tests, but they are not the public
 
 If you are unsure which API level to use, use this rule:
 
-- `PrintJobBuilder` if you start from a file
+- `ConnectedPrinter` if you want to print through repo-managed I/O
+- `PrintJobBuilder` if you want to build a file-based `ProtocolJob` without sending it
 - `PrinterProtocol` if you start from raster data
-- a connector if you need actual I/O
+- a connector if you need custom low-level I/O
 - `PrinterDevice` as the shared object passed between them
 
 The important thing to avoid is treating `PrinterProtocol` as a connection object.
