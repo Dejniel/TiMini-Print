@@ -8,6 +8,7 @@ from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from timiniprint.transport.bluetooth.backend import (
     SppBackend,
+    _CONNECT_TIMEOUT_SEC,
     _MACOS_FALLBACK_COOLDOWN_SEC,
     _resolve_rfcomm_channels,
 )
@@ -21,9 +22,10 @@ class _Socket:
         self.closed = False
         self.target = None
         self.sent = []
+        self.timeout = None
 
-    def settimeout(self, _t):
-        return None
+    def settimeout(self, timeout):
+        self.timeout = timeout
 
     def connect(self, target):
         self.target = target
@@ -128,6 +130,7 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         with patch("timiniprint.transport.bluetooth.backend._select_adapter", return_value=_Adapter([1], fail=False)):
             backend._connect_attempts_blocking([dev], pairing_hint=False)
         self.assertTrue(backend.is_connected())
+        self.assertEqual(getattr(backend, "_sock").timeout, _CONNECT_TIMEOUT_SEC)
 
     def test_connect_attempts_passes_ble_mtu_request_to_adapter(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)

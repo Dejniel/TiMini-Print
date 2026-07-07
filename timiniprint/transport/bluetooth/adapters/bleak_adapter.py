@@ -112,7 +112,10 @@ class _BleakSocket:
         except ImportError as exc:
             raise _missing_bleak_error() from exc
 
-        self._client = BleakClient(await self._resolve_client_target(address))
+        self._client = BleakClient(
+            await self._resolve_client_target(address),
+            timeout=self._timeout,
+        )
 
         try:
             await self._client.connect()

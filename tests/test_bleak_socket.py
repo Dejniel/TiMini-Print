@@ -97,6 +97,32 @@ class BleakSocketTests(unittest.TestCase):
 
         self.assertEqual(s._mtu_size, 20)
 
+    def test_connect_passes_socket_timeout_to_bleak_client(self) -> None:
+        client = _Client(
+            [
+                _Svc(
+                    "0000ae30-0000-1000-8000-00805f9b34fb",
+                    [_Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])],
+                )
+            ]
+        )
+        target = object()
+        calls = []
+
+        def fake_client(address_or_device, **kwargs):
+            calls.append((address_or_device, kwargs))
+            return client
+
+        s = _BleakSocket(device_cache={"AA": target})
+        s.settimeout(12.0)
+        fake_bleak = types.SimpleNamespace(BleakClient=fake_client)
+
+        with patch.dict("sys.modules", {"bleak": fake_bleak}):
+            asyncio.run(s._connect_async("AA"))
+
+        self.assertEqual(calls, [(target, {"timeout": 12.0})])
+        self.assertTrue(client.connected)
+
     def test_connect_caps_reported_ble_mtu_to_standard_request(self) -> None:
         client = _Client(
             [
@@ -108,7 +134,7 @@ class BleakSocketTests(unittest.TestCase):
             mtu_size=247,
         )
         s = _BleakSocket(device_cache={"AA": object()}, ble_mtu_request=23)
-        fake_bleak = types.SimpleNamespace(BleakClient=lambda _target: client)
+        fake_bleak = types.SimpleNamespace(BleakClient=lambda _target, **_kwargs: client)
 
         with patch.dict("sys.modules", {"bleak": fake_bleak}):
             asyncio.run(s._connect_async("AA"))
@@ -126,7 +152,7 @@ class BleakSocketTests(unittest.TestCase):
             mtu_size=247,
         )
         s = _BleakSocket(device_cache={"AA": object()}, ble_mtu_request=512)
-        fake_bleak = types.SimpleNamespace(BleakClient=lambda _target: client)
+        fake_bleak = types.SimpleNamespace(BleakClient=lambda _target, **_kwargs: client)
 
         with patch.dict("sys.modules", {"bleak": fake_bleak}):
             asyncio.run(s._connect_async("AA"))

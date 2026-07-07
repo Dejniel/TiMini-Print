@@ -13,6 +13,7 @@ from ... import reporting
 
 _MACOS_FALLBACK_COOLDOWN_SEC = 0.35
 _MACOS_BLE_REFRESH_TIMEOUT_SEC = 3.0
+_CONNECT_TIMEOUT_SEC = 12.0
 
 
 class SppBackend:
@@ -315,7 +316,7 @@ class SppBackend:
                 )
                 set_timeout = getattr(sock, "settimeout", None)
                 if callable(set_timeout):
-                    set_timeout(8)
+                    set_timeout(_CONNECT_TIMEOUT_SEC)
                 sock.connect((device.address, channel))
                 self._sock = sock
                 self._connected = True
