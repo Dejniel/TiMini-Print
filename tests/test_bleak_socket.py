@@ -117,7 +117,10 @@ class BleakSocketTests(unittest.TestCase):
         s.settimeout(12.0)
         fake_bleak = types.SimpleNamespace(BleakClient=fake_client)
 
-        with patch.dict("sys.modules", {"bleak": fake_bleak}):
+        with patch("timiniprint.transport.bluetooth.adapters.bleak_adapter.IS_MACOS", False), patch.dict(
+            "sys.modules",
+            {"bleak": fake_bleak},
+        ):
             asyncio.run(s._connect_async("AA"))
 
         self.assertEqual(calls, [(target, {"timeout": 12.0})])
