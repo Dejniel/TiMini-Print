@@ -16,7 +16,9 @@ class _FunnyLxSession:
     def __init__(self, replies: list[bytes]) -> None:
         self.replies = list(replies)
         self.packets: list[bytes] = []
+        self.packet_timeouts: list[float] = []
         self.control_packets: list[bytes] = []
+        self.control_timeouts: list[float] = []
         self.standard_payloads: list[bytes] = []
         self.wait_replies: list[bytes] = []
         self.debugs: list[str] = []
@@ -48,16 +50,17 @@ class _FunnyLxSession:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        _ = label, timeout, required
+        _ = label, required
         self.packets.append(bytes(packet))
+        self.packet_timeouts.append(timeout)
         reply = self.replies.pop(0)
         if not match(reply):
             raise AssertionError(f"reply did not match: {reply.hex()}")
         return reply
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
-        _ = timeout
         self.control_packets.append(bytes(packet))
+        self.control_timeouts.append(timeout)
         return True
 
     async def wait_for_notification(
@@ -224,6 +227,7 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
             b"\x5A\x0A" + random_bytes,
             b"\x5A\x0B" + crc.high,
         ])
+        self.assertEqual(session.packet_timeouts, [5.0, 5.0, 5.0])
         self.assertEqual(session.control_packets, [])
         self.assertTrue(controller.debug_snapshot()["verified"])
 
@@ -245,6 +249,7 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(session.packets[1], b"\x5A\x0A" + random_bytes)
         self.assertEqual(session.control_packets, [bytes.fromhex("5a 0c 03")])
+        self.assertEqual(session.control_timeouts, [0.1])
         self.assertEqual(controller.debug_snapshot()["darkness_code"], 3)
         self.assertTrue(controller.debug_snapshot()["supports_darkness"])
 

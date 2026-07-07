@@ -16,6 +16,7 @@ from ...protocol.steps import (
 from .base import RuntimeController, RuntimeSessionApi
 
 _HANDSHAKE_RANDOM_BYTES = 10
+_MIN_HANDSHAKE_TIMEOUT_SEC = 5.0
 _MAX_RETRY_REQUESTS = 10
 _MAX_PACKET_DELAY_HINT_SEC = 0.5
 _DEFAULT_PACKET_DELAY_HINT_SEC = 0.02
@@ -58,11 +59,12 @@ class FunnyLxRuntimeController(RuntimeController):
         if not session.can_send_control_packet_wait_notification():
             raise RuntimeError("Funny LX verification requires BLE notification queries")
 
+        handshake_timeout = _handshake_timeout(timeout)
         status = await session.send_control_packet_wait_notification(
             b"\x5A\x01\x00",
             label="Funny LX status",
             match=lambda reply: reply.startswith(b"\x5A\x01"),
-            timeout=timeout,
+            timeout=handshake_timeout,
         )
         self._supports_darkness = _status_supports_darkness(status or b"")
         mac_bytes = _mac_bytes_from_status(status) if status is not None else None
@@ -84,13 +86,13 @@ class FunnyLxRuntimeController(RuntimeController):
             b"\x5A\x0A" + random_bytes,
             label="Funny LX challenge low CRC",
             match=lambda reply: reply.startswith(b"\x5A\x0A") and reply[2 : 2 + len(crc.low)] == crc.low,
-            timeout=timeout,
+            timeout=handshake_timeout,
         )
         await session.send_control_packet_wait_notification(
             b"\x5A\x0B" + crc.high,
             label="Funny LX challenge high CRC",
             match=lambda reply: reply.startswith(b"\x5A\x0B\x01"),
-            timeout=timeout,
+            timeout=handshake_timeout,
         )
         self._verified = True
         if self._supports_darkness:
@@ -291,6 +293,10 @@ class FunnyLxRuntimeController(RuntimeController):
 
 def _random_challenge() -> bytes:
     return bytes(secrets.randbelow(0xFE) + 1 for _ in range(_HANDSHAKE_RANDOM_BYTES))
+
+
+def _handshake_timeout(timeout: float) -> float:
+    return max(timeout, _MIN_HANDSHAKE_TIMEOUT_SEC)
 
 
 def _mac_bytes_from_address(address: str) -> bytes | None:
