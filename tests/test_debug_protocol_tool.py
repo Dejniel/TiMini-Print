@@ -22,7 +22,7 @@ class DebugProtocolToolTests(unittest.TestCase):
             packet = make_packet(0xA4, b"\x35", ProtocolFamily.V5G)
 
             with patch(
-                "tools.debug_protocol_job.cli.build_print_job",
+                "tools.debug_protocol_job.build_print_job",
                 return_value=ProtocolJob(payload=packet),
             ) as build_job:
                 code = debug_protocol_job.main(

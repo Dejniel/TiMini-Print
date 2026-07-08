@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 from typing import Mapping, Sequence
 
@@ -13,6 +15,7 @@ if str(REPO_ROOT) not in sys.path:
 from timiniprint.app import cli  # noqa: E402
 from timiniprint.devices import PrinterCatalog, PrinterDevice  # noqa: E402
 from timiniprint.devices.printer_config import runtime_settings_from_parts  # noqa: E402
+from timiniprint.printing.builder import PrintJobBuilder  # noqa: E402
 from timiniprint.printing.debug_dump import build_protocol_packet_entries  # noqa: E402
 from timiniprint.protocol import ImageEncoding, ImagePipelineConfig, PaperMode, PrinterProtocol, ProtocolJob  # noqa: E402
 from timiniprint.protocol.families import get_protocol_behavior  # noqa: E402
@@ -97,6 +100,56 @@ def _paper_mode(args: argparse.Namespace) -> PaperMode | None:
     if not args.paper_mode:
         return None
     return PaperMode(args.paper_mode)
+
+
+def build_print_job(
+    device: PrinterDevice,
+    path: str | None,
+    *,
+    text_mode: bool | None,
+    blackening: int | None,
+    text_input: str | None,
+    text_font: str | None,
+    text_columns: int | None,
+    text_wrap: bool,
+    trim_side_margins: bool,
+    trim_top_bottom_margins: bool,
+    pdf_pages: str | None,
+    page_gap_mm: int,
+    paper_mode: PaperMode | None,
+    image_encoding_override: ImageEncoding | None,
+    debug_row_markers_interval: int | None,
+    reporter: reporting.Reporter | None,
+) -> ProtocolJob:
+    paper_preset_key = None if paper_mode is None else device.profile.paper_preset_for_mode(paper_mode).key
+    settings = cli.create_print_settings(
+        text_mode=text_mode,
+        blackening=blackening,
+        text_font=text_font,
+        text_columns=text_columns,
+        text_wrap=text_wrap,
+        trim_side_margins=trim_side_margins,
+        trim_top_bottom_margins=trim_top_bottom_margins,
+        pdf_pages=pdf_pages,
+        page_gap_mm=page_gap_mm,
+        paper_preset_key=paper_preset_key,
+        image_encoding_override=image_encoding_override,
+        debug_row_markers_interval=debug_row_markers_interval,
+    )
+    builder = PrintJobBuilder(device, settings=settings, reporter=reporter)
+    if text_input is None:
+        if path is None:
+            raise RuntimeError("Missing file path")
+        return builder.build_from_file(path)
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as handle:
+            handle.write(text_input)
+            temp_path = handle.name
+        return builder.build_from_file(temp_path)
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
 
 
 def build_protocol_job_debug_dump(
@@ -208,7 +261,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     effective_image_pipeline = PrinterProtocol(device).resolve_image_pipeline(
         image_encoding_override=image_encoding_override,
     )
-    job = cli.build_print_job(
+    job = build_print_job(
         device,
         args.path,
         text_mode=cli._resolve_text_mode(args),
