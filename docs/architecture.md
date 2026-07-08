@@ -1,290 +1,131 @@
 # Architecture
 
-Read [protocol.md](protocol.md) first.
-This document is the second step: it explains why the public API looks the way it does and where code belongs internally.
+Read [protocol.md](protocol.md) first if you want to use TiMini-Print from your own code. Read [catalog.md](catalog.md) for profile/model JSON data. This document is about package boundaries and where code belongs.
 
-## The main runtime model
+## Runtime Flow
 
-The codebase is built around three different concerns that stay separate on purpose:
+The app-level flow is:
 
-1. describe a concrete printer
-2. connect it through some transport
-3. print or send through the prepared connection
+1. `devices` resolves a `PrinterDevice`
+2. `transport` opens a connector-specific connection
+3. `printing.connected.connect_printer(...)` prepares runtime state
+4. `ConnectedPrinter` prints files/text or sends prepared jobs
+5. `protocol` builds packet payloads and optional protocol steps
+6. `transport` writes bytes and exposes generic query/wait primitives
 
-That is why the public model is built from:
-- `PrinterDevice`
-- `ConnectedPrinter`
-- `PrinterProtocol`
-- connectors
+The important object at runtime is `PrinterDevice`. It is the shared description used by protocol, printing, and transport without making those packages own each other.
 
-## Main objects
+## Package Boundaries
 
-### `PrinterProfile`
-Static catalog data.
-It describes printer capabilities and print defaults.
+### `timiniprint.devices`
+Owns printer description and catalog resolution.
 
-`paper_presets` lists the paper choices supported by the profile. In JSON these are exact keys into `printer_paper_presets.json`; at runtime the catalog resolves them to `PaperPreset` objects and keeps the same keys. A resolved preset contains the full paper/protocol width, actual render width, and any protocol-side paper parameters such as `paper_mode`, left padding, or maximum sheet height. If the full width is wider than the render width and no protocol-side left padding is configured, the printing layer centers the rendered page or prepared raster before protocol encoding.
+It contains `PrinterDevice`, model/profile data classes, `PrinterCatalog`, config serialization, Bluetooth endpoint models, and `BluetoothEndpointResolver`. It may decide which logical printer a raw endpoint represents. It must not perform I/O.
 
-TinyPrint size-8 paper handling is exposed through paper presets whose `paper_mode` selects the low-level recipe: `plain` keeps the roll-paper feed recipe, while `a4_sheet` maps to the original A4-sheet feed recipe for that protocol variant.
+### `timiniprint.printing`
+Owns the file-to-job flow and stateful print-session behavior.
 
-A `PrinterProfile` is not enough to print by itself.
-It does not say:
-- which protocol family is active right now
-- which protocol variant is active right now
-- which image pipeline is active right now
-- which runtime control algorithm, preset, and capabilities are active right now
-- which transport target is active right now
+It contains `ConnectedPrinter`, `connect_printer`, `PrintJobBuilder`, `DocumentRenderer`, `PrintSettings`, send helpers, and runtime controllers. This package is allowed to coordinate devices, protocol, rendering, and transport because it is the app-level print orchestration layer.
 
-### `PrinterModel`
-Shared catalog model data.
-It describes source-backed model identity and detection metadata:
-- optional `marketing_name` metadata for product/store/manual names shown in
-  generated README lists
-- named Bluetooth detections, where each public model name is attached to its
-  own exact names, prefixes, and optional MAC suffix constraints
-- original Android app package names
+### `timiniprint.protocol`
+Owns stateless wire-format construction.
 
-`marketing_name` is README-only presentation metadata. It must not be used as a
-Bluetooth detection trigger, routing hint, CLI alias, or GUI model selector name.
+It contains `PrinterProtocol`, `ProtocolJob`, protocol families, packet builders, image encoding choices, paper-mode recipe values, and internal low-level builders. It must not connect to hardware, scan Bluetooth, or know transport adapters.
 
-### `SupportedPrinterModel`
-Printable catalog model data.
-It extends `PrinterModel` with:
-- the shared `PrinterProfile` key to use
-- optional protocol/runtime overrides for this model
+### `timiniprint.rendering`
+Owns files, pages, converters, transforms, and rasterization.
 
-Several supported models may intentionally point to the same `PrinterProfile`
-when they use the same protocol recipe. If two source apps use the same advertised
-name with different values, model both variants explicitly and keep automatic
-detection conservative.
+It should not know printer protocols. `printing.DocumentRenderer` bridges rendering output into printer-specific job building because that step needs printer settings and selected paper/image pipeline.
 
-Editable printer configs should normally keep `model_key` as the fallback.
-That preserves model-level protocol overrides, image pipeline overrides,
-runtime presets, and source-app metadata when users delete individual override
-fields. Raw profile-based configs are low-level diagnostics only.
+### `timiniprint.raster`
+Owns shared raster types.
 
-### `UnsupportedPrinterModel`
-Catalog model data for known-but-not-implemented printers.
-It extends `PrinterModel`, but has no implemented `PrinterProfile`.
+It exists so rendering and protocol can share `RasterBuffer`, `RasterSet`, and pixel formats without importing each other.
 
-Use it to recognize reports and future-support candidates without pretending the
-printer is printable. `catalog.detect_model(...)` may include these records in
-its match tuple; `catalog.detect_device(...)` must not return them.
-`profile_key_prediction`, when present, is only a technical grouping hint for
-future profile extraction and README grouping. It is not an implemented
-`PrinterProfile` reference and must not route unsupported hardware to a protocol.
+### `timiniprint.transport`
+Owns actual I/O.
 
-### `RuntimeSettings`
-Runtime catalog data.
-It describes stateful print-session behavior that is not part of the static printer profile:
-- `control_algorithm`: which runtime algorithm to use
-- `preset`: dynamic density inputs for that algorithm, when the protocol needs them
-- `capabilities`: status-notification features used by the runtime controller
+It contains connector interfaces, connection implementations, Bluetooth adapters, and serial transport code. Transport may expose generic send/query/wait primitives. It must not contain printer-family opcode logic or firmware-state decisions.
 
-This exists so dynamic V5G/MX density behavior does not have to borrow a second
-`PrinterProfile` just to get density inputs.
+## Main Objects
 
 ### `PrinterDevice`
-The central runtime object.
-It combines:
-- display name
-- profile
-- protocol family
-- optional protocol variant
-- image pipeline
-- runtime settings
-- optional transport target
-
-If code needs to talk about “this actual printer instance as we currently intend to use it”, it should normally use `PrinterDevice`.
-
-### `PrinterProtocol`
-A protocol builder bound to one `PrinterDevice`.
-It may return named protocol steps for families that need interleaved sends,
-queries, or passive notification waits during a print job. The protocol layer
-defines the expected packet/notification semantics; transport adapters only
-provide the primitive I/O operations.
-It turns raster input into a `ProtocolJob`.
-
-### `PaperPreset` and `ResolvedPaper`
-`PaperPreset` is shared catalog data for a user-facing paper choice. Profiles refer to these presets by exact key, so repeated width/render/padding geometry is not copied across every profile. It answers “what paper is loaded?” rather than exposing protocol internals.
-
-The printing layer resolves a selected preset into:
-- render width
-- optional protocol `paper_mode`
-- future page-size, gap, margin, and padding values
-
-Rendering uses the resolved render width. Protocol families receive the resolved
-low-level values they already understand. Transport does not receive media data.
-Protocol-level `PaperMode` remains an internal/low-level recipe value; it should
-not be used as the GUI or CLI data source.
-
-Important: `PrinterProtocol` is not a transport object.
-It builds jobs; it does not connect, send, or create runtime controllers.
-Stateful runtime controllers are attached by the `printing` layer.
+A resolved printer instance as the program intends to use it. It combines display name, profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, and optional transport target.
 
 ### `ConnectedPrinter`
-The high-level object for an active printer session.
-It combines:
-- a `PrinterDevice`
-- an active transport connection
-- prepared runtime state
-- file/text printing
-- already-built `ProtocolJob` sending
-- manual paper motion
+The high-level object for an active printer session. It owns an active connection and prepared runtime context, then exposes `print_file(...)`, `print_text(...)`, `send_job(...)`, `feed()`, `retract()`, and `disconnect()`.
 
-CLI and GUI code should use `ConnectedPrinter` instead of manually combining
-`PrintJobBuilder`, runtime preparation, and `send_prepared_job`.
+CLI and GUI should use `ConnectedPrinter` instead of manually combining `PrintJobBuilder`, runtime preparation, and `send_prepared_job`.
+
+### `PrintJobBuilder`
+A lower-level file-to-job builder. It turns files into `ProtocolJob` objects using `DocumentRenderer` and `PrinterProtocol`. It does not own connection lifetime or runtime preparation.
+
+Use it directly for preview/debug/streaming-page workflows where a caller wants jobs without immediately printing them.
+
+### `PrinterProtocol`
+A protocol builder bound to one `PrinterDevice`. It builds `ProtocolJob` from raster input and may produce named protocol steps for families that need interleaved send/query/wait operations.
+
+It is not a connection object. Do not add `Protocol(connector).send(...)` style APIs.
 
 ### `ProtocolJob`
-A unit of work that transport can send.
-It contains:
-- `payload`
-- optional `steps`
-- optional `runtime_controller` supplied by the printing/runtime layer
+A transport-sendable unit of work. It contains payload bytes, optional payload segments, optional named steps, and optional runtime controller supplied by the printing layer.
 
-`payload` is the stream-only representation.
-`steps` is the named protocol operation plan for families that need request/response control flow during a print job.
-The transport still sees only generic sends and queries; it does not learn family-specific command meaning.
-If a family needs dynamic resend behavior while executing those steps, the runtime
-controller may execute the step plan itself; transport adapters still only expose
-send/query/wait primitives.
+Transport sees generic send/query/wait operations. It does not learn family-specific command meaning.
 
-### Connectors
-Connectors handle real I/O.
-Repo implementations include:
-- `BleakBluetoothConnector`
-- `SerialConnector`
+### Connectors And Connections
+A connector connects using a resolved `PrinterDevice` and returns a connection. A connection can always send a `ProtocolJob` and disconnect. Some connections also support runtime probe operations such as control-packet send/query and notification waits.
 
-A connector connects using `PrinterDevice` and exposes a low-level connection
-that can send `ProtocolJob`.
-Most app-level code should pass a connector to `connect_printer(...)` and use
-the returned `ConnectedPrinter`; direct connector use is lower-level transport
-plumbing.
+Most app-level code should pass a connector into `connect_printer(...)` and use the returned `ConnectedPrinter`.
 
-## Detecting versus discovering
+## Protocol And Transport Separation
 
-The codebase has two different concepts and they are intentionally separate.
+Protocol and transport stay separate so these combinations remain possible:
 
-### `PrinterCatalog.detect_device(...)`
-This is catalog-level detection.
-It does not scan hardware.
-It takes an already known device name and optional address and maps them to a `PrinterDevice`.
-More specific unsupported metadata can prevent a broad supported prefix from
-stealing an unrelated model. When supported and unsupported matches have the same
-specificity, supported wins. If multiple supported models tie, `detect_device(...)`
-returns `None` so the caller can ask the user to choose the source app or model
-explicitly.
-
-### `BluetoothDiscovery`
-This is transport-facing discovery.
-It does scan hardware.
-It returns reachable Bluetooth printers as `PrinterDevice` objects and can also select one by name or address.
-Automatic discovery keeps only unambiguous printable devices. UI and CLI scan
-views should call `devices_for_display(...)` to include manual candidates for
-source-app/model conflicts.
-It delegates raw endpoint resolution to `BluetoothEndpointResolver` in `timiniprint.devices`.
-
-This split keeps device knowledge out of transport while still allowing discovery to produce fully resolved runtime objects.
-BLE MTU requests are profile/device hints: `devices` decides whether a model
-should request a custom MTU, while `transport` decides whether the current backend can apply that request.
-Missing `ble_mtu_request` means the default `512` request; explicit `23`
-means standard BLE MTU and keeps the conservative default write payload.
-Transport code owns scanning; devices code owns turning raw endpoints into logical printer devices.
-
-## Why protocol and transport are separate
-
-This split is the important architectural decision.
-
-It allows these combinations:
 - repo discovery + repo transport + `ConnectedPrinter`
 - repo discovery + custom transport + `ConnectedPrinter`
 - explicit `PrinterDevice` + repo transport + `ConnectedPrinter`
 - explicit `PrinterDevice` + custom transport + `ConnectedPrinter`
 - `PrinterProtocol` only, with no repo transport at all
 
-That is why the code does not use a model like `Protocol(connector).send(...)`.
-Doing that would collapse packet building and transport into one object and make reuse harder.
+Packet construction belongs in `protocol`. Connection mechanics belong in `transport`. Stateful protocol synchronization belongs in `printing.runtime`, because it sits between the packet plan and the live connection.
 
-Instead, the shared object is `PrinterDevice`.
-That keeps protocol and transport aligned without making either one own the other.
-`ConnectedPrinter` sits above both: it coordinates a resolved printer and a
-chosen connector without moving protocol semantics into transport.
+## Stateful Runtime Behavior
 
-## Package roles
+There are two kinds of protocol-related behavior:
 
-### `timiniprint.devices`
-Owns printer description and detection.
+- stateless packet building
+- stateful session behavior
 
-It contains:
-- `PrinterDevice`
-- `PrinterModel`
-- `PrinterProfile`
-- `SupportedPrinterModel`
-- `UnsupportedPrinterModel`
-- Bluetooth endpoint and target models
-- `BluetoothEndpointResolver` for raw Bluetooth endpoint merging and catalog matching
-- model detection
-- `PrinterCatalog`
-- config serialization
+Stateless packet formats belong in `timiniprint.protocol.families.*`. Runtime behavior belongs in `timiniprint.printing.runtime.*` when it depends on current session state, notifications, timing, previous writes, firmware replies, or completion waits.
 
-### `timiniprint.raster`
-Owns shared raster data types.
+`prepare_connection_runtime(...)` selects a runtime controller for the resolved `PrinterDevice`. If no controller is needed, it returns an empty context. If a controller is needed, it may attach to the connection, probe capabilities, run a handshake, or prepare notification state.
 
-It exists so that rendering and protocol can share raster types without importing each other.
+GATT write response is not a printer protocol ACK. If a family needs ACKs, status, or completion waits, model that as protocol steps and runtime controller behavior, not as transport adapter policy.
 
-### `timiniprint.rendering`
-Owns file and page processing.
+## Detecting Versus Discovering
 
-It contains:
-- low-level file converters
-- page sources for one-page-at-a-time conversion
-- page transforms
-- rasterization primitives
+Catalog detection and Bluetooth discovery are different concerns.
 
-### `timiniprint.protocol`
-Owns stateless protocol building.
+`PrinterCatalog.detect_device(...)` does not scan hardware. It maps a known name/address to a printable `PrinterDevice` when the catalog match is unambiguous.
 
-It contains:
-- packet builders
-- family-specific stateless logic
-- `PrinterProtocol`
-- `ProtocolJob`
-- protocol-facing runtime capability data that can affect payload selection
-- internal low-level builders in `_builders`
+`BluetoothDiscovery` scans hardware, asks `BluetoothEndpointResolver` to merge raw endpoints, then returns `PrinterDevice` objects for devices that can be printed automatically. UI/CLI scan views may use display helpers to include ambiguous or unsupported manual candidates.
 
-### `timiniprint.printing`
-Owns the higher-level file pipeline and stateful runtime logic.
+Transport owns scanning mechanics. Devices own turning raw endpoints into logical printers.
 
-It contains:
-- `ConnectedPrinter` and `connect_printer`
-- `PrintJobBuilder`
-- `DocumentRenderer`, the printing-layer bridge from documents to raster pages
-- `PrintSettings`
-- job sending helpers
-- streaming page-job assembly for memory-sensitive callers
-- runtime controllers in `printing.runtime`
+## Paper And Media Boundaries
 
-`ConnectedPrinter` is the public app-facing boundary for an active session.
-`PrintJobBuilder` is lower-level: it builds a `ProtocolJob` from a file, but it
-does not own connection lifetime or runtime preparation.
+User-facing paper choices are catalog data. Profiles list exact paper preset keys; `PrintSettings.paper_preset_key` selects one for file printing.
 
-`DocumentRenderer` uses `timiniprint.rendering` converters, but it lives in
-`printing` because it also needs printer settings, resolved protocol image
-pipeline choices, and runtime capabilities. `PrintJobBuilder` asks
-`DocumentRenderer` for rendered pages, applies any print-job-only debug markers,
-and builds `ProtocolJob` pages.
+Rendering uses the preset's render width. Protocol families receive low-level values they understand, such as left padding, maximum sheet height, or `paper_mode`. Transport does not receive media data.
 
-### `timiniprint.transport`
-Owns actual I/O.
+`paper_mode` is a protocol recipe value. It must not become the GUI/CLI data source for paper selection.
 
-It contains:
-- connector interfaces
-- connection implementations
-- Bluetooth and serial transport code
+Detailed paper preset data rules are in [catalog.md](catalog.md).
 
-## Dependency direction
+## Dependency Direction
 
-The intended flow is:
+Allowed direction is:
+
 - `rendering -> raster`
 - `devices -> protocol.family|protocol.types`
 - `protocol -> raster`
@@ -295,45 +136,24 @@ The intended flow is:
 - `transport -> devices`
 - `transport -> protocol`
 
-The important practical rule is:
+Practical rules:
+
 - rendering should not depend on protocol builders
 - protocol should not depend on transport
 - protocol should not depend on printing runtime controllers
 - devices should describe printers, not perform I/O
+- transport should not know printer opcodes or family-specific ACK semantics
 
-## Stateful runtime behavior
+## Where To Put New Code
 
-There are two kinds of logic in the codebase:
+Put it in `devices` if it changes printer description, model detection, endpoint merging, profile loading, or config serialization.
 
-1. stateless protocol building
-2. stateful session behavior
+Put it in `rendering` if it changes how files become pages or raster data.
 
-Examples:
-- packet formats belong in `timiniprint.protocol.families.*`
-- named print-job operation plans belong in `ProtocolJob.steps`
-- session-derived protocol inputs, such as print capabilities discovered at runtime, can be passed into protocol builders as data
-- temperature/status-driven session behavior belongs in `timiniprint.printing.runtime.*`
+Put it in `protocol` if it changes stateless packet building, compression, encoding, protocol variants, or command payloads.
 
-This split matters because some printer families need session state during transport, but packet construction still needs to stay reusable outside the built-in app flow.
+Put it in `printing` if it changes file-to-job orchestration, print settings, diagnostics, connected-session behavior, send sequencing, or runtime controllers.
 
-## Bluetooth-specific note
+Put it in `transport` if it changes actual connection, scanning backend mechanics, characteristic selection, chunk writes, serial writes, or generic query/wait primitives.
 
-Bluetooth discovery and Bluetooth connection are separate concerns.
-
-- `BluetoothDiscovery` scans hardware and asks `BluetoothEndpointResolver` to resolve printers into `PrinterDevice`
-- `BleakBluetoothConnector` connects and sends jobs for those devices
-
-That keeps discovery logic out of protocol code and keeps transport replaceable.
-It also lets another platform-specific scanner, such as a mobile native bridge,
-reuse the same endpoint-resolution behavior without using the desktop Bluetooth backend.
-
-## Where to put new code
-
-Use this rule of thumb:
-
-- put it in `devices` if it changes how a printer is described or detected
-- put it in `devices` if it changes how raw Bluetooth endpoints are merged into logical printer devices
-- put it in `rendering` if it changes how files become raster data
-- put it in `protocol` if it changes stateless packet building
-- put it in `printing.runtime` if it changes stateful session behavior
-- put it in `transport` if it changes actual connection or write mechanics
+If a change requires protocol-specific timing, ACK handling, or notification interpretation, it belongs in `printing.runtime` or protocol steps, not transport adapters.

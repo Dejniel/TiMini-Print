@@ -1,110 +1,36 @@
-# Protocol Guide
+# Protocol / Integration Guide
 
-Start here if you want to use TiMini-Print from your own code.
+Start here if you want to use TiMini-Print from your own code. This document is intentionally about usage flow, not catalog internals.
 
-This guide is intentionally practical.
-It answers one question first:
+The normal path is:
 
-- how do I print something with the current public API?
+1. resolve a `PrinterDevice`
+2. choose a connector
+3. create a `ConnectedPrinter`
+4. call `print_file(...)`, `print_text(...)`, `feed(...)`, `retract(...)`, or `send_job(...)`
 
-Read it in this order:
+For package boundaries, read [architecture.md](architecture.md). For profile/model JSON data, read [catalog.md](catalog.md).
 
-1. get or create a `PrinterDevice`
-2. connect it through a connector
-3. print through `ConnectedPrinter`
+## Mental Model
 
-If you want package boundaries and internal placement after that, read [architecture.md](architecture.md).
+`PrinterDevice` describes one printer as TiMini intends to use it: selected profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, and optional transport target.
 
-## The core objects
+A connector opens a low-level transport connection for that device. The built-in connectors are:
 
-### `PrinterDevice`
-`PrinterDevice` is the central runtime object.
-It carries the resolved:
-- profile
-- protocol family
-- optional protocol variant
-- image pipeline
-- optional runtime settings
-- optional transport target
-
-A `PrinterDevice` is the one object that both protocol code and transport code agree on.
-
-When rendering your own raster data, start from the resolved paper preset.
-High-level file printing renders to `render_width_px`, and `build_raster_job()`
-expects the same input width. If the preset has a wider `paper_width_px` and no
-`left_padding_px`, the printing layer centers that image or raster on a white
-canvas before building the protocol job. If `left_padding_px` is set, the
-protocol builder adds that padding instead and the input raster stays at
-`render_width_px`.
-
-For high-level file printing, use `PrintSettings(paper_preset_key=...)` to select loaded paper. The key is the exact preset key from `printer_paper_presets.json`, for example `plain_1600r_1632p_32pl`, not the low-level `paper_mode`. A paper preset is the user-facing paper choice: it may change render width and may also map to a low-level protocol `paper_mode`.
-
-`paper_mode` remains a low-level protocol parameter for callers that already know the protocol family supports it. GUI, CLI, and high-level file printing should use exact paper preset keys instead.
-
-Runtime settings are separate from the static profile:
-- `control_algorithm` selects the stateful runtime algorithm, when a family needs one
-- `preset` provides runtime density defaults such as V5G/MX dynamic density inputs
-- `capabilities` describes runtime notification features used by the controller
-
-Editable JSON configs keep this separation too: `profile_overrides` edits the
-static profile, while `runtime_overrides` edits runtime control algorithm,
-preset key, density, and capabilities.
-
-### `ConnectedPrinter`
-`ConnectedPrinter` is the normal high-level entry point once you have a resolved
-`PrinterDevice` and a connector. It owns the active connection, prepared runtime
-state, file-to-job building, send path, and manual paper motion.
-
-Use:
-- `print_file(...)` for `.png`, `.jpg`, `.pdf`, or `.txt`
-- `print_text(...)` for raw text
-- `feed()` / `retract()` for manual paper motion
-- `send_job(...)` only when you already built a `ProtocolJob` yourself
-
-Create it with `connect_printer(device, connector, ...)`.
-
-### `PrintJobBuilder`
-`PrintJobBuilder(device, settings=...)` is the lower-level file-to-job builder
-used by `ConnectedPrinter`.
-Use it directly only when you want to build a `ProtocolJob` without sending it,
-or when you want one-page-at-a-time job construction.
-
-It handles:
-- file-to-page rendering through the printing-layer `DocumentRenderer`
-- print-job-only debug markers
-- protocol job building
-
-Use `build_from_file(...)` when you want one combined `ProtocolJob`.
-Use `iter_page_jobs(...)` when memory matters and you want to render and build one page at a time.
-The streaming path yields page metadata with each job: `page_index`, `page_count`,
-`image_pipeline`, and `job`.
-
-### `PrinterProtocol`
-`PrinterProtocol(device)` is the lower-level protocol entry point.
-Use it only when you already have raster data and want to build a printable job directly.
-It does not create runtime controllers; callers that need stateful runtime behavior
-must pass runtime capabilities/controller data from the printing layer.
-
-### `ProtocolJob`
-A `ProtocolJob` is what transport sends.
-It contains:
-- `payload: bytes`
-- optional `steps`, a named send/query/wait plan for protocols that need replies or passive notifications during a print job
-- optional `runtime_controller`, supplied by the printing/runtime layer for families that need session behavior during transport
-
-### Connectors
-Connectors handle actual I/O.
-The repo provides:
 - `BleakBluetoothConnector`
 - `SerialConnector`
 
-A connector accepts a `PrinterDevice` and opens a low-level connection.
-Most callers should pass that connector to `connect_printer(...)` instead of
-manually preparing runtime state and sending jobs.
+`connect_printer(device, connector, ...)` combines those pieces into a `ConnectedPrinter`. It opens the connection, prepares any runtime controller required by the selected printer family, and returns the object used by app-level code.
 
-## First example: print a file over Bluetooth
+`ConnectedPrinter` owns the active session. Use it for:
 
-This is the best first contact with the API.
+- `print_file(...)` for `.png`, `.jpg`, `.pdf`, or `.txt`
+- `print_text(...)` for raw text
+- `send_job(...)` when you already built a `ProtocolJob`
+- `feed()` and `retract()` for manual paper motion
+- `disconnect()` or `async with` for connection cleanup
+
+## Print A File Over Bluetooth
 
 ```python
 from timiniprint.devices import PrinterCatalog
@@ -115,64 +41,41 @@ from timiniprint.transport.bluetooth import BluetoothDiscovery, BleakBluetoothCo
 catalog = PrinterCatalog.load()
 discovery = BluetoothDiscovery(catalog)
 
-# Scan nearby supported printers and pick the first one.
 devices = await discovery.scan_devices()
 if not devices:
     raise RuntimeError("No supported printers found")
+
 device = devices[0]
 
-# Open a connection, prepare live runtime state, then build and send.
 async with await connect_printer(device, BleakBluetoothConnector()) as printer:
     await printer.print_file(
         "example.png",
-        settings=PrintSettings(
-            blackening=3,
-            rotate_90_clockwise=False,
-        ),
+        settings=PrintSettings(blackening=3),
     )
 ```
 
-What this does:
-- `BluetoothDiscovery` finds reachable printers and returns `PrinterDevice` objects
-- `BleakBluetoothConnector` uses `device.transport_target`, `device.profile.stream`, and BLE MTU hints from the profile
-- `connect_printer` opens the connection and prepares runtime state when the selected family needs it
-- `ConnectedPrinter.print_file(...)` turns the file into a `ProtocolJob`, sends it, executes named protocol steps when needed, and waits for runtime completion
-- the caller does not manually pass `chunk_size`, `delay_ms`, `runtime_context`, or `runtime_controller`
+This path handles file conversion, rendering, protocol job building, protocol steps, runtime waits, stream chunking, and disconnect cleanup. The caller does not manually pass `chunk_size`, `delay_ms`, `runtime_context`, or `runtime_controller`.
 
-Use this path when:
-- you want the repo file pipeline
-- you are printing normal files, not prebuilt raster data
-- you are fine using the repo Bluetooth transport
+## Choose A Bluetooth Printer
 
-If you build a job directly with `PrinterProtocol`, you are using the stateless
-protocol layer only. That path can still accept runtime capabilities, but it will
-not create a runtime controller for you.
+Use `scan_devices()` when you want printable devices that TiMini can resolve automatically.
 
-## Choosing a specific Bluetooth printer
+```python
+devices = await discovery.scan_devices()
+```
 
-The first example used `scan_devices()` and picked `devices[0]` to avoid introducing a fake or magic printer name.
-
-If you want to select one specific discovered printer, use:
+Use `resolve_device(...)` when you want one specific discovered Bluetooth device by name or address.
 
 ```python
 device = await discovery.resolve_device("AA:BB:CC:DD:EE:01")
-```
-
-or:
-
-```python
 device = await discovery.resolve_device("X6H-ABCD")
 ```
 
-`resolve_device(...)` in `BluetoothDiscovery` means:
-- scan for real Bluetooth devices
-- pick one discovered device by name or address
+`BluetoothDiscovery` scans hardware. `PrinterCatalog.detect_device(...)` does not scan; it only maps a known advertised name/address to a `PrinterDevice`. Use catalog detection when another platform already scanned Bluetooth for you.
 
-It is different from `catalog.detect_device(...)`, which does not scan Bluetooth at all.
+## Known Model Or Serial Target
 
-## Known profile, no discovery
-
-Use this when Bluetooth discovery is not involved and you already know what printer profile should be used.
+Use this path when Bluetooth discovery is not involved and you already know the model/profile.
 
 ```python
 from timiniprint.devices import PrinterCatalog, SerialTarget
@@ -180,8 +83,6 @@ from timiniprint.printing.connected import connect_printer
 from timiniprint.transport.serial import SerialConnector
 
 catalog = PrinterCatalog.load()
-
-# Create a PrinterDevice directly from a known profile.
 device = catalog.device_from_profile(
     "a200",
     transport_target=SerialTarget("/dev/rfcomm0"),
@@ -191,31 +92,80 @@ async with await connect_printer(device, SerialConnector()) as printer:
     await printer.print_file("example.pdf")
 ```
 
-Use this path when:
-- you already know the profile key
-- discovery is not part of your flow
-- you want an explicit `PrinterDevice` up front
+For normal user-selected models prefer `device_from_model(...)` or an exported printer config. `device_from_profile(...)` is useful for diagnostics and low-level integration where you intentionally bypass model metadata.
 
-## Use the protocol with your own connector
+## Print Text
 
-This is the main extension point if you do not want to use the repo Bluetooth implementation.
+```python
+async with await connect_printer(device, BleakBluetoothConnector()) as printer:
+    await printer.print_text("Hello from TiMini")
+```
 
-A custom connector is expected to do three things:
-- connect using a `PrinterDevice`
-- send a `ProtocolJob`
-- disconnect cleanly
+`print_text(...)` uses the same text converter and print pipeline as a temporary `.txt` file.
 
-If you want full support for query-driven families, your connection should also satisfy the optional
-`RuntimeProbeConnection` contract from `timiniprint.transport.base` and expose:
-- `attach_runtime_controller(runtime_controller, *, timeout=...)`
-- `send_control_packet(packet, *, timeout=...)`
-- `query_control_packet(packet, *, timeout=...)`
-- `wait_for_notification(label, match, *, timeout=..., required=...)`
+## Paper Choice
 
-If your transport cannot support these operations, you can omit them. Runtime-sensitive
-families will then fall back to degraded behavior when possible.
+For high-level file printing, select paper through `PrintSettings.paper_preset_key`.
 
-A minimal sketch looks like this:
+```python
+from timiniprint.printing.settings import PrintSettings
+
+settings = PrintSettings(paper_preset_key="plain_384r")
+await printer.print_file("label.png", settings=settings)
+```
+
+The key must be one of the paper preset keys supported by the device profile. The preset controls render width and any protocol-side paper recipe. Do not pass low-level `paper_mode` from GUI, CLI, or normal file-printing code.
+
+See [catalog.md](catalog.md) for the data model behind paper presets.
+
+## Build A Job Without Sending
+
+Use `PrintJobBuilder` only when you want to build file-based `ProtocolJob` objects yourself.
+
+```python
+from timiniprint.printing.builder import PrintJobBuilder
+from timiniprint.printing.settings import PrintSettings
+
+builder = PrintJobBuilder(device, settings=PrintSettings(blackening=4))
+job = builder.build_from_file("example.png")
+```
+
+Use `iter_page_jobs(...)` when memory matters and you want one page at a time.
+
+```python
+for page in builder.iter_page_jobs("document.pdf"):
+    await printer.send_job(page.job)
+```
+
+If you later send these jobs through TiMini transport, prefer `ConnectedPrinter.send_job(...)` so runtime completion waits and step execution are still applied.
+
+## Build From Raster Data
+
+Use `PrinterProtocol` when you already have raster data and do not want the repo file/rendering pipeline.
+
+```python
+from timiniprint.protocol import PrinterProtocol
+from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
+
+raster = RasterBuffer(
+    pixels=[1] * 64,
+    width=8,
+    pixel_format=PixelFormat.BW1,
+)
+raster_set = RasterSet.from_single(raster)
+
+job = PrinterProtocol(device).build_job(
+    raster_set,
+    is_text=False,
+    blackening=3,
+)
+```
+
+`PrinterProtocol` is stateless packet building. It does not connect to hardware and does not create runtime controllers.
+
+## Custom Connector
+
+A custom connector lets you reuse TiMini protocol logic without using the built-in Bluetooth stack. It must connect using a `PrinterDevice` and return a connection with `send(job)` and `disconnect()`.
 
 ```python
 from timiniprint.devices import PrinterCatalog
@@ -227,38 +177,12 @@ class MyConnection:
         self._raw_link = raw_link
         self._device = device
 
-    async def attach_runtime_controller(self, runtime_controller, *, timeout=1.0):
-        # Optional: bridge runtime session setup into your transport if needed.
-        _ = runtime_controller, timeout
-
-    async def send_control_packet(self, packet, *, timeout=1.0):
-        # Optional: return False if your transport cannot send standalone control packets.
-        _ = packet, timeout
-        return False
-
-    async def query_control_packet(self, packet, *, timeout=1.0):
-        # Optional: return None if your transport cannot do request/response queries.
-        _ = packet, timeout
-        return None
-
     async def send(self, job):
-        # Use the stream settings resolved for this device.
-        chunk_size = self._device.profile.stream.chunk_size
-        delay_ms = self._device.profile.stream.delay_ms
-        ble_mtu_request = self._device.profile.ble_mtu_request
-
-        # Your transport implementation is responsible for writing job.payload.
-        # Bluetooth LE transports may use ble_mtu_request as a request/cap hint;
-        # Classic/serial transports should ignore it.
-        # If the target family needs session logic, job.runtime_controller must be
-        # honored during the write loop.
         await send_payload_over_my_link(
             self._raw_link,
             payload=job.payload,
-            chunk_size=chunk_size,
-            delay_ms=delay_ms,
-            ble_mtu_request=ble_mtu_request,
-            runtime_controller=job.runtime_controller,
+            chunk_size=self._device.profile.stream.chunk_size,
+            delay_ms=self._device.profile.stream.delay_ms,
         )
 
     async def disconnect(self):
@@ -267,8 +191,6 @@ class MyConnection:
 
 class MyConnector:
     async def connect(self, device):
-        # Open your own transport here. You can use device.transport_target,
-        # or ignore it and use your own connection settings.
         raw_link = await open_my_link(device.transport_target)
         return MyConnection(raw_link, device)
 
@@ -280,66 +202,11 @@ async with await connect_printer(device, MyConnector()) as printer:
     await printer.print_file("example.png")
 ```
 
-This is the main reason protocol and transport stay separate in the architecture.
-The repo should make it easy to reuse protocol logic without forcing one Bluetooth stack.
-If you want probe warnings to go somewhere visible, pass your own reporter into
-`connect_printer(..., reporter=...)`.
+For full support of runtime-sensitive families, the connection may also implement optional methods from `RuntimeProbeConnection` in `timiniprint.transport.base`, such as `send_control_packet(...)`, `query_control_packet(...)`, `wait_for_notification(...)`, and `send_control_packet_wait_notification(...)`. If they are missing, runtime-sensitive families degrade or fail according to their controller.
 
-If your platform already has its own Bluetooth scanner, such as a mobile native bridge,
-convert raw scan results to `BluetoothEndpoint` and pass them to `BluetoothEndpointResolver`.
-That reuses TiMini's catalog matching, Classic/BLE endpoint merging, and model selection
-without importing the desktop Bluetooth backend.
+## Editable Printer Configs
 
-## Detecting by name is not the same as Bluetooth discovery
-
-There are two different operations in the codebase and they should not be confused.
-
-### `catalog.detect_model(...)`
-This does not scan hardware.
-It applies supported and known-unsupported model detection to a known device
-name and optional address.
-It returns an immutable tuple of matches; an empty tuple means nothing matched.
-
-Use it when you already have values such as:
-- a BLE name from somewhere else
-- a saved MAC address
-- a UI scan result that should show whether a model is printable or only a
-  future-support candidate
-
-Example:
-
-```python
-from timiniprint.devices import PrinterCatalog, SupportedModelMatch
-
-catalog = PrinterCatalog.load()
-matches = catalog.detect_model("MX10", "AA:BB:CC:DD:EE:59")
-supported = [match for match in matches if isinstance(match, SupportedModelMatch)]
-if len(supported) != 1:
-    raise RuntimeError("Printer model not detected unambiguously")
-match = supported[0]
-device = catalog.device_from_model(match.model.model_key)
-```
-
-`catalog.detect_device(...)` is a supported-only convenience wrapper that returns
-a printable `PrinterDevice` or `None`. Unsupported matches are metadata only.
-More specific unsupported metadata can prevent a broad supported prefix from
-stealing an unrelated model; when supported and unsupported matches have the same
-specificity, supported wins. Multiple equally specific supported matches return
-`None` so the caller can ask the user to choose the source app/model explicitly.
-
-### `BluetoothDiscovery`
-This does scan hardware.
-It returns real reachable Bluetooth printers as `PrinterDevice` objects.
-`scan_report(...).devices` contains only devices that are printable without a
-manual source-app/model choice. Use `devices_for_display(scan_report)` when a UI
-or diagnostic CLI should also show manual candidates for ambiguous supported
-names.
-
-Use it when your program needs to find printers nearby.
-
-## Save and reload an editable printer config
-
-Use this when you want to inspect or tweak the resolved runtime values instead of relying on auto-detection every time.
+Use printer configs when you want an explicit, editable runtime device instead of auto-detection every time.
 
 ```python
 from pathlib import Path
@@ -352,160 +219,25 @@ device = catalog.detect_device("MX10-ABCD", "AA:BB:CC:DD:EE:59")
 if device is None:
     raise RuntimeError("Printer profile not detected")
 
-# Export an editable printer config. For normal model-based configs, model_key
-# is the fallback and profile_key records the shared parameter recipe underneath.
-# profile_overrides and runtime_overrides can be edited or partially deleted.
 printer_config = catalog.serialize_printer_config(device)
 Path("printer.json").write_text(
     json.dumps(printer_config, indent=2) + "\n",
     encoding="utf-8",
 )
 
-# Load it back later as an explicit PrinterDevice.
 loaded = json.loads(Path("printer.json").read_text(encoding="utf-8"))
 manual_device = catalog.device_from_printer_config(loaded)
 ```
 
-This printer config captures:
-- base model key when the device came from a catalog model
-- base profile key for the shared parameter recipe
-- full editable profile overrides
-- protocol family
-- image pipeline
-- runtime overrides: control algorithm, preset key, density, and capabilities
-- optional transport target
+Model-based configs keep `model_key` as the fallback, so deleting an override falls back to the catalog model. Raw profile-based configs are possible for diagnostics, but they do not carry model detection metadata.
 
-If `model_key` is present, removing an override falls back to that catalog
-model's effective protocol, image pipeline, and runtime preset. Raw profile
-configs are still possible for low-level diagnostics, but they do not carry
-model detection metadata.
+## Debug A Protocol Job
 
-This is the right tool if you want to experiment with runtime values without adding more one-off CLI flags.
-
-## Low-level protocol dump
-
-Protocol job dumps are a developer diagnostic, not part of the public CLI surface.
-Use the tool version when you need to compare packet structure or image encoding
-without connecting to hardware:
+Use the tool version when you need to compare packet structure or image encoding without connecting to hardware.
 
 ```bash
 python3 tools/debug_protocol_job.py --model mx10 --text "test" --out job.json
 python3 tools/debug_protocol_job.py --runtime-preset mx06 --text "test" --image-encoding v5g_gray --out job.json
 ```
 
-`--profile` and `--runtime-preset` intentionally use internal catalog keys. Prefer
-`--model` or `--printer-config` unless you are debugging catalog internals.
-
-## Advanced: build jobs from raster data
-
-Only use this path when you already have raster data and do not want the repo file/rendering pipeline.
-
-Two raster types matter here:
-
-- `RasterBuffer`
-  - one raster in one pixel format
-  - `pixels` is a flat row-major sequence
-  - `width` defines where rows break
-- `RasterSet`
-  - one or more rasters for the same page, keyed by `PixelFormat`
-  - all rasters in the set must have matching dimensions
-
-Supported public pixel formats are:
-- `PixelFormat.BW1`
-  - binary raster values `0` or `1`
-- `PixelFormat.GRAY4`
-  - grayscale values `0..15`
-- `PixelFormat.GRAY8`
-  - grayscale values `0..255`
-
-Most callers do not need to build these manually, because `ConnectedPrinter`,
-`PrintJobBuilder`, and the rendering pipeline already do it.
-
-If you do want the low-level path, it looks like this:
-
-```python
-from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol import PrinterProtocol
-from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
-
-catalog = PrinterCatalog.load()
-device = catalog.detect_device("X6H-ABCD")
-if device is None:
-    raise RuntimeError("Printer profile not detected")
-
-raster = RasterBuffer(
-    pixels=[1] * 64,
-    width=8,
-    pixel_format=PixelFormat.BW1,
-)
-raster_set = RasterSet.from_single(raster)
-
-protocol = PrinterProtocol(device)
-job = protocol.build_job(
-    raster_set,
-    is_text=False,
-    blackening=3,
-    feed_padding=12,
-)
-```
-
-Use this path when:
-- you already have raster data
-- you want protocol building without file loading
-- you want to plug the built job into your own transport layer
-
-The old function-style raw builders are internal implementation details in `timiniprint.protocol._builders`.
-They still exist for internal composition and tests, but they are not the public integration surface anymore.
-
-## Mental model
-
-If you are unsure which API level to use, use this rule:
-
-- `ConnectedPrinter` if you want to print through repo-managed I/O
-- `PrintJobBuilder` if you want to build a file-based `ProtocolJob` without sending it
-- `PrinterProtocol` if you start from raster data
-- a connector if you need custom low-level I/O
-- `PrinterDevice` as the shared object passed between them
-
-The important thing to avoid is treating `PrinterProtocol` as a connection object.
-It is not `Protocol(connector).send(...)`.
-Its job is to build a `ProtocolJob` for a specific `PrinterDevice`.
-
-## Where to add new functionality
-
-### Add it to `timiniprint.rendering` when it is about pages or images
-Examples:
-- a new file loader
-- a new page transform
-- image preprocessing before rasterization
-
-### Add it to `timiniprint.protocol` when it is about stateless packet building
-Examples:
-- packet builders
-- compression/encoding changes
-- family-specific job construction
-
-### Add it to `timiniprint.printing.runtime` when it depends on session state
-Examples:
-- notify handling
-- status polling
-- temperature-driven behavior
-- stateful BLE write logic
-
-Rule of thumb:
-- if it depends only on input data, it belongs in `protocol`
-- if it depends on session state, notify packets, timing, or previous writes, it belongs in `printing.runtime`
-
-### Add it to `timiniprint.devices` when it is about describing or detecting printers
-Examples:
-- profile data models
-- profile loading
-- supported printer model detection
-- `PrinterDevice` creation
-- printer config serialization
-
-### Add it to `timiniprint.transport` when it is about actual I/O
-Examples:
-- a new connector
-- a new connection implementation
-- transport-specific connection or write behavior
+`--profile` and `--runtime-preset` intentionally use internal catalog keys. Prefer `--model` or `--printer-config` unless you are debugging catalog internals.
