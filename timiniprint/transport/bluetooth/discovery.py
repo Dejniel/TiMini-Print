@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import platform
-import time
 from dataclasses import dataclass, field
 from typing import Iterable, List, Optional
 
@@ -43,7 +40,6 @@ class BluetoothDiscovery:
         self._resolver = BluetoothEndpointResolver(catalog)
         self._policy = BluetoothTransportPolicy(catalog)
         self._reporter = reporter
-        self._windows11_ble_name_rescan = _Windows11BleNameRescanHackBecauseWindowsIsTheBestSystemInTheWorldAndIfYouDisagreeThenYouAreStupid(reporter)
 
     async def _scan_endpoints(
         self,
@@ -65,10 +61,6 @@ class BluetoothDiscovery:
                     include_ble=True,
                 )
                 devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
-            devices = await self._windows11_ble_name_rescan.apply(
-                devices,
-                timeout=timeout,
-            )
         return devices, failures
 
     def _scan_endpoints_blocking(
@@ -91,10 +83,6 @@ class BluetoothDiscovery:
                     include_ble=True,
                 )
                 devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
-            devices = self._windows11_ble_name_rescan.apply_blocking(
-                devices,
-                timeout=timeout,
-            )
         return devices, failures
 
     async def scan_report(
@@ -354,77 +342,5 @@ class BluetoothDiscovery:
     def transport_target_from_endpoint(self, endpoint: DeviceInfo) -> BluetoothTarget:
         """Return a concrete Bluetooth target for one raw scan endpoint."""
         return self._resolver.transport_target_from_endpoint(self._endpoint_from_scan(endpoint))
-
-
-class _Windows11BleNameRescanHackBecauseWindowsIsTheBestSystemInTheWorldAndIfYouDisagreeThenYouAreStupid:
-    """Windows-only BLE name rescue for when the best OS forgets scan names."""
-
-    def __init__(self, reporter: reporting.Reporter | None) -> None:
-        self._reporter = reporter
-
-    async def apply(
-        self,
-        devices: List[DeviceInfo],
-        *,
-        timeout: float,
-    ) -> List[DeviceInfo]:
-        if not self._should_run(devices):
-            return devices
-        delay_sec = 0.5
-        self._report(devices, delay_sec=delay_sec)
-        await asyncio.sleep(delay_sec)
-        ble_devices, _failures = await SppBackend.scan_with_failures(
-            timeout=timeout,
-            include_classic=False,
-            include_ble=True,
-        )
-        return DeviceInfo.dedupe(list(devices) + list(ble_devices))
-
-    def apply_blocking(
-        self,
-        devices: List[DeviceInfo],
-        *,
-        timeout: float,
-    ) -> List[DeviceInfo]:
-        if not self._should_run(devices):
-            return devices
-        delay_sec = 0.5
-        self._report(devices, delay_sec=delay_sec)
-        time.sleep(delay_sec)
-        ble_devices, _failures = SppBackend.scan_with_failures_blocking(
-            timeout=timeout,
-            include_classic=False,
-            include_ble=True,
-        )
-        return DeviceInfo.dedupe(list(devices) + list(ble_devices))
-
-    def _should_run(self, devices: Iterable[DeviceInfo]) -> bool:
-        # Windows 11 commonly reports as "Windows" / version 10.x via Python.
-        if platform.system() != "Windows":
-            return False
-        return any(
-            device.transport == DeviceTransport.BLE
-            and not (device.name or "").strip()
-            for device in devices
-        )
-
-    def _report(self, devices: Iterable[DeviceInfo], *, delay_sec: float) -> None:
-        if self._reporter is None:
-            return
-        anonymous_ble = sum(
-            1
-            for device in devices
-            if device.transport == DeviceTransport.BLE
-            and not (device.name or "").strip()
-        )
-        self._reporter.debug(
-            short="Discovery",
-            detail=reporting.format_kv(
-                "Windows 11 BLE name rescan",
-                anonymous_ble=anonymous_ble,
-                delay_ms=int(delay_sec * 1000),
-            ),
-        )
-
 
 __all__ = ["BluetoothDiscovery", "BluetoothScanResult"]

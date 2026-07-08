@@ -86,65 +86,6 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(result.devices[0].transport_badge, "[classic+ble]")
         self.assertEqual(result.devices[0].profile_key, "x6h")
 
-    def test_windows11_ble_name_rescan_merges_named_ble_scan_result(self) -> None:
-        anonymous = DeviceInfo(name="", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.BLE)
-        named = DeviceInfo(name="X6H-ABCD", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.BLE)
-
-        with patch(
-            "timiniprint.transport.bluetooth.discovery.platform.system",
-            return_value="Windows",
-        ), patch(
-            "timiniprint.transport.bluetooth.discovery.asyncio.sleep",
-            AsyncMock(),
-        ), patch(
-            "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures",
-            AsyncMock(side_effect=[([anonymous], []), ([named], [])]),
-        ) as scan_mock:
-            result = _run(self.discovery.scan_report(include_classic=True, include_ble=True))
-
-        self.assertEqual(scan_mock.await_count, 2)
-        self.assertEqual(result.raw_endpoints, [named])
-        self.assertEqual(len(result.devices), 1)
-        self.assertEqual(result.devices[0].profile_key, "x6h")
-        self.assertEqual(result.devices[0].transport_badge, "[ble]")
-
-    def test_blocking_windows11_ble_name_rescan_merges_named_ble_scan_result(self) -> None:
-        anonymous = DeviceInfo(name="", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.BLE)
-        named = DeviceInfo(name="X6H-ABCD", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.BLE)
-
-        with patch(
-            "timiniprint.transport.bluetooth.discovery.platform.system",
-            return_value="Windows",
-        ), patch(
-            "timiniprint.transport.bluetooth.discovery.time.sleep",
-        ), patch(
-            "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures_blocking",
-            side_effect=[([anonymous], []), ([named], [])],
-        ) as scan_mock:
-            result = self.discovery.scan_report_blocking(include_classic=True, include_ble=True)
-
-        self.assertEqual(scan_mock.call_count, 2)
-        self.assertEqual(result.raw_endpoints, [named])
-        self.assertEqual(len(result.devices), 1)
-        self.assertEqual(result.devices[0].profile_key, "x6h")
-        self.assertEqual(result.devices[0].transport_badge, "[ble]")
-
-    def test_windows11_ble_name_rescan_is_not_used_on_linux(self) -> None:
-        anonymous = DeviceInfo(name="", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.BLE)
-
-        with patch(
-            "timiniprint.transport.bluetooth.discovery.platform.system",
-            return_value="Linux",
-        ), patch(
-            "timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures",
-            AsyncMock(return_value=([anonymous], [])),
-        ) as scan_mock:
-            result = _run(self.discovery.scan_report(include_classic=True, include_ble=True))
-
-        self.assertEqual(scan_mock.await_count, 1)
-        self.assertEqual(result.raw_endpoints, [anonymous])
-        self.assertEqual(result.devices, [])
-
     def test_display_candidates_keep_classic_ble_fallback_for_ambiguous_supported_name(self) -> None:
         classic = DeviceInfo(
             name="P1",
