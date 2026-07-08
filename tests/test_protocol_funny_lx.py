@@ -197,12 +197,12 @@ class FunnyLxProtocolTests(unittest.TestCase):
                 is_text=False,
             )
 
-    def test_manual_paper_motion_uses_known_feed_and_explicit_retract_guess(self) -> None:
+    def test_manual_paper_motion_uses_observed_feed_and_no_retract(self) -> None:
         device = PrinterCatalog.load().device_from_model("funny_lx_d")
         protocol = PrinterProtocol(device)
 
-        self.assertEqual(protocol.build_paper_motion("feed").payload, bytes.fromhex("5a 03 82 00 04 00 00 00 00 00 00 00"))
-        self.assertEqual(protocol.build_paper_motion("retract").payload, bytes.fromhex("5a 03 81 00 04 00 00 00 00 00 00 00"))
+        self.assertEqual(protocol.build_paper_motion("feed").payload, bytes.fromhex("5a 03 81 00 04 00 00 00 00 00 00 00"))
+        self.assertEqual(protocol.build_paper_motion("retract").payload, b"")
 
 
 class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
