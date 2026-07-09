@@ -10,8 +10,12 @@ install_crc8_stub()
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.connected import connect_printer
+from timiniprint.printing.runtime.base import PreparedRuntimeContext
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.protocol import ProtocolJob
+from timiniprint.protocol.runtime import RuntimePrintCapabilities
+from timiniprint.protocol.types import ImageEncoding, ImagePipelineConfig
+from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
 class _Connection:
@@ -102,6 +106,112 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(captured["text"], "hello")
         self.assertFalse(os.path.exists(captured["path"]))
         self.assertEqual(connection.sent_jobs, [job])
+
+    async def test_connected_printer_builds_raster_jobs_with_runtime_context(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("x6h")
+        connection = _Connection()
+        connector = _Connector(connection)
+        settings = PrintSettings(blackening=5)
+        raster_set = RasterSet.from_single(
+            RasterBuffer([0, 1, 1, 0], width=2, pixel_format=PixelFormat.BW1)
+        )
+        pipeline = ImagePipelineConfig(
+            formats=(PixelFormat.BW1,),
+            encoding=ImageEncoding.TINY_RAW,
+        )
+        capabilities = RuntimePrintCapabilities(supports_gray=False)
+        context = PreparedRuntimeContext(
+            runtime_controller=object(),
+            capabilities=capabilities,
+        )
+        page_job = ProtocolJob(payload=b"page")
+        one_page_job = ProtocolJob(payload=b"one-page")
+        combined_job = ProtocolJob(payload=b"combined")
+
+        with patch(
+            "timiniprint.printing.connected.prepare_connection_runtime",
+            new=AsyncMock(return_value=context),
+        ):
+            connected = await connect_printer(device, connector)
+
+        self.assertIs(connected.raster_capabilities(), capabilities)
+        with patch(
+            "timiniprint.printing.connected._build_raster_page_job",
+            return_value=page_job,
+        ) as build_page:
+            self.assertEqual(
+                connected.raster_page_job(
+                    raster_set,
+                    is_text=True,
+                    settings=settings,
+                    page_index=2,
+                    page_count=3,
+                    image_pipeline=pipeline,
+                ),
+                page_job,
+            )
+
+        build_page.assert_called_once_with(
+            device,
+            raster_set,
+            is_text=True,
+            settings=settings,
+            runtime_context=context,
+            page_index=2,
+            page_count=3,
+            image_pipeline=pipeline,
+        )
+
+        with (
+            patch(
+                "timiniprint.printing.connected._build_raster_page_job",
+                return_value=one_page_job,
+            ) as build_page,
+            patch(
+                "timiniprint.printing.connected._combine_raster_page_jobs",
+                return_value=combined_job,
+            ) as combine_pages,
+        ):
+            self.assertEqual(
+                connected.raster_job(
+                    raster_set,
+                    is_text=False,
+                    settings=settings,
+                    image_pipeline=pipeline,
+                ),
+                combined_job,
+            )
+
+        build_page.assert_called_once_with(
+            device,
+            raster_set,
+            is_text=False,
+            settings=settings,
+            runtime_context=context,
+            page_index=1,
+            page_count=1,
+            image_pipeline=pipeline,
+        )
+        combine_pages.assert_called_once_with(
+            device,
+            (one_page_job,),
+            runtime_context=context,
+        )
+
+        with patch(
+            "timiniprint.printing.connected._combine_raster_page_jobs",
+            return_value=combined_job,
+        ) as combine_pages:
+            self.assertEqual(
+                connected.raster_pages_job((page_job, one_page_job)),
+                combined_job,
+            )
+
+        combine_pages.assert_called_once_with(
+            device,
+            (page_job, one_page_job),
+            runtime_context=context,
+        )
 
     async def test_connected_printer_context_manager_disconnects(self) -> None:
         device = PrinterCatalog.load().device_from_profile("x6h")

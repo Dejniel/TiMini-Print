@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 import os
 import tempfile
@@ -7,7 +8,12 @@ from typing import TYPE_CHECKING
 
 from .. import reporting
 from ..protocol import PrinterProtocol, ProtocolJob
+from ..protocol.runtime import RuntimePrintCapabilities
+from ..protocol.types import ImagePipelineConfig
+from ..raster import RasterSet
 from .builder import PrintJobBuilder
+from .raster_job import build_raster_page_job as _build_raster_page_job
+from .raster_job import combine_raster_page_jobs as _combine_raster_page_jobs
 from .runtime.base import PreparedRuntimeContext
 from .runtime.prepare import prepare_connection_runtime
 from .send import send_prepared_job
@@ -35,6 +41,62 @@ class ConnectedPrinter:
             job,
             timeout=timeout,
             reporter=self._reporter,
+        )
+
+    def raster_capabilities(self) -> RuntimePrintCapabilities | None:
+        """Return live-session capabilities that affect raster rendering and encoding."""
+        return self._runtime_context.capabilities
+
+    def raster_page_job(
+        self,
+        raster_set: RasterSet,
+        *,
+        is_text: bool,
+        settings: PrintSettings | None = None,
+        page_index: int = 1,
+        page_count: int = 1,
+        image_pipeline: ImagePipelineConfig | None = None,
+    ) -> ProtocolJob:
+        """Build one printable protocol page from an already rendered raster."""
+        return _build_raster_page_job(
+            self._device,
+            raster_set,
+            is_text=is_text,
+            settings=settings,
+            runtime_context=self._runtime_context,
+            page_index=page_index,
+            page_count=page_count,
+            image_pipeline=image_pipeline,
+        )
+
+    def raster_job(
+        self,
+        raster_set: RasterSet,
+        *,
+        is_text: bool,
+        settings: PrintSettings | None = None,
+        image_pipeline: ImagePipelineConfig | None = None,
+    ) -> ProtocolJob:
+        """Build a complete one-page raster protocol job."""
+        page_job = self.raster_page_job(
+            raster_set,
+            is_text=is_text,
+            settings=settings,
+            page_index=1,
+            page_count=1,
+            image_pipeline=image_pipeline,
+        )
+        return self.raster_pages_job((page_job,))
+
+    def raster_pages_job(
+        self,
+        page_jobs: Iterable[ProtocolJob],
+    ) -> ProtocolJob:
+        """Build one protocol job from already-built raster page jobs."""
+        return _combine_raster_page_jobs(
+            self._device,
+            page_jobs,
+            runtime_context=self._runtime_context,
         )
 
     async def print_file(
