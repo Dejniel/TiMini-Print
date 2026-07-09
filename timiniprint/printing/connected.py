@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     from ..transport.base import PrinterConnection, PrinterConnector
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, init=False)
 class ConnectedPrinter:
     """Resolved printer with an active transport connection and prepared runtime."""
 
@@ -32,6 +32,20 @@ class ConnectedPrinter:
     _connection: "PrinterConnection"
     _runtime_context: PreparedRuntimeContext
     _reporter: reporting.Reporter = reporting.DUMMY_REPORTER
+
+    def __init__(
+        self,
+        device: "PrinterDevice",
+        connection: "PrinterConnection",
+        runtime_context: PreparedRuntimeContext,
+        *,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+    ) -> None:
+        """Wrap a connection whose runtime has already been prepared by the caller."""
+        object.__setattr__(self, "_device", device)
+        object.__setattr__(self, "_connection", connection)
+        object.__setattr__(self, "_runtime_context", runtime_context)
+        object.__setattr__(self, "_reporter", reporter)
 
     async def send_job(self, job: ProtocolJob, *, timeout: float = 1.0) -> None:
         """Send an already-built protocol job through this prepared connection."""
@@ -180,8 +194,8 @@ async def connect_printer(
             pass
         raise
     return ConnectedPrinter(
-        _device=device,
-        _connection=connection,
-        _runtime_context=runtime_context,
-        _reporter=reporter,
+        device,
+        connection,
+        runtime_context,
+        reporter=reporter,
     )
