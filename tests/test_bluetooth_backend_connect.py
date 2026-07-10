@@ -1,18 +1,24 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
-from unittest.mock import call, patch
+from types import SimpleNamespace
+from unittest.mock import AsyncMock, call, patch
 
 from timiniprint import reporting
-from timiniprint.devices import PrinterCatalog
+from timiniprint.devices import BluetoothTarget, PrinterCatalog
 from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
+from timiniprint.protocol import ProtocolJob, ProtocolStep
 from timiniprint.transport.bluetooth.backend import (
     SppBackend,
     _CONNECT_TIMEOUT_SEC,
     _MACOS_FALLBACK_COOLDOWN_SEC,
     _resolve_rfcomm_channels,
 )
-from timiniprint.transport.bluetooth.connector import BleakBluetoothConnector
+from timiniprint.transport.bluetooth.connector import (
+    BleakBluetoothConnection,
+    BleakBluetoothConnector,
+)
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 
 
@@ -134,6 +140,33 @@ class _BleScanAdapter:
 
 
 class BluetoothBackendConnectTests(unittest.TestCase):
+    def test_connection_rejects_job_with_execution_steps(self) -> None:
+        endpoint = BluetoothEndpoint(
+            name="MXW01",
+            address="UUID-1",
+            transport=BluetoothEndpointTransport.BLE,
+        )
+        target = BluetoothTarget(
+            classic_endpoint=None,
+            ble_endpoint=endpoint,
+            display_address=endpoint.address,
+            transport_badge="BLE",
+        )
+        device = PrinterCatalog.load().device_from_profile(
+            "v5x",
+            transport_target=target,
+        )
+        backend = SimpleNamespace(write=AsyncMock())
+        connection = BleakBluetoothConnection(backend, device, reporting.DUMMY_REPORTER)
+        job = ProtocolJob(steps=(ProtocolStep.send("print data", b"abc"),))
+
+        async def run() -> None:
+            with self.assertRaisesRegex(RuntimeError, "ConnectedPrinter.send_job"):
+                await connection.send(job)
+
+        asyncio.run(run())
+        backend.write.assert_not_awaited()
+
     def test_resolve_rfcomm_channels_uses_explicit_then_fallback(self) -> None:
         adapter = _Adapter([7, "x", 3, 7])
         self.assertEqual(_resolve_rfcomm_channels(adapter, "AA"), [7, 3])

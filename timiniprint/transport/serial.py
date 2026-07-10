@@ -53,7 +53,11 @@ class SerialConnection:
         return None
 
     async def send(self, job: ProtocolJob) -> None:
-        """Send a protocol job over serial in blocking chunks via an executor."""
+        """Send a stream-only protocol job over serial in blocking chunks."""
+        if job.steps:
+            raise RuntimeError(
+                "Protocol jobs with execution steps must be sent through ConnectedPrinter.send_job()"
+            )
         await self.send_standard_payload(job.payload)
 
     async def send_standard_payload(self, data: bytes) -> None:

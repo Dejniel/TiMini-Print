@@ -105,7 +105,11 @@ class BleakBluetoothConnection:
         )
 
     async def send(self, job: ProtocolJob) -> None:
-        """Send a protocol job using the device's stream settings and runtime state."""
+        """Send a stream-only protocol job using the device's stream settings."""
+        if job.steps:
+            raise RuntimeError(
+                "Protocol jobs with execution steps must be sent through ConnectedPrinter.send_job()"
+            )
         await self._send_payload(job.payload)
 
     async def send_standard_payload(self, data: bytes) -> None:

@@ -70,12 +70,12 @@ Internal family builders return one `ProtocolPlan` shape for both stream-only an
 It is not a connection object. Do not add `Protocol(connector).send(...)` style APIs.
 
 ### `ProtocolJob`
-A transport-sendable unit of work. It contains payload bytes, optional payload segments, optional named steps, and whether printing should wait for protocol completion. It does not contain a live runtime controller.
+A stateless protocol execution plan. It contains payload bytes, optional payload segments, optional named steps, and whether printing should wait for protocol completion. It does not contain a live runtime controller. Stream-only jobs can be sent directly by a connection; jobs with steps must go through `ConnectedPrinter.send_job(...)` or `send_prepared_job(...)`.
 
 Transport sees generic send/query/wait operations. It does not learn family-specific command meaning.
 
 ### Connectors And Connections
-A connector connects using a resolved `PrinterDevice` and returns a connection. A connection can always send a `ProtocolJob` and disconnect. Some connections also support runtime probe operations such as control-packet send/query and notification waits.
+A connector connects using a resolved `PrinterDevice` and returns a connection. A connection can send a stream-only `ProtocolJob` and disconnect. Some connections also support the generic operations needed by the printing layer to execute step-based jobs, such as control-packet send/query, bulk send, and notification waits.
 
 Most app-level code should pass a connector into `connect_printer(...)` and use the returned `ConnectedPrinter`.
 

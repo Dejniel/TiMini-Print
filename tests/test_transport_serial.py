@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 from timiniprint.devices import PrinterCatalog, SerialTarget
-from timiniprint.protocol import ProtocolJob
+from timiniprint.protocol import ProtocolJob, ProtocolStep
 from timiniprint.transport.serial import SerialConnection, SerialConnector
 
 
@@ -99,6 +99,16 @@ class TransportSerialTests(unittest.TestCase):
             with patch.object(loop, "run_in_executor", new=AsyncMock(return_value=None)) as run_exec:
                 await connection.send(job)
                 run_exec.assert_awaited_once()
+
+        asyncio.run(run())
+
+    def test_send_rejects_job_with_execution_steps(self) -> None:
+        connection = SerialConnection(self.device)
+        job = ProtocolJob(steps=(ProtocolStep.send("print data", b"abc"),))
+
+        async def run() -> None:
+            with self.assertRaisesRegex(RuntimeError, "ConnectedPrinter.send_job"):
+                await connection.send(job)
 
         asyncio.run(run())
 

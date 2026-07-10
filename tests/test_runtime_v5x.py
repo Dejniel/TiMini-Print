@@ -131,17 +131,17 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
             ],
         )
 
-    async def test_declines_bulk_job_without_bulk_transport_capability(self) -> None:
+    async def test_rejects_bulk_job_without_bulk_transport_capability(self) -> None:
         controller = V5XRuntimeController()
         session = _Session(controller, can_send_bulk=False)
 
-        sent = await controller.send_protocol_steps(
-            session,
-            (ProtocolStep.send("print data", _page_payload()),),
-            timeout=0.2,
-        )
+        with self.assertRaisesRegex(RuntimeError, "V5X bulk payload send unavailable"):
+            await controller.send_protocol_steps(
+                session,
+                (ProtocolStep.send("print data", _page_payload()),),
+                timeout=0.2,
+            )
 
-        self.assertFalse(sent)
         self.assertEqual(session.events, [])
 
 

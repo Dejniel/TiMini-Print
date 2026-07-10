@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 class PrinterConnection(Protocol):
-    """Active transport connection able to send ``ProtocolJob`` objects."""
+    """Active transport connection able to send stream-only ``ProtocolJob`` objects."""
 
     async def send(self, job: ProtocolJob) -> None: ...
 

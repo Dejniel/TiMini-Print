@@ -137,7 +137,7 @@ for page in builder.iter_page_jobs("document.pdf"):
     await printer.send_job(page.job)
 ```
 
-If you later send these jobs through TiMini transport, prefer `ConnectedPrinter.send_job(...)` so runtime completion waits and step execution are still applied.
+If you later send these jobs through TiMini transport, use `ConnectedPrinter.send_job(...)` so runtime completion waits and step execution are applied. Built-in low-level connections accept only stream-only jobs directly.
 
 ## Build From Raster Data
 
@@ -165,7 +165,7 @@ job = PrinterProtocol(device).build_job(
 
 ## Custom Connector
 
-A custom connector lets you reuse TiMini protocol logic without using the built-in Bluetooth stack. It must connect using a `PrinterDevice` and return a connection with `send(job)` and `disconnect()`.
+A custom connector lets you reuse TiMini protocol logic without using the built-in Bluetooth stack. It must connect using a `PrinterDevice` and return a connection with `send(job)` and `disconnect()`. The basic `send(job)` operation is the stream-only fallback used when a job has no execution steps.
 
 ```python
 from timiniprint.devices import PrinterCatalog

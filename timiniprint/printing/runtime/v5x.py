@@ -165,9 +165,9 @@ class V5XRuntimeController(RuntimeController):
             for step in steps
         )
         if not session.can_send_control_packet():
-            return False
+            raise RuntimeError("V5X control packet send unavailable")
         if any(split.bulk_payload for split in split_jobs) and not session.can_send_bulk_payload():
-            return False
+            raise RuntimeError("V5X bulk payload send unavailable")
 
         for split in split_jobs:
             await self._send_split_job(session, split, timeout=timeout)
