@@ -3947,5 +3947,56 @@
         }
       }
     ]
+  },
+  {
+    "model_key": "unsupported_dck_c21",
+    "profile_key_prediction": "dck",
+    "notes": "DCK printing is not implemented.",
+    "origin_app_packages": [
+      "com.fun.mxw",
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "name": "C21",
+        "detection": {
+          "exact_names": [
+            "C21"
+          ]
+        }
+      },
+      {
+        "name": "D1",
+        "detection": {
+          "exact_names": [
+            "D1"
+          ]
+        }
+      },
+      {
+        "name": "D2",
+        "detection": {
+          "exact_names": [
+            "D2"
+          ]
+        }
+      },
+      {
+        "name": "E2",
+        "detection": {
+          "exact_names": [
+            "E2"
+          ]
+        }
+      },
+      {
+        "name": "NEWSMY",
+        "detection": {
+          "exact_names": [
+            "NEWSMY"
+          ]
+        }
+      }
+    ]
   }
 ]

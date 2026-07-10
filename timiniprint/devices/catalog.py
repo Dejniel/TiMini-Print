@@ -83,6 +83,7 @@ class PrinterCatalog:
         self._validate_runtime_presets()
         self._validate_unsupported_model_keys()
         self._validate_model_references()
+        self._validate_implemented_protocols()
         self._validate_origin_app_names()
 
     @staticmethod
@@ -408,6 +409,17 @@ class PrinterCatalog:
                     f"Printer model {model.model_key} references unknown runtime preset "
                     f"{model.profile_runtime_preset_key} for profile {profile.profile_key}"
                 )
+
+    def _validate_implemented_protocols(self) -> None:
+        for model in self._models:
+            profile = self._profile_by_key[model.profile_key]
+            protocol_family = self._protocol_family_for_model(model, profile)
+            if get_protocol_behavior(protocol_family).implemented:
+                continue
+            raise ValueError(
+                f"Supported printer model {model.model_key} uses unimplemented "
+                f"protocol family {protocol_family.value}"
+            )
 
     def _validate_origin_app_names(self) -> None:
         if not self._origin_app_names:

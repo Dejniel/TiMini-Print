@@ -489,6 +489,23 @@ class DevicesModelsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             PrinterCatalog([profile], [model])
 
+    def test_catalog_rejects_supported_model_with_unimplemented_protocol(self) -> None:
+        profile = model_from_json(PrinterProfile, _profile_payload())
+        model = model_from_json(
+            SupportedPrinterModel,
+            _model_payload(
+                model_key="demo",
+                profile_key=profile.profile_key,
+                protocol_family="dck",
+            ),
+        )
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "Supported printer model demo uses unimplemented protocol family dck",
+        ):
+            PrinterCatalog([profile], [model])
+
     def test_runtime_preset_key_is_scoped_to_profile(self) -> None:
         payload_a = _profile_payload("profile-a")
         payload_a["runtime_presets"] = [
@@ -756,10 +773,10 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(_model_keys(tiny_p1), {"pocket_printer", "toprint_tspl_p1"})
         self.assertIsInstance(eleph_p1, SupportedModelMatch)
         self.assertEqual(_model_keys(toprint_p1), {"pocket_printer", "toprint_tspl_p1"})
-        self.assertIsInstance(dck_d1, SupportedModelMatch)
-        self.assertIsInstance(exact_dck_d1, SupportedModelMatch)
+        self.assertIsInstance(dck_d1, UnsupportedModelMatch)
+        self.assertIsInstance(exact_dck_d1, UnsupportedModelMatch)
         self.assertIsInstance(tiny_d1, SupportedModelMatch)
-        self.assertEqual(exact_dck_d1.model.model_key, "c21")
+        self.assertEqual(exact_dck_d1.model.model_key, "unsupported_dck_c21")
         self.assertEqual(tiny_d1.model.model_key, "pocket_printer")
         self.assertEqual(
             {
@@ -1184,16 +1201,16 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.runtime_settings.preset_key, "mx10_mx06")
 
     def test_printer_config_model_key_is_fallback_for_protocol_override(self) -> None:
-        resolved = self.catalog.device_from_key("c21")
+        resolved = self.catalog.device_from_key("yt01_mac59")
         printer_config = self.catalog.serialize_printer_config(resolved)
-        self.assertEqual(printer_config["model_key"], "c21")
+        self.assertEqual(printer_config["model_key"], "yt01_mac59")
         del printer_config["profile_overrides"]["protocol_default"]
 
         rebuilt = self.catalog.device_from_printer_config(printer_config)
 
-        self.assertEqual(rebuilt.model_key, "c21")
+        self.assertEqual(rebuilt.model_key, "yt01_mac59")
         self.assertEqual(rebuilt.protocol_family, resolved.protocol_family)
-        self.assertEqual(rebuilt.protocol_family, ProtocolFamily.DCK)
+        self.assertEqual(rebuilt.protocol_family, ProtocolFamily.V5X)
 
     def test_printer_config_rejects_runtime_preset_from_other_profile(self) -> None:
         resolved = self.catalog.device_from_key("mx10")
@@ -1496,16 +1513,16 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_proxy_rules_resolve_to_profiles_not_alias_donors(self) -> None:
         jk01 = self.catalog.detect_device("JK01")
-        c21 = self.catalog.detect_device("C21")
         ytb01 = self.catalog.detect_device("YTB01")
 
         self.assertIsNotNone(jk01)
         self.assertEqual(jk01.profile_key, "v5x")
         self.assertEqual(jk01.protocol_family, ProtocolFamily.V5X)
 
+        self.assertIsNone(self.catalog.detect_device("C21"))
+        c21 = self.catalog.detect_unsupported_model("C21")
         self.assertIsNotNone(c21)
-        self.assertEqual(c21.profile_key, "d1")
-        self.assertEqual(c21.protocol_family, ProtocolFamily.DCK)
+        self.assertEqual(c21.model_key, "unsupported_dck_c21")
 
         self.assertIsNotNone(ytb01)
         self.assertEqual(ytb01.profile_key, "ytb01")

@@ -3491,59 +3491,6 @@
     "profile_runtime_preset_key": "mx10_control"
   },
   {
-    "model_key": "c21",
-    "profile_key": "d1",
-    "protocol_override": {
-      "type": "dck"
-    },
-    "detections": [
-      {
-        "name": "C21",
-        "detection": {
-          "exact_names": [
-            "C21"
-          ]
-        }
-      },
-      {
-        "name": "D1",
-        "detection": {
-          "exact_names": [
-            "D1"
-          ]
-        }
-      },
-      {
-        "name": "D2",
-        "detection": {
-          "exact_names": [
-            "D2"
-          ]
-        }
-      },
-      {
-        "name": "E2",
-        "detection": {
-          "exact_names": [
-            "E2"
-          ]
-        }
-      },
-      {
-        "name": "NEWSMY",
-        "detection": {
-          "exact_names": [
-            "NEWSMY"
-          ]
-        }
-      }
-    ],
-    "origin_app_packages": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ]
-  },
-  {
     "model_key": "luck_a2",
     "profile_key": "luck_a2",
     "detections": [
