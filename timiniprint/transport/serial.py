@@ -28,10 +28,6 @@ class SerialConnection:
     def reporter(self) -> reporting.Reporter:
         return self._reporter
 
-    async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
-        _ = runtime_controller, timeout
-        return None
-
     def can_send_control_packet(self) -> bool:
         return False
 

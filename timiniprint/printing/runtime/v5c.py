@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 from ...protocol.family import ProtocolFamily
@@ -17,18 +17,6 @@ from .base import RuntimeController
 
 
 @dataclass
-class _V5CCompatibilityState:
-    mode: str = "unknown"
-    request_pending: bool = False
-    checked: bool = False
-    confirmed: Optional[bool] = None
-    last_result_code: Optional[int] = None
-    backend_write_cmd: bytes = b""
-    last_trigger_opcode: Optional[int] = None
-    last_trigger_packet: bytes = b""
-
-
-@dataclass
 class _V5CSessionState:
     status_code: Optional[int] = None
     status_name: str = "unknown"
@@ -40,7 +28,6 @@ class _V5CSessionState:
     serial_valid: Optional[bool] = None
     last_auth_payload: bytes = b""
     last_error_status: Optional[int] = None
-    compatibility: _V5CCompatibilityState = field(default_factory=_V5CCompatibilityState)
 
 
 class V5CRuntimeController(RuntimeController):
@@ -52,7 +39,6 @@ class V5CRuntimeController(RuntimeController):
             self._state = previous._state
 
     def debug_snapshot(self) -> dict[str, object]:
-        compatibility = self._state.compatibility
         return {
             "status_code": self._state.status_code,
             "status_name": self._state.status_name,
@@ -64,16 +50,6 @@ class V5CRuntimeController(RuntimeController):
             "serial_valid": self._state.serial_valid,
             "last_auth_payload": self._state.last_auth_payload,
             "last_error_status": self._state.last_error_status,
-            "compatibility": {
-                "mode": compatibility.mode,
-                "request_pending": compatibility.request_pending,
-                "checked": compatibility.checked,
-                "confirmed": compatibility.confirmed,
-                "last_result_code": compatibility.last_result_code,
-                "backend_write_cmd": compatibility.backend_write_cmd,
-                "last_trigger_opcode": compatibility.last_trigger_opcode,
-                "last_trigger_packet": compatibility.last_trigger_packet,
-            },
         }
 
     def debug_update(self, **changes: object) -> None:
@@ -102,7 +78,7 @@ class V5CRuntimeController(RuntimeController):
         elif opcode == 0xAA:
             self._update_max_print_height(session, payload)
         elif opcode in (0xA8, 0xA9):
-            self._update_compatibility(session, payload, opcode)
+            self._update_identity(payload, opcode)
 
     async def send_protocol_steps(self, session, steps, *, timeout: float) -> bool:
         _ = timeout
@@ -122,53 +98,6 @@ class V5CRuntimeController(RuntimeController):
                 self._state.query_status_in_flight = False
             raise
         return True
-
-    def build_compat_request(
-        self,
-        *,
-        ble_name: str,
-        ble_address: str,
-        ble_model: str = "V5C",
-    ) -> Optional[dict[str, str]]:
-        compat = self._state.compatibility
-        if not compat.request_pending:
-            return None
-        mode = compat.mode
-        if mode == "to_auth":
-            packet = compat.last_trigger_packet
-            if not packet:
-                return None
-            return {
-                "mode": mode,
-                "ble_name": ble_name,
-                "ble_address": ble_address,
-                "ble_sn": packet.hex(),
-                "ble_model": ble_model,
-            }
-        if mode in {"get_sn", "auth"}:
-            serial = self._state.device_serial or "0"
-            return {
-                "mode": mode,
-                "ble_name": ble_name,
-                "ble_address": ble_address,
-                "ble_sn": serial,
-                "ble_model": ble_model,
-            }
-        return None
-
-    def apply_compat_result(self, session, *, mode: str, result_code: Optional[int], write_cmd: bytes | None = None) -> None:
-        compat = self._state.compatibility
-        compat.mode = mode
-        compat.request_pending = False
-        compat.checked = True
-        compat.last_result_code = result_code
-        compat.backend_write_cmd = write_cmd or b""
-        compat.confirmed = None if result_code is None else result_code != -2
-        if result_code == -2:
-            session.report_warning(
-                short="V5C compatibility check failed",
-                detail=f"mode={mode}. Continuing without blocking the print session.",
-            )
 
     def _update_status(self, session, payload: bytes) -> None:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5C)
@@ -227,40 +156,15 @@ class V5CRuntimeController(RuntimeController):
             return
         self._state.max_print_height = int.from_bytes(raw[:2], "little")
 
-    def _update_compatibility(self, session, payload: bytes, opcode: int) -> None:
+    def _update_identity(self, payload: bytes, opcode: int) -> None:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5C)
         if raw is None:
             return
         self._state.last_auth_payload = raw
-        compat = self._state.compatibility
-        compat.last_trigger_opcode = opcode
-        compat.last_trigger_packet = payload
         if opcode == 0xA8:
             self._state.device_serial = ""
             self._state.serial_valid = None
-            self._set_compatibility_mode("to_auth")
-            compat.request_pending = True
             return
         serial_hex = raw[:8].hex()
         self._state.device_serial = serial_hex
         self._state.serial_valid = bool(serial_hex) and int(serial_hex, 16) != 0
-        self._refresh_compatibility_mode()
-        compat.request_pending = True
-
-    def _refresh_compatibility_mode(self) -> None:
-        if self._state.serial_valid is False:
-            mode = "get_sn"
-        elif self._state.serial_valid is True:
-            mode = "auth"
-        else:
-            mode = "unknown"
-        self._set_compatibility_mode(mode)
-
-    def _set_compatibility_mode(self, mode: str) -> None:
-        compat = self._state.compatibility
-        compat.mode = mode
-        compat.request_pending = False
-        compat.checked = False
-        compat.confirmed = None
-        compat.last_result_code = None
-        compat.backend_write_cmd = b""

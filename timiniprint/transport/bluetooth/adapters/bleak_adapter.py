@@ -210,10 +210,6 @@ class _BleakSocket:
             )
             raise RuntimeError(f"BLE write failed ({detail}): {exc}") from exc
 
-    def sendall(self, data: bytes) -> None:
-        """Compatibility alias matching socket-style APIs."""
-        self.send_payload(data)
-
     def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0):
         if not self._connected or not self._client:
             raise RuntimeError("Not connected to BLE device")

@@ -5,7 +5,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
-from ... import reporting
 from ...protocol.family import ProtocolFamily
 from ...protocol.families import split_prefixed_bulk_stream
 from ...protocol.families.v5x import (
@@ -21,15 +20,6 @@ from ...protocol.packet import make_packet, prefixed_packet_opcode, prefixed_pac
 from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 from .v5x_density import V5XJobContext, adjust_density_payload, start_delay_ms
-
-
-@dataclass
-class _V5XCompatibilityState:
-    mode: str = "unknown"
-    checked: bool = False
-    confirmed: Optional[bool] = None
-    last_result_code: Optional[int] = None
-    backend_write_cmd: bytes = b""
 
 
 @dataclass
@@ -60,7 +50,6 @@ class _V5XSessionState:
     await_start_ready: bool = False
     start_ready_seen: bool = False
     await_connect_info: bool = False
-    compatibility: _V5XCompatibilityState = field(default_factory=_V5XCompatibilityState)
 
 
 class V5XRuntimeController(RuntimeController):
@@ -97,7 +86,6 @@ class V5XRuntimeController(RuntimeController):
         self._state.await_connect_info = await_connect_info
 
     def debug_snapshot(self) -> dict[str, object]:
-        compatibility = self._state.compatibility
         return {
             "task_state_name": self._state.task_state_name,
             "last_density_payload": self._state.last_density_payload,
@@ -122,13 +110,6 @@ class V5XRuntimeController(RuntimeController):
             "await_start_ready": self._state.await_start_ready,
             "start_ready_seen": self._state.start_ready_seen,
             "await_connect_info": self._state.await_connect_info,
-            "compatibility": {
-                "mode": compatibility.mode,
-                "checked": compatibility.checked,
-                "confirmed": compatibility.confirmed,
-                "last_result_code": compatibility.last_result_code,
-                "backend_write_cmd": compatibility.backend_write_cmd,
-            },
         }
 
     def debug_update(self, **changes: object) -> None:
@@ -354,7 +335,7 @@ class V5XRuntimeController(RuntimeController):
             return
         opcode = prefixed_packet_opcode(payload, ProtocolFamily.V5X)
         if opcode == 0xA7:
-            self._update_info_from_a7(session, payload)
+            self._update_info_from_a7(payload)
             self._mark_command_ack(session, 0xA7)
         elif opcode == 0xA1:
             self._update_status(session, payload)
@@ -379,38 +360,6 @@ class V5XRuntimeController(RuntimeController):
             self._schedule_status_poll(session)
         elif opcode == 0xB3:
             self._mark_sign_request(session)
-
-    def build_compat_request(
-        self,
-        *,
-        ble_name: str,
-        ble_address: str,
-        ble_model: str = "V5X",
-    ) -> Optional[dict[str, str]]:
-        mode = self._state.compatibility.mode
-        if mode not in {"get_sn", "auth"}:
-            return None
-        serial = self._state.device_serial or "0"
-        return {
-            "mode": mode,
-            "ble_name": ble_name,
-            "ble_address": ble_address,
-            "ble_sn": serial,
-            "ble_model": ble_model,
-        }
-
-    def apply_compat_result(self, session, *, mode: str, result_code: Optional[int], write_cmd: bytes | None = None) -> None:
-        compat = self._state.compatibility
-        compat.mode = mode
-        compat.checked = True
-        compat.last_result_code = result_code
-        compat.backend_write_cmd = write_cmd or b""
-        compat.confirmed = None if result_code is None else result_code != -2
-        if result_code == -2:
-            session.report_warning(
-                short="V5X compatibility check failed",
-                detail=f"mode={mode}. Continuing without blocking the print session.",
-            )
 
     async def _wait_for_command_ack(self, session, opcode: int, timeout: float) -> None:
         if opcode in self._state.seen_command_acks:
@@ -529,7 +478,7 @@ class V5XRuntimeController(RuntimeController):
         if status != 0x00:
             raise RuntimeError(f"V5X start print was rejected (status=0x{status:02x})")
 
-    def _update_info_from_a7(self, session, payload: bytes) -> None:
+    def _update_info_from_a7(self, payload: bytes) -> None:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)
         if raw is None:
             return
@@ -537,21 +486,6 @@ class V5XRuntimeController(RuntimeController):
         serial_hex = raw[:6].hex()
         self._state.device_serial = serial_hex
         self._state.serial_valid = bool(serial_hex) and serial_hex not in {"000000000000", "ffffffffffff"}
-        self._refresh_compatibility_mode(session)
-
-    def _refresh_compatibility_mode(self, session) -> None:
-        compat = self._state.compatibility
-        compat.checked = False
-        compat.confirmed = None
-        compat.last_result_code = None
-        compat.backend_write_cmd = b""
-        if self._state.serial_valid is False:
-            compat.mode = "get_sn"
-        elif self._state.serial_valid is True:
-            compat.mode = "auth"
-        else:
-            compat.mode = "unknown"
-        session.report_debug(f"V5X compatibility mode: {compat.mode}")
 
     def _extract_status_byte(self, session, payload: bytes) -> Optional[int]:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)

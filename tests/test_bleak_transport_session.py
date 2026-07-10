@@ -1366,7 +1366,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(_v5x_state(session).temperature_c, 30)
         self.assertEqual(_v5x_state(session).error_group, 0x00)
         self.assertEqual(_v5x_state(session).error_code, 0x00)
-        self.assertEqual(_v5x_state(session).compatibility.mode, "auth")
         debug_details = [
             message.detail or message.short
             for message in sink.messages
@@ -1393,90 +1392,6 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertEqual(_v5x_state(session).device_serial, "ffffffffffff")
         self.assertFalse(_v5x_state(session).serial_valid)
-        self.assertEqual(_v5x_state(session).compatibility.mode, "get_sn")
-
-    def test_v5x_builds_compat_request_for_auth_mode(self) -> None:
-        session, _ = self._make_session(ProtocolFamily.V5X)
-
-        session.handle_notification(
-            make_packet(0xA7, bytes.fromhex("112233445566"), ProtocolFamily.V5X)
-        )
-
-        request = _controller(session).build_compat_request(
-            ble_name="JK01",
-            ble_address="48:0F:57:49:1D:3A",
-        )
-
-        self.assertEqual(
-            request,
-            {
-                "mode": "auth",
-                "ble_name": "JK01",
-                "ble_address": "48:0F:57:49:1D:3A",
-                "ble_sn": "112233445566",
-                "ble_model": "V5X",
-            },
-        )
-
-    def test_v5x_builds_compat_request_for_get_sn_mode(self) -> None:
-        session, _ = self._make_session(ProtocolFamily.V5X)
-
-        session.handle_notification(
-            make_packet(0xA7, bytes.fromhex("FFFFFFFFFFFF"), ProtocolFamily.V5X)
-        )
-
-        request = _controller(session).build_compat_request(
-            ble_name="JK01",
-            ble_address="48:0F:57:49:1D:3A",
-            ble_model="JK01",
-        )
-
-        self.assertEqual(
-            request,
-            {
-                "mode": "get_sn",
-                "ble_name": "JK01",
-                "ble_address": "48:0F:57:49:1D:3A",
-                "ble_sn": "ffffffffffff",
-                "ble_model": "JK01",
-            },
-        )
-
-    def test_v5x_compat_result_is_non_blocking_and_warns_on_rejection(self) -> None:
-        session, _, sink = self._make_session_with_sink(ProtocolFamily.V5X)
-
-        session.handle_notification(
-            make_packet(0xA7, bytes.fromhex("112233445566"), ProtocolFamily.V5X)
-        )
-        _controller(session).apply_compat_result(session, mode="auth", result_code=-2)
-
-        self.assertTrue(_v5x_state(session).compatibility.checked)
-        self.assertFalse(_v5x_state(session).compatibility.confirmed)
-        self.assertEqual(_v5x_state(session).compatibility.last_result_code, -2)
-        warnings = [msg for msg in sink.messages if msg.level == "warning"]
-        self.assertEqual(len(warnings), 1)
-        self.assertEqual(warnings[0].short, "V5X compatibility check failed")
-
-    def test_v5x_compat_result_keeps_backend_write_cmd(self) -> None:
-        session, _ = self._make_session(ProtocolFamily.V5X)
-
-        session.handle_notification(
-            make_packet(0xA7, bytes.fromhex("FFFFFFFFFFFF"), ProtocolFamily.V5X)
-        )
-        _controller(session).apply_compat_result(
-            session,
-            mode="get_sn",
-            result_code=1,
-            write_cmd=bytes.fromhex("2221A70000000000"),
-        )
-
-        self.assertTrue(_v5x_state(session).compatibility.checked)
-        self.assertTrue(_v5x_state(session).compatibility.confirmed)
-        self.assertEqual(_v5x_state(session).compatibility.last_result_code, 1)
-        self.assertEqual(
-            _v5x_state(session).compatibility.backend_write_cmd,
-            bytes.fromhex("2221A70000000000"),
-        )
 
     def test_v5x_status_poll_ack_is_tracked(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)
@@ -1781,10 +1696,8 @@ class BleakTransportSessionTests(unittest.TestCase):
             _v5c_state(session).last_auth_payload,
             bytes.fromhex("1122334455667788"),
         )
-        self.assertEqual(_v5c_state(session).compatibility.mode, "auth")
-        self.assertEqual(_v5c_state(session).compatibility.last_trigger_opcode, 0xA9)
 
-    def test_v5c_invalid_serial_switches_to_get_sn_mode(self) -> None:
+    def test_v5c_invalid_serial_is_marked_invalid(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5C)
 
         session.handle_notification(
@@ -1793,86 +1706,18 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertEqual(_v5c_state(session).device_serial, "0000000000000000")
         self.assertFalse(_v5c_state(session).serial_valid)
-        self.assertEqual(_v5c_state(session).compatibility.mode, "get_sn")
-        self.assertEqual(_v5c_state(session).compatibility.last_trigger_opcode, 0xA9)
 
-    def test_v5c_builds_compat_request(self) -> None:
+    def test_v5c_a8_clears_device_identity(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5C)
-
-        self.assertIsNone(
-            _controller(session).build_compat_request(
-                ble_name="YTB01",
-                ble_address="48:0F:57:49:1D:3A",
-            )
-        )
-
         session.handle_notification(
             make_packet(0xA9, bytes.fromhex("1122334455667788"), ProtocolFamily.V5C)
         )
+        auth_payload = bytes.fromhex("8877665544332211")
+        session.handle_notification(make_packet(0xA8, auth_payload, ProtocolFamily.V5C))
 
-        request = _controller(session).build_compat_request(
-            ble_name="YTB01",
-            ble_address="48:0F:57:49:1D:3A",
-        )
-
-        self.assertEqual(
-            request,
-            {
-                "mode": "auth",
-                "ble_name": "YTB01",
-                "ble_address": "48:0F:57:49:1D:3A",
-                "ble_sn": "1122334455667788",
-                "ble_model": "V5C",
-            },
-        )
-        self.assertTrue(_v5c_state(session).compatibility.request_pending)
-
-    def test_v5c_a8_builds_to_auth_request_from_full_packet(self) -> None:
-        session, _ = self._make_session(ProtocolFamily.V5C)
-
-        packet = make_packet(0xA8, bytes.fromhex("1122334455667788"), ProtocolFamily.V5C)
-        session.handle_notification(packet)
-
-        request = _controller(session).build_compat_request(
-            ble_name="YTB01",
-            ble_address="48:0F:57:49:1D:3A",
-        )
-
-        self.assertEqual(
-            request,
-            {
-                "mode": "to_auth",
-                "ble_name": "YTB01",
-                "ble_address": "48:0F:57:49:1D:3A",
-                "ble_sn": packet.hex(),
-                "ble_model": "V5C",
-            },
-        )
-        self.assertEqual(_v5c_state(session).compatibility.last_trigger_opcode, 0xA8)
+        self.assertEqual(_v5c_state(session).last_auth_payload, auth_payload)
+        self.assertEqual(_v5c_state(session).device_serial, "")
         self.assertIsNone(_v5c_state(session).serial_valid)
-        self.assertTrue(_v5c_state(session).compatibility.request_pending)
-
-    def test_v5c_compat_result_is_non_blocking_and_warns_on_rejection(self) -> None:
-        session, _, sink = self._make_session_with_sink(ProtocolFamily.V5C)
-
-        session.handle_notification(
-            make_packet(0xA9, bytes.fromhex("1122334455667788"), ProtocolFamily.V5C)
-        )
-        _controller(session).apply_compat_result(session, mode="auth", result_code=-2)
-
-        self.assertTrue(_v5c_state(session).compatibility.checked)
-        self.assertFalse(_v5c_state(session).compatibility.confirmed)
-        self.assertEqual(_v5c_state(session).compatibility.last_result_code, -2)
-        self.assertFalse(_v5c_state(session).compatibility.request_pending)
-        self.assertIsNone(
-            _controller(session).build_compat_request(
-                ble_name="YTB01",
-                ble_address="48:0F:57:49:1D:3A",
-            )
-        )
-        warnings = [msg for msg in sink.messages if msg.level == "warning"]
-        self.assertEqual(len(warnings), 1)
-        self.assertEqual(warnings[0].short, "V5C compatibility check failed")
 
     def test_v5c_error_status_warns_once_per_status_code(self) -> None:
         session, _, sink = self._make_session_with_sink(ProtocolFamily.V5C)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
 
 from ...protocol.runtime import RuntimePrintCapabilities
 
@@ -111,12 +111,6 @@ class RuntimeController:
         return None
 
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
-        return None
-
-    def build_compat_request(self, **kwargs) -> Optional[dict[str, str]]:
-        return None
-
-    def apply_compat_result(self, session: RuntimeSessionApi, **kwargs) -> None:
         return None
 
     def debug_snapshot(self) -> dict[str, Any]:
