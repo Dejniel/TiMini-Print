@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class ProtocolJob:
     """Protocol payload and execution steps, independent from live connection state."""
 
-    _payload: bytes | None
+    _payload: bytes
     payload_segments: tuple[bytes, ...]
     steps: tuple[ProtocolStep, ...]
     wait_for_completion: bool
@@ -33,20 +33,29 @@ class ProtocolJob:
         steps: tuple[ProtocolStep, ...] = (),
         wait_for_completion: bool = False,
     ) -> None:
-        self._payload = payload
         self.steps = tuple(steps)
         self.wait_for_completion = bool(wait_for_completion)
         if payload_segments:
             self.payload_segments = tuple(bytes(segment) for segment in payload_segments)
+            segments_payload = b"".join(self.payload_segments)
+            if payload is not None and bytes(payload) != segments_payload:
+                raise ValueError("Protocol job payload does not match payload segments")
+            self._payload = segments_payload
         elif payload is not None:
-            self.payload_segments = (payload,)
+            self._payload = bytes(payload)
+            self.payload_segments = (self._payload,)
         else:
             self.payload_segments = tuple(step.data for step in self.steps if step.include_in_payload)
+            self._payload = b"".join(self.payload_segments)
+        if self.steps:
+            steps_payload = b"".join(
+                step.data for step in self.steps if step.include_in_payload
+            )
+            if self._payload != steps_payload:
+                raise ValueError("Protocol job payload does not match included protocol steps")
 
     @property
     def payload(self) -> bytes:
-        if self._payload is None:
-            self._payload = b"".join(self.payload_segments)
         return self._payload
 
 

@@ -172,6 +172,16 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(job.payload_segments, (b"A", b"B"))
         self.assertEqual(job.payload, b"AB")
 
+    async def test_protocol_job_rejects_conflicting_payload_shapes(self) -> None:
+        with self.assertRaisesRegex(ValueError, "payload segments"):
+            ProtocolJob(payload=b"A", payload_segments=(b"B",))
+
+        with self.assertRaisesRegex(ValueError, "protocol steps"):
+            ProtocolJob(
+                payload=b"A",
+                steps=(ProtocolStep.send("bitmap", b"B"),),
+            )
+
     async def test_send_prepared_job_executes_protocol_steps(self) -> None:
         connection = _Connection(replies=[b"\x00OK", b"\x00", b"\x00\xAA"])
         reporter = _Reporter()
