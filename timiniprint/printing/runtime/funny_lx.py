@@ -7,11 +7,12 @@ from collections.abc import Awaitable, Callable
 
 from ...devices.profiles import DetectionNormalizer
 from ...protocol.families.funny_lx.core import challenge_crc
-from ...protocol.steps import (
-    ProtocolReplyExpectation,
-    ProtocolStep,
-    ProtocolStepOperation,
-    reply_matches_expectation,
+from ...protocol.steps import ProtocolStep, ProtocolStepOperation
+from ..step_execution import (
+    bytes_preview,
+    execute_protocol_step,
+    reply_complete_for,
+    reply_matches_for,
 )
 from .base import RuntimeController, RuntimeSessionApi
 
@@ -226,13 +227,13 @@ class FunnyLxRuntimeController(RuntimeController):
             )
             retry_index = _retry_index_from_notification(reply or b"")
             if retry_index is None:
-                transfer_ready = _reply_matches_for(accepted_step, reply)
+                transfer_ready = reply_matches_for(accepted_step, reply)
                 if not transfer_ready:
                     session.report_warning(
                         short=f"Funny LX {accepted_step.label} reply mismatch",
                         detail=(
                             f"Expected protocol reply for {accepted_step.label!r}, "
-                            f"got {_hex_preview(reply)}."
+                            f"got {bytes_preview(reply)}."
                         ),
                     )
                 return transfer_ready
@@ -398,45 +399,19 @@ async def _execute_step(
     *,
     timeout: float,
 ) -> None:
-    # TODO: This deliberately duplicates part of printing.send's generic step
-    # executor so Funny LX can keep `5A 05` resend policy in runtime, not
-    # transport. If another runtime needs custom step execution, extract a small
-    # shared executor that accepts family hooks instead of growing this copy.
+    reply = await execute_protocol_step(
+        session,
+        step,
+        timeout=timeout,
+        log_prefix="Funny LX protocol",
+    )
     if step.operation is ProtocolStepOperation.SEND:
-        session.report_debug(f"Funny LX protocol send {step.label}: {step.data.hex(' ')}")
-        await session.send_standard_payload(step.data)
         return
-    if step.operation is ProtocolStepOperation.WAIT:
-        reply = await _wait_step(session, step, timeout=timeout)
-    elif step.operation is ProtocolStepOperation.QUERY:
-        reply = await _query_step(session, step, timeout=timeout)
-    else:
-        raise ValueError(f"Unsupported Funny LX protocol step operation: {step.operation.value}")
-    if not _reply_matches_for(step, reply):
+    if not reply_matches_for(step, reply):
         session.report_warning(
             short=f"Funny LX {step.label} reply mismatch",
-            detail=f"Expected protocol reply for {step.label!r}, got {_hex_preview(reply)}.",
+            detail=f"Expected protocol reply for {step.label!r}, got {bytes_preview(reply)}.",
         )
-
-
-async def _wait_step(
-    session: RuntimeSessionApi,
-    step: ProtocolStep,
-    *,
-    timeout: float,
-) -> bytes | None:
-    reply_complete = _reply_complete_for(step)
-    if reply_complete is None:
-        return None
-    wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
-    reply = await session.wait_for_notification(
-        step.label,
-        reply_complete,
-        timeout=wait_timeout,
-        required=False,
-    )
-    session.report_debug(f"Funny LX wait {step.label}: rx={_hex_preview(reply)}")
-    return reply
 
 
 async def _wait_for_image_transfer_ready_or_retry(
@@ -445,7 +420,7 @@ async def _wait_for_image_transfer_ready_or_retry(
     *,
     timeout: float,
 ) -> bytes | None:
-    reply_complete = _reply_complete_for(step)
+    reply_complete = reply_complete_for(step)
     if reply_complete is None:
         return None
 
@@ -462,62 +437,5 @@ async def _wait_for_image_transfer_ready_or_retry(
         timeout=wait_timeout,
         required=False,
     )
-    session.report_debug(f"Funny LX wait {step.label}: rx={_hex_preview(reply)}")
+    session.report_debug(f"Funny LX wait {step.label}: rx={bytes_preview(reply)}")
     return reply
-
-
-async def _query_step(
-    session: RuntimeSessionApi,
-    step: ProtocolStep,
-    *,
-    timeout: float,
-) -> bytes | None:
-    query_timeout = timeout if step.timeout_sec is None else step.timeout_sec
-    reply_complete = _reply_complete_for(step)
-    if session.can_query_control_packet():
-        reply = await session.query_control_packet(
-            step.data,
-            timeout=query_timeout,
-            reply_complete=reply_complete,
-        )
-    elif reply_complete is not None:
-        reply = await session.send_control_packet_wait_notification(
-            step.data,
-            label=step.label,
-            match=reply_complete,
-            timeout=query_timeout,
-            required=False,
-        )
-    else:
-        await session.send_standard_payload(step.data)
-        reply = None
-    session.report_debug(
-        f"Funny LX query {step.label}: tx={step.data.hex(' ')} rx={_hex_preview(reply)}"
-    )
-    return reply
-
-
-def _reply_complete_for(step: ProtocolStep):
-    if step.reply_matcher is not None:
-        return step.reply_matcher.complete
-    if step.expect is ProtocolReplyExpectation.NONE:
-        return None
-    return lambda reply: reply_matches_expectation(step.expect, reply)
-
-
-def _reply_matches_for(step: ProtocolStep, reply: bytes | None) -> bool:
-    if step.reply_matcher is not None:
-        if step.reply_matcher.matches is not None:
-            return step.reply_matcher.matches(reply)
-        return bool(reply and step.reply_matcher.complete(reply))
-    return reply_matches_expectation(step.expect, reply)
-
-
-def _hex_preview(data: bytes | None) -> str:
-    if data is None:
-        return "<none>"
-    if not data:
-        return "<empty>"
-    if len(data) <= 32:
-        return data.hex(" ")
-    return f"{data[:16].hex(' ')} ... {data[-16:].hex(' ')} ({len(data)} bytes)"
