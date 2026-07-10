@@ -9,8 +9,6 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
 
 from .... import reporting
-from ....printing.runtime.base import RuntimeController
-from ....printing.runtime.factory import _runtime_controller_for_family
 from ....protocol.families import BleBulkWriteProfile, BleTransportProfile, split_prefixed_bulk_stream
 from ....protocol.family import ProtocolFamily
 from ....protocol.packet import make_packet, prefixed_packet_length
@@ -69,7 +67,7 @@ class _BleakTransportSession:
         self._flow_resume_event: asyncio.Event | None = None
         self._flow_resume_event_loop: asyncio.AbstractEventLoop | None = None
         self._client: Any = None
-        self._runtime_controller = _runtime_controller_for_family(protocol_family)
+        self._runtime_controller = None
         self._notification_waiters: list[_NotificationWaiter] = []
         self._notification_history: deque[tuple[float, bytes]] = deque(
             maxlen=_NOTIFICATION_HISTORY_LIMIT
@@ -170,7 +168,7 @@ class _BleakTransportSession:
 
     async def attach_runtime_controller(
         self,
-        runtime_controller: RuntimeController | None,
+        runtime_controller: Any | None,
         *,
         mtu_size: int,
         timeout: float,
@@ -187,6 +185,7 @@ class _BleakTransportSession:
                     mtu_size=mtu_size,
                     timeout=timeout,
                 )
+                self._replay_notifications_to_runtime_controller()
                 await self._runtime_controller.after_initialize(self, timeout=timeout)
 
     async def start_notify_if_available(self, client: Any, callback) -> None:
@@ -260,13 +259,8 @@ class _BleakTransportSession:
         *,
         mtu_size: int,
         timeout: float,
-        runtime_controller: RuntimeController | None = None,
     ) -> None:
         self._client = client
-        if runtime_controller is not None:
-            if runtime_controller is not self._runtime_controller:
-                runtime_controller.adopt_previous(self._runtime_controller)
-                self._runtime_controller = runtime_controller
         if not self.bindings.write_char:
             raise RuntimeError("No write characteristic available")
 
@@ -850,6 +844,21 @@ class _BleakTransportSession:
     def _remember_notification(self, now: float, payload: bytes) -> None:
         self._notification_history.append((now, bytes(payload)))
         self._trim_notification_history(now)
+
+    def _replay_notifications_to_runtime_controller(self) -> None:
+        if self._runtime_controller is None:
+            return
+        now = time.monotonic()
+        self._trim_notification_history(now)
+        flow_control = self._transport_profile.flow_control
+        flow_packets = set()
+        if flow_control is not None:
+            flow_packets.update(flow_control.pause_packets)
+            flow_packets.update(flow_control.resume_packets)
+        for _timestamp, payload in self._notification_history:
+            if payload in flow_packets:
+                continue
+            self._runtime_controller.handle_notification(self, payload)
 
     def _match_notification_history(self, match: Callable[[bytes], bool]) -> bytes | None:
         now = time.monotonic()

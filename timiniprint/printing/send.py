@@ -27,9 +27,11 @@ async def send_prepared_job(
     sent_via_steps = False
     controller = job.runtime_controller
 
+    if controller is not None:
+        await session.attach_runtime_controller(controller, timeout=timeout)
+
     if job.steps:
         if controller is not None:
-            await session.attach_runtime_controller(controller, timeout=timeout)
             sent_via_steps = await controller.send_protocol_steps(session, job.steps, timeout=timeout)
         if not sent_via_steps and session.can_send_standard_payload():
             sent_via_steps = await _send_protocol_steps(session, job.steps, timeout=timeout)

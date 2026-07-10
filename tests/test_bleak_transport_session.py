@@ -149,6 +149,32 @@ def _enable_notification_waits(session: _BleakTransportSession) -> None:
     session.notify_started = True
 
 
+def _runtime_controller_for_test(family: ProtocolFamily):
+    if family is ProtocolFamily.V5G:
+        return V5GRuntimeController()
+    if family is ProtocolFamily.V5X:
+        return V5XRuntimeController()
+    if family is ProtocolFamily.V5C:
+        return V5CRuntimeController()
+    return None
+
+
+def _attach_runtime_controller_for_test(
+    session: _BleakTransportSession,
+    family: ProtocolFamily,
+) -> None:
+    controller = _runtime_controller_for_test(family)
+    if controller is None:
+        return
+    asyncio.run(
+        session.attach_runtime_controller(
+            controller,
+            mtu_size=180,
+            timeout=0.2,
+        )
+    )
+
+
 class BleakTransportSessionTests(unittest.TestCase):
     def _make_session(self, family: ProtocolFamily) -> tuple[_BleakTransportSession, _Client]:
         reporter, _ = build_capture_reporter()
@@ -158,6 +184,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(family, transport, resolver, reporter)
+        _attach_runtime_controller_for_test(session, family)
         client = _Client([])
         return session, client
 
@@ -169,6 +196,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(family, transport, resolver, reporter)
+        _attach_runtime_controller_for_test(session, family)
         client = _Client([])
         return session, client, sink
 
@@ -402,6 +430,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(ProtocolFamily.V5X, transport, resolver, reporter)
+        _attach_runtime_controller_for_test(session, ProtocolFamily.V5X)
         client = _Client([])
         _enable_notification_waits(session)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
@@ -422,6 +451,38 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(client.calls, [(cmd.uuid, V5X_CONNECT_INIT_PACKET, False)])
         self.assertFalse(_v5x_state(session).connect_info_received)
         self.assertFalse(_v5x_state(session).await_connect_info)
+
+    def test_attach_runtime_controller_replays_early_notifications(self) -> None:
+        reporter, _ = build_capture_reporter()
+        resolver = _BleWriteEndpointResolver(reporter=reporter)
+        transport = replace(
+            get_protocol_behavior(ProtocolFamily.V5X).transport,
+            connect_delay_ms=0,
+            standard_write_delay_ms=0,
+        )
+        session = _BleakTransportSession(
+            ProtocolFamily.V5X,
+            transport,
+            resolver,
+            reporter,
+        )
+        _enable_notification_waits(session)
+        session.handle_notification(
+            make_packet(0xB1, b"FW1.0.22", ProtocolFamily.V5X)
+        )
+        controller = V5XRuntimeController()
+
+        async def run() -> None:
+            await session.attach_runtime_controller(
+                controller,
+                mtu_size=180,
+                timeout=0.01,
+            )
+
+        asyncio.run(run())
+
+        self.assertTrue(controller.debug_snapshot()["connect_info_received"])
+        self.assertFalse(controller.debug_snapshot()["await_connect_info"])
 
     def test_initialize_connection_waits_for_family_settle_delay(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
@@ -667,12 +728,16 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.attach_runtime_controller(
+                    runtime_controller,
+                    mtu_size=180,
+                    timeout=0.2,
+                )
                 await session.send(
                     client,
                     data,
                     mtu_size=180,
                     timeout=0.2,
-                    runtime_controller=runtime_controller,
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
@@ -707,12 +772,16 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.attach_runtime_controller(
+                    runtime_controller,
+                    mtu_size=180,
+                    timeout=0.2,
+                )
                 await session.send(
                     client,
                     data,
                     mtu_size=180,
                     timeout=0.2,
-                    runtime_controller=runtime_controller,
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
@@ -747,12 +816,16 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.attach_runtime_controller(
+                    runtime_controller,
+                    mtu_size=180,
+                    timeout=0.2,
+                )
                 await session.send(
                     client,
                     data,
                     mtu_size=180,
                     timeout=0.2,
-                    runtime_controller=runtime_controller,
                 )
                 sent = write_chunks.await_args.args[2]
                 expected_values = [160, 145, 130, 115, 100]
@@ -789,12 +862,16 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.attach_runtime_controller(
+                    runtime_controller,
+                    mtu_size=180,
+                    timeout=0.2,
+                )
                 await session.send(
                     client,
                     data,
                     mtu_size=180,
                     timeout=0.2,
-                    runtime_controller=runtime_controller,
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
@@ -833,12 +910,16 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.attach_runtime_controller(
+                    runtime_controller,
+                    mtu_size=180,
+                    timeout=0.2,
+                )
                 await session.send(
                     client,
                     data,
                     mtu_size=180,
                     timeout=0.2,
-                    runtime_controller=runtime_controller,
                 )
                 sent = write_chunks.await_args.args[2]
                 self.assertIn(
@@ -877,12 +958,16 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.attach_runtime_controller(
+                    runtime_controller,
+                    mtu_size=180,
+                    timeout=0.2,
+                )
                 await session.send(
                     client,
                     data,
                     mtu_size=180,
                     timeout=0.2,
-                    runtime_controller=runtime_controller,
                 )
                 sent = write_chunks.await_args.args[2]
                 expected_values = [140, 140, 140, 140, 135, 130]
@@ -918,12 +1003,16 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
+                await session.attach_runtime_controller(
+                    runtime_controller,
+                    mtu_size=180,
+                    timeout=0.2,
+                )
                 await session.send(
                     client,
                     data,
                     mtu_size=180,
                     timeout=0.2,
-                    runtime_controller=runtime_controller,
                 )
                 sent = write_chunks.await_args.args[2]
                 expected_values = [90, 90, 90, 90, 80]

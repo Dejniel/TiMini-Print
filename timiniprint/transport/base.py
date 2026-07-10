@@ -7,7 +7,6 @@ from ..protocol.job import ProtocolJob
 
 if TYPE_CHECKING:
     from ..devices import PrinterDevice
-    from ..printing.runtime.base import RuntimeController
 
 
 class PrinterConnection(Protocol):
@@ -23,7 +22,7 @@ class RuntimeProbeConnection(PrinterConnection, Protocol):
 
     async def attach_runtime_controller(
         self,
-        runtime_controller: RuntimeController,
+        runtime_controller: object,
         *,
         timeout: float = 1.0,
     ) -> None: ...

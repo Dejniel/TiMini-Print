@@ -5,6 +5,7 @@ import types
 import unittest
 from unittest.mock import patch
 
+from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.transport.bluetooth.adapters.bleak_adapter import _BleakSocket
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families.v5x import (
@@ -230,6 +231,11 @@ class BleakSocketTests(unittest.TestCase):
         s._transport._client = client
 
         async def run() -> None:
+            await s._transport.attach_runtime_controller(
+                V5XRuntimeController(),
+                mtu_size=20,
+                timeout=0.2,
+            )
             s._handle_notification("", bytearray(V5X_NOTIFY_TRIGGER_STATUS_POLL))
             await asyncio.sleep(0.75)
 

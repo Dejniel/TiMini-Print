@@ -191,7 +191,7 @@ class _BleakSocket:
     def send(self, data: bytes) -> int:
         return self.send_payload(data)
 
-    def send_payload(self, data: bytes, runtime_controller=None) -> int:
+    def send_payload(self, data: bytes) -> int:
         """Send one payload using the active BLE transport session."""
         if not self._connected or not self._client:
             raise RuntimeError("Not connected to BLE device")
@@ -199,7 +199,7 @@ class _BleakSocket:
             raise RuntimeError("Event loop not initialized")
 
         try:
-            self._loop.run_until_complete(self._send_async(data, runtime_controller=runtime_controller))
+            self._loop.run_until_complete(self._send_async(data))
             return len(data)
         except Exception as exc:
             bindings = self._transport.bindings
@@ -322,14 +322,13 @@ class _BleakSocket:
             )
         )
 
-    async def _send_async(self, data: bytes, runtime_controller=None) -> None:
+    async def _send_async(self, data: bytes) -> None:
         """Delegate payload routing and chunking to the transport session."""
         await self._transport.send(
             self._client,
             data,
             mtu_size=self._mtu_size,
             timeout=self._timeout,
-            runtime_controller=runtime_controller,
         )
 
     async def _pair_if_supported(self) -> None:

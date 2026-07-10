@@ -34,15 +34,3 @@ def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | 
     ):
         return LuckNormalRuntimeController(protocol_variant=device.protocol_variant)
     return None
-
-
-def _runtime_controller_for_family(protocol_family: ProtocolFamily) -> RuntimeController | None:
-    if protocol_family is ProtocolFamily.V5G:
-        return V5GRuntimeController()
-    if protocol_family is ProtocolFamily.V5X:
-        return V5XRuntimeController()
-    if protocol_family is ProtocolFamily.V5C:
-        return V5CRuntimeController()
-    if protocol_family is ProtocolFamily.NIIMBOT:
-        return NiimbotRuntimeController()
-    return None

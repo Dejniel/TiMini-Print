@@ -95,17 +95,15 @@ class ArchitectureBoundaryTests(unittest.TestCase):
             PACKAGE_ROOT / "protocol",
             [
                 "timiniprint.rendering",
+                "timiniprint.printing",
                 "timiniprint.transport",
                 "timiniprint.app",
             ],
         )
 
-    def test_protocol_uses_only_device_model_and_runtime_interface(self) -> None:
+    def test_protocol_uses_only_device_model(self) -> None:
         violations: list[str] = []
-        allowed_prefixes = {
-            "timiniprint.devices.device",
-            "timiniprint.printing.runtime",
-        }
+        allowed_prefixes = {"timiniprint.devices.device"}
         for path in _iter_python_files(PACKAGE_ROOT / "protocol"):
             imported = sorted(
                 value
@@ -113,8 +111,6 @@ class ArchitectureBoundaryTests(unittest.TestCase):
                 if (
                     value == "timiniprint.devices"
                     or value.startswith("timiniprint.devices.")
-                    or value == "timiniprint.printing"
-                    or value.startswith("timiniprint.printing.")
                 )
                 and not any(
                     value == prefix or value.startswith(prefix + ".")
@@ -131,7 +127,13 @@ class ArchitectureBoundaryTests(unittest.TestCase):
             ["timiniprint.transport"],
         )
 
-    def test_transport_uses_only_generic_runtime_interface(self) -> None:
+    def test_transport_does_not_import_printing_layer(self) -> None:
+        self._assert_no_forbidden_imports(
+            PACKAGE_ROOT / "transport",
+            ["timiniprint.printing"],
+        )
+
+    def test_transport_does_not_import_family_implementations(self) -> None:
         self._assert_no_forbidden_imports(
             PACKAGE_ROOT / "transport",
             [

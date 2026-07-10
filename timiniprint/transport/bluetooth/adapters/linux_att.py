@@ -202,7 +202,7 @@ class _LinuxAttSocket:
     def sendall(self, data: bytes) -> None:
         self.send_payload(data)
 
-    def send_payload(self, data: bytes, runtime_controller=None) -> int:
+    def send_payload(self, data: bytes) -> int:
         if not self._connected or self._client is None:
             raise RuntimeError("Not connected to BLE device")
         self._run(
@@ -211,7 +211,6 @@ class _LinuxAttSocket:
                 data,
                 mtu_size=self._mtu_size,
                 timeout=self._timeout,
-                runtime_controller=runtime_controller,
             )
         )
         return len(data)

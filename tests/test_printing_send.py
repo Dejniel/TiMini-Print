@@ -214,6 +214,16 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(connection.standard_payloads, [b"runtime"])
         self.assertEqual(connection.sent_jobs, [])
 
+    async def test_send_prepared_job_attaches_runtime_controller_for_stream_job(self) -> None:
+        connection = _Connection()
+        controller = RuntimeController()
+        job = ProtocolJob(payload=b"stream", runtime_controller=controller)
+
+        await send_prepared_job(object(), connection, job, timeout=0.1)
+
+        self.assertEqual(connection.attached_runtime_controllers, [controller])
+        self.assertEqual(connection.sent_jobs, [job])
+
     async def test_send_prepared_job_executes_wait_steps(self) -> None:
         connection = _WaitOnlyConnection()
         reporter = _Reporter()

@@ -54,7 +54,6 @@ class SerialConnection:
 
     async def send(self, job: ProtocolJob) -> None:
         """Send a protocol job over serial in blocking chunks via an executor."""
-        _ = job.runtime_controller
         await self.send_standard_payload(job.payload)
 
     async def send_standard_payload(self, data: bytes) -> None:
