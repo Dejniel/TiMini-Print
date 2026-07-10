@@ -8,7 +8,7 @@ from ..plan import ProtocolPlan
 from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
-from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from .base import PrintJobRequest, ProtocolBehavior
 
 # Firmware blackening 1-5 maps to the protocol A4 quality bytes, not to
 # literal energy values. Keep this as a lookup table rather than arithmetic.
@@ -28,9 +28,6 @@ _DENSITY_MAX = 200
 _GRAY_BAND_ROWS = 20
 # 384-dot V5G row packets are 56 bytes. Eight rows per BLE write keeps the
 # transport out of the old 20-byte fallback path without changing payloads.
-_BLE_STANDARD_CHUNK_CAP = 56 * 8
-_BLE_STANDARD_WRITE_DELAY_MS = 30
-_BLE_WRITE_WITHOUT_RESPONSE_PAYLOAD_RESERVE = 5
 V5G_CONNECT_QUERY_PACKET = bytes.fromhex("5178A30001000000FF")
 V5G_TEMPERATURE_QUERY_PACKET = bytes.fromhex("5178D30001000000FF")
 
@@ -149,17 +146,7 @@ def build_job(request: PrintJobRequest) -> ProtocolPlan:
     )
 
 
-TRANSPORT = BleTransportProfile(
-    connect_packets=(V5G_CONNECT_QUERY_PACKET,),
-    prefer_generic_notify=True,
-    standard_chunk_cap=_BLE_STANDARD_CHUNK_CAP,
-    standard_write_delay_ms=_BLE_STANDARD_WRITE_DELAY_MS,
-    write_without_response_payload_reserve=_BLE_WRITE_WITHOUT_RESPONSE_PAYLOAD_RESERVE,
-)
-
-
 BEHAVIOR = ProtocolBehavior(
-    transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),
         encoding=ImageEncoding.V5G_DOT,

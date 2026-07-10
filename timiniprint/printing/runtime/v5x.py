@@ -9,9 +9,12 @@ from ... import reporting
 from ...protocol.family import ProtocolFamily
 from ...protocol.families import split_prefixed_bulk_stream
 from ...protocol.families.v5x import (
+    V5X_CONNECT_INIT_PACKET,
     V5X_FINALIZE_PACKET,
     V5X_GET_SERIAL_PACKET,
     V5X_GRAY_MODE_SUFFIX,
+    V5X_NOTIFY_PAUSE_PACKETS,
+    V5X_NOTIFY_RESUME_PACKETS,
     V5X_STATUS_POLL_PACKET,
 )
 from ...protocol.steps import ProtocolStepOperation
@@ -139,7 +142,12 @@ class V5XRuntimeController(RuntimeController):
             setattr(self._state, key, value)
 
     async def initialize_connection(self, session, *, mtu_size: int, timeout: float) -> None:
+        _ = mtu_size
         self._state.await_connect_info = session.can_wait_for_notification()
+        await asyncio.sleep(0.2)
+        sent = await session.send_control_packet(V5X_CONNECT_INIT_PACKET, timeout=timeout)
+        if not sent:
+            raise RuntimeError("V5X connect init send unavailable")
 
     async def after_initialize(self, session, *, timeout: float) -> None:
         if session.can_wait_for_notification():
@@ -333,6 +341,12 @@ class V5XRuntimeController(RuntimeController):
             await asyncio.sleep(self._COMPLETION_GRACE_S)
 
     def handle_notification(self, session, payload: bytes) -> None:
+        if payload in V5X_NOTIFY_PAUSE_PACKETS:
+            session.set_flow_paused(True, payload=payload)
+            return
+        if payload in V5X_NOTIFY_RESUME_PACKETS:
+            session.set_flow_paused(False, payload=payload)
+            return
         opcode = session.extract_prefixed_opcode(payload)
         if opcode == 0xA7:
             self._update_info_from_a7(session, payload)

@@ -3,28 +3,14 @@ from __future__ import annotations
 from ....raster import PixelFormat
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig
-from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from ..base import PrintJobRequest, ProtocolBehavior
 from .core import build_niimbot_job
-
-_NIIMBOT_SERVICE_UUID = "e7810a71-73ae-499d-8c15-faa9aef0c3f2"
-_PACKET_INTERVAL_MS = 10
-_STANDARD_CHUNK_CAP = 20
-
 
 def build_job(request: PrintJobRequest) -> ProtocolPlan:
     return ProtocolPlan.sequence(build_niimbot_job(request))
 
 
-TRANSPORT = BleTransportProfile(
-    preferred_service_uuid=_NIIMBOT_SERVICE_UUID,
-    prefer_generic_notify=True,
-    standard_chunk_cap=_STANDARD_CHUNK_CAP,
-    standard_write_delay_ms=_PACKET_INTERVAL_MS,
-)
-
-
 BEHAVIOR = ProtocolBehavior(
-    transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.NIIMBOT_D110,

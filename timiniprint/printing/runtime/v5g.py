@@ -8,6 +8,7 @@ from typing import Optional
 from ...devices.profiles import RuntimeSettings
 from ...protocol.family import ProtocolFamily
 from ...protocol.families.v5g import (
+    V5G_CONNECT_QUERY_PACKET,
     V5G_TEMPERATURE_QUERY_PACKET,
     decode_density_payload,
     encode_density_payload,
@@ -376,6 +377,12 @@ class V5GRuntimeController(RuntimeController):
             if not hasattr(self._state, key):
                 raise KeyError(f"Unknown V5G debug field '{key}'")
             setattr(self._state, key, value)
+
+    async def initialize_connection(self, session, *, mtu_size: int, timeout: float) -> None:
+        _ = mtu_size
+        sent = await session.send_control_packet(V5G_CONNECT_QUERY_PACKET, timeout=timeout)
+        if not sent:
+            raise RuntimeError("V5G connect query send unavailable")
 
     async def probe_capabilities(self, session, *, timeout: float) -> None:
         if not session.can_send_control_packet_wait_notification():

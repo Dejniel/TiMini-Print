@@ -9,9 +9,10 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
 
 from .... import reporting
-from ....protocol.families import BleBulkWriteProfile, BleTransportProfile, split_prefixed_bulk_stream
+from ....protocol.families import split_prefixed_bulk_stream
 from ....protocol.family import ProtocolFamily
 from ....protocol.packet import make_packet, prefixed_packet_length
+from ..profiles import BleBulkWriteProfile, BleTransportProfile
 from .bleak_adapter_diagnostics import (
     BleWriteCounters,
     BleWriteProgress,
@@ -140,7 +141,7 @@ class _BleakTransportSession:
                 transport.notify_char_uuid,
                 preferred_service_uuid=transport.preferred_service_uuid,
             )
-        elif transport.prefer_generic_notify or transport.flow_control is not None:
+        elif transport.prefer_generic_notify:
             self.bindings.notify_char = self.find_notify_characteristic(services)
 
         self.bindings.notify_char_uuid = _BleWriteEndpointResolver._normalize_uuid(
@@ -150,7 +151,7 @@ class _BleakTransportSession:
             self.report_debug(
                 f"selected notify characteristic char={self.bindings.notify_char_uuid}"
             )
-        elif transport.flow_control is not None:
+        elif transport.notify_char_uuid or transport.prefer_generic_notify:
             self.report_debug("configured notify characteristic not found")
 
     def debug_snapshot(self) -> dict[str, Any]:
@@ -226,30 +227,6 @@ class _BleakTransportSession:
         self._session_started_monotonic = time.monotonic()
         if self._runtime_controller is not None:
             await self._runtime_controller.initialize_connection(self, mtu_size=mtu_size, timeout=timeout)
-        if not self._transport_profile.connect_packets:
-            if self._runtime_controller is not None:
-                await self._runtime_controller.after_initialize(self, timeout=timeout)
-            return
-        if not self.bindings.write_char:
-            raise RuntimeError("No write characteristic available")
-        response = self._resolve_response_mode(
-            self.bindings.write_char,
-            self.bindings.write_selection_strategy,
-            self.bindings.write_response_preference,
-        )
-        if self._transport_profile.connect_delay_ms > 0:
-            await asyncio.sleep(self._transport_profile.connect_delay_ms / 1000.0)
-        for packet in self._transport_profile.connect_packets:
-            await self._write_chunks(
-                client,
-                self.bindings.write_char,
-                packet,
-                response=response,
-                chunk_size=min(mtu_size, self._transport_profile.standard_chunk_cap),
-                delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
-                timeout=timeout,
-            )
-        if self._runtime_controller is not None:
             await self._runtime_controller.after_initialize(self, timeout=timeout)
 
     async def send(
@@ -322,7 +299,7 @@ class _BleakTransportSession:
             chunk_size=chunk_size,
             delay_seconds=delay_seconds,
             timeout=timeout,
-            wait_for_flow=self._transport_profile.wait_for_flow_on_standard_write,
+            wait_for_flow=self._transport_profile.flow_controlled_standard_write,
             progress_label="standard",
             total_chunks=chunk_count,
         )
@@ -348,10 +325,18 @@ class _BleakTransportSession:
         if not self.bindings.bulk_write_char:
             raise RuntimeError("Bulk write characteristic not found")
 
+        trailing_packets = ()
+        if bulk_write.trailing_bytes > 0 and len(data) >= bulk_write.trailing_bytes:
+            trailing_offset = len(data) - bulk_write.trailing_bytes
+            if (
+                prefixed_packet_length(data, trailing_offset, self._protocol_family)
+                == bulk_write.trailing_bytes
+            ):
+                trailing_packets = (data[trailing_offset:],)
         split = split_prefixed_bulk_stream(
             data,
             self._protocol_family,
-            bulk_write.tail_packets,
+            trailing_packets,
         )
         cmd_response = self._resolve_response_mode(
             self.bindings.write_char,
@@ -430,7 +415,7 @@ class _BleakTransportSession:
             chunk_count=bulk_chunk_count,
             reserve=self._transport_profile.write_without_response_payload_reserve,
             delay_ms=bulk_write.write_delay_ms,
-            flow_control=self._transport_profile.flow_control is not None,
+            flow_control=bulk_write.flow_controlled,
         )
         counters_before = self._write_counters()
         started = time.monotonic()
@@ -442,7 +427,7 @@ class _BleakTransportSession:
             chunk_size=bulk_chunk_size,
             delay_seconds=bulk_write.write_delay_ms / 1000.0,
             timeout=timeout,
-            wait_for_flow=self._transport_profile.flow_control is not None,
+            wait_for_flow=bulk_write.flow_controlled,
             progress_label="split bulk",
             total_chunks=bulk_chunk_count,
         )
@@ -510,21 +495,20 @@ class _BleakTransportSession:
         self._last_notification_monotonic = now
         self._remember_notification(now, payload)
         self._match_notification_waiters(payload)
-        flow_control = self._transport_profile.flow_control
-        if flow_control is not None:
-            if payload in flow_control.pause_packets:
-                self.flow_can_write = False
-                self._flow_pause_count += 1
-                self.report_debug(f"flow pause: {payload.hex()}")
-                return
-            if payload in flow_control.resume_packets:
-                self.flow_can_write = True
-                self._flow_resume_count += 1
-                self.report_debug(f"flow resume: {payload.hex()}")
-                return
         if self._runtime_controller is not None:
             self._runtime_controller.handle_notification(self, payload)
         self.report_debug(f"BLE notify: {payload.hex()}")
+
+    def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
+        self.flow_can_write = not paused
+        if paused:
+            self._flow_pause_count += 1
+            label = "flow pause"
+        else:
+            self._flow_resume_count += 1
+            label = "flow resume"
+        detail = "" if not payload else f": {payload.hex()}"
+        self.report_debug(label + detail)
 
     def build_compat_request(self, **kwargs):
         if self._runtime_controller is None:
@@ -850,14 +834,7 @@ class _BleakTransportSession:
             return
         now = time.monotonic()
         self._trim_notification_history(now)
-        flow_control = self._transport_profile.flow_control
-        flow_packets = set()
-        if flow_control is not None:
-            flow_packets.update(flow_control.pause_packets)
-            flow_packets.update(flow_control.resume_packets)
         for _timestamp, payload in self._notification_history:
-            if payload in flow_packets:
-                continue
             self._runtime_controller.handle_notification(self, payload)
 
     def _match_notification_history(self, match: Callable[[bytes], bool]) -> bytes | None:

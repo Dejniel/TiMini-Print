@@ -5,7 +5,7 @@ from __future__ import annotations
 from ....raster import PixelFormat
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
-from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from ..base import PrintJobRequest, ProtocolBehavior
 from .core import (
     advance_paper_cmd,
     build_phomemo_esc_job,
@@ -13,26 +13,11 @@ from .core import (
     supported_paper_modes,
 )
 
-_PHOMEMO_SERVICE_UUID = "0000ff00-0000-1000-8000-00805f9b34fb"
-_PHOMEMO_WRITE_UUID = "0000ff02-0000-1000-8000-00805f9b34fb"
-_STANDARD_CHUNK_CAP = 128
-_STANDARD_WRITE_DELAY_MS = 20
-
-
 def build_job(request: PrintJobRequest) -> ProtocolPlan:
     return ProtocolPlan.stream(build_phomemo_esc_job(request))
 
 
-TRANSPORT = BleTransportProfile(
-    preferred_service_uuid=_PHOMEMO_SERVICE_UUID,
-    preferred_write_char_uuid=_PHOMEMO_WRITE_UUID,
-    standard_chunk_cap=_STANDARD_CHUNK_CAP,
-    standard_write_delay_ms=_STANDARD_WRITE_DELAY_MS,
-)
-
-
 BEHAVIOR = ProtocolBehavior(
-    transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.PHOMEMO_ESC_RASTER,

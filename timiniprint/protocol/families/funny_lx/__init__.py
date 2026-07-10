@@ -5,14 +5,9 @@ from __future__ import annotations
 from ....raster import PixelFormat
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
-from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from ..base import PrintJobRequest, ProtocolBehavior
 from .core import build_funny_lx_job
 
-_SERVICE_UUID = "0000ffe6-0000-1000-8000-00805f9b34fb"
-_WRITE_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"
-_NOTIFY_UUID = "0000ffe2-0000-1000-8000-00805f9b34fb"
-_PACKET_WRITE_BYTES = 100
-_WRITE_DELAY_MS = 0
 _FEED_PAPER_CMD = bytes.fromhex("5a 03 81 00 04 00 00 00 00 00 00 00")
 
 
@@ -30,17 +25,7 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
     return b""
 
 
-TRANSPORT = BleTransportProfile(
-    preferred_service_uuid=_SERVICE_UUID,
-    preferred_write_char_uuid=_WRITE_UUID,
-    notify_char_uuid=_NOTIFY_UUID,
-    standard_chunk_cap=_PACKET_WRITE_BYTES,
-    standard_write_delay_ms=_WRITE_DELAY_MS,
-)
-
-
 BEHAVIOR = ProtocolBehavior(
-    transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.FUNNY_LX_RASTER,

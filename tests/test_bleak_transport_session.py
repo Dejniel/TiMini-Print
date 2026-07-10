@@ -19,8 +19,6 @@ from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.runtime.v5g import DensityLevels, V5GRuntimeController
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.protocol.families import (
-    BleBulkWriteProfile,
-    get_protocol_behavior,
     split_prefixed_bulk_stream,
 )
 from timiniprint.protocol.family import ProtocolFamily
@@ -48,6 +46,10 @@ from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver im
 )
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_transport import (
     _BleakTransportSession,
+)
+from timiniprint.transport.bluetooth.profiles import (
+    BleBulkWriteProfile,
+    get_ble_transport_profile,
 )
 
 
@@ -82,9 +84,7 @@ class _Client:
 
 
 def _v5x_tail_packets() -> tuple[bytes, ...]:
-    bulk_write = get_protocol_behavior(ProtocolFamily.V5X).transport.bulk_write
-    assert bulk_write is not None
-    return bulk_write.tail_packets
+    return (V5X_FINALIZE_PACKET,)
 
 
 def _to_namespace(value):
@@ -167,13 +167,7 @@ def _attach_runtime_controller_for_test(
     controller = _runtime_controller_for_test(family)
     if controller is None:
         return
-    asyncio.run(
-        session.attach_runtime_controller(
-            controller,
-            mtu_size=180,
-            timeout=0.2,
-        )
-    )
+    session._runtime_controller = controller
 
 
 class _StandardRuntimeSession:
@@ -266,7 +260,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         transport = replace(
-            get_protocol_behavior(family).transport,
+            get_ble_transport_profile(family),
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(family, transport, resolver, reporter)
@@ -278,7 +272,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         reporter, sink = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         transport = replace(
-            get_protocol_behavior(family).transport,
+            get_ble_transport_profile(family),
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(family, transport, resolver, reporter)
@@ -499,7 +493,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(client.calls, [(cmd.uuid, V5X_CONNECT_INIT_PACKET, False)])
 
     def test_v5x_transport_uses_source_like_bulk_pacing(self) -> None:
-        transport = get_protocol_behavior(ProtocolFamily.V5X).transport
+        transport = get_ble_transport_profile(ProtocolFamily.V5X)
         bulk_write = transport.bulk_write
 
         self.assertIsInstance(bulk_write, BleBulkWriteProfile)
@@ -511,8 +505,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         transport = replace(
-            get_protocol_behavior(ProtocolFamily.V5X).transport,
-            connect_delay_ms=0,
+            get_ble_transport_profile(ProtocolFamily.V5X),
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(ProtocolFamily.V5X, transport, resolver, reporter)
@@ -542,8 +535,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         transport = replace(
-            get_protocol_behavior(ProtocolFamily.V5X).transport,
-            connect_delay_ms=0,
+            get_ble_transport_profile(ProtocolFamily.V5X),
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(
@@ -552,6 +544,13 @@ class BleakTransportSessionTests(unittest.TestCase):
             resolver,
             reporter,
         )
+        client = _Client([])
+        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session._client = client
+        session.bindings.write_char = cmd
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = cmd.uuid
         _enable_notification_waits(session)
         session.handle_notification(
             make_packet(0xB1, b"FW1.0.22", ProtocolFamily.V5X)
@@ -559,11 +558,12 @@ class BleakTransportSessionTests(unittest.TestCase):
         controller = V5XRuntimeController()
 
         async def run() -> None:
-            await session.attach_runtime_controller(
-                controller,
-                mtu_size=180,
-                timeout=0.01,
-            )
+            with patch("timiniprint.printing.runtime.v5x.asyncio.sleep", new=AsyncMock()):
+                await session.attach_runtime_controller(
+                    controller,
+                    mtu_size=180,
+                    timeout=0.01,
+                )
 
         asyncio.run(run())
 
@@ -584,7 +584,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch(
-                "timiniprint.transport.bluetooth.adapters.bleak_adapter_transport.asyncio.sleep",
+                "timiniprint.printing.runtime.v5x.asyncio.sleep",
                 new=fake_sleep,
             ), patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
                 await session.initialize_connection(
@@ -650,7 +650,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with patch(
-                "timiniprint.transport.bluetooth.adapters.bleak_adapter_transport.asyncio.sleep",
+                "timiniprint.printing.runtime.v5c.asyncio.sleep",
                 new=fake_sleep,
             ), patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
                 await session.initialize_connection(
@@ -668,7 +668,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         transport = replace(
-            get_protocol_behavior(ProtocolFamily.V5C).transport,
+            get_ble_transport_profile(ProtocolFamily.V5C),
             standard_chunk_cap=7,
             standard_write_delay_ms=0,
         )
@@ -693,7 +693,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual([len(call[1]) for call in client.calls], [7, 7, 6])
 
     def test_v5g_transport_uses_multi_row_ble_pacing(self) -> None:
-        transport = get_protocol_behavior(ProtocolFamily.V5G).transport
+        transport = get_ble_transport_profile(ProtocolFamily.V5G)
 
         self.assertEqual(transport.standard_chunk_cap, 56 * 8)
         self.assertEqual(transport.standard_write_delay_ms, 30)
@@ -1143,7 +1143,7 @@ class BleakTransportSessionTests(unittest.TestCase):
     def test_send_split_uses_bulk_chunk_cap_from_transport_profile(self) -> None:
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
-        base_transport = get_protocol_behavior(ProtocolFamily.V5X).transport
+        base_transport = get_ble_transport_profile(ProtocolFamily.V5X)
         self.assertIsNotNone(base_transport.bulk_write)
         transport = replace(
             base_transport,
@@ -1180,7 +1180,7 @@ class BleakTransportSessionTests(unittest.TestCase):
     def test_send_split_applies_bulk_write_without_response_payload_reserve(self) -> None:
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
-        base_transport = get_protocol_behavior(ProtocolFamily.V5X).transport
+        base_transport = get_ble_transport_profile(ProtocolFamily.V5X)
         self.assertIsNotNone(base_transport.bulk_write)
         transport = replace(
             base_transport,
@@ -1215,7 +1215,7 @@ class BleakTransportSessionTests(unittest.TestCase):
     def test_send_split_keeps_twenty_byte_bulk_fallback_without_reported_mtu(self) -> None:
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
-        base_transport = get_protocol_behavior(ProtocolFamily.V5X).transport
+        base_transport = get_ble_transport_profile(ProtocolFamily.V5X)
         self.assertIsNotNone(base_transport.bulk_write)
         transport = replace(
             base_transport,

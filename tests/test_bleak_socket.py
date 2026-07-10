@@ -5,6 +5,7 @@ import types
 import unittest
 from unittest.mock import patch
 
+from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.transport.bluetooth.adapters.bleak_adapter import _BleakSocket
 from timiniprint.protocol.family import ProtocolFamily
@@ -211,6 +212,7 @@ class BleakSocketTests(unittest.TestCase):
 
     def test_v5x_notify_updates_flow_state(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5X)
+        s._transport._runtime_controller = V5XRuntimeController()
         self.assertTrue(s._flow_can_write)
         s._handle_notification("", bytearray(bytes.fromhex("AA01")))
         self.assertFalse(s._flow_can_write)
@@ -229,13 +231,9 @@ class BleakSocketTests(unittest.TestCase):
         bindings.write_response_preference = False
         bindings.write_char_uuid = cmd.uuid
         s._transport._client = client
+        s._transport._runtime_controller = V5XRuntimeController()
 
         async def run() -> None:
-            await s._transport.attach_runtime_controller(
-                V5XRuntimeController(),
-                mtu_size=20,
-                timeout=0.2,
-            )
             s._handle_notification("", bytearray(V5X_NOTIFY_TRIGGER_STATUS_POLL))
             await asyncio.sleep(0.75)
 
@@ -244,6 +242,7 @@ class BleakSocketTests(unittest.TestCase):
 
     def test_v5c_notify_updates_flow_state(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5C)
+        s._transport._runtime_controller = V5CRuntimeController()
         self.assertTrue(s._flow_can_write)
         s._handle_notification("", bytearray(bytes.fromhex("5688A70101000107FF")))
         self.assertFalse(s._flow_can_write)

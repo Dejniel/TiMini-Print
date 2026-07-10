@@ -6,7 +6,7 @@ from ...family import ProtocolFamily
 from ...packet import make_packet
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
-from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
+from ..base import PrintJobRequest, ProtocolBehavior
 
 
 VARIANT_LINE_EIGHT = "line_eight"
@@ -14,7 +14,6 @@ VARIANT_ESC_STAR = "esc_star"
 VARIANT_ESC_STAR_EIGHT = "esc_star_eight"
 VARIANT_PROFESSIONAL = "professional"
 EIGHT_PAPER_MODES = (PaperMode.PLAIN, PaperMode.A4_SHEET)
-_BLE_STANDARD_CHUNK_CAP = 512
 
 
 def _speed(request: PrintJobRequest) -> int:
@@ -260,9 +259,6 @@ def _build_variant_job(request: PrintJobRequest) -> ProtocolPlan | None:
 
 BEHAVIOR = ProtocolBehavior(
     requires_speed=True,
-    transport=BleTransportProfile(
-        standard_chunk_cap=_BLE_STANDARD_CHUNK_CAP,
-    ),
     supported_protocol_variants=(
         VARIANT_LINE_EIGHT,
         VARIANT_ESC_STAR,

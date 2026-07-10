@@ -13,9 +13,9 @@ from .base import _BleBluetoothAdapter
 from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSelection
 from .bleak_adapter_transport import _BleakTransportSession
 from ..constants import IS_MACOS
+from ..profiles import get_ble_transport_profile
 from ..types import DeviceInfo, DeviceTransport, SocketLike
 from .... import reporting
-from ....protocol.families import get_protocol_behavior
 from ....protocol.family import ProtocolFamily
 
 _BLE_DEFAULT_MTU_PAYLOAD = 20
@@ -56,7 +56,7 @@ class _BleakSocket:
         self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
         self._transport = _BleakTransportSession(
             protocol_family=self._protocol_family_or_default(),
-            transport_profile=get_protocol_behavior(self._protocol_family_or_default()).transport,
+            transport_profile=get_ble_transport_profile(self._protocol_family_or_default()),
             write_resolver=self._write_resolver,
             reporter=self._reporter,
         )
@@ -181,7 +181,7 @@ class _BleakSocket:
         """Resolve the primary writable characteristic for this connection."""
         if not self._client or not self._connected:
             return None
-        transport = get_protocol_behavior(self._protocol_family_or_default()).transport
+        transport = get_ble_transport_profile(self._protocol_family_or_default())
         return self._write_resolver.resolve(
             self._client.services,
             preferred_service_uuid=transport.preferred_service_uuid,
@@ -378,7 +378,7 @@ class _BleakSocket:
         self._client = None
         self._transport = _BleakTransportSession(
             protocol_family=self._protocol_family_or_default(),
-            transport_profile=get_protocol_behavior(self._protocol_family_or_default()).transport,
+            transport_profile=get_ble_transport_profile(self._protocol_family_or_default()),
             write_resolver=self._write_resolver,
             reporter=self._reporter,
         )

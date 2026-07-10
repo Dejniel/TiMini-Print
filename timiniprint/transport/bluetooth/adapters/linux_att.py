@@ -37,9 +37,9 @@ from typing import Any, Callable, Iterable, List, Optional
 from .base import _BleBluetoothAdapter
 from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver
 from .bleak_adapter_transport import _BleakTransportSession
+from ..profiles import get_ble_transport_profile
 from ..types import DeviceInfo, SocketLike
 from .... import reporting
-from ....protocol.families import get_protocol_behavior
 from ....protocol.family import ProtocolFamily
 
 _AF_BLUETOOTH = getattr(socket, "AF_BLUETOOTH", 31)
@@ -172,7 +172,7 @@ class _LinuxAttSocket:
             self._client.connect(address)
             self._connected = True
             self._mtu_size = min(max(1, self._client.mtu_size - 3), 512)
-            transport = get_protocol_behavior(self._protocol_family).transport
+            transport = get_ble_transport_profile(self._protocol_family)
             selection = self._write_resolver.resolve(
                 self._client.services,
                 preferred_service_uuid=transport.preferred_service_uuid,
@@ -330,7 +330,7 @@ class _LinuxAttSocket:
     def _new_transport_session(self) -> _BleakTransportSession:
         return _BleakTransportSession(
             protocol_family=self._protocol_family,
-            transport_profile=get_protocol_behavior(self._protocol_family).transport,
+            transport_profile=get_ble_transport_profile(self._protocol_family),
             write_resolver=self._write_resolver,
             reporter=self._reporter,
         )

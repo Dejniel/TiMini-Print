@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Optional
 
-from ...protocol.families.v5c import V5C_QUERY_STATUS_PACKET
+from ...protocol.families.v5c import (
+    V5C_CONNECT_INIT_PACKET,
+    V5C_NOTIFY_PAUSE,
+    V5C_NOTIFY_RESUME,
+    V5C_QUERY_STATUS_PACKET,
+)
 from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 
@@ -74,7 +80,20 @@ class V5CRuntimeController(RuntimeController):
                 raise KeyError(f"Unknown V5C debug field '{key}'")
             setattr(self._state, key, value)
 
+    async def initialize_connection(self, session, *, mtu_size: int, timeout: float) -> None:
+        _ = mtu_size
+        await asyncio.sleep(0.6)
+        sent = await session.send_control_packet(V5C_CONNECT_INIT_PACKET, timeout=timeout)
+        if not sent:
+            raise RuntimeError("V5C connect init send unavailable")
+
     def handle_notification(self, session, payload: bytes) -> None:
+        if payload == V5C_NOTIFY_PAUSE:
+            session.set_flow_paused(True, payload=payload)
+            return
+        if payload == V5C_NOTIFY_RESUME:
+            session.set_flow_paused(False, payload=payload)
+            return
         opcode = session.extract_prefixed_opcode(payload)
         if opcode == 0xA1:
             self._update_status(session, payload)

@@ -19,43 +19,9 @@ PaperModeResolver = Callable[[str | None], tuple[PaperMode, ...]]
 
 
 @dataclass(frozen=True)
-class FlowControlProfile:
-    pause_packets: frozenset[bytes] = frozenset()
-    resume_packets: frozenset[bytes] = frozenset()
-
-
-@dataclass(frozen=True)
-class BleBulkWriteProfile:
-    char_uuid: str
-    chunk_cap: int = 20
-    write_delay_ms: int = 50
-    tail_packets: tuple[bytes, ...] = ()
-
-
-@dataclass(frozen=True)
-class BleTransportProfile:
-    # Transport settings drive endpoint selection and write routing.
-    connect_packets: tuple[bytes, ...] = ()
-    connect_delay_ms: int = 0
-    standard_chunk_cap: int = 20
-    standard_write_delay_ms: int = 50
-    preferred_service_uuid: str = ""
-    preferred_write_char_uuid: str = ""
-    notify_char_uuid: str = ""
-    prefer_generic_notify: bool = False
-    flow_control: FlowControlProfile | None = None
-    wait_for_flow_on_standard_write: bool = False
-    bulk_write: BleBulkWriteProfile | None = None
-    # Some BLE writers need a smaller application chunk than the reported ATT
-    # payload for write-without-response transfers.
-    write_without_response_payload_reserve: int = 0
-
-
-@dataclass(frozen=True)
 class ProtocolBehavior:
     implemented: bool = True
     requires_speed: bool = False
-    transport: BleTransportProfile = field(default_factory=BleTransportProfile)
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(
             formats=(PixelFormat.BW1,),

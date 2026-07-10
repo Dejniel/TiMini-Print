@@ -18,7 +18,7 @@ from timiniprint.devices.printer_config import runtime_settings_from_parts  # no
 from timiniprint.printing.builder import PrintJobBuilder  # noqa: E402
 from timiniprint.printing.debug_dump import build_protocol_packet_entries  # noqa: E402
 from timiniprint.protocol import ImageEncoding, ImagePipelineConfig, PaperMode, PrinterProtocol, ProtocolJob  # noqa: E402
-from timiniprint.protocol.families import get_protocol_behavior  # noqa: E402
+from timiniprint.transport.bluetooth.profiles import get_ble_transport_profile  # noqa: E402
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -162,7 +162,7 @@ def build_protocol_job_debug_dump(
     runtime_settings = device.runtime_settings
     runtime_preset = None if runtime_settings is None else runtime_settings.preset
     runtime_capabilities = None if runtime_settings is None else runtime_settings.capabilities
-    transport = get_protocol_behavior(device.protocol_family).transport
+    transport = get_ble_transport_profile(device.protocol_family)
     return {
         "schema": "timiniprint/debug-protocol-job/v1",
         "diagnostic_only": True,
@@ -194,8 +194,6 @@ def build_protocol_job_debug_dump(
         },
         "settings": dict(settings),
         "transport": {
-            "connect_packets": [packet.hex() for packet in transport.connect_packets],
-            "connect_delay_ms": transport.connect_delay_ms,
             "standard_chunk_cap": transport.standard_chunk_cap,
             "standard_write_delay_ms": transport.standard_write_delay_ms,
             "write_without_response_payload_reserve": (

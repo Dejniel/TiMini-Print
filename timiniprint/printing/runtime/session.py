@@ -72,6 +72,11 @@ class RuntimeConnectionSession:
     def report_warning(self, *, short: str, detail: str) -> None:
         self._reporter.warning(short=short, detail=detail)
 
+    def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
+        set_flow_paused = getattr(self._connection, "set_flow_paused", None)
+        if callable(set_flow_paused):
+            set_flow_paused(paused, payload=payload)
+
     def can_send_control_packet(self) -> bool:
         can_send_control_packet = getattr(self._connection, "can_send_control_packet", None)
         if callable(can_send_control_packet):

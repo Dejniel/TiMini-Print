@@ -7,7 +7,7 @@ from ..plan import ProtocolPlan
 from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
-from .base import BleTransportProfile, FlowControlProfile, PrintJobRequest, ProtocolBehavior
+from .base import PrintJobRequest, ProtocolBehavior
 
 
 def _hex_bytes(value: str) -> bytes:
@@ -20,22 +20,6 @@ V5C_NOTIFY_PAUSE = _hex_bytes("5688A70101000107FF")
 V5C_NOTIFY_RESUME = _hex_bytes("5688A70101000000FF")
 # Compressed V5C jobs are emitted in 20-row bands.
 _V5C_BAND_ROWS = 20
-
-_FLOW_CONTROL = FlowControlProfile(
-    pause_packets=frozenset({V5C_NOTIFY_PAUSE}),
-    resume_packets=frozenset({V5C_NOTIFY_RESUME}),
-)
-
-
-TRANSPORT = BleTransportProfile(
-    connect_packets=(V5C_CONNECT_INIT_PACKET,),
-    # V5C devices need a longer settle window after the connect init packet.
-    connect_delay_ms=600,
-    prefer_generic_notify=True,
-    flow_control=_FLOW_CONTROL,
-    wait_for_flow_on_standard_write=True,
-)
-
 
 def _settings_payload(blackening: int, is_text: bool) -> bytes:
     level = max(1, min(5, blackening))
@@ -115,7 +99,6 @@ def build_job(request: PrintJobRequest) -> ProtocolPlan:
 
 
 BEHAVIOR = ProtocolBehavior(
-    transport=TRANSPORT,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),
         encoding=ImageEncoding.V5C_A4,

@@ -57,7 +57,7 @@ class DebugProtocolToolTests(unittest.TestCase):
             self.assertEqual(payload["settings"]["image_encoding_override"], "v5g_gray")
             self.assertEqual(payload["job"]["effective_image_pipeline"]["encoding"], "v5g_gray")
             self.assertEqual(payload["job"]["effective_image_pipeline"]["formats"][0], "gray4")
-            self.assertIn("connect_packets", payload["transport"])
+            self.assertEqual(payload["transport"]["standard_chunk_cap"], 56 * 8)
             self.assertEqual(payload["job"]["payload_bytes"], len(packet))
             self.assertFalse(payload["job"]["wait_for_completion"])
             self.assertEqual(payload["packets"][0]["op"], "A4")
