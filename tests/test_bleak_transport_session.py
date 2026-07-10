@@ -178,6 +178,25 @@ def _attach_runtime_controller_for_test(
     session._runtime_controller = controller
 
 
+class _NotificationCountingController:
+    def __init__(self) -> None:
+        self.notifications: list[bytes] = []
+
+    def adopt_previous(self, previous) -> None:
+        _ = previous
+
+    async def initialize_connection(self, session, *, mtu_size: int, timeout: float) -> None:
+        _ = mtu_size, timeout
+        session.handle_notification(b"during init")
+
+    async def after_initialize(self, session, *, timeout: float) -> None:
+        _ = session, timeout
+
+    def handle_notification(self, session, payload: bytes) -> None:
+        _ = session
+        self.notifications.append(bytes(payload))
+
+
 class _StandardRuntimeSession:
     def __init__(
         self,
@@ -576,6 +595,30 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertTrue(controller.debug_snapshot()["connect_info_received"])
         self.assertFalse(controller.debug_snapshot()["await_connect_info"])
+
+    def test_attach_runtime_controller_processes_init_notifications_once(self) -> None:
+        reporter, _ = build_capture_reporter()
+        session = _BleakTransportSession(
+            get_ble_transport_profile(ProtocolFamily.V5X),
+            _BleWriteEndpointResolver(reporter=reporter),
+            reporter,
+        )
+        session.handle_notification(b"before attach")
+        controller = _NotificationCountingController()
+
+        async def run() -> None:
+            await session.attach_runtime_controller(
+                controller,
+                mtu_size=180,
+                timeout=0.01,
+            )
+
+        asyncio.run(run())
+
+        self.assertEqual(
+            controller.notifications,
+            [b"before attach", b"during init"],
+        )
 
     def test_initialize_connection_waits_for_family_settle_delay(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)

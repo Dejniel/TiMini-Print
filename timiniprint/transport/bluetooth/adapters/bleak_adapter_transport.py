@@ -159,17 +159,19 @@ class _BleakTransportSession:
         if runtime_controller is None:
             return None
         if runtime_controller is not self._runtime_controller:
-            had_previous = self._runtime_controller is not None
-            runtime_controller.adopt_previous(self._runtime_controller)
-            self._runtime_controller = runtime_controller
-            if not had_previous:
-                await self._runtime_controller.initialize_connection(
+            previous = self._runtime_controller
+            runtime_controller.adopt_previous(previous)
+            if previous is None:
+                await runtime_controller.initialize_connection(
                     self,
                     mtu_size=mtu_size,
                     timeout=timeout,
                 )
+                self._runtime_controller = runtime_controller
                 self._replay_notifications_to_runtime_controller()
-                await self._runtime_controller.after_initialize(self, timeout=timeout)
+                await runtime_controller.after_initialize(self, timeout=timeout)
+            else:
+                self._runtime_controller = runtime_controller
 
     async def start_notify_if_available(self, client: Any, callback) -> None:
         if not self.bindings.notify_char or not self.bindings.notify_char_uuid:
