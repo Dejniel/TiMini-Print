@@ -284,64 +284,57 @@ class _BleakTransportSession:
         mtu_size: int,
         timeout: float,
     ) -> None:
-        if self._runtime_controller is not None:
-            self._runtime_controller.on_standard_send_started(self)
-            data = self._runtime_controller.prepare_standard_payload(self, data)
-        try:
-            response = self._resolve_response_mode(
-                self.bindings.write_char,
-                self.bindings.write_selection_strategy,
-                self.bindings.write_response_preference,
-            )
-            mtu_payload = self._effective_mtu_payload(
-                self.bindings.write_char,
-                mtu_size,
-                response=response,
-                reserve=self._transport_profile.write_without_response_payload_reserve,
-            )
-            chunk_size = min(mtu_payload, self._transport_profile.standard_chunk_cap)
-            delay_seconds = self._transport_profile.standard_write_delay_ms / 1000.0
-            chunk_count = (len(data) + chunk_size - 1) // chunk_size if chunk_size else 0
-            report_ble_write_plan(
-                self._reporter,
-                response=response,
-                strategy=self.bindings.write_selection_strategy,
-                char_uuid=self.bindings.write_char_uuid,
-                payload_bytes=len(data),
-                mtu_payload=mtu_payload,
-                chunk_size=chunk_size,
-                chunk_count=chunk_count,
-                reserve=self._transport_profile.write_without_response_payload_reserve,
-                delay_ms=self._transport_profile.standard_write_delay_ms,
-                payload_head=data[:16],
-                payload_tail=data[-16:],
-            )
-            counters_before = self._write_counters()
-            started = time.monotonic()
-            chunks_written = await self._write_chunks(
-                client,
-                self.bindings.write_char,
-                data,
-                response=response,
-                chunk_size=chunk_size,
-                delay_seconds=delay_seconds,
-                timeout=timeout,
-                wait_for_flow=self._transport_profile.wait_for_flow_on_standard_write,
-                progress_label="standard",
-                total_chunks=chunk_count,
-            )
-            report_ble_write_summary(
-                self._reporter,
-                "standard write done",
-                byte_count=len(data),
-                chunks_written=chunks_written,
-                elapsed_seconds=time.monotonic() - started,
-                before=counters_before,
-                after=self._write_counters(),
-            )
-        finally:
-            if self._runtime_controller is not None:
-                self._runtime_controller.on_standard_send_finished(self)
+        response = self._resolve_response_mode(
+            self.bindings.write_char,
+            self.bindings.write_selection_strategy,
+            self.bindings.write_response_preference,
+        )
+        mtu_payload = self._effective_mtu_payload(
+            self.bindings.write_char,
+            mtu_size,
+            response=response,
+            reserve=self._transport_profile.write_without_response_payload_reserve,
+        )
+        chunk_size = min(mtu_payload, self._transport_profile.standard_chunk_cap)
+        delay_seconds = self._transport_profile.standard_write_delay_ms / 1000.0
+        chunk_count = (len(data) + chunk_size - 1) // chunk_size if chunk_size else 0
+        report_ble_write_plan(
+            self._reporter,
+            response=response,
+            strategy=self.bindings.write_selection_strategy,
+            char_uuid=self.bindings.write_char_uuid,
+            payload_bytes=len(data),
+            mtu_payload=mtu_payload,
+            chunk_size=chunk_size,
+            chunk_count=chunk_count,
+            reserve=self._transport_profile.write_without_response_payload_reserve,
+            delay_ms=self._transport_profile.standard_write_delay_ms,
+            payload_head=data[:16],
+            payload_tail=data[-16:],
+        )
+        counters_before = self._write_counters()
+        started = time.monotonic()
+        chunks_written = await self._write_chunks(
+            client,
+            self.bindings.write_char,
+            data,
+            response=response,
+            chunk_size=chunk_size,
+            delay_seconds=delay_seconds,
+            timeout=timeout,
+            wait_for_flow=self._transport_profile.wait_for_flow_on_standard_write,
+            progress_label="standard",
+            total_chunks=chunk_count,
+        )
+        report_ble_write_summary(
+            self._reporter,
+            "standard write done",
+            byte_count=len(data),
+            chunks_written=chunks_written,
+            elapsed_seconds=time.monotonic() - started,
+            before=counters_before,
+            after=self._write_counters(),
+        )
 
     async def _send_split(
         self,

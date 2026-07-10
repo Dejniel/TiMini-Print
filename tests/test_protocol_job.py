@@ -1500,6 +1500,17 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertEqual(data.count(state_query), 3)
         self.assertTrue(data.endswith(self.commands.make_packet(0xA3, bytes([0x00]), ProtocolFamily.V5G)))
 
+    def test_v5g_public_job_exposes_runtime_print_step(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("v5g_small_203")
+        raster_set = self._raster_set(
+            self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0])
+        )
+
+        job = PrinterProtocol(device).build_job(raster_set, is_text=False)
+
+        self.assertEqual([step.label for step in job.steps], ["print data"])
+        self.assertEqual(job.steps[0].data, job.payload)
+
     def test_build_v5g_text_job_still_uses_source_image_mode_packet(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],

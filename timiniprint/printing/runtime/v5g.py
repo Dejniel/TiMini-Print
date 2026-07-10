@@ -13,6 +13,7 @@ from ...protocol.families.v5g import (
     encode_density_payload,
 )
 from ...protocol.packet import make_packet
+from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 
 
@@ -393,16 +394,21 @@ class V5GRuntimeController(RuntimeController):
         self._state.pending_reset_task.cancel()
         self._state.pending_reset_task = None
 
-    def prepare_standard_payload(self, session, data: bytes) -> bytes:
-        self.on_standard_send_started(session)
-        return self._prepare_v5g_standard_payload(session, data)
-
-    def on_standard_send_started(self, session) -> None:
+    async def send_protocol_steps(self, session, steps, *, timeout: float) -> bool:
+        _ = timeout
+        if not session.can_send_standard_payload():
+            return False
+        if any(step.operation is not ProtocolStepOperation.SEND for step in steps):
+            return False
+        data = b"".join(step.data for step in steps)
         self._state.printing = True
-
-    def on_standard_send_finished(self, session) -> None:
-        self._state.printing = False
-        self._state.last_complete_time = time.time()
+        try:
+            data = self._prepare_v5g_standard_payload(session, data)
+            await session.send_standard_payload(data)
+        finally:
+            self._state.printing = False
+            self._state.last_complete_time = time.time()
+        return True
 
     def handle_notification(self, session, payload: bytes) -> None:
         opcode = session.extract_prefixed_opcode(payload)

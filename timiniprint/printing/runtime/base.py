@@ -115,15 +115,6 @@ class RuntimeController:
     def runtime_capabilities(self) -> RuntimePrintCapabilities | None:
         return None
 
-    def prepare_standard_payload(self, session: RuntimeSessionApi, data: bytes) -> bytes:
-        return data
-
-    def on_standard_send_started(self, session: RuntimeSessionApi) -> None:
-        return None
-
-    def on_standard_send_finished(self, session: RuntimeSessionApi) -> None:
-        return None
-
     # TODO: These split/ACK hooks are the older BLE runtime path for V5X
     # notification behavior. Do not add new protocol sequencing here.
     # Future cleanup should model both SPP replies and BLE notifications as
