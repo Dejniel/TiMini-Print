@@ -11,7 +11,6 @@ class RuntimeConnectionSession:
     def __init__(self, connection, *, reporter: reporting.Reporter) -> None:
         self._connection = connection
         self._reporter = reporter
-        self.notify_started = False
 
     async def attach_runtime_controller(self, runtime_controller, *, timeout: float) -> None:
         attach_runtime_controller = getattr(self._connection, "attach_runtime_controller", None)

@@ -20,6 +20,7 @@ from ...protocol.families.v5x import (
 from ...protocol.packet import make_packet, prefixed_packet_opcode, prefixed_packet_payload
 from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
+from .v5x_density import V5XJobContext, adjust_density_payload, start_delay_ms
 
 
 @dataclass
@@ -60,12 +61,6 @@ class _V5XSessionState:
     start_ready_seen: bool = False
     await_connect_info: bool = False
     compatibility: _V5XCompatibilityState = field(default_factory=_V5XCompatibilityState)
-
-
-@dataclass(frozen=True)
-class _V5XJobContext:
-    coverage_ratio: float = 0.0
-    is_gray: bool = False
 
 
 class V5XRuntimeController(RuntimeController):
@@ -219,7 +214,7 @@ class V5XRuntimeController(RuntimeController):
             if not sent:
                 raise RuntimeError("V5X trailing control packet send unavailable")
 
-    def _build_job_context(self, session, split) -> _V5XJobContext:
+    def _build_job_context(self, session, split) -> V5XJobContext:
         is_gray = False
         for packet in split.commands:
             if prefixed_packet_opcode(packet, ProtocolFamily.V5X) != 0xA9:
@@ -238,13 +233,13 @@ class V5XRuntimeController(RuntimeController):
             if total_bits > 0:
                 black_bits = sum(chunk.bit_count() for chunk in split.bulk_payload)
                 coverage_ratio = black_bits / total_bits
-        return _V5XJobContext(coverage_ratio=coverage_ratio, is_gray=is_gray)
+        return V5XJobContext(coverage_ratio=coverage_ratio, is_gray=is_gray)
 
     def _prepare_command(
         self,
         session,
         packet: bytes,
-        context: _V5XJobContext,
+        context: V5XJobContext,
     ) -> tuple[bytes | None, bool]:
         opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5X)
         if opcode != 0xA2:
@@ -252,7 +247,12 @@ class V5XRuntimeController(RuntimeController):
         payload = prefixed_packet_payload(packet, ProtocolFamily.V5X)
         if payload is None:
             return packet, False
-        adjusted_payload = self._adjust_density_payload(payload, context)
+        adjusted_payload = adjust_density_payload(
+            payload,
+            context,
+            temperature_c=self._state.temperature_c or 0,
+            head_type=self._state.print_head_type,
+        )
         if adjusted_payload != payload:
             packet = make_packet(0xA2, adjusted_payload, ProtocolFamily.V5X)
             payload = adjusted_payload
@@ -266,7 +266,7 @@ class V5XRuntimeController(RuntimeController):
         self,
         session,
         packet: bytes,
-        context: _V5XJobContext,
+        context: V5XJobContext,
         *,
         timeout: float,
         density_updated: bool,
@@ -291,7 +291,7 @@ class V5XRuntimeController(RuntimeController):
         self,
         session,
         packet: bytes,
-        context: _V5XJobContext,
+        context: V5XJobContext,
         *,
         timeout: float,
         density_updated: bool,
@@ -305,7 +305,11 @@ class V5XRuntimeController(RuntimeController):
             finally:
                 self._clear_command_ack_state(ack_opcode)
         if opcode == 0xA9:
-            delay_ms = self._compute_start_delay_ms(context, density_updated=density_updated)
+            delay_ms = start_delay_ms(
+                context,
+                density_updated=density_updated,
+                head_type=self._state.print_head_type,
+            )
             if delay_ms > 0:
                 await asyncio.sleep(delay_ms / 1000.0)
 
@@ -524,64 +528,6 @@ class V5XRuntimeController(RuntimeController):
             raise RuntimeError("V5X start print response did not include a status byte")
         if status != 0x00:
             raise RuntimeError(f"V5X start print was rejected (status=0x{status:02x})")
-
-    def _adjust_density_payload(self, payload: bytes, context: _V5XJobContext) -> bytes:
-        if len(payload) != 1:
-            return payload
-        user_density = payload[0]
-        temperature_c = self._state.temperature_c or 0
-        coverage_ratio = context.coverage_ratio
-        head_type = self._state.print_head_type
-        is_gray = context.is_gray
-        if is_gray:
-            target_density = self._gray_density_target(temperature_c, user_density, head_type)
-        else:
-            target_density = self._dot_density_target(temperature_c, user_density, head_type, coverage_ratio)
-        target_density = max(0, min(user_density, target_density))
-        return bytes([target_density])
-
-    def _compute_start_delay_ms(self, context: _V5XJobContext, *, density_updated: bool) -> int:
-        # High-coverage gaoya heads need a noticeably longer settle window
-        # before the print-start command becomes reliable.
-        if self._state.print_head_type == "gaoya" and context.coverage_ratio > 0.4:
-            return 200
-        if density_updated:
-            return 60
-        return 0
-
-    @staticmethod
-    def _coverage_band(coverage_ratio: float) -> int:
-        if coverage_ratio <= 0.4:
-            return 1
-        if coverage_ratio < 0.5:
-            return 2
-        if coverage_ratio < 0.7:
-            return 3
-        return 4
-
-    def _gray_density_target(self, temperature_c: int, user_density: int, head_type: str) -> int:
-        # Gray-mode thresholds are head-specific lookup tables rather than a
-        # smooth formula.
-        if head_type == "gaoya":
-            thresholds = ((70, 56), (65, 65), (60, 75), (55, 80), (50, 85))
-        else:
-            thresholds = ((70, 56), (65, 60), (60, 65), (55, 75), (50, 80))
-        for threshold, value in thresholds:
-            if temperature_c >= threshold:
-                return min(user_density, value)
-        return user_density
-
-    def _dot_density_target(self, temperature_c: int, user_density: int, head_type: str, coverage_ratio: float) -> int:
-        if temperature_c <= 60:
-            return user_density
-        band = self._coverage_band(coverage_ratio)
-        # Dot-mode fallback uses one table per head type and temperature band,
-        # then picks a slot based on black coverage.
-        if head_type == "gaoya":
-            values = (48, 15, 15, 10) if temperature_c < 65 else ((36, 9, 5, 5) if temperature_c < 70 else (22, 5, 3, 3))
-        else:
-            values = (60, 50, 50, 30) if temperature_c <= 65 else ((50, 40, 40, 20) if temperature_c <= 70 else (40, 30, 30, 10))
-        return min(user_density, values[band - 1])
 
     def _update_info_from_a7(self, session, payload: bytes) -> None:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)

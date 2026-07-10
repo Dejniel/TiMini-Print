@@ -23,6 +23,7 @@ from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.runtime.v5g import V5GRuntimeController
 from timiniprint.printing.runtime.v5g_density import DensityLevels
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
+from timiniprint.printing.runtime.v5x_density import adjust_density_payload, start_delay_ms
 from timiniprint.protocol.families import (
     split_prefixed_bulk_stream,
 )
@@ -1492,7 +1493,13 @@ class BleakTransportSessionTests(unittest.TestCase):
         context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
 
-        adjusted = session._runtime_controller._adjust_density_payload(bytes([0x5D]), context)
+        state = session._runtime_controller.debug_snapshot()
+        adjusted = adjust_density_payload(
+            bytes([0x5D]),
+            context,
+            temperature_c=state["temperature_c"] or 0,
+            head_type=state["print_head_type"],
+        )
 
         self.assertEqual(adjusted, bytes([0x05]))
 
@@ -1509,7 +1516,11 @@ class BleakTransportSessionTests(unittest.TestCase):
         context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
 
-        delay_ms = session._runtime_controller._compute_start_delay_ms(context, density_updated=True)
+        delay_ms = start_delay_ms(
+            context,
+            density_updated=True,
+            head_type="gaoya",
+        )
 
         self.assertEqual(delay_ms, 200)
 
@@ -1526,7 +1537,11 @@ class BleakTransportSessionTests(unittest.TestCase):
         context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
 
-        delay_ms = session._runtime_controller._compute_start_delay_ms(context, density_updated=True)
+        delay_ms = start_delay_ms(
+            context,
+            density_updated=True,
+            head_type="diya",
+        )
 
         self.assertEqual(delay_ms, 60)
 

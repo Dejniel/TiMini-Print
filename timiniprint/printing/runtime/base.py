@@ -19,8 +19,6 @@ class PreparedRuntimeContext:
 
 
 class RuntimeSessionApi(Protocol):
-    notify_started: bool
-
     def report_debug(self, message: str) -> None: ...
 
     def report_warning(self, *, short: str, detail: str) -> None: ...

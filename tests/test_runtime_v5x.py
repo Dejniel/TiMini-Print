@@ -108,7 +108,7 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
             ProtocolStep.send("page 2", _page_payload()),
         )
 
-        with patch.object(controller, "_compute_start_delay_ms", return_value=0):
+        with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
             sent = await controller.send_protocol_steps(session, steps, timeout=0.2)
 
         self.assertTrue(sent)
