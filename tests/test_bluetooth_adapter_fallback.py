@@ -34,8 +34,7 @@ class _FakeSocket:
         self.connected = True
         self.target = target
 
-    def send_payload(self, data: bytes, runtime_controller=None) -> int:
-        _ = runtime_controller
+    def send_payload(self, data: bytes) -> int:
         self.sent.append(data)
         return len(data)
 
