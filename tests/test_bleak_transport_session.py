@@ -97,16 +97,22 @@ def _to_namespace(value):
     return value
 
 
+def _controller(session):
+    controller = session._runtime_controller
+    assert controller is not None
+    return controller
+
+
 def _v5g_state(session):
-    return _to_namespace(session.debug_snapshot())
+    return _to_namespace(_controller(session).debug_snapshot())
 
 
 def _v5x_state(session):
-    return _to_namespace(session.debug_snapshot())
+    return _to_namespace(_controller(session).debug_snapshot())
 
 
 def _v5c_state(session):
-    return _to_namespace(session.debug_snapshot())
+    return _to_namespace(_controller(session).debug_snapshot())
 
 
 def _make_level_profile(levels: DensityLevels) -> LevelProfile:
@@ -797,7 +803,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        session.debug_update(temperature_c=60)
+        _controller(session).debug_update(temperature_c=60)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
             profile_runtime_preset_key="mx06",
@@ -836,7 +842,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        session.debug_update(temperature_c=54)
+        _controller(session).debug_update(temperature_c=54)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
             profile_runtime_preset_key="mx06",
@@ -875,7 +881,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        session.debug_update(temperature_c=50)
+        _controller(session).debug_update(temperature_c=50)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
             profile_runtime_preset_key="mx06",
@@ -916,7 +922,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        session.debug_update(temperature_c=60)
+        _controller(session).debug_update(temperature_c=60)
         runtime_controller = _make_v5g_controller(
             helper_kind="pd01",
             profile_runtime_preset_key="mx11",
@@ -955,7 +961,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        session.debug_update(
+        _controller(session).debug_update(
             d2_status=True,
             last_complete_time=time.time(),
             last_single_density_value=150,
@@ -998,7 +1004,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        session.debug_update(
+        _controller(session).debug_update(
             d2_status=True,
             last_complete_time=time.time(),
             last_print_record_density=150,
@@ -1084,7 +1090,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
         session._client = client
-        session.debug_update(helper_kind="pd01", temperature_c=80)
+        _controller(session).debug_update(helper_kind="pd01", temperature_c=80)
 
         async def run() -> None:
             with patch.object(session, "_write_chunks", new=AsyncMock()) as write_chunks:
@@ -1353,7 +1359,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             make_packet(0xA7, bytes.fromhex("112233445566"), ProtocolFamily.V5X)
         )
 
-        request = session.build_compat_request(
+        request = _controller(session).build_compat_request(
             ble_name="JK01",
             ble_address="48:0F:57:49:1D:3A",
         )
@@ -1376,7 +1382,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             make_packet(0xA7, bytes.fromhex("FFFFFFFFFFFF"), ProtocolFamily.V5X)
         )
 
-        request = session.build_compat_request(
+        request = _controller(session).build_compat_request(
             ble_name="JK01",
             ble_address="48:0F:57:49:1D:3A",
             ble_model="JK01",
@@ -1399,7 +1405,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(
             make_packet(0xA7, bytes.fromhex("112233445566"), ProtocolFamily.V5X)
         )
-        session.apply_compat_result(mode="auth", result_code=-2)
+        _controller(session).apply_compat_result(session, mode="auth", result_code=-2)
 
         self.assertTrue(_v5x_state(session).compatibility.checked)
         self.assertFalse(_v5x_state(session).compatibility.confirmed)
@@ -1414,7 +1420,8 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(
             make_packet(0xA7, bytes.fromhex("FFFFFFFFFFFF"), ProtocolFamily.V5X)
         )
-        session.apply_compat_result(
+        _controller(session).apply_compat_result(
+            session,
             mode="get_sn",
             result_code=1,
             write_cmd=bytes.fromhex("2221A70000000000"),
@@ -1505,7 +1512,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
     def test_v5x_start_delay_prefers_gaoya_high_coverage_rule(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)
-        session.debug_update(print_head_type="gaoya")
+        _controller(session).debug_update(print_head_type="gaoya")
         split = split_prefixed_bulk_stream(
             bytes.fromhex("2221A9000600010030010000EBFF")
             + (b"\xAA\x55" * 16)
@@ -1526,7 +1533,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
     def test_v5x_start_delay_uses_short_density_settle_for_lower_coverage(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)
-        session.debug_update(print_head_type="diya")
+        _controller(session).debug_update(print_head_type="diya")
         split = split_prefixed_bulk_stream(
             bytes.fromhex("2221A9000600010030010000EBFF")
             + (b"\x80" * 8)
@@ -1750,7 +1757,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session, _ = self._make_session(ProtocolFamily.V5C)
 
         self.assertIsNone(
-            session.build_compat_request(
+            _controller(session).build_compat_request(
                 ble_name="YTB01",
                 ble_address="48:0F:57:49:1D:3A",
             )
@@ -1760,7 +1767,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             make_packet(0xA9, bytes.fromhex("1122334455667788"), ProtocolFamily.V5C)
         )
 
-        request = session.build_compat_request(
+        request = _controller(session).build_compat_request(
             ble_name="YTB01",
             ble_address="48:0F:57:49:1D:3A",
         )
@@ -1783,7 +1790,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         packet = make_packet(0xA8, bytes.fromhex("1122334455667788"), ProtocolFamily.V5C)
         session.handle_notification(packet)
 
-        request = session.build_compat_request(
+        request = _controller(session).build_compat_request(
             ble_name="YTB01",
             ble_address="48:0F:57:49:1D:3A",
         )
@@ -1808,14 +1815,14 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(
             make_packet(0xA9, bytes.fromhex("1122334455667788"), ProtocolFamily.V5C)
         )
-        session.apply_compat_result(mode="auth", result_code=-2)
+        _controller(session).apply_compat_result(session, mode="auth", result_code=-2)
 
         self.assertTrue(_v5c_state(session).compatibility.checked)
         self.assertFalse(_v5c_state(session).compatibility.confirmed)
         self.assertEqual(_v5c_state(session).compatibility.last_result_code, -2)
         self.assertFalse(_v5c_state(session).compatibility.request_pending)
         self.assertIsNone(
-            session.build_compat_request(
+            _controller(session).build_compat_request(
                 ble_name="YTB01",
                 ble_address="48:0F:57:49:1D:3A",
             )

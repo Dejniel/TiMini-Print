@@ -149,19 +149,6 @@ class _BleakTransportSession:
         elif transport.notify_char_uuid or transport.prefer_generic_notify:
             self.report_debug("configured notify characteristic not found")
 
-    def debug_snapshot(self) -> dict[str, Any]:
-        if self._runtime_controller is None:
-            return {}
-        return self._runtime_controller.debug_snapshot()
-
-    def debug_update(self, **changes: Any) -> None:
-        if self._runtime_controller is None:
-            if changes:
-                unknown = ", ".join(sorted(changes.keys()))
-                raise KeyError(f"Runtime controller does not support debug_update fields: {unknown}")
-            return
-        self._runtime_controller.debug_update(**changes)
-
     async def attach_runtime_controller(
         self,
         runtime_controller: Any | None,
@@ -427,16 +414,6 @@ class _BleakTransportSession:
             label = "flow resume"
         detail = "" if not payload else f": {payload.hex()}"
         self.report_debug(label + detail)
-
-    def build_compat_request(self, **kwargs):
-        if self._runtime_controller is None:
-            return None
-        return self._runtime_controller.build_compat_request(**kwargs)
-
-    def apply_compat_result(self, **kwargs) -> None:
-        if self._runtime_controller is None:
-            return
-        self._runtime_controller.apply_compat_result(self, **kwargs)
 
     @staticmethod
     def _find_characteristic_by_uuid(
