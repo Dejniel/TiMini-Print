@@ -1160,6 +1160,17 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(bytes([0x55]), data)
         self.assertTrue(data.endswith(V5X_FINALIZE_PACKET))
 
+    def test_v5x_public_job_exposes_runtime_print_step(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("v5x")
+        raster_set = self._raster_set(
+            self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0])
+        )
+
+        job = PrinterProtocol(device).build_job(raster_set, is_text=False)
+
+        self.assertEqual([step.label for step in job.steps], ["print data"])
+        self.assertEqual(job.steps[0].data, job.payload)
+
     def test_build_v5x_job_uses_standard_mode_when_labels_disabled(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],

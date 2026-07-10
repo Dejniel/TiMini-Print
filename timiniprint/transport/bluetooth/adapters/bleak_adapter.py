@@ -240,6 +240,25 @@ class _BleakSocket:
             return False
         return self._transport.can_send_control_packet()
 
+    def can_send_bulk_payload(self) -> bool:
+        if not self._connected or not self._client:
+            return False
+        return self._transport.can_send_bulk_payload()
+
+    def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
+        if not self._connected or not self._client:
+            return False
+        if not self._loop:
+            raise RuntimeError("Event loop not initialized")
+        return self._loop.run_until_complete(
+            self._transport.send_bulk_payload(
+                self._client,
+                data,
+                mtu_size=self._mtu_size,
+                timeout=timeout,
+            )
+        )
+
     def can_query_control_packet(self) -> bool:
         if not self._connected or not self._client:
             return False

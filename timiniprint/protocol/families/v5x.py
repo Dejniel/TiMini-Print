@@ -4,6 +4,7 @@ from ..encoding import pack_line
 from ..packet import crc8_value, make_packet
 from ..family import ProtocolFamily
 from ..plan import ProtocolPlan
+from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import BleBulkWriteProfile, BleTransportProfile, FlowControlProfile, PrintJobRequest, ProtocolBehavior
@@ -167,7 +168,9 @@ def _build_payload(request: PrintJobRequest) -> bytes:
 
 
 def build_job(request: PrintJobRequest) -> ProtocolPlan:
-    return ProtocolPlan.stream(_build_payload(request))
+    return ProtocolPlan.sequence(
+        (ProtocolStep.send("print data", _build_payload(request)),)
+    )
 
 
 BEHAVIOR = ProtocolBehavior(

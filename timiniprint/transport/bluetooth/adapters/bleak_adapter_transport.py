@@ -353,13 +353,6 @@ class _BleakTransportSession:
             self._protocol_family,
             bulk_write.tail_packets,
         )
-        # TODO: Legacy BLE split runtime hooks for V5X live here because
-        # they depend on notifications and BLE bulk/write characteristics. New
-        # protocol send/query sequencing should be modeled as ProtocolJob.steps.
-        split_context = None
-        if self._runtime_controller is not None:
-            split_context = self._runtime_controller.build_split_context(self, split)
-
         cmd_response = self._resolve_response_mode(
             self.bindings.write_char,
             self.bindings.write_selection_strategy,
@@ -372,97 +365,23 @@ class _BleakTransportSession:
         )
 
         for packet in split.commands:
-            density_updated = False
-            if self._runtime_controller is not None:
-                packet, density_updated = self._runtime_controller.prepare_split_command(self, packet, split_context)
-            if packet is None:
-                continue
-            if self._runtime_controller is not None:
-                await self._runtime_controller.before_split_command(
-                    self,
-                    packet,
-                    split_context,
-                    timeout=timeout,
-                    density_updated=density_updated,
-                )
-                ack_token = self._runtime_controller.arm_command_ack(self, packet)
-            else:
-                ack_token = None
-            try:
-                await self._write_chunks(
-                    client,
-                    self.bindings.write_char,
-                    packet,
-                    response=cmd_response,
-                    chunk_size=min(mtu_size, self._transport_profile.standard_chunk_cap),
-                    delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
-                    timeout=timeout,
-                )
-                if self._runtime_controller is not None:
-                    await self._runtime_controller.after_split_command(
-                        self,
-                        packet,
-                        split_context,
-                        timeout=timeout,
-                        density_updated=density_updated,
-                        ack_token=ack_token,
-                    )
-            except Exception:
-                if self._runtime_controller is not None:
-                    self._runtime_controller.clear_command_ack(self, ack_token)
-                raise
+            await self._write_chunks(
+                client,
+                self.bindings.write_char,
+                packet,
+                response=cmd_response,
+                chunk_size=min(mtu_size, self._transport_profile.standard_chunk_cap),
+                delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
+                timeout=timeout,
+            )
 
         if split.bulk_payload:
-            bulk_response = self._resolve_response_mode(
-                self.bindings.bulk_write_char,
-                "preferred_uuid",
-                False,
-            )
-            bulk_mtu_payload = self._effective_mtu_payload(
-                self.bindings.bulk_write_char,
-                mtu_size,
-                response=bulk_response,
-                reserve=self._transport_profile.write_without_response_payload_reserve,
-            )
-            bulk_chunk_size = min(bulk_mtu_payload, bulk_write.chunk_cap)
-            bulk_chunk_count = (
-                (len(split.bulk_payload) + bulk_chunk_size - 1) // bulk_chunk_size
-                if bulk_chunk_size
-                else 0
-            )
-            report_ble_split_bulk_plan(
-                self._reporter,
-                response=bulk_response,
-                payload_bytes=len(split.bulk_payload),
-                mtu_payload=bulk_mtu_payload,
-                chunk_size=bulk_chunk_size,
-                chunk_count=bulk_chunk_count,
-                reserve=self._transport_profile.write_without_response_payload_reserve,
-                delay_ms=bulk_write.write_delay_ms,
-                flow_control=self._transport_profile.flow_control is not None,
-            )
-            counters_before = self._write_counters()
-            started = time.monotonic()
-            chunks_written = await self._write_chunks(
+            await self._write_bulk_payload(
                 client,
-                self.bindings.bulk_write_char,
                 split.bulk_payload,
-                response=bulk_response,
-                chunk_size=bulk_chunk_size,
-                delay_seconds=bulk_write.write_delay_ms / 1000.0,
+                bulk_write=bulk_write,
+                mtu_size=mtu_size,
                 timeout=timeout,
-                wait_for_flow=self._transport_profile.flow_control is not None,
-                progress_label="split bulk",
-                total_chunks=bulk_chunk_count,
-            )
-            report_ble_write_summary(
-                self._reporter,
-                "split bulk done",
-                byte_count=len(split.bulk_payload),
-                chunks_written=chunks_written,
-                elapsed_seconds=time.monotonic() - started,
-                before=counters_before,
-                after=self._write_counters(),
             )
 
         for packet in split.trailing_commands:
@@ -475,6 +394,67 @@ class _BleakTransportSession:
                 delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
                 timeout=timeout,
             )
+
+    async def _write_bulk_payload(
+        self,
+        client: Any,
+        data: bytes,
+        *,
+        bulk_write: BleBulkWriteProfile,
+        mtu_size: int,
+        timeout: float,
+    ) -> None:
+        bulk_response = self._resolve_response_mode(
+            self.bindings.bulk_write_char,
+            "preferred_uuid",
+            False,
+        )
+        bulk_mtu_payload = self._effective_mtu_payload(
+            self.bindings.bulk_write_char,
+            mtu_size,
+            response=bulk_response,
+            reserve=self._transport_profile.write_without_response_payload_reserve,
+        )
+        bulk_chunk_size = min(bulk_mtu_payload, bulk_write.chunk_cap)
+        bulk_chunk_count = (
+            (len(data) + bulk_chunk_size - 1) // bulk_chunk_size
+            if bulk_chunk_size
+            else 0
+        )
+        report_ble_split_bulk_plan(
+            self._reporter,
+            response=bulk_response,
+            payload_bytes=len(data),
+            mtu_payload=bulk_mtu_payload,
+            chunk_size=bulk_chunk_size,
+            chunk_count=bulk_chunk_count,
+            reserve=self._transport_profile.write_without_response_payload_reserve,
+            delay_ms=bulk_write.write_delay_ms,
+            flow_control=self._transport_profile.flow_control is not None,
+        )
+        counters_before = self._write_counters()
+        started = time.monotonic()
+        chunks_written = await self._write_chunks(
+            client,
+            self.bindings.bulk_write_char,
+            data,
+            response=bulk_response,
+            chunk_size=bulk_chunk_size,
+            delay_seconds=bulk_write.write_delay_ms / 1000.0,
+            timeout=timeout,
+            wait_for_flow=self._transport_profile.flow_control is not None,
+            progress_label="split bulk",
+            total_chunks=bulk_chunk_count,
+        )
+        report_ble_write_summary(
+            self._reporter,
+            "split bulk done",
+            byte_count=len(data),
+            chunks_written=chunks_written,
+            elapsed_seconds=time.monotonic() - started,
+            before=counters_before,
+            after=self._write_counters(),
+        )
 
     async def _write_chunks(
         self,
@@ -723,6 +703,13 @@ class _BleakTransportSession:
     def can_send_control_packet(self) -> bool:
         return bool(self._client and self.bindings.write_char)
 
+    def can_send_bulk_payload(self) -> bool:
+        return bool(
+            self._client
+            and self.bindings.bulk_write_char
+            and self._transport_profile.bulk_write is not None
+        )
+
     def can_query_control_packet(self) -> bool:
         return False
 
@@ -805,6 +792,27 @@ class _BleakTransportSession:
             response=response,
             chunk_size=min(180, self._transport_profile.standard_chunk_cap),
             delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
+            timeout=timeout,
+        )
+        return True
+
+    async def send_bulk_payload(
+        self,
+        client: Any,
+        data: bytes,
+        *,
+        mtu_size: int,
+        timeout: float = 1.0,
+    ) -> bool:
+        self._client = client
+        bulk_write = self._transport_profile.bulk_write
+        if not self.can_send_bulk_payload() or bulk_write is None:
+            return False
+        await self._write_bulk_payload(
+            client,
+            data,
+            bulk_write=bulk_write,
+            mtu_size=mtu_size,
             timeout=timeout,
         )
         return True

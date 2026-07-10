@@ -220,6 +220,47 @@ async def _send_v5g_runtime_payload(
         raise AssertionError("V5G runtime did not handle standard payload steps")
 
 
+class _V5XRuntimeSession:
+    def __init__(
+        self,
+        session: _BleakTransportSession,
+        client: _Client,
+    ) -> None:
+        self._session = session
+        self._client = client
+        self._session._client = client
+
+    def __getattr__(self, name: str):
+        return getattr(self._session, name)
+
+    async def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
+        return await self._session.send_bulk_payload(
+            self._client,
+            data,
+            mtu_size=180,
+            timeout=timeout,
+        )
+
+
+async def _send_v5x_runtime_payload(
+    session: _BleakTransportSession,
+    client: _Client,
+    data: bytes,
+    *,
+    timeout: float = 0.2,
+) -> None:
+    runtime_controller = session._runtime_controller
+    if not isinstance(runtime_controller, V5XRuntimeController):
+        raise AssertionError("V5X runtime controller is not attached")
+    sent = await runtime_controller.send_protocol_steps(
+        _V5XRuntimeSession(session, client),
+        (ProtocolStep.send("print data", data),),
+        timeout=timeout,
+    )
+    if not sent:
+        raise AssertionError("V5X runtime did not handle split payload steps")
+
+
 class BleakTransportSessionTests(unittest.TestCase):
     def _make_session(self, family: ProtocolFamily) -> tuple[_BleakTransportSession, _Client]:
         reporter, _ = build_capture_reporter()
@@ -1088,12 +1129,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 session.handle_notification(V5X_NOTIFY_START_PRINT_OK)
 
             task = asyncio.create_task(notify())
-            await session.send(
-                client,
-                data,
-                mtu_size=180,
-                timeout=0.2,
-            )
+            await _send_v5x_runtime_payload(session, client, data)
             await task
 
         asyncio.run(run())
@@ -1243,12 +1279,7 @@ class BleakTransportSessionTests(unittest.TestCase):
                 session.handle_notification(V5X_NOTIFY_START_PRINT_OK)
 
             task = asyncio.create_task(notify())
-            await session.send(
-                client,
-                data,
-                mtu_size=180,
-                timeout=0.2,
-            )
+            await _send_v5x_runtime_payload(session, client, data)
             await task
 
         asyncio.run(run_once())
@@ -1473,7 +1504,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             ProtocolFamily.V5X,
             _v5x_tail_packets(),
         )
-        context = session._runtime_controller.build_split_context(session, split)
+        context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
 
         adjusted = session._runtime_controller._adjust_density_payload(bytes([0x5D]), context)
@@ -1490,7 +1521,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             ProtocolFamily.V5X,
             _v5x_tail_packets(),
         )
-        context = session._runtime_controller.build_split_context(session, split)
+        context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
 
         delay_ms = session._runtime_controller._compute_start_delay_ms(context, density_updated=True)
@@ -1507,7 +1538,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             ProtocolFamily.V5X,
             _v5x_tail_packets(),
         )
-        context = session._runtime_controller.build_split_context(session, split)
+        context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
 
         delay_ms = session._runtime_controller._compute_start_delay_ms(context, density_updated=True)
@@ -1525,7 +1556,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             _v5x_tail_packets(),
         )
 
-        context = session._runtime_controller.build_split_context(session, split)
+        context = session._runtime_controller._build_job_context(session, split)
 
         self.assertIsNotNone(context)
         self.assertTrue(context.is_gray)
@@ -1581,10 +1612,10 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         async def run() -> None:
             with self.assertRaises(TimeoutError):
-                await session.send(
+                await _send_v5x_runtime_payload(
+                    session,
                     client,
                     data,
-                    mtu_size=180,
                     timeout=0.01,
                 )
 
@@ -1624,12 +1655,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
             task = asyncio.create_task(notify())
             with self.assertRaisesRegex(RuntimeError, "status=0x03"):
-                await session.send(
-                    client,
-                    data,
-                    mtu_size=180,
-                    timeout=0.2,
-                )
+                await _send_v5x_runtime_payload(session, client, data)
             await task
 
         asyncio.run(run())

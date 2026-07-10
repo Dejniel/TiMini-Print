@@ -80,6 +80,21 @@ class _BleNotificationQuerySocket(_Socket):
         return reply if match(reply) else None
 
 
+class _BulkSocket(_Socket):
+    def __init__(self, *, can_send_bulk: bool = True):
+        super().__init__(fail=False)
+        self.can_send_bulk = can_send_bulk
+        self.bulk_timeouts = []
+
+    def can_send_bulk_payload(self):
+        return self.can_send_bulk
+
+    def send_bulk_payload(self, data, *, timeout=1.0):
+        self.sent.append(bytes(data))
+        self.bulk_timeouts.append(timeout)
+        return True
+
+
 class _Reporter:
     def __init__(self):
         self.debugs = []
@@ -340,6 +355,21 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         backend._sock = _BleNotificationQuerySocket(can_send_wait=False)
         self.assertFalse(backend.can_send_control_packet_wait_notification())
+
+    def test_ble_bulk_payload_capability_and_send_delegate_to_socket(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        sock = _BulkSocket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.BLE
+
+        self.assertTrue(backend.can_send_bulk_payload())
+        self.assertTrue(backend._send_bulk_payload_blocking(b"BULK", 0.25))
+        self.assertEqual(sock.sent, [b"BULK"])
+        self.assertEqual(sock.bulk_timeouts, [0.25])
+
+        backend._sock = _BulkSocket(can_send_bulk=False)
+        self.assertFalse(backend.can_send_bulk_payload())
 
 
 if __name__ == "__main__":

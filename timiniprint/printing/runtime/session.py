@@ -102,6 +102,12 @@ class RuntimeConnectionSession:
         send_standard_payload = getattr(self._connection, "send_standard_payload", None)
         return callable(send_standard_payload)
 
+    def can_send_bulk_payload(self) -> bool:
+        can_send_bulk_payload = getattr(self._connection, "can_send_bulk_payload", None)
+        if callable(can_send_bulk_payload):
+            return bool(can_send_bulk_payload())
+        return False
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         send_control_packet = getattr(self._connection, "send_control_packet", None)
         if not callable(send_control_packet):
@@ -173,3 +179,9 @@ class RuntimeConnectionSession:
         if not callable(send_standard_payload):
             raise RuntimeError("Connection does not support runtime standard payload sends")
         await send_standard_payload(data)
+
+    async def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
+        send_bulk_payload = getattr(self._connection, "send_bulk_payload", None)
+        if not callable(send_bulk_payload):
+            return False
+        return await send_bulk_payload(data, timeout=timeout)

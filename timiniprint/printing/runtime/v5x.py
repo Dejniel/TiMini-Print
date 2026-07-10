@@ -7,11 +7,14 @@ from typing import Optional
 
 from ... import reporting
 from ...protocol.family import ProtocolFamily
+from ...protocol.families import split_prefixed_bulk_stream
 from ...protocol.families.v5x import (
+    V5X_FINALIZE_PACKET,
     V5X_GET_SERIAL_PACKET,
     V5X_GRAY_MODE_SUFFIX,
     V5X_STATUS_POLL_PACKET,
 )
+from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 
 
@@ -146,7 +149,68 @@ class V5XRuntimeController(RuntimeController):
         self._cancel_pending_get_serial()
         self._cancel_pending_status_poll()
 
-    def build_split_context(self, session, split) -> _V5XJobContext:
+    async def send_protocol_steps(self, session, steps, *, timeout: float) -> bool:
+        if any(step.operation is not ProtocolStepOperation.SEND for step in steps):
+            return False
+        split_jobs = tuple(
+            split_prefixed_bulk_stream(
+                step.data,
+                ProtocolFamily.V5X,
+                (V5X_FINALIZE_PACKET,),
+            )
+            for step in steps
+        )
+        if not session.can_send_control_packet():
+            return False
+        if any(split.bulk_payload for split in split_jobs) and not session.can_send_bulk_payload():
+            return False
+
+        for split in split_jobs:
+            await self._send_split_job(session, split, timeout=timeout)
+        return True
+
+    async def _send_split_job(self, session, split, *, timeout: float) -> None:
+        context = self._build_job_context(session, split)
+        for packet in split.commands:
+            packet, density_updated = self._prepare_command(session, packet, context)
+            if packet is None:
+                continue
+            await self._before_command(
+                session,
+                packet,
+                context,
+                timeout=timeout,
+                density_updated=density_updated,
+            )
+            ack_opcode = self._arm_command_ack(session, packet)
+            try:
+                sent = await session.send_control_packet(packet, timeout=timeout)
+                if not sent:
+                    raise RuntimeError("V5X control packet send unavailable")
+                await self._after_command(
+                    session,
+                    packet,
+                    context,
+                    timeout=timeout,
+                    density_updated=density_updated,
+                    ack_opcode=ack_opcode,
+                )
+            except Exception:
+                if ack_opcode is not None:
+                    self._clear_command_ack_state(ack_opcode)
+                raise
+
+        if split.bulk_payload:
+            sent = await session.send_bulk_payload(split.bulk_payload, timeout=timeout)
+            if not sent:
+                raise RuntimeError("V5X bulk payload send unavailable")
+
+        for packet in split.trailing_commands:
+            sent = await session.send_control_packet(packet, timeout=timeout)
+            if not sent:
+                raise RuntimeError("V5X trailing control packet send unavailable")
+
+    def _build_job_context(self, session, split) -> _V5XJobContext:
         is_gray = False
         for packet in split.commands:
             if session.extract_prefixed_opcode(packet) != 0xA9:
@@ -167,14 +231,19 @@ class V5XRuntimeController(RuntimeController):
                 coverage_ratio = black_bits / total_bits
         return _V5XJobContext(coverage_ratio=coverage_ratio, is_gray=is_gray)
 
-    def prepare_split_command(self, session, packet: bytes, split_context: _V5XJobContext) -> tuple[bytes | None, bool]:
+    def _prepare_command(
+        self,
+        session,
+        packet: bytes,
+        context: _V5XJobContext,
+    ) -> tuple[bytes | None, bool]:
         opcode = session.extract_prefixed_opcode(packet)
         if opcode != 0xA2:
             return packet, False
         payload = session.extract_prefixed_payload(packet)
         if payload is None:
             return packet, False
-        adjusted_payload = self._adjust_density_payload(payload, split_context)
+        adjusted_payload = self._adjust_density_payload(payload, context)
         if adjusted_payload != payload:
             packet = session.make_packet(0xA2, adjusted_payload)
             payload = adjusted_payload
@@ -184,12 +253,21 @@ class V5XRuntimeController(RuntimeController):
         self._state.last_density_payload = payload
         return packet, True
 
-    async def before_split_command(self, session, packet: bytes, split_context: _V5XJobContext, *, timeout: float, density_updated: bool) -> None:
+    async def _before_command(
+        self,
+        session,
+        packet: bytes,
+        context: _V5XJobContext,
+        *,
+        timeout: float,
+        density_updated: bool,
+    ) -> None:
+        _ = context, density_updated
         opcode = session.extract_prefixed_opcode(packet)
         if opcode in (0xA2, 0xA9):
             await self._wait_for_start_ready(session, timeout)
 
-    def arm_command_ack(self, session, packet: bytes) -> int | None:
+    def _arm_command_ack(self, session, packet: bytes) -> int | None:
         opcode = session.extract_prefixed_opcode(packet)
         if opcode not in (0xA7, 0xA9):
             return None
@@ -200,24 +278,27 @@ class V5XRuntimeController(RuntimeController):
         self._state.seen_command_acks.discard(opcode)
         return opcode
 
-    async def after_split_command(self, session, packet: bytes, split_context: _V5XJobContext, *, timeout: float, density_updated: bool, ack_token) -> None:
+    async def _after_command(
+        self,
+        session,
+        packet: bytes,
+        context: _V5XJobContext,
+        *,
+        timeout: float,
+        density_updated: bool,
+        ack_opcode: int | None,
+    ) -> None:
         opcode = session.extract_prefixed_opcode(packet)
-        if ack_token is not None:
-            ack_opcode = ack_token
+        if ack_opcode is not None:
             try:
                 await self._wait_for_command_ack(session, ack_opcode, timeout)
                 self._validate_command_ack(ack_opcode)
             finally:
                 self._clear_command_ack_state(ack_opcode)
         if opcode == 0xA9:
-            delay_ms = self._compute_start_delay_ms(split_context, density_updated=density_updated)
+            delay_ms = self._compute_start_delay_ms(context, density_updated=density_updated)
             if delay_ms > 0:
                 await asyncio.sleep(delay_ms / 1000.0)
-
-    def clear_command_ack(self, session, ack_token) -> None:
-        if ack_token is None:
-            return
-        self._clear_command_ack_state(ack_token)
 
     async def wait_for_completion(self, session, *, timeout: float) -> None:
         # Hold the BLE link after the job is sent until the printer finishes. The

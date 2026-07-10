@@ -88,6 +88,9 @@ class SppBackend:
     def can_send_control_packet(self) -> bool:
         return self._can_send_control_packet_blocking()
 
+    def can_send_bulk_payload(self) -> bool:
+        return self._can_send_bulk_payload_blocking()
+
     def can_query_control_packet(self) -> bool:
         return self._can_query_control_packet_blocking()
 
@@ -103,6 +106,15 @@ class SppBackend:
             None,
             self._send_control_packet_blocking,
             packet,
+            timeout,
+        )
+
+    async def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            self._send_bulk_payload_blocking,
+            data,
             timeout,
         )
 
@@ -383,6 +395,14 @@ class SppBackend:
             return callable(getattr(self._sock, "send_control_packet", None))
         return True
 
+    def _can_send_bulk_payload_blocking(self) -> bool:
+        if not self._sock or not self._connected or self._transport != DeviceTransport.BLE:
+            return False
+        can_send_bulk_payload = getattr(self._sock, "can_send_bulk_payload", None)
+        if callable(can_send_bulk_payload):
+            return bool(can_send_bulk_payload())
+        return callable(getattr(self._sock, "send_bulk_payload", None))
+
     def _can_query_control_packet_blocking(self) -> bool:
         if not self._sock or not self._connected:
             return False
@@ -419,6 +439,15 @@ class SppBackend:
             return False
         with self._lock:
             return _send_control_packet(self._sock, packet, timeout=timeout)
+
+    def _send_bulk_payload_blocking(self, data: bytes, timeout: float) -> bool:
+        if not self._sock or not self._connected or self._transport != DeviceTransport.BLE:
+            return False
+        send_bulk_payload = getattr(self._sock, "send_bulk_payload", None)
+        if not callable(send_bulk_payload):
+            return False
+        with self._lock:
+            return bool(send_bulk_payload(data, timeout=timeout))
 
     def _query_control_packet_blocking(
         self,

@@ -37,6 +37,9 @@ class BleakBluetoothConnection:
     def can_send_control_packet(self) -> bool:
         return self._backend.can_send_control_packet()
 
+    def can_send_bulk_payload(self) -> bool:
+        return self._backend.can_send_bulk_payload()
+
     def can_query_control_packet(self) -> bool:
         return self._backend.can_query_control_packet()
 
@@ -48,6 +51,9 @@ class BleakBluetoothConnection:
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         return await self._backend.send_control_packet(packet, timeout=timeout)
+
+    async def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
+        return await self._backend.send_bulk_payload(data, timeout=timeout)
 
     async def query_control_packet(
         self,
