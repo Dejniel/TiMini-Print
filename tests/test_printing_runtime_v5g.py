@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from timiniprint.printing.runtime.v5g import (
+from timiniprint.printing.runtime.v5g_density import (
     DensityLevels,
     mx06_continuous_plan,
     mx06_single_density_value,

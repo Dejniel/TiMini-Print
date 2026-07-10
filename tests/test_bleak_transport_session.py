@@ -20,7 +20,8 @@ from timiniprint.devices.bluetooth_profiles import (
     get_ble_transport_profile,
 )
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
-from timiniprint.printing.runtime.v5g import DensityLevels, V5GRuntimeController
+from timiniprint.printing.runtime.v5g import V5GRuntimeController
+from timiniprint.printing.runtime.v5g_density import DensityLevels
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.protocol.families import (
     split_prefixed_bulk_stream,
