@@ -73,7 +73,6 @@ class BleTransportProfileTests(unittest.TestCase):
         self.assertEqual(v5x.bulk_write.char_uuid, "0000ae03-0000-1000-8000-00805f9b34fb")
         self.assertEqual(v5x.bulk_write.chunk_cap, 180)
         self.assertEqual(v5x.bulk_write.write_delay_ms, 30)
-        self.assertEqual(v5x.bulk_write.trailing_bytes, 9)
         self.assertTrue(v5x.bulk_write.flow_controlled)
         self.assertEqual(v5x.write_without_response_payload_reserve, 5)
 

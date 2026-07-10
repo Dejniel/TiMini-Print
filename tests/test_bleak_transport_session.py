@@ -39,7 +39,7 @@ from timiniprint.protocol.families.v5x import (
     V5X_STATUS_POLL_PACKET,
 )
 from timiniprint.protocol.families.v5c import V5C_CONNECT_INIT_PACKET
-from timiniprint.protocol.packet import crc8_value, make_packet
+from timiniprint.protocol.packet import crc8_value, make_packet, prefixed_packet_opcode
 from timiniprint.protocol.steps import ProtocolStep
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver import (
     _BleWriteEndpointResolver,
@@ -263,7 +263,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             get_ble_transport_profile(family),
             standard_write_delay_ms=0,
         )
-        session = _BleakTransportSession(family, transport, resolver, reporter)
+        session = _BleakTransportSession(transport, resolver, reporter)
         _attach_runtime_controller_for_test(session, family)
         client = _Client([])
         return session, client
@@ -275,7 +275,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             get_ble_transport_profile(family),
             standard_write_delay_ms=0,
         )
-        session = _BleakTransportSession(family, transport, resolver, reporter)
+        session = _BleakTransportSession(transport, resolver, reporter)
         _attach_runtime_controller_for_test(session, family)
         client = _Client([])
         return session, client, sink
@@ -399,7 +399,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             task = asyncio.create_task(
                 session.wait_for_notification(
                     "temperature",
-                    lambda payload: session.extract_prefixed_opcode(payload) == 0xD3,
+                    lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5G) == 0xD3,
                     timeout=0.2,
                 )
             )
@@ -450,14 +450,14 @@ class BleakTransportSessionTests(unittest.TestCase):
             wait_a7 = asyncio.create_task(
                 session.wait_for_notification(
                     "a7",
-                    lambda payload: session.extract_prefixed_opcode(payload) == 0xA7,
+                    lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xA7,
                     timeout=0.2,
                 )
             )
             wait_aa = asyncio.create_task(
                 session.wait_for_notification(
                     "aa",
-                    lambda payload: session.extract_prefixed_opcode(payload) == 0xAA,
+                    lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xAA,
                     timeout=0.2,
                 )
             )
@@ -508,7 +508,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             get_ble_transport_profile(ProtocolFamily.V5X),
             standard_write_delay_ms=0,
         )
-        session = _BleakTransportSession(ProtocolFamily.V5X, transport, resolver, reporter)
+        session = _BleakTransportSession(transport, resolver, reporter)
         _attach_runtime_controller_for_test(session, ProtocolFamily.V5X)
         client = _Client([])
         _enable_notification_waits(session)
@@ -539,7 +539,6 @@ class BleakTransportSessionTests(unittest.TestCase):
             standard_write_delay_ms=0,
         )
         session = _BleakTransportSession(
-            ProtocolFamily.V5X,
             transport,
             resolver,
             reporter,
@@ -672,7 +671,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             standard_chunk_cap=7,
             standard_write_delay_ms=0,
         )
-        session = _BleakTransportSession(ProtocolFamily.V5C, transport, resolver, reporter)
+        session = _BleakTransportSession(transport, resolver, reporter)
         client = _Client([])
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         session.bindings.write_char = cmd
@@ -1098,7 +1097,7 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         asyncio.run(run())
 
-    def test_send_split_routes_commands_bulk_and_trailing_packets(self) -> None:
+    def test_v5x_runtime_routes_commands_bulk_and_trailing_packets(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
         _enable_notification_waits(session)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
@@ -1140,7 +1139,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(client.calls[3][0], bulk.uuid)
         self.assertEqual(client.calls[4][0], cmd.uuid)
 
-    def test_send_split_uses_bulk_chunk_cap_from_transport_profile(self) -> None:
+    def test_bulk_send_uses_chunk_cap_from_transport_profile(self) -> None:
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         base_transport = get_ble_transport_profile(ProtocolFamily.V5X)
@@ -1150,34 +1149,27 @@ class BleakTransportSessionTests(unittest.TestCase):
             standard_write_delay_ms=0,
             bulk_write=replace(base_transport.bulk_write, write_delay_ms=0, chunk_cap=5),
         )
-        session = _BleakTransportSession(ProtocolFamily.V5X, transport, resolver, reporter)
+        session = _BleakTransportSession(transport, resolver, reporter)
         client = _Client([])
-        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
-        session.bindings.write_char = cmd
         session.bindings.bulk_write_char = bulk
-        session.bindings.write_selection_strategy = "preferred_uuid"
-        session.bindings.write_response_preference = False
-        session.bindings.write_char_uuid = cmd.uuid
         session.bindings.bulk_write_char_uuid = bulk.uuid
+        session._client = client
 
         async def run() -> None:
-            await session.send(
+            await session.send_bulk_payload(
                 client,
-                make_packet(0xA2, bytes([0x01]), ProtocolFamily.V5X) + (b"\xAA" * 12),
+                b"\xAA" * 12,
                 mtu_size=180,
                 timeout=0.2,
             )
 
         asyncio.run(run())
 
-        self.assertEqual(client.calls[0][0], cmd.uuid)
-        self.assertEqual(client.calls[1][0], bulk.uuid)
-        self.assertEqual(client.calls[2][0], bulk.uuid)
-        self.assertEqual(client.calls[3][0], bulk.uuid)
-        self.assertEqual([len(call[1]) for call in client.calls[1:]], [5, 5, 2])
+        self.assertTrue(all(call[0] == bulk.uuid for call in client.calls))
+        self.assertEqual([len(call[1]) for call in client.calls], [5, 5, 2])
 
-    def test_send_split_applies_bulk_write_without_response_payload_reserve(self) -> None:
+    def test_bulk_send_applies_write_without_response_payload_reserve(self) -> None:
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         base_transport = get_ble_transport_profile(ProtocolFamily.V5X)
@@ -1188,31 +1180,27 @@ class BleakTransportSessionTests(unittest.TestCase):
             bulk_write=replace(base_transport.bulk_write, write_delay_ms=0, chunk_cap=180),
             write_without_response_payload_reserve=5,
         )
-        session = _BleakTransportSession(ProtocolFamily.V5X, transport, resolver, reporter)
+        session = _BleakTransportSession(transport, resolver, reporter)
         client = _Client([])
-        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk.max_write_without_response_size = 13
-        session.bindings.write_char = cmd
         session.bindings.bulk_write_char = bulk
-        session.bindings.write_selection_strategy = "preferred_uuid"
-        session.bindings.write_response_preference = False
-        session.bindings.write_char_uuid = cmd.uuid
         session.bindings.bulk_write_char_uuid = bulk.uuid
+        session._client = client
 
         async def run() -> None:
-            await session.send(
+            await session.send_bulk_payload(
                 client,
-                make_packet(0xA2, bytes([0x01]), ProtocolFamily.V5X) + (b"\xAA" * 12),
+                b"\xAA" * 12,
                 mtu_size=180,
                 timeout=0.2,
             )
 
         asyncio.run(run())
 
-        self.assertEqual([len(call[1]) for call in client.calls[1:]], [8, 4])
+        self.assertEqual([len(call[1]) for call in client.calls], [8, 4])
 
-    def test_send_split_keeps_twenty_byte_bulk_fallback_without_reported_mtu(self) -> None:
+    def test_bulk_send_keeps_twenty_byte_fallback_without_reported_mtu(self) -> None:
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         base_transport = get_ble_transport_profile(ProtocolFamily.V5X)
@@ -1223,28 +1211,24 @@ class BleakTransportSessionTests(unittest.TestCase):
             bulk_write=replace(base_transport.bulk_write, write_delay_ms=0, chunk_cap=180),
             write_without_response_payload_reserve=5,
         )
-        session = _BleakTransportSession(ProtocolFamily.V5X, transport, resolver, reporter)
+        session = _BleakTransportSession(transport, resolver, reporter)
         client = _Client([])
-        cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
-        session.bindings.write_char = cmd
         session.bindings.bulk_write_char = bulk
-        session.bindings.write_selection_strategy = "preferred_uuid"
-        session.bindings.write_response_preference = False
-        session.bindings.write_char_uuid = cmd.uuid
         session.bindings.bulk_write_char_uuid = bulk.uuid
+        session._client = client
 
         async def run() -> None:
-            await session.send(
+            await session.send_bulk_payload(
                 client,
-                make_packet(0xA2, bytes([0x01]), ProtocolFamily.V5X) + (b"\xAA" * 45),
+                b"\xAA" * 45,
                 mtu_size=20,
                 timeout=0.2,
             )
 
         asyncio.run(run())
 
-        self.assertEqual([len(call[1]) for call in client.calls[1:]], [15, 15, 15])
+        self.assertEqual([len(call[1]) for call in client.calls], [15, 15, 15])
 
     def test_v5x_skips_redundant_density_command_on_same_connection(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)

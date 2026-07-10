@@ -12,9 +12,6 @@ from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families.v5x import (
     V5X_FINALIZE_PACKET,
     V5X_GET_SERIAL_PACKET,
-    V5X_NOTIFY_GET_SERIAL_ACK,
-    V5X_NOTIFY_START_PRINT_OK,
-    V5X_NOTIFY_START_READY,
     V5X_NOTIFY_TRIGGER_STATUS_POLL,
     V5X_STATUS_POLL_PACKET,
 )
@@ -164,7 +161,7 @@ class BleakSocketTests(unittest.TestCase):
 
         self.assertEqual(s._mtu_size, 244)
 
-    def test_send_async_v5x_routes_commands_and_bulk_data(self) -> None:
+    def test_send_async_does_not_interpret_v5x_payload(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5X)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
@@ -172,7 +169,6 @@ class BleakSocketTests(unittest.TestCase):
         bindings = s._transport.bindings
         s._client = client
         s._connected = True
-        s._transport.notify_started = True
         bindings.write_char = cmd
         bindings.bulk_write_char = bulk
         bindings.write_selection_strategy = "preferred_uuid"
@@ -187,28 +183,10 @@ class BleakSocketTests(unittest.TestCase):
             + V5X_FINALIZE_PACKET
         )
 
-        async def run() -> None:
-            async def notify() -> None:
-                while len(client.calls) < 1:
-                    await asyncio.sleep(0.001)
-                s._handle_notification("", bytearray(V5X_NOTIFY_GET_SERIAL_ACK))
-                s._handle_notification("", bytearray(V5X_NOTIFY_START_READY))
-                while len(client.calls) < 3:
-                    await asyncio.sleep(0.001)
-                s._handle_notification("", bytearray(V5X_NOTIFY_START_PRINT_OK))
+        asyncio.run(s._send_async(data))
 
-            task = asyncio.create_task(notify())
-            await s._send_async(data)
-            await task
-
-        asyncio.run(run())
-        self.assertEqual(client.calls[0][0], cmd.uuid)
-        self.assertEqual(client.calls[1][0], cmd.uuid)
-        self.assertEqual(client.calls[2][0], cmd.uuid)
-        self.assertTrue(all(call[0] == bulk.uuid for call in client.calls[3:-1]))
-        self.assertEqual(client.calls[-1][0], cmd.uuid)
-        self.assertEqual(client.calls[0][1], V5X_GET_SERIAL_PACKET)
-        self.assertEqual(client.calls[-1][1], V5X_FINALIZE_PACKET)
+        self.assertTrue(all(call[0] == cmd.uuid for call in client.calls))
+        self.assertEqual(b"".join(call[1] for call in client.calls), data)
 
     def test_v5x_notify_updates_flow_state(self) -> None:
         s = _BleakSocket(protocol_family=ProtocolFamily.V5X)

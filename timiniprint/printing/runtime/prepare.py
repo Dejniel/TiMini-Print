@@ -24,7 +24,7 @@ async def prepare_connection_runtime(
     controller = runtime_controller_for_device(device)
     if controller is None:
         return PreparedRuntimeContext()
-    session = RuntimeConnectionSession(device, connection, reporter=reporter)
+    session = RuntimeConnectionSession(connection, reporter=reporter)
     await session.attach_runtime_controller(controller, timeout=timeout)
     await controller.probe_capabilities(session, timeout=timeout)
     return PreparedRuntimeContext(

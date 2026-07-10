@@ -55,7 +55,6 @@ class _BleakSocket:
         self._device_cache = device_cache if device_cache is not None else {}
         self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
         self._transport = _BleakTransportSession(
-            protocol_family=self._protocol_family_or_default(),
             transport_profile=get_ble_transport_profile(self._protocol_family_or_default()),
             write_resolver=self._write_resolver,
             reporter=self._reporter,
@@ -377,7 +376,6 @@ class _BleakSocket:
         self._connected = False
         self._client = None
         self._transport = _BleakTransportSession(
-            protocol_family=self._protocol_family_or_default(),
             transport_profile=get_ble_transport_profile(self._protocol_family_or_default()),
             write_resolver=self._write_resolver,
             reporter=self._reporter,

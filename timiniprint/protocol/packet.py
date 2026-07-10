@@ -45,3 +45,52 @@ def prefixed_packet_length(
     if offset + total_length > len(data):
         return None
     return total_length
+
+
+def split_prefixed_packets(
+    data: bytes,
+    protocol_family: ProtocolFamily | str,
+) -> list[bytes] | None:
+    """Split a complete command stream into framed protocol packets."""
+    packets: list[bytes] = []
+    offset = 0
+    while offset < len(data):
+        packet_length = prefixed_packet_length(data, offset, protocol_family)
+        if packet_length is None:
+            return None
+        packets.append(data[offset : offset + packet_length])
+        offset += packet_length
+    return packets
+
+
+def prefixed_packet_opcode(
+    packet: bytes,
+    protocol_family: ProtocolFamily | str,
+) -> int | None:
+    family = ProtocolFamily.from_value(protocol_family)
+    prefix = family.packet_prefix
+    if prefix is None:
+        return None
+    if len(packet) < len(prefix) + 1 or packet[: len(prefix)] != prefix:
+        return None
+    return packet[len(prefix)]
+
+
+def prefixed_packet_payload(
+    packet: bytes,
+    protocol_family: ProtocolFamily | str,
+) -> bytes | None:
+    family = ProtocolFamily.from_value(protocol_family)
+    prefix = family.packet_prefix
+    if prefix is None:
+        return None
+    packet_length = prefixed_packet_length(packet, 0, family)
+    if packet_length is None:
+        return None
+    payload_length_offset = len(prefix) + 2
+    payload_length = (
+        packet[payload_length_offset]
+        | (packet[payload_length_offset + 1] << 8)
+    )
+    payload_start = len(prefix) + 4
+    return packet[payload_start : payload_start + payload_length]

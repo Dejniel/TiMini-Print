@@ -4,12 +4,14 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Optional
 
+from ...protocol.family import ProtocolFamily
 from ...protocol.families.v5c import (
     V5C_CONNECT_INIT_PACKET,
     V5C_NOTIFY_PAUSE,
     V5C_NOTIFY_RESUME,
     V5C_QUERY_STATUS_PACKET,
 )
+from ...protocol.packet import prefixed_packet_opcode, prefixed_packet_payload
 from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 
@@ -94,7 +96,7 @@ class V5CRuntimeController(RuntimeController):
         if payload == V5C_NOTIFY_RESUME:
             session.set_flow_paused(False, payload=payload)
             return
-        opcode = session.extract_prefixed_opcode(payload)
+        opcode = prefixed_packet_opcode(payload, ProtocolFamily.V5C)
         if opcode == 0xA1:
             self._update_status(session, payload)
         elif opcode == 0xAA:
@@ -169,7 +171,7 @@ class V5CRuntimeController(RuntimeController):
             )
 
     def _update_status(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5C)
         if not raw:
             return
         previous_status = self._state.status_code
@@ -220,13 +222,13 @@ class V5CRuntimeController(RuntimeController):
         session.report_warning(short=short, detail=f"status=0x{status:02x} ({self._state.status_name}).")
 
     def _update_max_print_height(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5C)
         if raw is None or len(raw) < 2:
             return
         self._state.max_print_height = int.from_bytes(raw[:2], "little")
 
     def _update_compatibility(self, session, payload: bytes, opcode: int) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5C)
         if raw is None:
             return
         self._state.last_auth_payload = raw

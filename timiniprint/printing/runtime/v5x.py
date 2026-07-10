@@ -17,6 +17,7 @@ from ...protocol.families.v5x import (
     V5X_NOTIFY_RESUME_PACKETS,
     V5X_STATUS_POLL_PACKET,
 )
+from ...protocol.packet import make_packet, prefixed_packet_opcode, prefixed_packet_payload
 from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 
@@ -221,9 +222,9 @@ class V5XRuntimeController(RuntimeController):
     def _build_job_context(self, session, split) -> _V5XJobContext:
         is_gray = False
         for packet in split.commands:
-            if session.extract_prefixed_opcode(packet) != 0xA9:
+            if prefixed_packet_opcode(packet, ProtocolFamily.V5X) != 0xA9:
                 continue
-            payload = session.extract_prefixed_payload(packet)
+            payload = prefixed_packet_payload(packet, ProtocolFamily.V5X)
             if payload is None:
                 continue
             if len(payload) == 2:
@@ -245,15 +246,15 @@ class V5XRuntimeController(RuntimeController):
         packet: bytes,
         context: _V5XJobContext,
     ) -> tuple[bytes | None, bool]:
-        opcode = session.extract_prefixed_opcode(packet)
+        opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5X)
         if opcode != 0xA2:
             return packet, False
-        payload = session.extract_prefixed_payload(packet)
+        payload = prefixed_packet_payload(packet, ProtocolFamily.V5X)
         if payload is None:
             return packet, False
         adjusted_payload = self._adjust_density_payload(payload, context)
         if adjusted_payload != payload:
-            packet = session.make_packet(0xA2, adjusted_payload)
+            packet = make_packet(0xA2, adjusted_payload, ProtocolFamily.V5X)
             payload = adjusted_payload
         if self._state.last_density_payload == payload:
             session.report_debug(f"skipping unchanged V5X density packet: {payload.hex()}")
@@ -271,12 +272,12 @@ class V5XRuntimeController(RuntimeController):
         density_updated: bool,
     ) -> None:
         _ = context, density_updated
-        opcode = session.extract_prefixed_opcode(packet)
+        opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5X)
         if opcode in (0xA2, 0xA9):
             await self._wait_for_start_ready(session, timeout)
 
     def _arm_command_ack(self, session, packet: bytes) -> int | None:
-        opcode = session.extract_prefixed_opcode(packet)
+        opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5X)
         if opcode not in (0xA7, 0xA9):
             return None
         if opcode == 0xA7:
@@ -296,7 +297,7 @@ class V5XRuntimeController(RuntimeController):
         density_updated: bool,
         ack_opcode: int | None,
     ) -> None:
-        opcode = session.extract_prefixed_opcode(packet)
+        opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5X)
         if ack_opcode is not None:
             try:
                 await self._wait_for_command_ack(session, ack_opcode, timeout)
@@ -322,7 +323,7 @@ class V5XRuntimeController(RuntimeController):
         while time.monotonic() < deadline:
             frame = await session.wait_for_notification(
                 "V5X print completion 0xa1",
-                lambda payload: session.extract_prefixed_opcode(payload) == 0xA1,
+                lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xA1,
                 timeout=self._COMPLETION_QUIET_S,
                 required=False,
             )
@@ -330,7 +331,7 @@ class V5XRuntimeController(RuntimeController):
                 session.report_debug("V5X status quiet; print assumed finished")
                 capped = False
                 break
-            raw = session.extract_prefixed_payload(frame)
+            raw = prefixed_packet_payload(frame, ProtocolFamily.V5X)
             if raw and raw[0] == 0x00:
                 session.report_debug("V5X reported idle (task_state=0); print finished")
                 capped = False
@@ -347,7 +348,7 @@ class V5XRuntimeController(RuntimeController):
         if payload in V5X_NOTIFY_RESUME_PACKETS:
             session.set_flow_paused(False, payload=payload)
             return
-        opcode = session.extract_prefixed_opcode(payload)
+        opcode = prefixed_packet_opcode(payload, ProtocolFamily.V5X)
         if opcode == 0xA7:
             self._update_info_from_a7(session, payload)
             self._mark_command_ack(session, 0xA7)
@@ -412,7 +413,7 @@ class V5XRuntimeController(RuntimeController):
             return
         await session.wait_for_notification(
             f"V5X command ack 0x{opcode:02x}",
-            lambda payload: session.extract_prefixed_opcode(payload) == opcode,
+            lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == opcode,
             timeout=timeout,
             required=True,
         )
@@ -424,7 +425,7 @@ class V5XRuntimeController(RuntimeController):
             if not self._state.start_ready_seen:
                 await session.wait_for_notification(
                     "V5X start ready 0xaa",
-                    lambda payload: session.extract_prefixed_opcode(payload) == 0xAA,
+                    lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xAA,
                     timeout=timeout,
                     required=True,
                 )
@@ -437,7 +438,7 @@ class V5XRuntimeController(RuntimeController):
             return
         await session.wait_for_notification(
             "V5X connect info 0xb1",
-            lambda payload: session.extract_prefixed_opcode(payload) == 0xB1,
+            lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xB1,
             timeout=timeout,
             required=False,
         )
@@ -583,7 +584,7 @@ class V5XRuntimeController(RuntimeController):
         return min(user_density, values[band - 1])
 
     def _update_info_from_a7(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)
         if raw is None:
             return
         self._state.last_a7_payload = raw
@@ -607,7 +608,7 @@ class V5XRuntimeController(RuntimeController):
         session.report_debug(f"V5X compatibility mode: {compat.mode}")
 
     def _extract_status_byte(self, session, payload: bytes) -> Optional[int]:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)
         if raw:
             return raw[0]
         prefix = ProtocolFamily.V5X.require_packet_prefix()
@@ -616,7 +617,7 @@ class V5XRuntimeController(RuntimeController):
         return payload[len(prefix) + 1]
 
     def _update_status(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)
         if raw is None or len(raw) < 8:
             return
         self._state.task_state = raw[0]
@@ -668,7 +669,7 @@ class V5XRuntimeController(RuntimeController):
         session.report_debug("V5X status poll acknowledged: 0xa3")
 
     def _update_ab_status(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)
         if not raw:
             return
         self._state.last_ab_status = raw[-1]
@@ -683,7 +684,7 @@ class V5XRuntimeController(RuntimeController):
         )
 
     def _update_head_type_from_b0(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)
         if not raw:
             return
         value = raw[0]
@@ -695,7 +696,7 @@ class V5XRuntimeController(RuntimeController):
             self._state.print_head_type = "diya"
 
     def _update_info_from_b1(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)
         if not raw:
             return
         self._state.connect_info_received = True

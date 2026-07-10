@@ -26,7 +26,7 @@ async def send_prepared_job(
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> None:
     """Send a prepared protocol job, executing named protocol steps when present."""
-    session = RuntimeConnectionSession(device, connection, reporter=reporter)
+    session = RuntimeConnectionSession(connection, reporter=reporter)
     sent_via_steps = False
     controller = runtime_context.runtime_controller
     if controller is None and job.wait_for_completion:

@@ -13,7 +13,12 @@ from ...protocol.families.v5g import (
     decode_density_payload,
     encode_density_payload,
 )
-from ...protocol.packet import make_packet
+from ...protocol.packet import (
+    make_packet,
+    prefixed_packet_opcode,
+    prefixed_packet_payload,
+    split_prefixed_packets,
+)
 from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 
@@ -390,7 +395,7 @@ class V5GRuntimeController(RuntimeController):
         await session.send_control_packet_wait_notification(
             V5G_TEMPERATURE_QUERY_PACKET,
             label="v5g temperature",
-            match=lambda payload: session.extract_prefixed_opcode(payload) == 0xD3,
+            match=lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5G) == 0xD3,
             timeout=min(timeout, 0.4),
             required=False,
         )
@@ -418,7 +423,7 @@ class V5GRuntimeController(RuntimeController):
         return True
 
     def handle_notification(self, session, payload: bytes) -> None:
-        opcode = session.extract_prefixed_opcode(payload)
+        opcode = prefixed_packet_opcode(payload, ProtocolFamily.V5G)
         if opcode == 0xA3:
             self._update_status(session, payload)
         elif opcode == 0xD2:
@@ -436,12 +441,12 @@ class V5GRuntimeController(RuntimeController):
     def _prepare_v5g_standard_payload(self, session, data: bytes) -> bytes:
         if len(data) <= 50:
             return data
-        packets = session.split_prefixed_packets(data)
+        packets = split_prefixed_packets(data, ProtocolFamily.V5G)
         if packets is None:
             return data
         density_indexes = [
             index for index, packet in enumerate(packets)
-            if session.extract_prefixed_opcode(packet) == 0xF2
+            if prefixed_packet_opcode(packet, ProtocolFamily.V5G) == 0xF2
         ]
         if not density_indexes:
             return data
@@ -454,7 +459,7 @@ class V5GRuntimeController(RuntimeController):
         current_mode_is_text = self._state.last_print_mode_is_text
         last_density_value = self._state.last_density_value
         for index, packet in enumerate(packets):
-            opcode = session.extract_prefixed_opcode(packet)
+            opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5G)
             if opcode == 0xBE:
                 current_mode_is_text = self._extract_print_mode(session, packet)
             if index in rewrite_map:
@@ -607,7 +612,7 @@ class V5GRuntimeController(RuntimeController):
     def _mode_before_packet_index(self, session, packets: list[bytes], packet_index: int) -> bool:
         is_text = self._state.last_print_mode_is_text
         for packet in packets[:packet_index]:
-            if session.extract_prefixed_opcode(packet) == 0xBE:
+            if prefixed_packet_opcode(packet, ProtocolFamily.V5G) == 0xBE:
                 is_text = self._extract_print_mode(session, packet)
         return is_text
 
@@ -648,20 +653,20 @@ class V5GRuntimeController(RuntimeController):
 
     @staticmethod
     def _extract_density_value(session, packet: bytes) -> int | None:
-        payload = session.extract_prefixed_payload(packet)
+        payload = prefixed_packet_payload(packet, ProtocolFamily.V5G)
         if payload is None or len(payload) != 2:
             return None
         return decode_density_payload(payload)
 
     @staticmethod
     def _extract_print_mode(session, packet: bytes) -> bool:
-        payload = session.extract_prefixed_payload(packet)
+        payload = prefixed_packet_payload(packet, ProtocolFamily.V5G)
         if not payload:
             return False
         return payload[0] == 0x01
 
     def _update_status(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5G)
         if not raw:
             return
         status = raw[0]
@@ -676,14 +681,14 @@ class V5GRuntimeController(RuntimeController):
         )
 
     def _update_d2_status(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5G)
         if raw is None:
             return
         self._state.d2_status = True
         session.report_debug("V5G D2 status received")
 
     def _update_temperature(self, session, payload: bytes) -> None:
-        raw = session.extract_prefixed_payload(payload)
+        raw = prefixed_packet_payload(payload, ProtocolFamily.V5G)
         if not raw:
             return
         previous = self._state.temperature_c

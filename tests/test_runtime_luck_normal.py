@@ -31,21 +31,6 @@ class _Session:
         self.debug_messages: list[str] = []
         self.warnings: list[tuple[str, str]] = []
 
-    def make_packet(self, opcode: int, payload: bytes) -> bytes:
-        return bytes([opcode]) + payload
-
-    def split_prefixed_packets(self, data: bytes):
-        _ = data
-        return None
-
-    def extract_prefixed_opcode(self, payload: bytes):
-        _ = payload
-        return None
-
-    def extract_prefixed_payload(self, packet: bytes):
-        _ = packet
-        return None
-
     def report_debug(self, message: str) -> None:
         self.debug_messages.append(message)
 

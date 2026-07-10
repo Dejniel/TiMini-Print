@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..family import ProtocolCommandSet, ProtocolFamily, ProtocolSpec, ProtocolTransportStyle
+from ..family import ProtocolCommandSet, ProtocolFamily, ProtocolSpec
 from .base import (
     PrintJobRequest,
     ProtocolBehavior,
@@ -27,7 +27,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=bytes([0x51, 0x78]),
             command_set=ProtocolCommandSet.TINY,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=TINY_BEHAVIOR,
     ),
@@ -35,7 +34,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=bytes([0x12, 0x51, 0x78]),
             command_set=ProtocolCommandSet.TINY,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=TINY_BEHAVIOR,
     ),
@@ -43,7 +41,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.LUCK_NORMAL,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=LUCK_NORMAL_BEHAVIOR,
     ),
@@ -51,7 +48,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.LUCK_NORMAL,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=LUCK_NORMAL_A4_BEHAVIOR,
     ),
@@ -59,7 +55,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=bytes([0x51, 0x78]),
             command_set=ProtocolCommandSet.V5G,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=V5G_BEHAVIOR,
     ),
@@ -67,7 +62,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=bytes([0x22, 0x21]),
             command_set=ProtocolCommandSet.V5X,
-            transport_style=ProtocolTransportStyle.SPLIT_BULK,
         ),
         behavior=V5X_BEHAVIOR,
     ),
@@ -75,7 +69,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=bytes([0x56, 0x88]),
             command_set=ProtocolCommandSet.V5C,
-            transport_style=ProtocolTransportStyle.FLOW_CONTROLLED,
         ),
         behavior=V5C_BEHAVIOR,
     ),
@@ -83,7 +76,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=bytes([0x55, 0xAA]),
             command_set=ProtocolCommandSet.DCK,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=DCK_BEHAVIOR,
     ),
@@ -91,7 +83,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.ELEPH_HPRT_ESC,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=ELEPH_HPRT_ESC_BEHAVIOR,
     ),
@@ -99,7 +90,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.INSTAPRINT_CORE,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=INSTAPRINT_CORE_BEHAVIOR,
     ),
@@ -107,7 +97,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.NIIMBOT,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=NIIMBOT_BEHAVIOR,
     ),
@@ -115,7 +104,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.ELEPH_TSPL,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=ELEPH_TSPL_BEHAVIOR,
     ),
@@ -123,7 +111,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.PHOMEMO_ESC,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=PHOMEMO_ESC_BEHAVIOR,
     ),
@@ -131,7 +118,6 @@ _DEFINITIONS = {
         spec=ProtocolSpec(
             packet_prefix=None,
             command_set=ProtocolCommandSet.FUNNY_LX,
-            transport_style=ProtocolTransportStyle.STANDARD,
         ),
         behavior=FUNNY_LX_BEHAVIOR,
     ),

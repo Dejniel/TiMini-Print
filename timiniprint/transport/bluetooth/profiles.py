@@ -10,7 +10,6 @@ class BleBulkWriteProfile:
     char_uuid: str
     chunk_cap: int = 20
     write_delay_ms: int = 50
-    trailing_bytes: int = 0
     flow_controlled: bool = False
 
 
@@ -51,7 +50,6 @@ _PROFILES = {
             char_uuid="0000ae03-0000-1000-8000-00805f9b34fb",
             chunk_cap=180,
             write_delay_ms=30,
-            trailing_bytes=9,
             flow_controlled=True,
         ),
         write_without_response_payload_reserve=5,

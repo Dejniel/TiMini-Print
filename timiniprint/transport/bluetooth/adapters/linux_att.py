@@ -329,7 +329,6 @@ class _LinuxAttSocket:
 
     def _new_transport_session(self) -> _BleakTransportSession:
         return _BleakTransportSession(
-            protocol_family=self._protocol_family,
             transport_profile=get_ble_transport_profile(self._protocol_family),
             write_resolver=self._write_resolver,
             reporter=self._reporter,

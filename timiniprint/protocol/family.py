@@ -19,17 +19,10 @@ class ProtocolCommandSet(str, Enum):
     FUNNY_LX = "funny_lx"
 
 
-class ProtocolTransportStyle(str, Enum):
-    STANDARD = "standard"
-    SPLIT_BULK = "split_bulk"
-    FLOW_CONTROLLED = "flow_controlled"
-
-
 @dataclass(frozen=True)
 class ProtocolSpec:
     packet_prefix: bytes | None
     command_set: ProtocolCommandSet
-    transport_style: ProtocolTransportStyle
 
 
 class ProtocolFamily(str, Enum):
@@ -79,7 +72,3 @@ class ProtocolFamily(str, Enum):
     @property
     def command_set(self) -> ProtocolCommandSet:
         return self.spec.command_set
-
-    @property
-    def transport_style(self) -> ProtocolTransportStyle:
-        return self.spec.transport_style

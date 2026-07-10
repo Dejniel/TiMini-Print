@@ -4,7 +4,7 @@ import importlib
 import unittest
 
 from tests.helpers import install_crc8_stub
-from timiniprint.protocol.family import ProtocolCommandSet, ProtocolFamily, ProtocolTransportStyle
+from timiniprint.protocol.family import ProtocolCommandSet, ProtocolFamily
 
 
 class ProtocolCommandsTests(unittest.TestCase):
@@ -12,6 +12,7 @@ class ProtocolCommandsTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         install_crc8_stub()
         cls.commands = importlib.import_module("timiniprint.protocol.commands")
+        cls.packet = importlib.import_module("timiniprint.protocol.packet")
 
     def test_make_packet_headers_by_protocol_family(self) -> None:
         payload = b"\x01\x02\x03"
@@ -28,7 +29,27 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertTrue(packet_dck.startswith(bytes([0x55, 0xAA, 0xA2, 0x00, 0x03, 0x00])))
         self.assertEqual(packet_tiny[-1], 0xFF)
 
-    def test_protocol_specs_expose_command_set_and_transport_style(self) -> None:
+    def test_prefixed_packet_codec_reads_and_splits_complete_frames(self) -> None:
+        first = self.packet.make_packet(0xA2, b"\x01\x02", ProtocolFamily.V5X)
+        second = self.packet.make_packet(0xA3, b"\x03", ProtocolFamily.V5X)
+
+        self.assertEqual(
+            self.packet.split_prefixed_packets(first + second, ProtocolFamily.V5X),
+            [first, second],
+        )
+        self.assertEqual(
+            self.packet.prefixed_packet_opcode(first, ProtocolFamily.V5X),
+            0xA2,
+        )
+        self.assertEqual(
+            self.packet.prefixed_packet_payload(first, ProtocolFamily.V5X),
+            b"\x01\x02",
+        )
+        self.assertIsNone(
+            self.packet.split_prefixed_packets(first + b"\x00", ProtocolFamily.V5X)
+        )
+
+    def test_protocol_specs_expose_command_set(self) -> None:
         self.assertEqual(ProtocolFamily.TINY.command_set, ProtocolCommandSet.TINY)
         self.assertEqual(ProtocolFamily.TINY_PREFIXED.command_set, ProtocolCommandSet.TINY)
         self.assertEqual(ProtocolFamily.LUCK_NORMAL.command_set, ProtocolCommandSet.LUCK_NORMAL)
@@ -39,17 +60,6 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertEqual(ProtocolFamily.ELEPH_HPRT_ESC.command_set, ProtocolCommandSet.ELEPH_HPRT_ESC)
         self.assertEqual(ProtocolFamily.ELEPH_TSPL.command_set, ProtocolCommandSet.ELEPH_TSPL)
         self.assertEqual(ProtocolFamily.PHOMEMO_ESC.command_set, ProtocolCommandSet.PHOMEMO_ESC)
-
-        self.assertEqual(ProtocolFamily.TINY.transport_style, ProtocolTransportStyle.STANDARD)
-        self.assertEqual(ProtocolFamily.TINY_PREFIXED.transport_style, ProtocolTransportStyle.STANDARD)
-        self.assertEqual(ProtocolFamily.LUCK_NORMAL.transport_style, ProtocolTransportStyle.STANDARD)
-        self.assertEqual(ProtocolFamily.LUCK_NORMAL_A4.transport_style, ProtocolTransportStyle.STANDARD)
-        self.assertEqual(ProtocolFamily.V5X.transport_style, ProtocolTransportStyle.SPLIT_BULK)
-        self.assertEqual(ProtocolFamily.V5C.transport_style, ProtocolTransportStyle.FLOW_CONTROLLED)
-        self.assertEqual(ProtocolFamily.DCK.transport_style, ProtocolTransportStyle.STANDARD)
-        self.assertEqual(ProtocolFamily.ELEPH_HPRT_ESC.transport_style, ProtocolTransportStyle.STANDARD)
-        self.assertEqual(ProtocolFamily.ELEPH_TSPL.transport_style, ProtocolTransportStyle.STANDARD)
-        self.assertEqual(ProtocolFamily.PHOMEMO_ESC.transport_style, ProtocolTransportStyle.STANDARD)
 
     def test_protocol_family_accepts_current_serialized_values(self) -> None:
         self.assertEqual(ProtocolFamily.from_value(None), ProtocolFamily.TINY)

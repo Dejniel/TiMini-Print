@@ -146,6 +146,15 @@ class ArchitectureBoundaryTests(unittest.TestCase):
             ],
         )
 
+    def test_transport_does_not_parse_protocol_packets(self) -> None:
+        self._assert_no_forbidden_imports(
+            PACKAGE_ROOT / "transport",
+            [
+                "timiniprint.protocol.families",
+                "timiniprint.protocol.packet",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,9 +9,6 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
 
 from .... import reporting
-from ....protocol.families import split_prefixed_bulk_stream
-from ....protocol.family import ProtocolFamily
-from ....protocol.packet import make_packet, prefixed_packet_length
 from ..profiles import BleBulkWriteProfile, BleTransportProfile
 from .bleak_adapter_diagnostics import (
     BleWriteCounters,
@@ -53,12 +50,10 @@ class _BleakTransportSession:
 
     def __init__(
         self,
-        protocol_family: ProtocolFamily,
         transport_profile: BleTransportProfile,
         write_resolver: _BleWriteEndpointResolver,
         reporter: reporting.Reporter,
     ) -> None:
-        self._protocol_family = protocol_family
         self._transport_profile = transport_profile
         self._write_resolver = write_resolver
         self._reporter = reporter
@@ -241,16 +236,6 @@ class _BleakTransportSession:
         if not self.bindings.write_char:
             raise RuntimeError("No write characteristic available")
 
-        bulk_write = self._transport_profile.bulk_write
-        if bulk_write is not None:
-            await self._send_split(
-                client,
-                data,
-                bulk_write=bulk_write,
-                mtu_size=mtu_size,
-                timeout=timeout,
-            )
-            return
         await self._send_standard(client, data, mtu_size=mtu_size, timeout=timeout)
 
     async def _send_standard(
@@ -312,73 +297,6 @@ class _BleakTransportSession:
             before=counters_before,
             after=self._write_counters(),
         )
-
-    async def _send_split(
-        self,
-        client: Any,
-        data: bytes,
-        *,
-        bulk_write: BleBulkWriteProfile,
-        mtu_size: int,
-        timeout: float,
-    ) -> None:
-        if not self.bindings.bulk_write_char:
-            raise RuntimeError("Bulk write characteristic not found")
-
-        trailing_packets = ()
-        if bulk_write.trailing_bytes > 0 and len(data) >= bulk_write.trailing_bytes:
-            trailing_offset = len(data) - bulk_write.trailing_bytes
-            if (
-                prefixed_packet_length(data, trailing_offset, self._protocol_family)
-                == bulk_write.trailing_bytes
-            ):
-                trailing_packets = (data[trailing_offset:],)
-        split = split_prefixed_bulk_stream(
-            data,
-            self._protocol_family,
-            trailing_packets,
-        )
-        cmd_response = self._resolve_response_mode(
-            self.bindings.write_char,
-            self.bindings.write_selection_strategy,
-            self.bindings.write_response_preference,
-        )
-        self.report_debug(
-            f"split write response={cmd_response} cmd_char={self.bindings.write_char_uuid} "
-            f"bulk_char={self.bindings.bulk_write_char_uuid or '<missing>'} "
-            f"notify_char={self.bindings.notify_char_uuid or '<missing>'}"
-        )
-
-        for packet in split.commands:
-            await self._write_chunks(
-                client,
-                self.bindings.write_char,
-                packet,
-                response=cmd_response,
-                chunk_size=min(mtu_size, self._transport_profile.standard_chunk_cap),
-                delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
-                timeout=timeout,
-            )
-
-        if split.bulk_payload:
-            await self._write_bulk_payload(
-                client,
-                split.bulk_payload,
-                bulk_write=bulk_write,
-                mtu_size=mtu_size,
-                timeout=timeout,
-            )
-
-        for packet in split.trailing_commands:
-            await self._write_chunks(
-                client,
-                self.bindings.write_char,
-                packet,
-                response=cmd_response,
-                chunk_size=min(mtu_size, self._transport_profile.standard_chunk_cap),
-                delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
-                timeout=timeout,
-            )
 
     async def _write_bulk_payload(
         self,
@@ -519,41 +437,6 @@ class _BleakTransportSession:
         if self._runtime_controller is None:
             return
         self._runtime_controller.apply_compat_result(self, **kwargs)
-
-    def make_packet(self, opcode: int, payload: bytes) -> bytes:
-        return make_packet(opcode, payload, self._protocol_family)
-
-    def split_prefixed_packets(self, data: bytes) -> list[bytes] | None:
-        packets: list[bytes] = []
-        offset = 0
-        while offset < len(data):
-            packet_len = prefixed_packet_length(data, offset, self._protocol_family)
-            if packet_len is None:
-                return None
-            packets.append(data[offset : offset + packet_len])
-            offset += packet_len
-        return packets
-
-    def extract_prefixed_opcode(self, payload: bytes) -> Optional[int]:
-        prefix = self._protocol_family.packet_prefix
-        if prefix is None:
-            return None
-        if len(payload) < len(prefix) + 1 or payload[: len(prefix)] != prefix:
-            return None
-        return payload[len(prefix)]
-
-    def extract_prefixed_payload(self, packet: bytes) -> Optional[bytes]:
-        prefix = self._protocol_family.packet_prefix
-        if prefix is None:
-            return None
-        if len(packet) < len(prefix) + 6 or packet[: len(prefix)] != prefix:
-            return None
-        payload_length = packet[len(prefix) + 2] | (packet[len(prefix) + 3] << 8)
-        payload_start = len(prefix) + 4
-        payload_end = payload_start + payload_length
-        if payload_end + 2 > len(packet):
-            return None
-        return packet[payload_start:payload_end]
 
     @staticmethod
     def _find_characteristic_by_uuid(
