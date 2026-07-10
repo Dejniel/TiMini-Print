@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import unittest
+from unittest.mock import patch
 
-from timiniprint.printing.runtime.base import RuntimeController
+from timiniprint.printing.runtime.base import PreparedRuntimeContext, RuntimeController
 from timiniprint.printing.send import send_prepared_job
 from timiniprint.protocol import ProtocolJob, ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
 
@@ -204,10 +205,15 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         controller = _RuntimeStepController()
         job = ProtocolJob(
             steps=(ProtocolStep.send("bitmap", b"B"),),
-            runtime_controller=controller,
         )
 
-        await send_prepared_job(object(), connection, job, timeout=0.1)
+        await send_prepared_job(
+            object(),
+            connection,
+            job,
+            timeout=0.1,
+            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
+        )
 
         self.assertEqual(controller.calls, 1)
         self.assertEqual(connection.attached_runtime_controllers, [controller])
@@ -217,10 +223,32 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
     async def test_send_prepared_job_attaches_runtime_controller_for_stream_job(self) -> None:
         connection = _Connection()
         controller = RuntimeController()
-        job = ProtocolJob(payload=b"stream", runtime_controller=controller)
+        job = ProtocolJob(payload=b"stream")
 
-        await send_prepared_job(object(), connection, job, timeout=0.1)
+        await send_prepared_job(
+            object(),
+            connection,
+            job,
+            timeout=0.1,
+            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
+        )
 
+        self.assertEqual(connection.attached_runtime_controllers, [controller])
+        self.assertEqual(connection.sent_jobs, [job])
+
+    async def test_send_prepared_job_resolves_runtime_for_print_job(self) -> None:
+        connection = _Connection()
+        controller = RuntimeController()
+        device = object()
+        job = ProtocolJob(payload=b"print", wait_for_completion=True)
+
+        with patch(
+            "timiniprint.printing.send.runtime_controller_for_device",
+            return_value=controller,
+        ) as runtime_factory:
+            await send_prepared_job(device, connection, job, timeout=0.1)
+
+        runtime_factory.assert_called_once_with(device)
         self.assertEqual(connection.attached_runtime_controllers, [controller])
         self.assertEqual(connection.sent_jobs, [job])
 

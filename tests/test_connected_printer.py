@@ -193,9 +193,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
             image_pipeline=pipeline,
         )
         combine_pages.assert_called_once_with(
-            device,
             (one_page_job,),
-            runtime_context=context,
         )
 
         with patch(
@@ -208,9 +206,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
             )
 
         combine_pages.assert_called_once_with(
-            device,
             (page_job, one_page_job),
-            runtime_context=context,
         )
 
     async def test_connected_printer_context_manager_disconnects(self) -> None:

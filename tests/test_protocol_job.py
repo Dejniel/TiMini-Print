@@ -412,6 +412,8 @@ class ProtocolJobTests(unittest.TestCase):
 
         job = PrinterProtocol(device).build_job(raster_set, is_text=False)
 
+        self.assertTrue(job.wait_for_completion)
+        self.assertFalse(hasattr(job, "runtime_controller"))
         self.assertIn(bytes([0x1F, 0x80, 0x01, 0x20]), job.payload)
         self.assertIn(bytes([0x10, 0xFF, 0xF1, 0x45]), job.payload)
         self.assertEqual([step.label for step in job.steps[:5]], ["density", "status", "enable", "wakeup", "paper type"])

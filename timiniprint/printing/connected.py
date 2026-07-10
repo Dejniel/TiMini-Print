@@ -55,6 +55,7 @@ class ConnectedPrinter:
             job,
             timeout=timeout,
             reporter=self._reporter,
+            runtime_context=self._runtime_context,
         )
 
     def raster_capabilities(self) -> RuntimePrintCapabilities | None:
@@ -107,11 +108,7 @@ class ConnectedPrinter:
         page_jobs: Iterable[ProtocolJob],
     ) -> ProtocolJob:
         """Build one protocol job from already-built raster page jobs."""
-        return _combine_raster_page_jobs(
-            self._device,
-            page_jobs,
-            runtime_context=self._runtime_context,
-        )
+        return _combine_raster_page_jobs(page_jobs)
 
     async def print_file(
         self,

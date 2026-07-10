@@ -126,6 +126,8 @@ class HprtEscProtocolTests(unittest.TestCase):
 
         self.assertEqual(feed.payload, b"\x1b\x4a\x50")
         self.assertEqual(retract.payload, b"\x10\xff\x81\x50")
+        self.assertFalse(feed.wait_for_completion)
+        self.assertFalse(retract.wait_for_completion)
 
 
 if __name__ == "__main__":

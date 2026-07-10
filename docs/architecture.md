@@ -68,7 +68,7 @@ A protocol builder bound to one `PrinterDevice`. It builds `ProtocolJob` from ra
 It is not a connection object. Do not add `Protocol(connector).send(...)` style APIs.
 
 ### `ProtocolJob`
-A transport-sendable unit of work. It contains payload bytes, optional payload segments, optional named steps, and optional runtime controller supplied by the printing layer.
+A transport-sendable unit of work. It contains payload bytes, optional payload segments, optional named steps, and whether printing should wait for protocol completion. It does not contain a live runtime controller.
 
 Transport sees generic send/query/wait operations. It does not learn family-specific command meaning.
 

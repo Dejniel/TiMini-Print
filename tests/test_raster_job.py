@@ -10,6 +10,7 @@ from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.raster_job import build_raster_job
 from timiniprint.printing.runtime.base import PreparedRuntimeContext
 from timiniprint.printing.settings import PrintSettings
+from timiniprint.protocol.runtime import RuntimePrintCapabilities
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
@@ -37,8 +38,8 @@ class RasterJobTests(unittest.TestCase):
         self.assertTrue(build_job_mock.call_args.kwargs["is_text"])
 
     def test_build_raster_job_accepts_settings_and_runtime_context(self) -> None:
-        controller = object()
-        context = PreparedRuntimeContext(runtime_controller=controller)
+        capabilities = RuntimePrintCapabilities(supports_gray=False)
+        context = PreparedRuntimeContext(capabilities=capabilities)
         settings = PrintSettings(feed_padding=7, blackening=5)
 
         with patch(
@@ -53,10 +54,14 @@ class RasterJobTests(unittest.TestCase):
                 runtime_context=context,
             )
 
-        self.assertIs(job.runtime_controller, controller)
+        self.assertTrue(job.wait_for_completion)
         self.assertEqual(build_job_mock.call_args.kwargs["feed_padding"], 7)
         self.assertEqual(build_job_mock.call_args.kwargs["blackening"], 5)
         self.assertFalse(build_job_mock.call_args.kwargs["is_text"])
+        self.assertIs(
+            build_job_mock.call_args.kwargs["runtime_capabilities"],
+            capabilities,
+        )
 
     def test_build_raster_job_centers_raw_raster_on_wider_paper(self) -> None:
         profile = replace(

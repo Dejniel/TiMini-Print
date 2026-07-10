@@ -8,7 +8,6 @@ from ..protocol.types import ImagePipelineConfig
 from ..raster import RasterSet
 from .paper import apply_paper_layout_to_raster_set, resolve_paper
 from .runtime.base import PreparedRuntimeContext
-from .runtime.factory import runtime_controller_for_device
 from .settings import PrintSettings
 
 if TYPE_CHECKING:
@@ -44,24 +43,17 @@ def build_raster_page_job(
         page_index=page_index,
         page_count=page_count,
         runtime_capabilities=runtime_context.capabilities,
-        runtime_controller=runtime_context.runtime_controller,
     )
 
 
 def combine_raster_page_jobs(
-    device: PrinterDevice,
     page_jobs: Iterable[ProtocolJob],
-    *,
-    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> ProtocolJob:
     jobs = tuple(page_jobs)
     return ProtocolJob(
-        runtime_controller=(
-            runtime_context.runtime_controller
-            or runtime_controller_for_device(device)
-        ),
         payload_segments=tuple(job.payload for job in jobs),
         steps=tuple(step for job in jobs for step in job.steps),
+        wait_for_completion=any(job.wait_for_completion for job in jobs),
     )
 
 
@@ -81,8 +73,4 @@ def build_raster_job(
         settings=settings,
         runtime_context=runtime_context,
     )
-    return combine_raster_page_jobs(
-        device,
-        (page_job,),
-        runtime_context=runtime_context,
-    )
+    return combine_raster_page_jobs((page_job,))

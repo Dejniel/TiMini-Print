@@ -13,6 +13,7 @@ from PIL import Image
 from tests.helpers import install_crc8_stub, reset_registry_cache
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.document_renderer import DocumentPage, DocumentPlan, RenderDocument, RenderedPage
+from timiniprint.printing.runtime.factory import runtime_controller_for_device
 from timiniprint.protocol import ImagePipelineConfig
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
@@ -262,7 +263,8 @@ class PrintingJobTests(unittest.TestCase):
             ) as build_model_mock:
                 job = builder.build_from_file(str(path))
 
-        controller = job.runtime_controller
+        self.assertTrue(job.wait_for_completion)
+        controller = runtime_controller_for_device(resolved)
         self.assertIsNotNone(controller)
         snapshot = controller.debug_snapshot()
         self.assertEqual(snapshot["helper_kind"], "mx10")
@@ -303,7 +305,8 @@ class PrintingJobTests(unittest.TestCase):
             ):
                 job = builder.build_from_file(str(path))
 
-        controller = job.runtime_controller
+        self.assertTrue(job.wait_for_completion)
+        controller = runtime_controller_for_device(resolved)
         self.assertIsNotNone(controller)
         snapshot = controller.debug_snapshot()
         self.assertEqual(snapshot["runtime_preset"]["key"], "xopoppy")

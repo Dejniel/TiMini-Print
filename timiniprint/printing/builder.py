@@ -61,11 +61,7 @@ class PrintJobBuilder:
             page_jobs.append(prepared.job)
             if pipeline is None:
                 pipeline = prepared.image_pipeline
-        job = combine_raster_page_jobs(
-            self.device,
-            page_jobs,
-            runtime_context=self.runtime_context,
-        )
+        job = combine_raster_page_jobs(page_jobs)
         report_protocol_job_build(
             self._reporter,
             device=self.device,

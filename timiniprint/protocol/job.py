@@ -19,23 +19,23 @@ if TYPE_CHECKING:
 
 
 class ProtocolJob:
-    """Printable protocol payload plus optional externally supplied runtime controller."""
+    """Protocol payload and execution steps, independent from live connection state."""
 
     _payload: bytes | None
-    runtime_controller: object | None
     payload_segments: tuple[bytes, ...]
     steps: tuple[ProtocolStep, ...]
+    wait_for_completion: bool
 
     def __init__(
         self,
         payload: bytes | None = None,
-        runtime_controller: object | None = None,
         payload_segments: tuple[bytes, ...] = (),
         steps: tuple[ProtocolStep, ...] = (),
+        wait_for_completion: bool = False,
     ) -> None:
         self._payload = payload
-        self.runtime_controller = runtime_controller
         self.steps = tuple(steps)
+        self.wait_for_completion = bool(wait_for_completion)
         if payload_segments:
             self.payload_segments = tuple(bytes(segment) for segment in payload_segments)
         elif payload is not None:
@@ -72,7 +72,6 @@ class PrinterProtocol:
         page_index: int = 1,
         page_count: int = 1,
         runtime_capabilities: RuntimePrintCapabilities | None = None,
-        runtime_controller: object | None = None,
     ) -> ProtocolJob:
         """Build a printable job from raster input for this device."""
         if paper_preset_key is not None:
@@ -135,8 +134,8 @@ class PrinterProtocol:
         )
         return ProtocolJob(
             payload=payload,
-            runtime_controller=runtime_controller,
             steps=steps,
+            wait_for_completion=True,
         )
 
     def build_paper_motion(self, action: str) -> ProtocolJob:
@@ -155,7 +154,7 @@ class PrinterProtocol:
             )
         else:
             raise ValueError(f"Unknown paper motion action: {action}")
-        return ProtocolJob(payload=payload, runtime_controller=None)
+        return ProtocolJob(payload=payload)
 
     def resolve_image_pipeline(
         self,

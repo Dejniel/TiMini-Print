@@ -59,6 +59,7 @@ class DebugProtocolToolTests(unittest.TestCase):
             self.assertEqual(payload["job"]["effective_image_pipeline"]["formats"][0], "gray4")
             self.assertIn("connect_packets", payload["transport"])
             self.assertEqual(payload["job"]["payload_bytes"], len(packet))
+            self.assertFalse(payload["job"]["wait_for_completion"])
             self.assertEqual(payload["packets"][0]["op"], "A4")
             self.assertEqual(payload["payload_hex"], packet.hex())
 

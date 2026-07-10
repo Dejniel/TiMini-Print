@@ -219,11 +219,7 @@ def build_protocol_job_debug_dump(
                 }
                 for step in job.steps
             ],
-            "runtime_controller": (
-                None
-                if job.runtime_controller is None
-                else type(job.runtime_controller).__name__
-            ),
+            "wait_for_completion": job.wait_for_completion,
         },
         "packets": build_protocol_packet_entries(device, job.payload),
         "payload_hex": job.payload.hex(),

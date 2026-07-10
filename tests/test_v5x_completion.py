@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from timiniprint.printing.runtime.base import RuntimeController
+from timiniprint.printing.runtime.base import PreparedRuntimeContext, RuntimeController
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.job import ProtocolJob
@@ -124,9 +124,14 @@ class _StandardPayloadConnection(_SendOnlyConnection):
 class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
     async def test_send_prepared_job_invokes_wait_for_completion(self) -> None:
         spy = _SpyController()
-        job = ProtocolJob(payload=b"data", runtime_controller=spy)
+        job = ProtocolJob(payload=b"data", wait_for_completion=True)
         connection = _SendOnlyConnection()
-        await send_prepared_job(object(), connection, job)
+        await send_prepared_job(
+            object(),
+            connection,
+            job,
+            runtime_context=PreparedRuntimeContext(runtime_controller=spy),
+        )
         self.assertEqual(len(connection.sent), 1)
         self.assertEqual(spy.completed, 1)
 
@@ -134,11 +139,16 @@ class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
         spy = _SpyController()
         job = ProtocolJob(
             steps=(ProtocolStep.send("bitmap", b"data"),),
-            runtime_controller=spy,
+            wait_for_completion=True,
         )
         connection = _StandardPayloadConnection()
 
-        await send_prepared_job(object(), connection, job)
+        await send_prepared_job(
+            object(),
+            connection,
+            job,
+            runtime_context=PreparedRuntimeContext(runtime_controller=spy),
+        )
 
         self.assertEqual(connection.standard_payloads, [b"data"])
         self.assertEqual(connection.sent, [])

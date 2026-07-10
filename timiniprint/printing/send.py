@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from .. import reporting
 from ..protocol import ProtocolJob, ProtocolReplyExpectation, ProtocolStep, ProtocolStepOperation
 from ..protocol.steps import reply_matches_expectation
+from .runtime.base import PreparedRuntimeContext
+from .runtime.factory import runtime_controller_for_device
 from .runtime.session import RuntimeConnectionSession
 
 if TYPE_CHECKING:
@@ -21,11 +23,14 @@ async def send_prepared_job(
     *,
     timeout: float = 1.0,
     reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> None:
     """Send a prepared protocol job, executing named protocol steps when present."""
     session = RuntimeConnectionSession(device, connection, reporter=reporter)
     sent_via_steps = False
-    controller = job.runtime_controller
+    controller = runtime_context.runtime_controller
+    if controller is None and job.wait_for_completion:
+        controller = runtime_controller_for_device(device)
 
     if controller is not None:
         await session.attach_runtime_controller(controller, timeout=timeout)
@@ -51,7 +56,7 @@ async def send_prepared_job(
     # (e.g. V5X/MXW01) keep printing for several seconds afterwards. Give the
     # runtime controller a chance to wait for the device to finish before the
     # caller closes the connection, so we don't truncate the output.
-    if controller is not None:
+    if controller is not None and job.wait_for_completion:
         await controller.wait_for_completion(session, timeout=timeout)
 
 
