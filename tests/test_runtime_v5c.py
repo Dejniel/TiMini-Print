@@ -49,7 +49,7 @@ class _Session:
 
 
 class V5CRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
-    async def test_sends_plan_and_arms_status_query(self) -> None:
+    async def test_sends_plan_as_continuous_stream_and_arms_status_query(self) -> None:
         controller = V5CRuntimeController()
         session = _Session()
         steps = (
@@ -60,7 +60,7 @@ class V5CRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         sent = await controller.send_protocol_steps(session, steps, timeout=0.2)
 
         self.assertTrue(sent)
-        self.assertEqual(session.payloads, [b"PRINT", V5C_QUERY_STATUS_PACKET])
+        self.assertEqual(session.payloads, [b"PRINT" + V5C_QUERY_STATUS_PACKET])
         self.assertTrue(controller.debug_snapshot()["query_status_in_flight"])
 
         controller.debug_update(status_code=0x80, status_name="printing")
@@ -73,7 +73,7 @@ class V5CRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_query_send_failure_clears_armed_state(self) -> None:
         controller = V5CRuntimeController()
-        session = _Session(fail_on=V5C_QUERY_STATUS_PACKET)
+        session = _Session(fail_on=b"PRINT" + V5C_QUERY_STATUS_PACKET)
         steps = (
             ProtocolStep.send("print data", b"PRINT"),
             ProtocolStep.send("query status", V5C_QUERY_STATUS_PACKET),

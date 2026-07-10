@@ -89,17 +89,17 @@ class V5CRuntimeController(RuntimeController):
             return False
         if any(step.operation is not ProtocolStepOperation.SEND for step in steps):
             return False
-        self._state.query_status_in_flight = False
-        for step in steps:
-            query_status = step.data == V5C_QUERY_STATUS_PACKET
+        # Named V5C steps remain one standard stream; their logical boundary is
+        # not a BLE write boundary.
+        data = b"".join(step.data for step in steps)
+        query_status = any(step.data == V5C_QUERY_STATUS_PACKET for step in steps)
+        self._state.query_status_in_flight = query_status
+        try:
+            await session.send_standard_payload(data)
+        except Exception:
             if query_status:
-                self._state.query_status_in_flight = True
-            try:
-                await session.send_standard_payload(step.data)
-            except Exception:
-                if query_status:
-                    self._state.query_status_in_flight = False
-                raise
+                self._state.query_status_in_flight = False
+            raise
         return True
 
     def build_compat_request(

@@ -286,7 +286,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             connection.standard_payloads,
-            [b"PRINT", V5C_QUERY_STATUS_PACKET],
+            [b"PRINT" + V5C_QUERY_STATUS_PACKET],
         )
         self.assertEqual(connection.sent_jobs, [])
         self.assertTrue(controller.debug_snapshot()["query_status_in_flight"])
