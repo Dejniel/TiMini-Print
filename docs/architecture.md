@@ -20,7 +20,7 @@ The important object at runtime is `PrinterDevice`. It is the shared description
 ### `timiniprint.devices`
 Owns printer description and catalog resolution.
 
-It contains `PrinterDevice`, model/profile data classes, `PrinterCatalog`, config serialization, Bluetooth endpoint models, and `BluetoothEndpointResolver`. It may decide which logical printer a raw endpoint represents. It must not perform I/O.
+It contains `PrinterDevice`, model/profile data classes, `PrinterCatalog`, config serialization, Bluetooth endpoint models, BLE transport profiles, and `BluetoothEndpointResolver`. It may decide which logical printer a raw endpoint represents and select the ready-to-use BLE profile for it. It must not perform I/O.
 
 ### `timiniprint.printing`
 Owns the file-to-job flow and stateful print-session behavior.
@@ -45,12 +45,12 @@ It exists so rendering and protocol can share `RasterBuffer`, `RasterSet`, and p
 ### `timiniprint.transport`
 Owns actual I/O.
 
-It contains connector interfaces, connection implementations, Bluetooth adapters, and serial transport code. Transport may expose generic send/query/wait primitives. It must not contain printer-family opcode logic or firmware-state decisions.
+It contains connector interfaces, connection implementations, Bluetooth adapters, and serial transport code. Transport may expose generic send/query/wait primitives. Bluetooth adapters receive a selected BLE profile and apply its GATT endpoints, chunk limits, and pacing; they do not select behavior from a protocol family. Transport must not contain printer-family opcode logic or firmware-state decisions.
 
 ## Main Objects
 
 ### `PrinterDevice`
-A resolved printer instance as the program intends to use it. It combines display name, profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, and optional transport target.
+A resolved printer instance as the program intends to use it. It combines display name, profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, optional transport target, and the BLE transport profile derived by the devices layer.
 
 ### `ConnectedPrinter`
 The high-level object for an active printer session. It owns an active connection and prepared runtime context, then exposes `print_file(...)`, `print_text(...)`, `send_job(...)`, `feed()`, `retract()`, and `disconnect()`.
