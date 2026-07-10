@@ -40,7 +40,7 @@ from timiniprint.protocol.families.v5x import (
     V5X_NOTIFY_TRIGGER_STATUS_POLL,
     V5X_STATUS_POLL_PACKET,
 )
-from timiniprint.protocol.families.v5c import V5C_CONNECT_INIT_PACKET, V5C_QUERY_STATUS_PACKET
+from timiniprint.protocol.families.v5c import V5C_CONNECT_INIT_PACKET
 from timiniprint.protocol.packet import crc8_value, make_packet
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver import (
     _BleWriteEndpointResolver,
@@ -1675,26 +1675,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(client.calls, [])
         self.assertFalse(session.flow_can_write)
 
-    def test_v5c_standard_send_arms_query_status_when_query_packet_is_present(self) -> None:
-        session, client = self._make_session(ProtocolFamily.V5C)
-        write_char = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
-        session.bindings.write_char = write_char
-        session.bindings.write_selection_strategy = "preferred_uuid"
-        session.bindings.write_response_preference = False
-        session.bindings.write_char_uuid = write_char.uuid
-
-        async def run() -> None:
-            await session.send(
-                client,
-                b"AB" + V5C_QUERY_STATUS_PACKET,
-                mtu_size=180,
-                timeout=0.2,
-            )
-
-        asyncio.run(run())
-
-        self.assertTrue(_v5c_state(session).query_status_in_flight)
-
     def test_v5c_notifications_update_session_state(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5C)
 
@@ -1874,29 +1854,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(_v5c_state(session).status_name, "normal")
         self.assertTrue(_v5c_state(session).print_complete_seen)
         self.assertFalse(_v5c_state(session).is_charging)
-
-    def test_v5c_query_status_ack_does_not_mark_print_complete(self) -> None:
-        session, client = self._make_session(ProtocolFamily.V5C)
-        write_char = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
-        session.bindings.write_char = write_char
-        session.bindings.write_selection_strategy = "preferred_uuid"
-        session.bindings.write_response_preference = False
-        session.bindings.write_char_uuid = write_char.uuid
-        session.debug_update(status_code=0x80, status_name="printing")
-
-        async def run() -> None:
-            await session.send(
-                client,
-                V5C_QUERY_STATUS_PACKET,
-                mtu_size=180,
-                timeout=0.2,
-            )
-
-        asyncio.run(run())
-        session.handle_notification(make_packet(0xA1, bytes([0x00]), ProtocolFamily.V5C))
-
-        self.assertFalse(_v5c_state(session).query_status_in_flight)
-        self.assertFalse(_v5c_state(session).print_complete_seen)
 
 
 if __name__ == "__main__":

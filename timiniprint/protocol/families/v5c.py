@@ -4,6 +4,7 @@ from ..compression import compress_lzo1x_1
 from ..encoding import pack_line
 from ..packet import make_packet
 from ..plan import ProtocolPlan
+from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import BleTransportProfile, FlowControlProfile, PrintJobRequest, ProtocolBehavior
@@ -101,12 +102,16 @@ def _build_payload(request: PrintJobRequest) -> bytes:
         job += _build_a4_frames(request)
 
     job += make_packet(0xA6, bytes([0x30, 0x00]), request.protocol_family)
-    job += V5C_QUERY_STATUS_PACKET
     return bytes(job)
 
 
 def build_job(request: PrintJobRequest) -> ProtocolPlan:
-    return ProtocolPlan.stream(_build_payload(request))
+    return ProtocolPlan.sequence(
+        (
+            ProtocolStep.send("print data", _build_payload(request)),
+            ProtocolStep.send("query status", V5C_QUERY_STATUS_PACKET),
+        )
+    )
 
 
 BEHAVIOR = ProtocolBehavior(

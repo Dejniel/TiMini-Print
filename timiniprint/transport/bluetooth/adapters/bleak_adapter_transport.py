@@ -287,7 +287,6 @@ class _BleakTransportSession:
         if self._runtime_controller is not None:
             self._runtime_controller.on_standard_send_started(self)
             data = self._runtime_controller.prepare_standard_payload(self, data)
-            self._runtime_controller.track_outgoing_query_status(self, data)
         try:
             response = self._resolve_response_mode(
                 self.bindings.write_char,
@@ -361,7 +360,7 @@ class _BleakTransportSession:
             self._protocol_family,
             bulk_write.tail_packets,
         )
-        # TODO: Legacy BLE split runtime hooks for V5X/V5G/V5C live here because
+        # TODO: Legacy BLE split runtime hooks for V5X live here because
         # they depend on notifications and BLE bulk/write characteristics. New
         # protocol send/query sequencing should be modeled as ProtocolJob.steps.
         split_context = None

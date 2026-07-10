@@ -124,11 +124,8 @@ class RuntimeController:
     def on_standard_send_finished(self, session: RuntimeSessionApi) -> None:
         return None
 
-    def track_outgoing_query_status(self, session: RuntimeSessionApi, data: bytes) -> None:
-        return None
-
-    # TODO: These split/ACK hooks are the older BLE runtime path for V5X/V5G/V5C
-    # notification/flow-control behavior. Do not add new protocol sequencing here.
+    # TODO: These split/ACK hooks are the older BLE runtime path for V5X
+    # notification behavior. Do not add new protocol sequencing here.
     # Future cleanup should model both SPP replies and BLE notifications as
     # explicit "send, then wait until condition" runtime steps. Keep the two
     # transports separate underneath: SPP uses reply-matched control queries,

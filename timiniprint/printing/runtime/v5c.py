@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from ...protocol.families.v5c import V5C_QUERY_STATUS_PACKET
+from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 
 
@@ -82,9 +83,24 @@ class V5CRuntimeController(RuntimeController):
         elif opcode in (0xA8, 0xA9):
             self._update_compatibility(session, payload, opcode)
 
-    def track_outgoing_query_status(self, session, data: bytes) -> None:
-        query_seen = V5C_QUERY_STATUS_PACKET in data
-        self._state.query_status_in_flight = query_seen
+    async def send_protocol_steps(self, session, steps, *, timeout: float) -> bool:
+        _ = timeout
+        if not session.can_send_standard_payload():
+            return False
+        if any(step.operation is not ProtocolStepOperation.SEND for step in steps):
+            return False
+        self._state.query_status_in_flight = False
+        for step in steps:
+            query_status = step.data == V5C_QUERY_STATUS_PACKET
+            if query_status:
+                self._state.query_status_in_flight = True
+            try:
+                await session.send_standard_payload(step.data)
+            except Exception:
+                if query_status:
+                    self._state.query_status_in_flight = False
+                raise
+        return True
 
     def build_compat_request(
         self,

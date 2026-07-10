@@ -1283,6 +1283,24 @@ class ProtocolJobTests(unittest.TestCase):
             data.endswith(self.commands.make_packet(0xA1, bytes([0x00]), ProtocolFamily.V5C))
         )
 
+    def test_v5c_public_job_exposes_print_and_status_steps(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("ytb01")
+        raster_set = self._raster_set(
+            self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0])
+        )
+
+        job = PrinterProtocol(device).build_job(raster_set, is_text=True)
+
+        self.assertEqual(
+            [step.label for step in job.steps],
+            ["print data", "query status"],
+        )
+        self.assertEqual(
+            job.steps[-1].data,
+            self.commands.make_packet(0xA1, bytes([0x00]), ProtocolFamily.V5C),
+        )
+        self.assertEqual(job.payload, b"".join(step.data for step in job.steps))
+
     def test_build_v5c_compressed_job_uses_a5_frames(self) -> None:
         gray_raster = self.raster.RasterBuffer(
             pixels=[15, 14, 13, 12, 11, 10, 9, 8, 15, 14, 13, 12, 11, 10, 9, 8],

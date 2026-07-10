@@ -5,8 +5,10 @@ import unittest
 from unittest.mock import patch
 
 from timiniprint.printing.runtime.base import PreparedRuntimeContext, RuntimeController
+from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.send import send_prepared_job
 from timiniprint.protocol import ProtocolJob, ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
+from timiniprint.protocol.families.v5c import V5C_QUERY_STATUS_PACKET
 
 
 class _Reporter:
@@ -261,6 +263,54 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         runtime_factory.assert_called_once_with(device)
         self.assertEqual(connection.attached_runtime_controllers, [controller])
         self.assertEqual(connection.sent_jobs, [job])
+
+    async def test_v5c_runtime_executes_status_steps(self) -> None:
+        connection = _Connection()
+        controller = V5CRuntimeController()
+        job = ProtocolJob(
+            steps=(
+                ProtocolStep.send("print data", b"PRINT"),
+                ProtocolStep.send("query status", V5C_QUERY_STATUS_PACKET),
+            ),
+            wait_for_completion=True,
+        )
+
+        await send_prepared_job(
+            object(),
+            connection,
+            job,
+            timeout=0.1,
+            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
+        )
+
+        self.assertEqual(
+            connection.standard_payloads,
+            [b"PRINT", V5C_QUERY_STATUS_PACKET],
+        )
+        self.assertEqual(connection.sent_jobs, [])
+        self.assertTrue(controller.debug_snapshot()["query_status_in_flight"])
+
+    async def test_v5c_steps_fall_back_to_stream_only_connection(self) -> None:
+        connection = _SendOnlyConnection()
+        controller = V5CRuntimeController()
+        job = ProtocolJob(
+            steps=(
+                ProtocolStep.send("print data", b"PRINT"),
+                ProtocolStep.send("query status", V5C_QUERY_STATUS_PACKET),
+            ),
+            wait_for_completion=True,
+        )
+
+        await send_prepared_job(
+            object(),
+            connection,
+            job,
+            timeout=0.1,
+            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
+        )
+
+        self.assertEqual(connection.sent_jobs, [job])
+        self.assertFalse(controller.debug_snapshot()["query_status_in_flight"])
 
     async def test_send_prepared_job_executes_wait_steps(self) -> None:
         connection = _WaitOnlyConnection()
