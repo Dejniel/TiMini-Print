@@ -13,12 +13,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from timiniprint.app import cli  # noqa: E402
-from timiniprint.devices import PrinterCatalog, PrinterDevice  # noqa: E402
+from timiniprint.devices import PrinterCatalog, PrinterDevice, get_ble_transport_profile  # noqa: E402
 from timiniprint.devices.printer_config import runtime_settings_from_parts  # noqa: E402
 from timiniprint.printing.builder import PrintJobBuilder  # noqa: E402
 from timiniprint.printing.debug_dump import build_protocol_packet_entries  # noqa: E402
 from timiniprint.protocol import ImageEncoding, ImagePipelineConfig, PaperMode, PrinterProtocol, ProtocolJob  # noqa: E402
-from timiniprint.transport.bluetooth.profiles import get_ble_transport_profile  # noqa: E402
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

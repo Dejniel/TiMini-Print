@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import unittest
 
+from timiniprint.devices import get_ble_transport_profile
 from timiniprint.protocol.families import get_protocol_behavior
 from timiniprint.protocol.family import ProtocolFamily
-from timiniprint.transport.bluetooth.profiles import get_ble_transport_profile
 
 
 class BleTransportProfileTests(unittest.TestCase):
@@ -78,6 +78,19 @@ class BleTransportProfileTests(unittest.TestCase):
 
         v5c = get_ble_transport_profile(ProtocolFamily.V5C)
         self.assertTrue(v5c.flow_controlled_standard_write)
+
+    def test_unspecialized_families_keep_generic_transport_defaults(self) -> None:
+        for family in (
+            ProtocolFamily.LUCK_NORMAL,
+            ProtocolFamily.LUCK_NORMAL_A4,
+            ProtocolFamily.DCK,
+        ):
+            with self.subTest(family=family.value):
+                profile = get_ble_transport_profile(family)
+                self.assertEqual(profile.standard_chunk_cap, 20)
+                self.assertEqual(profile.standard_write_delay_ms, 50)
+
+        self.assertEqual(get_ble_transport_profile(None).standard_chunk_cap, 512)
 
 
 if __name__ == "__main__":

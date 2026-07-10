@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Optional
 
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImagePipelineConfig
+from .bluetooth_profiles import BleTransportProfile, get_ble_transport_profile
 
 if TYPE_CHECKING:
     from .profiles import PrinterProfile, RuntimeSettings
@@ -122,6 +123,10 @@ class PrinterDevice:
         if isinstance(target, SerialTarget):
             return "[serial]"
         return ""
+
+    @property
+    def ble_transport_profile(self) -> BleTransportProfile:
+        return get_ble_transport_profile(self.protocol_family)
 
     def with_transport_target(self, transport_target: TransportTarget | None) -> "PrinterDevice":
         """Return a copy of this device with a different transport target."""

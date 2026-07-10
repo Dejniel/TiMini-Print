@@ -51,8 +51,8 @@ class _ClassicAdapter:
     def resolve_rfcomm_channels(self, _address: str):
         return []
 
-    def create_socket(self, _pairing_hint=None, protocol_family=None, reporter=None, ble_mtu_request=None):
-        _ = protocol_family
+    def create_socket(self, _pairing_hint=None, ble_profile=None, reporter=None, ble_mtu_request=None):
+        _ = ble_profile
         _ = reporter
         _ = ble_mtu_request
         if self._fail:
@@ -71,8 +71,8 @@ class _BleAdapter:
     def resolve_rfcomm_channels(self, _address: str):
         return [1]
 
-    def create_socket(self, _pairing_hint=None, protocol_family=None, reporter=None, ble_mtu_request=None):
-        _ = protocol_family
+    def create_socket(self, _pairing_hint=None, ble_profile=None, reporter=None, ble_mtu_request=None):
+        _ = ble_profile
         _ = reporter
         _ = ble_mtu_request
         if self._fail:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ...protocol.family import ProtocolFamily
+from ..protocol.family import ProtocolFamily
 
 
 @dataclass(frozen=True)
@@ -28,7 +28,7 @@ class BleTransportProfile:
     write_without_response_payload_reserve: int = 0
 
 
-_DEFAULT_PROFILE = BleTransportProfile()
+_FALLBACK_PROFILE = BleTransportProfile()
 
 _PROFILES = {
     ProtocolFamily.TINY: BleTransportProfile(standard_chunk_cap=512),
@@ -89,9 +89,11 @@ _PROFILES = {
     ),
 }
 
+DEFAULT_BLE_TRANSPORT_PROFILE = _PROFILES[ProtocolFamily.TINY]
+
 
 def get_ble_transport_profile(
     protocol_family: ProtocolFamily | str | None,
 ) -> BleTransportProfile:
     family = ProtocolFamily.from_value(protocol_family)
-    return _PROFILES.get(family, _DEFAULT_PROFILE)
+    return _PROFILES.get(family, _FALLBACK_PROFILE)

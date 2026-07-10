@@ -15,6 +15,10 @@ from timiniprint.devices.profiles import (
     RuntimeCapabilities,
     RuntimeSettings,
 )
+from timiniprint.devices.bluetooth_profiles import (
+    BleBulkWriteProfile,
+    get_ble_transport_profile,
+)
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.runtime.v5g import DensityLevels, V5GRuntimeController
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
@@ -46,10 +50,6 @@ from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver im
 )
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_transport import (
     _BleakTransportSession,
-)
-from timiniprint.transport.bluetooth.profiles import (
-    BleBulkWriteProfile,
-    get_ble_transport_profile,
 )
 
 

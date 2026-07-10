@@ -1,4 +1,9 @@
 from .bluetooth_resolver import BluetoothEndpointResolver, ResolvedBluetoothTarget
+from .bluetooth_profiles import (
+    BleBulkWriteProfile,
+    BleTransportProfile,
+    get_ble_transport_profile,
+)
 from .bluetooth_policy import (
     BluetoothConnectionAttempt,
     BluetoothConnectionPlan,
@@ -25,6 +30,8 @@ from .profiles import (
 __all__ = [
     "BluetoothEndpoint",
     "BluetoothEndpointResolver",
+    "BleBulkWriteProfile",
+    "BleTransportProfile",
     "BluetoothConnectionAttempt",
     "BluetoothConnectionPlan",
     "BluetoothTarget",
@@ -47,4 +54,5 @@ __all__ = [
     "UnsupportedModelMatch",
     "UnsupportedPrinterModel",
     "bluetooth_connection_plan",
+    "get_ble_transport_profile",
 ]

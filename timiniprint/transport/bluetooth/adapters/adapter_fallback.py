@@ -4,9 +4,9 @@ from __future__ import annotations
 from typing import List, Optional
 
 from .base import _BleBluetoothAdapter
+from ....devices.bluetooth_profiles import BleTransportProfile
 from ..types import DeviceInfo, SocketLike
 from .... import reporting
-from ....protocol.family import ProtocolFamily
 
 
 class _FallbackAdapter(_BleBluetoothAdapter):
@@ -22,20 +22,20 @@ class _FallbackAdapter(_BleBluetoothAdapter):
     def create_socket(
         self,
         pairing_hint: Optional[bool] = None,
-        protocol_family: Optional[ProtocolFamily] = None,
+        ble_profile: BleTransportProfile | None = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
         ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         return _FallbackSocket(
             primary=self._primary.create_socket(
                 pairing_hint=pairing_hint,
-                protocol_family=protocol_family,
+                ble_profile=ble_profile,
                 reporter=reporter,
                 ble_mtu_request=ble_mtu_request,
             ),
             fallback=self._fallback.create_socket(
                 pairing_hint=pairing_hint,
-                protocol_family=protocol_family,
+                ble_profile=ble_profile,
                 reporter=reporter,
                 ble_mtu_request=ble_mtu_request,
             ),

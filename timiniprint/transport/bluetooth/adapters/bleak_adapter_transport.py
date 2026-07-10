@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
 
 from .... import reporting
-from ..profiles import BleBulkWriteProfile, BleTransportProfile
+from ....devices.bluetooth_profiles import BleBulkWriteProfile, BleTransportProfile
 from .bleak_adapter_diagnostics import (
     BleWriteCounters,
     BleWriteProgress,

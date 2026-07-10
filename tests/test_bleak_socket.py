@@ -5,6 +5,7 @@ import types
 import unittest
 from unittest.mock import patch
 
+from timiniprint.devices import get_ble_transport_profile
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.transport.bluetooth.adapters.bleak_adapter import _BleakSocket
@@ -162,7 +163,7 @@ class BleakSocketTests(unittest.TestCase):
         self.assertEqual(s._mtu_size, 244)
 
     def test_send_async_does_not_interpret_v5x_payload(self) -> None:
-        s = _BleakSocket(protocol_family=ProtocolFamily.V5X)
+        s = _BleakSocket(ble_profile=get_ble_transport_profile(ProtocolFamily.V5X))
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         client = _Client([])
@@ -189,7 +190,7 @@ class BleakSocketTests(unittest.TestCase):
         self.assertEqual(b"".join(call[1] for call in client.calls), data)
 
     def test_v5x_notify_updates_flow_state(self) -> None:
-        s = _BleakSocket(protocol_family=ProtocolFamily.V5X)
+        s = _BleakSocket(ble_profile=get_ble_transport_profile(ProtocolFamily.V5X))
         s._transport._runtime_controller = V5XRuntimeController()
         self.assertTrue(s._flow_can_write)
         s._handle_notification("", bytearray(bytes.fromhex("AA01")))
@@ -198,7 +199,7 @@ class BleakSocketTests(unittest.TestCase):
         self.assertTrue(s._flow_can_write)
 
     def test_v5x_b2_notification_schedules_status_poll(self) -> None:
-        s = _BleakSocket(protocol_family=ProtocolFamily.V5X)
+        s = _BleakSocket(ble_profile=get_ble_transport_profile(ProtocolFamily.V5X))
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
         client = _Client([])
         bindings = s._transport.bindings
@@ -219,7 +220,7 @@ class BleakSocketTests(unittest.TestCase):
         self.assertEqual(client.calls, [(cmd.uuid, V5X_STATUS_POLL_PACKET, False)])
 
     def test_v5c_notify_updates_flow_state(self) -> None:
-        s = _BleakSocket(protocol_family=ProtocolFamily.V5C)
+        s = _BleakSocket(ble_profile=get_ble_transport_profile(ProtocolFamily.V5C))
         s._transport._runtime_controller = V5CRuntimeController()
         self.assertTrue(s._flow_can_write)
         s._handle_notification("", bytearray(bytes.fromhex("5688A70101000107FF")))

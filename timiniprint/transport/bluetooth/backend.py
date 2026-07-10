@@ -320,7 +320,7 @@ class SppBackend:
                 )
                 sock = adapter.create_socket(
                     pairing_hint,
-                    protocol_family=device.protocol_family,
+                    ble_profile=device.ble_profile,
                     reporter=self._reporter,
                     ble_mtu_request=device.ble_mtu_request,
                 )

@@ -109,6 +109,7 @@ class _Adapter:
         self._fail = fail
         self._pair_error = pair_error
         self.ble_mtu_request = None
+        self.ble_profile = None
 
     def resolve_rfcomm_channels(self, _address):
         return self._channels
@@ -117,9 +118,9 @@ class _Adapter:
         if self._pair_error:
             raise self._pair_error
 
-    def create_socket(self, _pairing_hint=None, protocol_family=None, reporter=None, ble_mtu_request=None):
-        _ = protocol_family
+    def create_socket(self, _pairing_hint=None, ble_profile=None, reporter=None, ble_mtu_request=None):
         _ = reporter
+        self.ble_profile = ble_profile
         self.ble_mtu_request = ble_mtu_request
         return _Socket(fail=self._fail)
 
@@ -161,6 +162,26 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         self.assertEqual(adapter.ble_mtu_request, 512)
 
+    def test_connect_attempts_passes_ble_profile_to_adapter(self) -> None:
+        device = PrinterCatalog.load().detect_device("MXW01")
+        self.assertIsNotNone(device)
+        profile = device.ble_transport_profile
+        attempt = DeviceInfo(
+            "MXW01",
+            "UUID",
+            transport=DeviceTransport.BLE,
+            ble_profile=profile,
+        )
+        adapter = _Adapter([1], fail=False)
+
+        with patch("timiniprint.transport.bluetooth.backend._select_adapter", return_value=adapter):
+            SppBackend(reporter=reporting.DUMMY_REPORTER)._connect_attempts_blocking(
+                [attempt],
+                pairing_hint=False,
+            )
+
+        self.assertIs(adapter.ble_profile, profile)
+
     def test_connector_maps_profile_ble_mtu_request_only_for_ble_endpoint(self) -> None:
         device = PrinterCatalog.load().detect_device("X9-38CC")
         self.assertIsNotNone(device)
@@ -180,6 +201,8 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         self.assertEqual(ble_info.ble_mtu_request, 512)
         self.assertIsNone(classic_info.ble_mtu_request)
+        self.assertIs(ble_info.ble_profile, device.ble_transport_profile)
+        self.assertIsNone(classic_info.ble_profile)
 
     def test_connect_attempts_fallback_and_final_error(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)

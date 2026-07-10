@@ -155,6 +155,12 @@ class ArchitectureBoundaryTests(unittest.TestCase):
             ],
         )
 
+    def test_bluetooth_adapters_do_not_select_protocol_families(self) -> None:
+        self._assert_no_forbidden_imports(
+            PACKAGE_ROOT / "transport" / "bluetooth" / "adapters",
+            ["timiniprint.protocol"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

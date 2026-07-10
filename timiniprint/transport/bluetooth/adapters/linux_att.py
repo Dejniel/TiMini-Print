@@ -37,10 +37,12 @@ from typing import Any, Callable, Iterable, List, Optional
 from .base import _BleBluetoothAdapter
 from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver
 from .bleak_adapter_transport import _BleakTransportSession
-from ..profiles import get_ble_transport_profile
 from ..types import DeviceInfo, SocketLike
 from .... import reporting
-from ....protocol.family import ProtocolFamily
+from ....devices.bluetooth_profiles import (
+    DEFAULT_BLE_TRANSPORT_PROFILE,
+    BleTransportProfile,
+)
 
 _AF_BLUETOOTH = getattr(socket, "AF_BLUETOOTH", 31)
 _BTPROTO_L2CAP = getattr(socket, "BTPROTO_L2CAP", 0)
@@ -85,13 +87,13 @@ class _LinuxAttAdapter(_BleBluetoothAdapter):
     def create_socket(
         self,
         pairing_hint: Optional[bool] = None,
-        protocol_family: Optional[ProtocolFamily] = None,
+        ble_profile: BleTransportProfile | None = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
         ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         _ = pairing_hint
         return _LinuxAttSocket(
-            protocol_family=protocol_family,
+            ble_profile=ble_profile,
             reporter=reporter,
             ble_mtu_request=ble_mtu_request,
         )
@@ -141,11 +143,11 @@ class _LinuxAttSocket:
     def __init__(
         self,
         *,
-        protocol_family: Optional[ProtocolFamily] = None,
+        ble_profile: BleTransportProfile | None = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
         ble_mtu_request: Optional[int] = None,
     ) -> None:
-        self._protocol_family = ProtocolFamily.from_value(protocol_family)
+        self._ble_profile = ble_profile or DEFAULT_BLE_TRANSPORT_PROFILE
         self._reporter = reporter
         self._ble_mtu_request = ble_mtu_request
         self._client: _LinuxAttClient | None = None
@@ -172,7 +174,7 @@ class _LinuxAttSocket:
             self._client.connect(address)
             self._connected = True
             self._mtu_size = min(max(1, self._client.mtu_size - 3), 512)
-            transport = get_ble_transport_profile(self._protocol_family)
+            transport = self._ble_profile
             selection = self._write_resolver.resolve(
                 self._client.services,
                 preferred_service_uuid=transport.preferred_service_uuid,
@@ -329,7 +331,7 @@ class _LinuxAttSocket:
 
     def _new_transport_session(self) -> _BleakTransportSession:
         return _BleakTransportSession(
-            transport_profile=get_ble_transport_profile(self._protocol_family),
+            transport_profile=self._ble_profile,
             write_resolver=self._write_resolver,
             reporter=self._reporter,
         )

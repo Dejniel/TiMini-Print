@@ -1,7 +1,7 @@
 """Bluetooth Low Energy adapter using bleak for BLE communication.
 
 The adapter keeps connection lifecycle in `_BleakSocket` and delegates endpoint
-binding plus family-aware write routing to `_BleakTransportSession`.
+binding plus write routing to `_BleakTransportSession`.
 """
 from __future__ import annotations
 
@@ -13,10 +13,12 @@ from .base import _BleBluetoothAdapter
 from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSelection
 from .bleak_adapter_transport import _BleakTransportSession
 from ..constants import IS_MACOS
-from ..profiles import get_ble_transport_profile
 from ..types import DeviceInfo, DeviceTransport, SocketLike
 from .... import reporting
-from ....protocol.family import ProtocolFamily
+from ....devices.bluetooth_profiles import (
+    DEFAULT_BLE_TRANSPORT_PROFILE,
+    BleTransportProfile,
+)
 
 _BLE_DEFAULT_MTU_PAYLOAD = 20
 
@@ -37,7 +39,7 @@ class _BleakSocket:
     def __init__(
         self,
         pairing_hint: Optional[bool] = None,
-        protocol_family: Optional[ProtocolFamily] = None,
+        ble_profile: BleTransportProfile | None = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
         device_cache: Optional[Dict[str, Any]] = None,
         ble_mtu_request: Optional[int] = None,
@@ -49,13 +51,13 @@ class _BleakSocket:
         self._mtu_size = _BLE_DEFAULT_MTU_PAYLOAD
         self._timeout = 30.0
         self._pairing_hint = pairing_hint is True and not IS_MACOS
-        self._protocol_family = protocol_family
+        self._ble_profile = ble_profile or DEFAULT_BLE_TRANSPORT_PROFILE
         self._ble_mtu_request = ble_mtu_request
         self._reporter = reporter
         self._device_cache = device_cache if device_cache is not None else {}
         self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
         self._transport = _BleakTransportSession(
-            transport_profile=get_ble_transport_profile(self._protocol_family_or_default()),
+            transport_profile=self._ble_profile,
             write_resolver=self._write_resolver,
             reporter=self._reporter,
         )
@@ -180,7 +182,7 @@ class _BleakSocket:
         """Resolve the primary writable characteristic for this connection."""
         if not self._client or not self._connected:
             return None
-        transport = get_ble_transport_profile(self._protocol_family_or_default())
+        transport = self._ble_profile
         return self._write_resolver.resolve(
             self._client.services,
             preferred_service_uuid=transport.preferred_service_uuid,
@@ -376,7 +378,7 @@ class _BleakSocket:
         self._connected = False
         self._client = None
         self._transport = _BleakTransportSession(
-            transport_profile=get_ble_transport_profile(self._protocol_family_or_default()),
+            transport_profile=self._ble_profile,
             write_resolver=self._write_resolver,
             reporter=self._reporter,
         )
@@ -403,9 +405,6 @@ class _BleakSocket:
             except Exception:
                 pass
             self._loop = None
-
-    def _protocol_family_or_default(self) -> ProtocolFamily:
-        return ProtocolFamily.from_value(self._protocol_family)
 
     def _handle_notification(self, _sender: Any, data: Any) -> None:
         self._transport.handle_notification(bytes(data))
@@ -454,13 +453,13 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
     def create_socket(
         self,
         pairing_hint: Optional[bool] = None,
-        protocol_family: Optional[ProtocolFamily] = None,
+        ble_profile: BleTransportProfile | None = None,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
         ble_mtu_request: Optional[int] = None,
     ) -> SocketLike:
         return _BleakSocket(
             pairing_hint=pairing_hint,
-            protocol_family=protocol_family,
+            ble_profile=ble_profile,
             reporter=reporter,
             device_cache=self._device_cache,
             ble_mtu_request=ble_mtu_request,

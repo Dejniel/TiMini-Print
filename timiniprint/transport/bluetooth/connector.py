@@ -3,7 +3,11 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from ... import reporting
-from ...devices import BluetoothTarget, PrinterDevice, bluetooth_connection_plan
+from ...devices import (
+    BluetoothTarget,
+    PrinterDevice,
+    bluetooth_connection_plan,
+)
 from ...devices.device import BluetoothEndpointTransport
 from ...protocol import ProtocolJob
 from .backend import SppBackend
@@ -155,7 +159,11 @@ class BleakBluetoothConnector:
             address=endpoint.address,
             paired=endpoint.paired,
             transport=transport,
-            protocol_family=device.protocol_family,
+            ble_profile=(
+                device.ble_transport_profile
+                if transport is DeviceTransport.BLE
+                else None
+            ),
             ble_mtu_request=(
                 device.profile.ble_mtu_request
                 if transport is DeviceTransport.BLE
