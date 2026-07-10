@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ....raster import PixelFormat
-from ...steps import ProtocolStep
+from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig
 from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
 from .core import build_niimbot_job
@@ -11,8 +11,8 @@ _PACKET_INTERVAL_MS = 10
 _STANDARD_CHUNK_CAP = 20
 
 
-def build_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    return build_niimbot_job(request)
+def build_job(request: PrintJobRequest) -> ProtocolPlan:
+    return ProtocolPlan.sequence(build_niimbot_job(request))
 
 
 TRANSPORT = BleTransportProfile(

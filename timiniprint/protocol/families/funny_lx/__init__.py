@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from ....raster import PixelFormat
+from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
 from .core import build_funny_lx_job
@@ -15,8 +16,8 @@ _WRITE_DELAY_MS = 0
 _FEED_PAPER_CMD = bytes.fromhex("5a 03 81 00 04 00 00 00 00 00 00 00")
 
 
-def build_job(request: PrintJobRequest):
-    return build_funny_lx_job(request)
+def build_job(request: PrintJobRequest) -> ProtocolPlan:
+    return ProtocolPlan.sequence(build_funny_lx_job(request))
 
 
 def advance_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None = None) -> bytes:

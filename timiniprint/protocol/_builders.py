@@ -12,26 +12,17 @@ from .commands import (
 from .encoding import build_line_packets
 from .families import PrintJobRequest, get_protocol_behavior
 from .family import ProtocolFamily
+from .plan import ProtocolPlan
 from .runtime import RuntimePrintCapabilities
 from .steps import ProtocolStep
 from .types import ImagePipelineConfig, PaperMode
 
 
-FamilyJob = bytes | tuple[ProtocolStep, ...]
-
-
-def _build_family_job(request: PrintJobRequest) -> FamilyJob | None:
+def _build_family_job(request: PrintJobRequest) -> ProtocolPlan | None:
     behavior = get_protocol_behavior(request.protocol_family)
     if behavior.job_builder is None:
         return None
     return behavior.job_builder(request)
-
-
-def _family_job_payload_and_steps(family_job: FamilyJob) -> tuple[bytes, tuple[ProtocolStep, ...]]:
-    if isinstance(family_job, bytes):
-        return family_job, ()
-    steps = tuple(family_job)
-    return b"".join(step.data for step in steps if step.include_in_payload), steps
 
 
 def _resolve_image_pipeline(
@@ -235,10 +226,9 @@ def _build_print_payload_from_raster_set(
         page_count=page_count,
         runtime_capabilities=runtime_capabilities,
     )
-    family_payload = _build_family_job(request)
-    if family_payload is not None:
-        payload, _steps = _family_job_payload_and_steps(family_payload)
-        return payload
+    family_plan = _build_family_job(request)
+    if family_plan is not None:
+        return family_plan.payload
 
     raster = request.require_raster(PixelFormat.BW1)
     payload = bytearray()
@@ -458,9 +448,9 @@ def _build_job_model_from_raster_set(
         page_count=page_count,
         runtime_capabilities=runtime_capabilities,
     )
-    family_job = _build_family_job(request)
-    if family_job is not None:
-        return _family_job_payload_and_steps(family_job)
+    family_plan = _build_family_job(request)
+    if family_plan is not None:
+        return family_plan.payload, family_plan.steps
 
     job = bytearray()
     job += blackening_cmd(blackening, request.protocol_family)

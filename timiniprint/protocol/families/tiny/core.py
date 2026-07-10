@@ -4,6 +4,7 @@ from ....raster import PixelFormat
 from ...encoding import pack_line, rle_encode_line
 from ...family import ProtocolFamily
 from ...packet import make_packet
+from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
 
@@ -238,7 +239,7 @@ def _build_esc_star_job(request: PrintJobRequest, *, eight: bool) -> bytes:
     return bytes(payload)
 
 
-def _build_variant_job(request: PrintJobRequest) -> bytes | None:
+def _build_variant_payload(request: PrintJobRequest) -> bytes | None:
     if request.protocol_variant == VARIANT_LINE_EIGHT:
         return _build_line_eight_job(request)
     if request.protocol_variant == VARIANT_ESC_STAR:
@@ -248,6 +249,13 @@ def _build_variant_job(request: PrintJobRequest) -> bytes | None:
     if request.protocol_variant == VARIANT_PROFESSIONAL:
         return _build_professional_raw_fallback_job(request)
     return None
+
+
+def _build_variant_job(request: PrintJobRequest) -> ProtocolPlan | None:
+    payload = _build_variant_payload(request)
+    if payload is None:
+        return None
+    return ProtocolPlan.stream(payload)
 
 
 BEHAVIOR = ProtocolBehavior(

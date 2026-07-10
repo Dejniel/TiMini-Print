@@ -10,6 +10,7 @@ from .commands import (
 )
 from .families import get_protocol_behavior
 from .family import ProtocolFamily
+from .plan import ProtocolPlan
 from .runtime import RuntimePrintCapabilities
 from .steps import ProtocolStep
 from .types import ImageEncoding, ImagePipelineConfig, PaperMode
@@ -21,9 +22,8 @@ if TYPE_CHECKING:
 class ProtocolJob:
     """Protocol payload and execution steps, independent from live connection state."""
 
-    _payload: bytes
+    _plan: ProtocolPlan
     payload_segments: tuple[bytes, ...]
-    steps: tuple[ProtocolStep, ...]
     wait_for_completion: bool
 
     def __init__(
@@ -33,30 +33,34 @@ class ProtocolJob:
         steps: tuple[ProtocolStep, ...] = (),
         wait_for_completion: bool = False,
     ) -> None:
-        self.steps = tuple(steps)
+        normalized_steps = tuple(steps)
         self.wait_for_completion = bool(wait_for_completion)
         if payload_segments:
             self.payload_segments = tuple(bytes(segment) for segment in payload_segments)
             segments_payload = b"".join(self.payload_segments)
             if payload is not None and bytes(payload) != segments_payload:
                 raise ValueError("Protocol job payload does not match payload segments")
-            self._payload = segments_payload
+            normalized_payload = segments_payload
         elif payload is not None:
-            self._payload = bytes(payload)
-            self.payload_segments = (self._payload,)
+            normalized_payload = bytes(payload)
+            self.payload_segments = (normalized_payload,)
         else:
-            self.payload_segments = tuple(step.data for step in self.steps if step.include_in_payload)
-            self._payload = b"".join(self.payload_segments)
-        if self.steps:
-            steps_payload = b"".join(
-                step.data for step in self.steps if step.include_in_payload
+            self.payload_segments = tuple(
+                step.data for step in normalized_steps if step.include_in_payload
             )
-            if self._payload != steps_payload:
-                raise ValueError("Protocol job payload does not match included protocol steps")
+            normalized_payload = b"".join(self.payload_segments)
+        self._plan = ProtocolPlan(
+            payload=normalized_payload,
+            steps=normalized_steps,
+        )
 
     @property
     def payload(self) -> bytes:
-        return self._payload
+        return self._plan.payload
+
+    @property
+    def steps(self) -> tuple[ProtocolStep, ...]:
+        return self._plan.steps
 
 
 class PrinterProtocol:

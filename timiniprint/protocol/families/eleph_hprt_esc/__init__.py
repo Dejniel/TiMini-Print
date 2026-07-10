@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ....raster import PixelFormat
-from ...steps import ProtocolStep
+from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
 from .core import (
@@ -16,8 +16,8 @@ _STANDARD_CHUNK_CAP = 180
 _STANDARD_WRITE_DELAY_MS = 10
 
 
-def build_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    return build_zl1_job(request)
+def build_job(request: PrintJobRequest) -> ProtocolPlan:
+    return ProtocolPlan.sequence(build_zl1_job(request))
 
 
 TRANSPORT = BleTransportProfile(

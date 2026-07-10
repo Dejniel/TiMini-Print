@@ -65,6 +65,8 @@ Use it directly for preview/debug/streaming-page workflows where a caller wants 
 ### `PrinterProtocol`
 A protocol builder bound to one `PrinterDevice`. It builds `ProtocolJob` from raster input and may produce named protocol steps for families that need interleaved send/query/wait operations.
 
+Internal family builders return one `ProtocolPlan` shape for both stream-only and step-based protocols. The public `ProtocolJob` wraps that stateless plan with job-level execution policy.
+
 It is not a connection object. Do not add `Protocol(connector).send(...)` style APIs.
 
 ### `ProtocolJob`

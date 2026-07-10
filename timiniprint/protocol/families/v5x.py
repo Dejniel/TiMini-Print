@@ -3,6 +3,7 @@ from __future__ import annotations
 from ..encoding import pack_line
 from ..packet import crc8_value, make_packet
 from ..family import ProtocolFamily
+from ..plan import ProtocolPlan
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import BleBulkWriteProfile, BleTransportProfile, FlowControlProfile, PrintJobRequest, ProtocolBehavior
@@ -144,7 +145,7 @@ def _gray_start_packet(height: int, protocol_family: ProtocolFamily) -> bytes:
     return header + height_bytes + bytes([crc8_value(height_bytes), 0xFF])
 
 
-def build_job(request: PrintJobRequest) -> bytes:
+def _build_payload(request: PrintJobRequest) -> bytes:
     is_gray = request.image_pipeline.encoding == ImageEncoding.V5X_GRAY
     raster = (
         request.default_raster
@@ -163,6 +164,10 @@ def build_job(request: PrintJobRequest) -> bytes:
         job += _raw_lsb_payload(list(raster.pixels), raster.width)
     job += V5X_FINALIZE_PACKET
     return bytes(job)
+
+
+def build_job(request: PrintJobRequest) -> ProtocolPlan:
+    return ProtocolPlan.stream(_build_payload(request))
 
 
 BEHAVIOR = ProtocolBehavior(

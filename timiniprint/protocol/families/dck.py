@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from ...raster import PixelFormat
+from ..plan import ProtocolPlan
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import PrintJobRequest, ProtocolBehavior
 
 
-def build_job(_request: PrintJobRequest) -> bytes:
+def build_job(_request: PrintJobRequest) -> ProtocolPlan:
     raise NotImplementedError("Printing is not implemented for the DCK protocol family yet")
 
 

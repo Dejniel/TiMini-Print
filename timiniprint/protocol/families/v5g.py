@@ -4,6 +4,7 @@ from ..compression import compress_lzo1x_1
 from ..encoding import pack_line
 from ..family import ProtocolFamily
 from ..packet import make_packet
+from ..plan import ProtocolPlan
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import BleTransportProfile, PrintJobRequest, ProtocolBehavior
@@ -116,7 +117,7 @@ def _gray_frames(request: PrintJobRequest) -> bytes:
     return bytes(job)
 
 
-def build_job(request: PrintJobRequest) -> bytes:
+def _build_payload(request: PrintJobRequest) -> bytes:
     job = bytearray()
     if request.density is not None:
         job += _density_packet(request.density, request.protocol_family)
@@ -139,6 +140,10 @@ def build_job(request: PrintJobRequest) -> bytes:
     job += _state_query_packet(request.protocol_family)
     job += _state_query_packet(request.protocol_family)
     return bytes(job)
+
+
+def build_job(request: PrintJobRequest) -> ProtocolPlan:
+    return ProtocolPlan.stream(_build_payload(request))
 
 
 TRANSPORT = BleTransportProfile(

@@ -8,6 +8,7 @@ from ....raster import PixelFormat, RasterBuffer
 from ...compression import compress_zlib_wbits_10
 from ...encoding import pack_line
 from ...family import ProtocolFamily
+from ...plan import ProtocolPlan
 from ...steps import ProtocolReplyExpectation, ProtocolStep
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest
@@ -205,11 +206,13 @@ class LuckNormalFamilyRecipe:
     bitmap_encoder: LuckNormalBitmapEncoder = field(default_factory=LuckNormalBitmapEncoder)
     variants: Mapping[str, "LuckNormalVariantRecipe"] = field(default_factory=dict)
 
-    def build_job(self, request: PrintJobRequest) -> bytes | tuple[ProtocolStep, ...]:
+    def build_job(self, request: PrintJobRequest) -> ProtocolPlan:
         steps = self.build_steps(request)
         if self._uses_query_interleaving(request.protocol_variant):
-            return tuple(steps)
-        return b"".join(step.data for step in steps if step.include_in_payload)
+            return ProtocolPlan.sequence(tuple(steps))
+        return ProtocolPlan.stream(
+            b"".join(step.data for step in steps if step.include_in_payload)
+        )
 
     def build_steps(self, request: PrintJobRequest) -> list[ProtocolStep]:
         recipe = self.recipe_for_mode(request.paper_mode, request.protocol_variant)
