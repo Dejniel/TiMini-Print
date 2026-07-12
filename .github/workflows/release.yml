@@ -124,7 +124,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt "pyinstaller>=6.0,<7"
+          python -m pip install -r requirements.txt "pyinstaller==6.21.0"
 
       - name: Resolve artifact metadata
         id: meta
@@ -177,17 +177,30 @@ jobs:
           fi
           echo "path=$target" >> "$GITHUB_OUTPUT"
 
+      - name: Package executable and licenses
+        id: package
+        shell: bash
+        env:
+          ARTIFACT_NAME: ${{ steps.meta.outputs.artifact_name }}
+          TARGET_PATH: ${{ steps.built.outputs.path }}
+        run: |
+          package_dir="dist/package/${ARTIFACT_NAME}"
+          archive="dist/${ARTIFACT_NAME}.zip"
+          python tools/package_release.py --artifact "$TARGET_PATH" --output "$package_dir"
+          python -m zipfile -c "$archive" "$package_dir"
+          echo "path=$archive" >> "$GITHUB_OUTPUT"
+
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.meta.outputs.artifact_name }}
-          path: ${{ steps.built.outputs.path }}
+          path: ${{ steps.package.outputs.path }}
 
       - name: Upload files to GitHub release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2.5.0
         with:
-          files: ${{ steps.built.outputs.path }}
+          files: ${{ steps.package.outputs.path }}
 
   build_gui:
     name: Build GUI ${{ matrix.platform_name }} ${{ matrix.arch_name }}
@@ -248,7 +261,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt "pyinstaller>=6.0,<7"
+          python -m pip install -r requirements.txt "pyinstaller==6.21.0"
 
       - name: Verify tkinter for GUI build
         shell: bash
@@ -306,37 +319,31 @@ jobs:
           fi
           echo "path=$target" >> "$GITHUB_OUTPUT"
 
-      - name: Package macOS app bundle
-        if: runner.os == 'macOS'
+      - name: Package executable and licenses
+        id: package
         shell: bash
         env:
           ARTIFACT_NAME: ${{ steps.meta.outputs.artifact_name }}
           TARGET_PATH: ${{ steps.built.outputs.path }}
         run: |
-          if [ ! -d "$TARGET_PATH" ]; then
-            echo "Expected macOS GUI bundle at $TARGET_PATH"
-            exit 1
+          package_dir="dist/package/${ARTIFACT_NAME}"
+          archive="dist/${ARTIFACT_NAME}.zip"
+          python tools/package_release.py --artifact "$TARGET_PATH" --output "$package_dir"
+          if [ "${{ runner.os }}" = "macOS" ] && [ -d "$TARGET_PATH" ]; then
+            ditto -c -k --keepParent "$package_dir" "$archive"
+          else
+            python -m zipfile -c "$archive" "$package_dir"
           fi
-          ditto -c -k --keepParent "$TARGET_PATH" "dist/${ARTIFACT_NAME}.zip"
-
-      - name: Resolve upload path
-        id: upload
-        shell: bash
-        run: |
-          path="${{ steps.built.outputs.path }}"
-          if [ "${{ runner.os }}" = "macOS" ]; then
-            path="dist/${{ steps.meta.outputs.artifact_name }}.zip"
-          fi
-          echo "path=$path" >> "$GITHUB_OUTPUT"
+          echo "path=$archive" >> "$GITHUB_OUTPUT"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.meta.outputs.artifact_name }}
-          path: ${{ steps.upload.outputs.path }}
+          path: ${{ steps.package.outputs.path }}
 
       - name: Upload files to GitHub release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2.5.0
         with:
-          files: ${{ steps.upload.outputs.path }}
+          files: ${{ steps.package.outputs.path }}

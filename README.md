@@ -20,12 +20,12 @@ I bought a Chinese mini printer and could not find any decent desktop software t
 - If you need security/reverse engineering, broader commercial support, or a custom implementation, feel free to [reach out](https://inajiffy.eu/). I work on broken systems, neglected integrations, and projects that are already end-of-life, unsupported — or simply unsupportable. I also handle custom implementation work that sits outside the usual support model
 
 # Requirements
-You can find the latest standalone executable files on the [releases page](https://github.com/Dejniel/TiMini-Print/releases) and choose the asset that starts with `TiMini-Print-GUI-...` or `TiMini-Print-Command-Line-...` for your platform, or you can build the project yourself
+You can find the latest standalone archives on the [releases page](https://github.com/Dejniel/TiMini-Print/releases). Choose the ZIP asset that starts with `TiMini-Print-GUI-...` or `TiMini-Print-Command-Line-...` for your platform, extract it, and run the included executable. Each archive also contains the project and third-party license notices. You can alternatively build the project yourself
 
 Theoretically, I support Windows, macOS, and Linux, but I test builds only on Ubuntu-like systems—if you need to run this elsewhere, please report issues or submit a fix :P
 
 ## Manual building requirements
-- Python 3.8+
+- Python 3.10+
 - `pip install -r requirements.txt`
   - Windows + Python 3.13+: installing `winsdk` may require building binaries during download
   - (optional, GUI only) if `tkinter` is missing, install it from your system packages:
@@ -33,12 +33,12 @@ Theoretically, I support Windows, macOS, and Linux, but I test builds only on Ub
   macOS (Homebrew Python): `brew install python-tk`
 
 # Quick start
-If you use release binaries, run the downloaded executable directly.
+If you use a release archive, extract it and run the included executable.
 If you build or run from source instead, use `python3 timiniprint_gui.py` or `python3 timiniprint_command_line.py`.
 
 ## Graphical user interface
 You can scan, connect or disconnect with one button, choose a file, and print.
-Start the graphical app by running the [downloaded executable file](#requirements).
+Start the graphical app by running the executable from the [extracted release archive](#requirements).
 On Linux, make sure it has execute permission first.
 
 ```bash
