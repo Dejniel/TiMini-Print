@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import re
 import shutil
 from collections import deque
 from importlib import metadata
 from pathlib import Path
 
-from packaging.markers import default_environment
-from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
-
-
 _PROJECT_FILES = ("LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md")
 _BUILD_DISTRIBUTIONS = ("PyInstaller",)
 _LICENSE_PREFIXES = ("license", "copying", "notice", "copyright")
+_CANONICAL_SEPARATOR = re.compile(r"[-_.]+")
 
 
 def prepare_release_package(artifact: Path, output: Path) -> None:
@@ -48,6 +45,9 @@ def prepare_release_package(artifact: Path, output: Path) -> None:
 
 
 def _resolve_distributions(requirements_path: Path) -> list[metadata.Distribution]:
+    from packaging.markers import default_environment
+    from packaging.requirements import Requirement
+
     environment = default_environment()
     queue: deque[str] = deque(_BUILD_DISTRIBUTIONS)
     for line in requirements_path.read_text(encoding="utf-8").splitlines():
@@ -61,7 +61,7 @@ def _resolve_distributions(requirements_path: Path) -> list[metadata.Distributio
     resolved: dict[str, metadata.Distribution] = {}
     while queue:
         requested_name = queue.popleft()
-        canonical_name = canonicalize_name(requested_name)
+        canonical_name = _canonicalize_name(requested_name)
         if canonical_name in resolved:
             continue
         distribution = metadata.distribution(requested_name)
@@ -84,7 +84,7 @@ def _copy_distribution_licenses(
     manifest: list[str] = []
     for distribution in distributions:
         name = distribution.metadata["Name"]
-        canonical_name = canonicalize_name(name)
+        canonical_name = _canonicalize_name(name)
         copied = 0
         for entry in distribution.files or ():
             relative = Path(str(entry))
@@ -123,6 +123,10 @@ def _is_license_file(path: Path) -> bool:
         ):
             return True
     return path.name.lower().startswith(_LICENSE_PREFIXES)
+
+
+def _canonicalize_name(name: str) -> str:
+    return _CANONICAL_SEPARATOR.sub("-", name).lower()
 
 
 def main() -> int:
