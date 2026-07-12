@@ -98,7 +98,7 @@ def _copy_distribution_licenses(
             shutil.copy2(source, target)
             copied += 1
 
-        fallback = static_licenses / canonical_name
+        fallback = _static_license_directory(static_licenses, canonical_name)
         if copied == 0 and fallback.is_dir():
             shutil.copytree(fallback, destination / canonical_name, dirs_exist_ok=True)
             copied = sum(1 for path in fallback.rglob("*") if path.is_file())
@@ -127,6 +127,14 @@ def _is_license_file(path: Path) -> bool:
 
 def _canonicalize_name(name: str) -> str:
     return _CANONICAL_SEPARATOR.sub("-", name).lower()
+
+
+def _static_license_directory(root: Path, canonical_name: str) -> Path:
+    if canonical_name.startswith("pyobjc-"):
+        return root / "pyobjc"
+    if canonical_name.startswith("winrt-"):
+        return root / "winrt"
+    return root / canonical_name
 
 
 def main() -> int:

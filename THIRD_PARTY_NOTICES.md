@@ -15,10 +15,11 @@ TiMini-Print release builds use the following directly declared components:
 | PyInstaller | 6.21.0 | GPL-2.0-or-later with the PyInstaller bootloader exception |
 
 Each binary archive contains license files for the exact package versions used
-on that platform under `licenses/python/`. The pySerial 3.5 text comes from its
-official release because its wheel omits the file. The archive also includes
-pypdfium2's platform-specific `BUILD_LICENSES` directory for PDFium and its
-bundled dependencies. `THIRD_PARTY_MANIFEST.txt` records the exact installed
-versions, including active transitive dependencies.
+on that platform under `licenses/python/`. Where a wheel omits its license file,
+the text is taken from the matching official release; this currently applies to
+pySerial, PyObjC framework wheels, PyWinRT wheels, and winsdk. The archive also
+includes pypdfium2's platform-specific `BUILD_LICENSES` directory for PDFium
+and its bundled dependencies. `THIRD_PARTY_MANIFEST.txt` records the exact
+installed versions, including active transitive dependencies.
 
 The presence of a notice does not imply endorsement by a component's authors.
