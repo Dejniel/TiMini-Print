@@ -137,8 +137,8 @@ def supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]
     if variant in _M110_VARIANTS:
         return tuple(_M110_PAPER_MEDIA)
     if variant in _PRINTMASTER_M110_VARIANTS:
-        # TODO: Print Master has paper/material commands, but the recovered
-        # normal M110/M120 print methods do not set medium type inline.
+        # TODO: Print Master has paper/material commands, but the current
+        # M110/M120 recipe does not set medium type inline.
         return (PaperMode.TAG,)
     return (PaperMode.PLAIN,)
 
