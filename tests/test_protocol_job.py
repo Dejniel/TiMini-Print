@@ -1388,35 +1388,6 @@ class ProtocolJobTests(unittest.TestCase):
             data,
         )
 
-    def test_build_v5c_compressed_job_raises_when_compressor_fails(self) -> None:
-        gray_raster = self.raster.RasterBuffer(
-            pixels=[15, 13, 11, 9, 7, 5, 3, 1],
-            width=8,
-            pixel_format=self.raster.PixelFormat.GRAY4,
-        )
-        raster_set = self._raster_set(
-            self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0]),
-            gray_raster,
-        )
-        with patch(
-            "timiniprint.protocol.families.v5c.compress_lzo1x_1",
-            side_effect=RuntimeError("python-lzo is required for V5C compressed jobs"),
-        ):
-            with self.assertRaisesRegex(RuntimeError, "python-lzo is required"):
-                self.builders._build_job_from_raster_set(
-                    raster_set=raster_set,
-                    is_text=False,
-                    speed=10,
-                    energy=5000,
-                    density=None,
-                    blackening=3,
-                    lsb_first=True,
-                    protocol_family=ProtocolFamily.V5C,
-                    feed_padding=12,
-                    dev_dpi=203,
-                    image_pipeline=self.v5c_a5_gray4,
-                )
-
     def test_build_dck_job_is_not_implemented(self) -> None:
             with self.assertRaisesRegex(NotImplementedError, "DCK protocol family"):
                 self.builders._build_job(

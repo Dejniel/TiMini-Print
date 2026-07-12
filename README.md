@@ -28,9 +28,6 @@ Theoretically, I support Windows, macOS, and Linux, but I test builds only on Ub
 - Python 3.8+
 - `pip install -r requirements.txt`
   - Windows + Python 3.13+: installing `winsdk` may require building binaries during download
-  - If `python-lzo` needs a source build, install the LZO development package first:
-    Linux (Ubuntu/Debian): `sudo apt install liblzo2-dev`
-    macOS (Homebrew Python): `brew install lzo`
   - (optional, GUI only) if `tkinter` is missing, install it from your system packages:
   Linux (Ubuntu/Debian): `sudo apt install python3-tk`
   macOS (Homebrew Python): `brew install python-tk`

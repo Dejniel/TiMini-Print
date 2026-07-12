@@ -39,20 +39,6 @@ class AppDiagnosticsTests(unittest.TestCase):
         self.assertIn("winsdk", joined)
         self.assertIn("pyobjc-framework-IOBluetooth", joined)
 
-    def test_python_lzo_uses_lzo_import_name(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            req = Path(tmp) / "requirements.txt"
-            req.write_text("python-lzo\n", encoding="utf-8")
-
-            def fake_has_module(name: str) -> bool:
-                return name == "lzo"
-
-            with patch.object(diagnostics, "_REQUIREMENTS_PATH", req), patch.object(
-                diagnostics, "_has_module", side_effect=fake_has_module
-            ):
-                warnings = diagnostics.collect_dependency_warnings()
-        self.assertEqual(warnings, [])
-
     def test_emit_startup_warnings_only_once(self) -> None:
         reporter, sink = build_capture_reporter()
         with patch.object(diagnostics, "collect_dependency_warnings", return_value=["A", "B"]):
