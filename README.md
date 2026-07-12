@@ -241,3 +241,18 @@ A30, B246D, D110_M, DL-T1, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Pr
 - Y02C and clones: Y02S
 - YINTIBAO and clones: PAPERGO
 <!-- END todo-models -->
+
+## Contributing
+
+Contributions are welcome. Before submitting code, read
+[CONTRIBUTING.md](CONTRIBUTING.md), including the rules for original protocol
+implementations and sanitized diagnostics.
+
+Security issues must be reported privately as described in
+[SECURITY.md](SECURITY.md).
+
+## License
+
+TiMini-Print is licensed under the [Apache License 2.0](LICENSE). Copyright and
+attribution information is available in [NOTICE](NOTICE). Binary distributions
+also include notices for their bundled third-party components.
