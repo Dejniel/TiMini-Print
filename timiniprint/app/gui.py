@@ -366,19 +366,24 @@ class TiMiniPrintGUI(tk.Tk):
         window = tk.Toplevel(self)
         self._licenses_window = window
         window.title("TiMini-Print licenses")
-        window.geometry("760x600")
-        window.minsize(480, 320)
+        window.geometry("900x650")
+        window.minsize(600, 400)
 
         frame = ttk.Frame(window, padding=8)
         frame.pack(fill="both", expand=True)
         frame.rowconfigure(0, weight=1)
         frame.columnconfigure(0, weight=1)
 
-        text = tk.Text(frame, wrap="word", padx=8, pady=8)
-        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
-        text.configure(yscrollcommand=scrollbar.set)
+        text = tk.Text(frame, wrap="none", font="TkFixedFont", padx=8, pady=8)
+        vertical_scrollbar = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
+        horizontal_scrollbar = ttk.Scrollbar(frame, orient="horizontal", command=text.xview)
+        text.configure(
+            yscrollcommand=vertical_scrollbar.set,
+            xscrollcommand=horizontal_scrollbar.set,
+        )
         text.grid(row=0, column=0, sticky="nsew")
-        scrollbar.grid(row=0, column=1, sticky="ns")
+        vertical_scrollbar.grid(row=0, column=1, sticky="ns")
+        horizontal_scrollbar.grid(row=1, column=0, sticky="ew")
         text.insert("1.0", license_text())
         text.configure(state="disabled")
 
