@@ -238,6 +238,25 @@ class _LinuxAttSocket:
             return False
         return self._transport.can_send_control_packet()
 
+    def can_send_bulk_payload(self) -> bool:
+        if not self._connected or self._client is None:
+            return False
+        return self._transport.can_send_bulk_payload()
+
+    def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
+        if not self._connected or self._client is None:
+            return False
+        return bool(
+            self._run(
+                self._transport.send_bulk_payload(
+                    self._client,
+                    data,
+                    mtu_size=self._mtu_size,
+                    timeout=timeout,
+                )
+            )
+        )
+
     def can_query_control_packet(self) -> bool:
         if not self._connected or self._client is None:
             return False
