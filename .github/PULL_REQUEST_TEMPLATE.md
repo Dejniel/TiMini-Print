@@ -4,9 +4,7 @@ Describe what changed and why.
 
 ## Verification
 
-List the exact tests run. State explicitly whether the change was tested on a
-physical printer and, if so, include the model, detected Bluetooth name,
-transport, and relevant profile/runtime settings.
+List the exact tests run. State explicitly whether the change was tested on a physical printer and, if so, include the model, detected Bluetooth name, transport, and relevant profile/runtime settings.
 
 ## Contribution checklist
 

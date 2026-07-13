@@ -1,37 +1,23 @@
 # Contributing
 
-Thank you for helping improve TiMini-Print. Keep each pull request focused on
-one behavioral change and include the smallest relevant tests.
+Thanks for helping TiMini-Print support more printers and work better across platforms. Keep each pull request focused on one change, explain what it fixes, and include the smallest useful tests.
 
-## Contribution terms
+## Before sending a change
 
-By submitting a contribution, you represent that you have the right to submit
-it and agree that it is licensed under the Apache License 2.0.
+- Run the smallest relevant test set and include the exact command in the pull request.
+- Add a regression test when fixing a bug.
+- Say clearly whether you tested only the code or also used a physical printer.
+- For printer tests, include the model, detected Bluetooth name, transport, relevant profile/runtime settings, and the exact before/after result.
+- Do not assume that one tested model proves the same behavior for a whole printer family.
 
-Do not submit source code, assets, data, credentials, personal data, unique
-device identifiers, or other material copied from manufacturer applications,
-firmware, SDKs, or other proprietary sources. Do not attach proprietary
-binaries, decompiled sources, private source dumps, or packet captures that
-contain identifiers.
+## Rights and source material
 
-Protocol contributions must be independently implemented from lawful
-observations, public documentation, or contributor-owned test data. Describe
-the provenance, affected printer model, transport, and test method in the pull
-request. Sanitize Bluetooth addresses, serial numbers, credentials, and other
-device-specific identifiers from logs and fixtures.
+By submitting a contribution, you confirm that you have the right to submit it and agree that it is licensed under Apache-2.0.
 
-If the contribution was created as part of your employment or for another
-organization, make sure you have any permission required to submit it.
+Do not submit code, assets, data, credentials, personal data, unique device identifiers, or other material copied from manufacturer applications, firmware, SDKs, or other proprietary sources. Do not attach proprietary binaries, decompiled sources, private source dumps, or packet captures containing identifiers.
 
-## Verification
+Protocol changes must be your own implementation based on lawful observations, public documentation, or test data you own. Briefly describe how you learned the protocol behavior and how you tested it. Remove Bluetooth addresses, serial numbers, credentials, and other device-specific identifiers from logs and fixtures.
 
-- Run the smallest relevant test set and state the exact command in the pull
-  request.
-- Add a regression test for a fixed bug.
-- Distinguish code/test verification from physical printer verification.
-- For hardware verification, include the model, detected Bluetooth name,
-  transport, relevant profile/runtime settings, and exact before/after result.
-- Do not generalize behavior from one printer to a whole family without
-  evidence that the family shares it.
+If you created the contribution for an employer or another organization, make sure you have permission to submit it.
 
-For more project-specific architecture and review rules, see `AGENTS.md`.
+For the project's architecture and review rules, see `AGENTS.md`.
