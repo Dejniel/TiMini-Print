@@ -25,7 +25,7 @@ You can find the latest standalone executable files on the [releases page](https
 Theoretically, I support Windows, macOS, and Linux, but I test builds only on Ubuntu-like systems—if you need to run this elsewhere, please report issues or submit a fix :P
 
 ## Manual building requirements
-- Python 3.10+
+- Python 3.8+
 - `pip install -r requirements.txt`
   - Windows + Python 3.13+: installing `winsdk` may require building binaries during download
   - (optional, GUI only) if `tkinter` is missing, install it from your system packages:

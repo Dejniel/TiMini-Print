@@ -9,6 +9,8 @@ from ...encoding import pack_line
 from ...steps import ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
 from ..base import PrintJobRequest
 
+_BIT_COUNTS = tuple(bin(value).count("1") for value in range(256))
+
 
 class NiimbotRequest(IntEnum):
     CONNECT = 0xC1
@@ -441,7 +443,7 @@ def _count_pixels(row_data: bytes, printhead_pixels: int) -> tuple[int, int, int
     parts = [0, 0, 0]
     for byte_index, value in enumerate(row_data):
         chunk_index = byte_index // chunk_size if chunk_size else 0
-        bit_count = int(value).bit_count()
+        bit_count = _BIT_COUNTS[value]
         total += bit_count
         if split and chunk_index < 3:
             parts[chunk_index] += bit_count

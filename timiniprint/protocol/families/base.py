@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
-from typing import Callable, Mapping
+from typing import Callable, Mapping, Optional, Tuple
 
 from ...raster import PixelFormat, RasterSet
 from ..family import ProtocolFamily
@@ -13,9 +13,9 @@ from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 if TYPE_CHECKING:
     from ..runtime import RuntimePrintCapabilities
 
-ManualMotionBuilder = Callable[[int, ProtocolFamily, str | None], bytes]
-FamilyJobBuilder = Callable[["PrintJobRequest"], ProtocolPlan | None]
-PaperModeResolver = Callable[[str | None], tuple[PaperMode, ...]]
+ManualMotionBuilder = Callable[[int, ProtocolFamily, Optional[str]], bytes]
+FamilyJobBuilder = Callable[["PrintJobRequest"], Optional[ProtocolPlan]]
+PaperModeResolver = Callable[[Optional[str]], Tuple[PaperMode, ...]]
 
 
 @dataclass(frozen=True)

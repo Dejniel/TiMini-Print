@@ -5,6 +5,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Union
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
@@ -18,7 +19,7 @@ README_PATH = REPO_ROOT / "README.md"
 UNSUPPORTED_MODELS_PATH = REPO_ROOT / "timiniprint/data/printer_models_unsupported.json"
 SUPPORTED_MARKER = "supported-models"
 TODO_MARKER = "todo-models"
-ReadablePrinterModel = SupportedPrinterModel | UnsupportedPrinterModel
+ReadablePrinterModel = Union[SupportedPrinterModel, UnsupportedPrinterModel]
 
 
 def _display_name_sort_key(value: str) -> tuple[str, str]:

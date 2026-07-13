@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Tuple, Union
 
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImageEncoding, ImagePipelineConfig, PaperMode
@@ -80,8 +80,8 @@ class StreamProfile:
 @dataclass(frozen=True)
 class PrintDefaults:
     energy: ModeLevelProfile
-    speed: SpeedProfile | None = None
-    density: ModeLevelProfile | None = None
+    speed: Optional[SpeedProfile] = None
+    density: Optional[ModeLevelProfile] = None
 
 
 @dataclass(frozen=True)
@@ -93,20 +93,20 @@ class RuntimeCapabilities:
 @dataclass(frozen=True)
 class ProtocolDefault:
     type: ProtocolFamily
-    packets_type: str | None = None
+    packets_type: Optional[str] = None
 
 
 @dataclass(frozen=True)
 class ProtocolOverride:
-    type: ProtocolFamily | None = None
-    packets_type: str | None = None
+    type: Optional[ProtocolFamily] = None
+    packets_type: Optional[str] = None
 
 
 @dataclass(frozen=True)
 class RuntimePreset:
     key: str
-    control_algorithm: str | None
-    density: ModeLevelProfile | None = None
+    control_algorithm: Optional[str]
+    density: Optional[ModeLevelProfile] = None
     capabilities: RuntimeCapabilities = field(default_factory=RuntimeCapabilities)
 
     def select_density(self, *, is_text: bool, blackening: int) -> int:
@@ -117,15 +117,15 @@ class RuntimePreset:
 
 @dataclass(frozen=True)
 class RuntimeSettings:
-    control_algorithm: str | None = None
-    preset: RuntimePreset | None = None
+    control_algorithm: Optional[str] = None
+    preset: Optional[RuntimePreset] = None
     capabilities: RuntimeCapabilities = field(default_factory=RuntimeCapabilities)
 
     @property
-    def preset_key(self) -> str | None:
+    def preset_key(self) -> Optional[str]:
         return None if self.preset is None else self.preset.key
 
-    def select_density(self, *, is_text: bool, blackening: int) -> int | None:
+    def select_density(self, *, is_text: bool, blackening: int) -> Optional[int]:
         if self.preset is None or self.preset.density is None:
             return None
         return self.preset.select_density(is_text=is_text, blackening=blackening)
@@ -137,9 +137,9 @@ class PaperPreset:
     label: str
     paper_width_px: int
     render_width_px: int
-    paper_mode: PaperMode | None = None
+    paper_mode: Optional[PaperMode] = None
     left_padding_px: int = 0
-    max_height_px: int | None = None
+    max_height_px: Optional[int] = None
 
     def __post_init__(self) -> None:
         if not self.key:
@@ -187,9 +187,9 @@ class PrinterProfile:
     default_image_pipeline: ImagePipelineConfig
     stream: StreamProfile
     print_defaults: PrintDefaults
-    runtime_presets: tuple[RuntimePreset, ...] = ()
-    paper_presets: tuple[PaperPreset, ...] = ()
-    default_paper_preset_key: str | None = None
+    runtime_presets: Tuple[RuntimePreset, ...] = ()
+    paper_presets: Tuple[PaperPreset, ...] = ()
+    default_paper_preset_key: Optional[str] = None
     ble_mtu_request: int = 512
     post_print_feed_count: int = 2
     a4xii: bool = False
@@ -212,7 +212,7 @@ class PrinterProfile:
                 f"{self.default_paper_preset_key} is not defined"
             )
 
-    def paper_preset(self, key: str) -> PaperPreset | None:
+    def paper_preset(self, key: str) -> Optional[PaperPreset]:
         return next((preset for preset in self.paper_presets if preset.key == key), None)
 
     @property
@@ -227,7 +227,7 @@ class PrinterProfile:
             )
         return preset
 
-    def paper_preset_for_mode(self, paper_mode: PaperMode | None) -> PaperPreset:
+    def paper_preset_for_mode(self, paper_mode: Optional[PaperMode]) -> PaperPreset:
         if paper_mode is None:
             return self.default_paper_preset
         preset = next(
@@ -248,11 +248,11 @@ class PrinterProfile:
         return preset
 
     @property
-    def default_paper_mode(self) -> PaperMode | None:
+    def default_paper_mode(self) -> Optional[PaperMode]:
         return self.default_paper_preset.paper_mode
 
     @property
-    def speed(self) -> SpeedProfile | None:
+    def speed(self) -> Optional[SpeedProfile]:
         return self.print_defaults.speed
 
     @property
@@ -260,10 +260,10 @@ class PrinterProfile:
         return self.print_defaults.energy
 
     @property
-    def density(self) -> ModeLevelProfile | None:
+    def density(self) -> Optional[ModeLevelProfile]:
         return self.print_defaults.density
 
-    def select_speed(self, *, is_text: bool) -> int | None:
+    def select_speed(self, *, is_text: bool) -> Optional[int]:
         if self.speed is None:
             return None
         return self.speed.select(is_text=is_text)
@@ -271,7 +271,7 @@ class PrinterProfile:
     def select_energy(self, *, is_text: bool, blackening: int) -> int:
         return self.energy.select(is_text=is_text, blackening=blackening)
 
-    def select_density(self, *, is_text: bool, blackening: int) -> int | None:
+    def select_density(self, *, is_text: bool, blackening: int) -> Optional[int]:
         if self.density is None:
             return None
         return self.density.select(is_text=is_text, blackening=blackening)
@@ -279,11 +279,11 @@ class PrinterProfile:
 
 @dataclass(frozen=True)
 class ModelDetection:
-    prefixes: tuple[str, ...] = ()
-    exact_names: tuple[str, ...] = ()
-    mac_suffixes: tuple[str, ...] = ()
-    _folded_prefixes: tuple[str, ...] = field(init=False, repr=False)
-    _folded_exact_names: tuple[str, ...] = field(init=False, repr=False)
+    prefixes: Tuple[str, ...] = ()
+    exact_names: Tuple[str, ...] = ()
+    mac_suffixes: Tuple[str, ...] = ()
+    _folded_prefixes: Tuple[str, ...] = field(init=False, repr=False)
+    _folded_exact_names: Tuple[str, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         prefixes = tuple(DetectionNormalizer.normalize_name(prefix) for prefix in self.prefixes)
@@ -355,12 +355,12 @@ class NamedModelDetection:
         return self.normalize_public_name(self.name)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True)
 class PrinterModel:
     model_key: str
-    marketing_name: str | None = None
-    detections: tuple[NamedModelDetection, ...]
-    origin_app_packages: tuple[str, ...] = ()
+    detections: Tuple[NamedModelDetection, ...]
+    marketing_name: Optional[str] = None
+    origin_app_packages: Tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.model_key:
@@ -374,16 +374,16 @@ class PrinterModel:
             raise ValueError(f"Printer model {self.model_key} requires detections")
 
     @property
-    def names(self) -> tuple[str, ...]:
+    def names(self) -> Tuple[str, ...]:
         return tuple(detection.name for detection in self.detections)
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True)
 class SupportedPrinterModel(PrinterModel):
-    profile_key: str
-    protocol_override: ProtocolOverride | None = None
-    image_pipeline: ImagePipelineConfig | None = None
-    profile_runtime_preset_key: str | None = None
+    profile_key: str = ""
+    protocol_override: Optional[ProtocolOverride] = None
+    image_pipeline: Optional[ImagePipelineConfig] = None
+    profile_runtime_preset_key: Optional[str] = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -391,10 +391,10 @@ class SupportedPrinterModel(PrinterModel):
             raise ValueError(f"Printer model {self.model_key} requires profile_key")
 
 
-@dataclass(frozen=True, kw_only=True)
+@dataclass(frozen=True)
 class UnsupportedPrinterModel(PrinterModel):
-    profile_key_prediction: str | None = None
-    notes: str | None = None
+    profile_key_prediction: Optional[str] = None
+    notes: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -410,7 +410,7 @@ class UnsupportedModelMatch:
     detection: NamedModelDetection
 
 
-ModelMatch = SupportedModelMatch | UnsupportedModelMatch
+ModelMatch = Union[SupportedModelMatch, UnsupportedModelMatch]
 
 
 __all__ = [

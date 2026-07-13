@@ -9,7 +9,7 @@ on:
 
 jobs:
   test:
-    name: Test ${{ matrix.platform_name }} ${{ matrix.arch_name }}
+    name: Test ${{ matrix.platform_name }} ${{ matrix.arch_name }} Python ${{ matrix.python_version }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -18,18 +18,27 @@ jobs:
           - runner: ubuntu-22.04
             platform_name: Linux
             arch_name: x86_64
+            python_version: "3.11"
           - runner: ubuntu-22.04-arm
             platform_name: Linux
             arch_name: arm64
+            python_version: "3.11"
           - runner: windows-latest
             platform_name: Windows
             arch_name: x86_64
+            python_version: "3.11"
           - runner: macos-15
             platform_name: macOS
             arch_name: arm64
+            python_version: "3.11"
           - runner: macos-15-intel
             platform_name: macOS
             arch_name: x86_64
+            python_version: "3.11"
+          - runner: ubuntu-22.04
+            platform_name: Linux
+            arch_name: x86_64
+            python_version: "3.8"
 
     steps:
       - name: Checkout
@@ -38,7 +47,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python_version }}
 
       - name: Install dependencies
         shell: bash

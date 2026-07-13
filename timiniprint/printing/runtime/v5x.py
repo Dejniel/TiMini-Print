@@ -21,6 +21,8 @@ from ...protocol.steps import ProtocolStepOperation
 from .base import RuntimeController
 from .v5x_density import V5XJobContext, adjust_density_payload, start_delay_ms
 
+_BIT_COUNTS = tuple(bin(value).count("1") for value in range(256))
+
 
 @dataclass
 class _V5XSessionState:
@@ -212,7 +214,7 @@ class V5XRuntimeController(RuntimeController):
         if split.bulk_payload and not is_gray:
             total_bits = len(split.bulk_payload) * 8
             if total_bits > 0:
-                black_bits = sum(chunk.bit_count() for chunk in split.bulk_payload)
+                black_bits = sum(_BIT_COUNTS[chunk] for chunk in split.bulk_payload)
                 coverage_ratio = black_bits / total_bits
         return V5XJobContext(coverage_ratio=coverage_ratio, is_gray=is_gray)
 

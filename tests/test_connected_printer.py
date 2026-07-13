@@ -162,25 +162,23 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
             image_pipeline=pipeline,
         )
 
-        with (
-            patch(
-                "timiniprint.printing.connected._build_raster_page_job",
-                return_value=one_page_job,
-            ) as build_page,
-            patch(
+        with patch(
+            "timiniprint.printing.connected._build_raster_page_job",
+            return_value=one_page_job,
+        ) as build_page:
+            with patch(
                 "timiniprint.printing.connected._combine_raster_page_jobs",
                 return_value=combined_job,
-            ) as combine_pages,
-        ):
-            self.assertEqual(
-                connected.raster_job(
-                    raster_set,
-                    is_text=False,
-                    settings=settings,
-                    image_pipeline=pipeline,
-                ),
-                combined_job,
-            )
+            ) as combine_pages:
+                self.assertEqual(
+                    connected.raster_job(
+                        raster_set,
+                        is_text=False,
+                        settings=settings,
+                        image_pipeline=pipeline,
+                    ),
+                    combined_job,
+                )
 
         build_page.assert_called_once_with(
             device,

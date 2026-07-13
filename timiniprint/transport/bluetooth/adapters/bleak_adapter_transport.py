@@ -393,7 +393,7 @@ class _BleakTransportSession:
                 self._flow_resume_event_for_current_loop().wait(),
                 timeout=max(0.0, timeout),
             )
-        except TimeoutError:
+        except asyncio.TimeoutError:
             raise TimeoutError("Timed out waiting for BLE flow-control resume") from None
 
     def handle_notification(self, payload: bytes) -> None:
@@ -723,7 +723,7 @@ class _BleakTransportSession:
     ) -> bytes | None:
         try:
             return await asyncio.wait_for(waiter.future, timeout=max(0.0, timeout))
-        except TimeoutError:
+        except asyncio.TimeoutError:
             if required:
                 raise TimeoutError(f"Timed out waiting for BLE notification: {waiter.label}") from None
             self.report_debug(f"optional notification wait timed out: {waiter.label}")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 from PIL import Image
 
@@ -20,7 +20,7 @@ from ..rendering.renderer import PrintImageRenderer
 from .paper import ResolvedPaper, resolve_paper
 from .settings import PrintSettings, resolve_gray_preprocessing
 
-TextFontResolver = Callable[[str | None], str | None]
+TextFontResolver = Callable[[Optional[str]], Optional[str]]
 TextLoader = Callable[[str], str]
 
 TEXT_DOCUMENT_NAME = "<text>"

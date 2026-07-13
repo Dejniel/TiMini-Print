@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImagePipelineConfig
@@ -74,7 +74,7 @@ class SerialTarget:
     baud_rate: int = 115200
 
 
-TransportTarget = BluetoothTarget | SerialTarget
+TransportTarget = Union[BluetoothTarget, SerialTarget]
 
 
 @dataclass(frozen=True)
@@ -84,12 +84,12 @@ class PrinterDevice:
     display_name: str
     profile: "PrinterProfile"
     protocol_family: ProtocolFamily
-    protocol_variant: str | None
+    protocol_variant: Optional[str]
     image_pipeline: ImagePipelineConfig
-    runtime_settings: "RuntimeSettings | None" = None
-    transport_target: TransportTarget | None = None
+    runtime_settings: Optional["RuntimeSettings"] = None
+    transport_target: Optional[TransportTarget] = None
     model_key: str = ""
-    origin_app_packages: tuple[str, ...] = ()
+    origin_app_packages: Tuple[str, ...] = ()
 
     @property
     def name(self) -> str:
@@ -128,6 +128,6 @@ class PrinterDevice:
     def ble_transport_profile(self) -> BleTransportProfile:
         return get_ble_transport_profile(self.protocol_family)
 
-    def with_transport_target(self, transport_target: TransportTarget | None) -> "PrinterDevice":
+    def with_transport_target(self, transport_target: Optional[TransportTarget]) -> "PrinterDevice":
         """Return a copy of this device with a different transport target."""
         return replace(self, transport_target=transport_target)

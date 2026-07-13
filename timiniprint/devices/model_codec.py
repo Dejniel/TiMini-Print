@@ -3,11 +3,16 @@ from __future__ import annotations
 from collections.abc import Mapping as MappingABC, Sequence as SequenceABC
 from dataclasses import MISSING, fields, is_dataclass
 from enum import Enum
-from types import UnionType
 from typing import Any, TypeVar, Union, get_args, get_origin, get_type_hints
 
 T = TypeVar("T")
-_UNION_ORIGINS = {Union, UnionType}
+_UNION_ORIGINS = {Union}
+try:
+    from types import UnionType
+except ImportError:  # Python 3.8 and 3.9
+    pass
+else:
+    _UNION_ORIGINS.add(UnionType)
 
 
 def model_from_json(model_type: type[T], payload: object, *, path: str = "$") -> T:

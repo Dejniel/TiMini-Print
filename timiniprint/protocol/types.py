@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 from dataclasses import dataclass
+from typing import Tuple
 
 from ..raster import PixelFormat
 
@@ -52,7 +53,7 @@ class PaperMode(str, Enum):
 
 @dataclass(frozen=True)
 class ImagePipelineConfig:
-    formats: tuple[PixelFormat, ...]
+    formats: Tuple[PixelFormat, ...]
     encoding: ImageEncoding
 
     def __post_init__(self) -> None:

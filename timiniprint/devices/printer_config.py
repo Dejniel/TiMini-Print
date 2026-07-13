@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Optional, Tuple
 
 from .device import (
     BluetoothTarget,
@@ -24,26 +24,26 @@ PRINTER_CONFIG_SCHEMA = "timiniprint/printer-config/v1"
 
 @dataclass(frozen=True)
 class RuntimeOverrides:
-    control_algorithm: str | None = None
-    preset_key: str | None = None
-    density: ModeLevelProfile | None = None
+    control_algorithm: Optional[str] = None
+    preset_key: Optional[str] = None
+    density: Optional[ModeLevelProfile] = None
     capabilities: RuntimeCapabilities = field(default_factory=RuntimeCapabilities)
 
 
 @dataclass(frozen=True)
 class PrinterConfigParts:
     profile: PrinterProfile
-    runtime_settings: RuntimeSettings | None
+    runtime_settings: Optional[RuntimeSettings]
     display_name: str
-    transport_target: TransportTarget | None
-    model_key: str | None = None
-    origin_app_packages: tuple[str, ...] = ()
+    transport_target: Optional[TransportTarget]
+    model_key: Optional[str] = None
+    origin_app_packages: Tuple[str, ...] = ()
 
 
 def runtime_settings_from_parts(
     *,
-    preset: RuntimePreset | None,
-) -> RuntimeSettings | None:
+    preset: Optional[RuntimePreset],
+) -> Optional[RuntimeSettings]:
     if preset is None:
         return None
     return RuntimeSettings(
@@ -56,7 +56,7 @@ def runtime_settings_from_parts(
 def serialize_printer_config(
     device: PrinterDevice,
     *,
-    model_key: str | None = None,
+    model_key: Optional[str] = None,
 ) -> dict[str, Any]:
     payload = {
         "schema": PRINTER_CONFIG_SCHEMA,
@@ -171,10 +171,10 @@ def _profile_from_printer_config(
 def _runtime_settings_from_printer_config(
     entry: Mapping[str, object],
     *,
-    base_settings: RuntimeSettings | None,
+    base_settings: Optional[RuntimeSettings],
     profile: PrinterProfile,
     require_preset: Callable[[PrinterProfile, str], RuntimePreset],
-) -> RuntimeSettings | None:
+) -> Optional[RuntimeSettings]:
     if "preset_key" in entry:
         preset_key = None if entry.get("preset_key") in (None, "") else str(entry["preset_key"])
     else:
@@ -214,7 +214,7 @@ def _runtime_settings_from_printer_config(
     )
 
 
-def _runtime_overrides_from_settings(runtime_settings: RuntimeSettings | None) -> RuntimeOverrides:
+def _runtime_overrides_from_settings(runtime_settings: Optional[RuntimeSettings]) -> RuntimeOverrides:
     if runtime_settings is None:
         return RuntimeOverrides()
     return RuntimeOverrides(
@@ -225,7 +225,7 @@ def _runtime_overrides_from_settings(runtime_settings: RuntimeSettings | None) -
     )
 
 
-def _serialize_transport_target(transport_target: TransportTarget | None) -> dict[str, Any] | None:
+def _serialize_transport_target(transport_target: Optional[TransportTarget]) -> Optional[dict[str, Any]]:
     if isinstance(transport_target, SerialTarget):
         payload = model_to_json(transport_target)
         payload["kind"] = "serial"
@@ -237,7 +237,7 @@ def _serialize_transport_target(transport_target: TransportTarget | None) -> dic
     return None
 
 
-def _parse_transport_target(value: object) -> TransportTarget | None:
+def _parse_transport_target(value: object) -> Optional[TransportTarget]:
     if value is None:
         return None
     if not isinstance(value, Mapping):
