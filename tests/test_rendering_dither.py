@@ -14,7 +14,12 @@ class RenderingDitherTests(unittest.TestCase):
         img.putdata([0, 100, 220, 255])
 
         self.assertEqual(
-            list(Ditherer(DitherMode.NONE).render_bw(img).convert("L").getdata()),
+            list(
+                Ditherer(DitherMode.NONE)
+                .render_bw(img)
+                .convert("L")
+                .get_flattened_data()
+            ),
             [0, 0, 255, 255],
         )
 
@@ -22,14 +27,21 @@ class RenderingDitherTests(unittest.TestCase):
         img = Image.new("L", (8, 8), 128)
 
         for mode in (DitherMode.BAYER_4, DitherMode.BAYER_8):
-            pixels = set(Ditherer(mode).render_bw(img).convert("L").getdata())
+            pixels = set(
+                Ditherer(mode).render_bw(img).convert("L").get_flattened_data()
+            )
             self.assertEqual(pixels, {0, 255})
 
     def test_atkinson_renders_black_and_white_pixels(self) -> None:
         img = Image.new("L", (8, 1))
         img.putdata([0, 64, 96, 120, 136, 160, 192, 255])
 
-        pixels = set(Ditherer(DitherMode.ATKINSON).render_bw(img).convert("L").getdata())
+        pixels = set(
+            Ditherer(DitherMode.ATKINSON)
+            .render_bw(img)
+            .convert("L")
+            .get_flattened_data()
+        )
 
         self.assertEqual(pixels, {0, 255})
 

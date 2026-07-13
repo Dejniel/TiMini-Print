@@ -39,19 +39,22 @@ class PrintImageRenderer:
     def encode(self, img: Image.Image, pixel_format: PixelFormat) -> RasterBuffer:
         if pixel_format == PixelFormat.BW1:
             return RasterBuffer(
-                pixels=[1 if p <= 127 else 0 for p in img.convert("L").getdata()],
+                pixels=[1 if p <= 127 else 0 for p in img.convert("L").get_flattened_data()],
                 width=img.width,
                 pixel_format=PixelFormat.BW1,
             )
         if pixel_format == PixelFormat.GRAY8:
             return RasterBuffer(
-                pixels=list(img.convert("L").getdata()),
+                pixels=list(img.convert("L").get_flattened_data()),
                 width=img.width,
                 pixel_format=pixel_format,
             )
         if pixel_format == PixelFormat.GRAY4:
             return RasterBuffer(
-                pixels=[15 - min(15, (value + 15) // 16) for value in img.convert("L").getdata()],
+                pixels=[
+                    15 - min(15, (value + 15) // 16)
+                    for value in img.convert("L").get_flattened_data()
+                ],
                 width=img.width,
                 pixel_format=pixel_format,
             )
@@ -179,5 +182,10 @@ class PrintImageRenderer:
     def _quantize_gray4(self, img: Image.Image) -> Image.Image:
         gray = img.convert("L")
         out = Image.new("L", gray.size)
-        out.putdata([min(15, (value + 15) // 16) * 16 for value in gray.getdata()])
+        out.putdata(
+            [
+                min(15, (value + 15) // 16) * 16
+                for value in gray.get_flattened_data()
+            ]
+        )
         return out

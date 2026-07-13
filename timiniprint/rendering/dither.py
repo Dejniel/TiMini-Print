@@ -39,7 +39,7 @@ class Ditherer:
         return self._ordered(gray, self._bayer_matrix(8))
 
     def _threshold(self, gray: "Image.Image") -> "Image.Image":
-        data = list(gray.getdata())
+        data = list(gray.get_flattened_data())
         avg = sum(data) / len(data) if data else 0
         threshold = int(max(0, min(255, avg - 13)))
         return self._bw_image(gray.size, [0 if p <= threshold else 255 for p in data])
@@ -58,7 +58,7 @@ class Ditherer:
 
     def _atkinson(self, gray: "Image.Image") -> "Image.Image":
         width, height = gray.size
-        values = [float(value) for value in gray.getdata()]
+        values = [float(value) for value in gray.get_flattened_data()]
         for y in range(height):
             for x in range(width):
                 idx = (y * width) + x

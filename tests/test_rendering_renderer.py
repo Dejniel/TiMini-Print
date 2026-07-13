@@ -60,7 +60,7 @@ class RenderingRendererTests(unittest.TestCase):
             gamma_handle=False,
         )
 
-        self.assertEqual(list(prepared.getdata()), [0, 32, 128, 240])
+        self.assertEqual(list(prepared.get_flattened_data()), [0, 32, 128, 240])
         raster = self.renderer.encode(prepared, PixelFormat.GRAY4)
         self.assertEqual(list(raster.pixels), [15, 13, 7, 0])
 
@@ -78,7 +78,7 @@ class RenderingRendererTests(unittest.TestCase):
         )
 
         self.assertEqual(preview.mode, "L")
-        self.assertEqual(list(preview.getdata()), [0, 0, 255, 255])
+        self.assertEqual(list(preview.get_flattened_data()), [0, 0, 255, 255])
 
     def test_preview_png_expands_gray4_visual_range(self) -> None:
         img = Image.new("L", (2, 1))
@@ -94,7 +94,7 @@ class RenderingRendererTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(list(preview.getdata()), [0, 255])
+        self.assertEqual(list(preview.get_flattened_data()), [0, 255])
 
 
 if __name__ == "__main__":
