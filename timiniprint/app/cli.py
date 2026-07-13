@@ -12,6 +12,7 @@ from typing import Optional, Sequence
 
 from .. import __version__, reporting
 from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarget
+from ..licensing import license_text
 from ..printing.connected import connect_printer
 from ..printing.settings import PrintSettings
 from ..protocol import ImageEncoding
@@ -37,6 +38,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--debug-row-markers", type=int, metavar="N", help="Debug only: add side row markers every N raster rows")
     parser.add_argument("--scan", action="store_true", help="List nearby supported printers and exit")
     parser.add_argument("--list-models", action="store_true", help="List known printer model keys and public names and exit")
+    parser.add_argument("--licenses", action="store_true", help="Show project and third-party licenses and exit")
     parser.add_argument("--text", metavar="TEXT", help="Print raw text instead of a file path")
     parser.add_argument("--text-font", metavar="PATH", help="Path to a .ttf/.otf font used for text rendering (default: monospace bold)")
     parser.add_argument("--text-columns", type=int, metavar="N", help="Target number of characters per line for text rendering")
@@ -588,6 +590,9 @@ def _build_cli_reporter(verbose: bool) -> reporting.Reporter:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
+    if args.licenses:
+        print(license_text(), end="")
+        return 0
     reporter = _build_cli_reporter(args.verbose)
     emit_startup_debug(reporter)
     emit_startup_warnings(reporter)

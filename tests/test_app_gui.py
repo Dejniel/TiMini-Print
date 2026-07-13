@@ -372,6 +372,31 @@ class GuiUpdateButtonTests(unittest.TestCase):
         self.assertEqual(gui.update_button.pack_kwargs["before"], gui.print_button)
 
 
+class GuiLicensesTests(unittest.TestCase):
+    def test_show_licenses_reuses_open_window(self) -> None:
+        class FakeWindow:
+            def __init__(self) -> None:
+                self.lifted = False
+                self.focused = False
+
+            def winfo_exists(self) -> bool:
+                return True
+
+            def lift(self) -> None:
+                self.lifted = True
+
+            def focus_set(self) -> None:
+                self.focused = True
+
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+        gui._licenses_window = FakeWindow()
+
+        gui.show_licenses()
+
+        self.assertTrue(gui._licenses_window.lifted)
+        self.assertTrue(gui._licenses_window.focused)
+
+
 class _InlineThread:
     def __init__(self, *, target, name=None, daemon=None):
         self._target = target

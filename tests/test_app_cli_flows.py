@@ -26,6 +26,7 @@ class AppCliFlowsTests(unittest.TestCase):
     def _args(self, **kwargs):
         base = dict(
             list_models=False,
+            licenses=False,
             scan=False,
             feed=False,
             retract=False,
@@ -74,6 +75,15 @@ class AppCliFlowsTests(unittest.TestCase):
         ), patch("timiniprint.app.cli.scan_devices", return_value=0) as scan_devices:
             self.assertEqual(cli.main(["--scan"]), 0)
         scan_devices.assert_called_once()
+
+    def test_main_displays_licenses_without_startup_checks(self) -> None:
+        output = io.StringIO()
+        with patch("timiniprint.app.cli.license_text", return_value="all licenses\n"), patch(
+            "timiniprint.app.cli.emit_startup_warnings"
+        ) as warnings, contextlib.redirect_stdout(output):
+            self.assertEqual(cli.main(["--licenses"]), 0)
+        warnings.assert_not_called()
+        self.assertEqual(output.getvalue(), "all licenses\n")
 
     def test_list_models_includes_origin_app_names(self) -> None:
         output = io.StringIO()

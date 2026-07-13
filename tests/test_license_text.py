@@ -3,10 +3,10 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from tools.package_release import _is_license_file, _static_license_directory
+from tools.build_license_text import _is_license_file, _static_license_directory
 
 
-class PackageReleaseTests(unittest.TestCase):
+class LicenseTextTests(unittest.TestCase):
     def test_distribution_license_directories_are_included(self) -> None:
         self.assertTrue(
             _is_license_file(

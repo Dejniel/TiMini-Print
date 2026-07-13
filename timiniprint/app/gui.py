@@ -16,6 +16,7 @@ from tkinter import filedialog, ttk
 from .diagnostics import emit_startup_warnings
 from .. import reporting
 from ..devices import PrinterCatalog, PrinterDevice, ResolvedBluetoothTarget
+from ..licensing import license_text
 from ..printing.connected import ConnectedPrinter, connect_printer
 from ..printing.paper import default_paper_preset_for_device, paper_presets_for_device
 from ..printing.settings import PrintSettings
@@ -159,6 +160,7 @@ class TiMiniPrintGUI(tk.Tk):
         self._paper_choice_map: dict[str, str] = {}
         self._manual_model_choice_map = self._build_manual_model_choice_map()
         self._update_release_url: str | None = None
+        self._licenses_window: tk.Toplevel | None = None
         self.file_var.trace_add("write", self._on_file_path_change)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
@@ -345,10 +347,46 @@ class TiMiniPrintGUI(tk.Tk):
             command=self._on_show_unknown_devices_changed,
         )
         self.show_unknown_check.pack(side="right")
+        self.licenses_link = ttk.Label(status_frame, text="Licenses", cursor="hand2", takefocus=True)
+        self.licenses_link.bind("<Button-1>", self.show_licenses)
+        self.licenses_link.bind("<Return>", self.show_licenses)
+        self.licenses_link.bind("<space>", self.show_licenses)
+        self.licenses_link.pack(side="right", padx=(0, 10))
         ttk.Label(status_frame, textvariable=self.status_var).pack(side="left", padx=6, fill="x", expand=True)
 
         self._update_option_sections(self.file_var.get())
         self._refresh_paper_controls()
+
+    def show_licenses(self, _event=None) -> None:
+        if self._licenses_window is not None and self._licenses_window.winfo_exists():
+            self._licenses_window.lift()
+            self._licenses_window.focus_set()
+            return
+
+        window = tk.Toplevel(self)
+        self._licenses_window = window
+        window.title("TiMini-Print licenses")
+        window.geometry("760x600")
+        window.minsize(480, 320)
+
+        frame = ttk.Frame(window, padding=8)
+        frame.pack(fill="both", expand=True)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(0, weight=1)
+
+        text = tk.Text(frame, wrap="word", padx=8, pady=8)
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=text.yview)
+        text.configure(yscrollcommand=scrollbar.set)
+        text.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        text.insert("1.0", license_text())
+        text.configure(state="disabled")
+
+        def close() -> None:
+            window.destroy()
+            self._licenses_window = None
+
+        window.protocol("WM_DELETE_WINDOW", close)
 
     def _process_queue(self) -> None:
         if self._closing:

@@ -14,12 +14,6 @@ TiMini-Print release builds use the following directly declared components:
 | winsdk | 1.0.0b10 | MIT |
 | PyInstaller | 6.21.0 | GPL-2.0-or-later with the PyInstaller bootloader exception |
 
-Each binary archive contains license files for the exact package versions used
-on that platform under `licenses/python/`. Where a wheel omits its license file,
-the text is taken from the matching official release; this currently applies to
-pySerial, PyObjC framework wheels, PyWinRT wheels, and winsdk. The archive also
-includes pypdfium2's platform-specific `BUILD_LICENSES` directory for PDFium
-and its bundled dependencies. `THIRD_PARTY_MANIFEST.txt` records the exact
-installed versions, including active transitive dependencies.
+Each release executable contains one platform-specific license document with the exact installed versions and their license texts. This includes pypdfium2's `BUILD_LICENSES` content for PDFium and its bundled dependencies. Where a wheel omits its license file, the text is taken from the matching official release; this currently applies to pySerial, PyObjC framework wheels, PyWinRT wheels, and winsdk. Run the executable with `--licenses`, or use the `Licenses` link in the GUI, to display the complete document.
 
 The presence of a notice does not imply endorsement by a component's authors.
