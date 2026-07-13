@@ -1,8 +1,8 @@
-Pillow==12.3.0
-pypdfium2==5.11.0
-bleak==3.0.2
-crc8==0.2.1
-pyserial==3.5
-platformdirs==4.10.0
-pyobjc-framework-IOBluetooth==12.2.1; sys_platform == "darwin"
-winsdk==1.0.0b10; sys_platform == "win32"
+Pillow>=9.0
+pypdfium2>=4.0
+bleak>=0.22
+crc8>=0.2.0
+pyserial>=3.5
+platformdirs>=4.0
+pyobjc-framework-IOBluetooth>=10.0; sys_platform == "darwin"
+winsdk>=1.0.0b10; sys_platform == "win32"
