@@ -8,7 +8,7 @@ List the exact tests run. State explicitly whether the change was tested on a ph
 
 ## Contribution checklist
 
-- [ ] I have the right to submit this contribution and license it under Apache-2.0.
+- [ ] I have the right to submit this contribution and have accepted version 1.0 of the TiMini-Print CLA through [CLA Assistant](https://cla-assistant.io/Dejniel/TiMini-Print).
 - [ ] This contribution does not contain material copied from proprietary applications, firmware, SDKs, decompiled sources, or private source dumps.
 - [ ] Logs, captures, and fixtures contain no credentials, personal data, Bluetooth addresses, serial numbers, or other unique device identifiers.
 - [ ] Protocol behavior is independently implemented, and its lawful provenance and test method are described above.
