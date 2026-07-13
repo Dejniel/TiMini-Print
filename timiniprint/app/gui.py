@@ -27,6 +27,7 @@ from ..transport.bluetooth.types import DeviceTransport
 from ..update_check import UpdateCheckResult, check_for_updates, should_check_for_updates
 
 PAPER_MOTION_INTERVAL_MS = 1000
+ANDROID_APP_URL = "https://play.google.com/store/apps/details?id=pl.wtrymiga.timiniprint"
 
 
 @dataclass(frozen=True)
@@ -347,11 +348,18 @@ class TiMiniPrintGUI(tk.Tk):
             command=self._on_show_unknown_devices_changed,
         )
         self.show_unknown_check.pack(side="right")
+        ttk.Label(status_frame, text="|").pack(side="right", padx=6)
         self.licenses_link = ttk.Label(status_frame, text="Licenses", cursor="hand2", takefocus=True)
         self.licenses_link.bind("<Button-1>", self.show_licenses)
         self.licenses_link.bind("<Return>", self.show_licenses)
         self.licenses_link.bind("<space>", self.show_licenses)
-        self.licenses_link.pack(side="right", padx=(0, 10))
+        self.licenses_link.pack(side="right")
+        ttk.Label(status_frame, text="|").pack(side="right", padx=6)
+        self.android_link = ttk.Label(status_frame, text="Android app", cursor="hand2", takefocus=True)
+        self.android_link.bind("<Button-1>", self.open_android_app)
+        self.android_link.bind("<Return>", self.open_android_app)
+        self.android_link.bind("<space>", self.open_android_app)
+        self.android_link.pack(side="right")
         ttk.Label(status_frame, textvariable=self.status_var).pack(side="left", padx=6, fill="x", expand=True)
 
         self._update_option_sections(self.file_var.get())
@@ -387,6 +395,9 @@ class TiMiniPrintGUI(tk.Tk):
             self._licenses_window = None
 
         window.protocol("WM_DELETE_WINDOW", close)
+
+    def open_android_app(self, _event=None) -> None:
+        webbrowser.open(ANDROID_APP_URL)
 
     def _process_queue(self) -> None:
         if self._closing:

@@ -397,6 +397,18 @@ class GuiLicensesTests(unittest.TestCase):
         self.assertTrue(gui._licenses_window.focused)
 
 
+class GuiAndroidLinkTests(unittest.TestCase):
+    def test_open_android_app_opens_store_page(self) -> None:
+        gui = TiMiniPrintGUI.__new__(TiMiniPrintGUI)
+
+        with patch("timiniprint.app.gui.webbrowser.open") as open_browser:
+            gui.open_android_app()
+
+        open_browser.assert_called_once_with(
+            "https://play.google.com/store/apps/details?id=pl.wtrymiga.timiniprint"
+        )
+
+
 class _InlineThread:
     def __init__(self, *, target, name=None, daemon=None):
         self._target = target
