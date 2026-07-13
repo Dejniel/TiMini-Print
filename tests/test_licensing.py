@@ -16,12 +16,50 @@ class LicensingTests(unittest.TestCase):
             with patch.object(licensing, "_BUNDLED_LICENSES", bundled):
                 self.assertEqual(licensing.license_text(), "bundled licenses\n")
 
-    def test_source_fallback_contains_project_license_and_notices(self) -> None:
-        with patch.object(licensing, "_BUNDLED_LICENSES", Path("/missing")):
+    def test_source_run_builds_license_text_on_demand(self) -> None:
+        with patch.object(licensing, "_BUNDLED_LICENSES", Path("/missing")), patch.object(
+            licensing,
+            "build_license_text",
+            return_value="generated licenses\n",
+        ) as build:
             text = licensing.license_text()
-        self.assertIn("Apache License", text)
-        self.assertIn("Daniel Banecki", text)
-        self.assertIn("pypdfium2", text)
+
+        self.assertEqual(text, "generated licenses\n")
+        build.assert_called_once_with(strict=False)
+
+    def test_generated_manifest_precedes_project_license(self) -> None:
+        with patch.object(licensing, "_resolve_runtime_distributions", return_value=[]):
+            text = licensing.build_license_text()
+
+        self.assertLess(text.index("Installed component manifest"), text.index("Apache License"))
+
+    def test_source_run_skips_missing_optional_distribution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            requirements = Path(tmp) / "requirements.txt"
+            requirements.write_text("missing-pdf-renderer>=1\n", encoding="utf-8")
+            with patch.object(
+                licensing.metadata,
+                "distribution",
+                side_effect=licensing.metadata.PackageNotFoundError("missing-pdf-renderer"),
+            ):
+                distributions = licensing._resolve_runtime_distributions(
+                    requirements,
+                    strict=False,
+                )
+
+        self.assertEqual(distributions, [])
+
+    def test_release_build_rejects_missing_distribution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            requirements = Path(tmp) / "requirements.txt"
+            requirements.write_text("missing-runtime>=1\n", encoding="utf-8")
+            with patch.object(
+                licensing.metadata,
+                "distribution",
+                side_effect=licensing.metadata.PackageNotFoundError("missing-runtime"),
+            ):
+                with self.assertRaises(licensing.metadata.PackageNotFoundError):
+                    licensing._resolve_runtime_distributions(requirements, strict=True)
 
 
 if __name__ == "__main__":

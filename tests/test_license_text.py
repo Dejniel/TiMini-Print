@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
-from tools.build_license_text import _is_license_file, _static_license_directory
+from timiniprint.licensing import _is_license_file, _static_license_directory
 
 
 class LicenseTextTests(unittest.TestCase):
@@ -21,20 +21,32 @@ class LicenseTextTests(unittest.TestCase):
     def test_source_modules_named_licenses_are_not_included(self) -> None:
         self.assertFalse(_is_license_file(Path("packaging/licenses/_spdx.py")))
 
+    def test_unrelated_copying_binaries_are_not_included(self) -> None:
+        self.assertFalse(_is_license_file(Path("debug/copying.cpython-311-darwin.so")))
+
     def test_platform_package_families_share_official_fallbacks(self) -> None:
         root = Path("licenses")
         self.assertEqual(
-            _static_license_directory(root, "pyobjc-framework-iobluetooth"),
+            _static_license_directory(root, "pyobjc-framework-iobluetooth", "12.2.1"),
             root / "pyobjc",
         )
         self.assertEqual(
-            _static_license_directory(root, "winrt-runtime"),
+            _static_license_directory(root, "winrt-runtime", "3.2.1"),
             root / "winrt",
         )
         self.assertEqual(
-            _static_license_directory(root, "winsdk"),
+            _static_license_directory(root, "winsdk", "1.0.0b10"),
             root / "winsdk",
         )
+
+    def test_static_fallbacks_reject_unverified_versions(self) -> None:
+        root = Path("licenses")
+        self.assertIsNone(_static_license_directory(root, "pyserial", "3.6"))
+        self.assertIsNone(
+            _static_license_directory(root, "pyobjc-framework-iobluetooth", "13.0")
+        )
+        self.assertIsNone(_static_license_directory(root, "winrt-runtime", "3.3.0"))
+        self.assertIsNone(_static_license_directory(root, "winsdk", "1.0.0"))
 
 
 if __name__ == "__main__":
