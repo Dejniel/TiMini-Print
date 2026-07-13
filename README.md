@@ -244,7 +244,7 @@ A30, B246D, D110_M, DL-T1, F12, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Pr
 
 ## Contributing
 
-Found a bug, added a printer, or improved a protocol? Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and accept the contributor agreement before a pull request is merged.
+Found a bug, added a printer, or improved a protocol? Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before sending a pull request. A contributor agreement is requested only for substantial contributions that would be costly to replace.
 
 Please report security issues privately as described in [SECURITY.md](SECURITY.md).
 

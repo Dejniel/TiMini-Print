@@ -45,13 +45,27 @@ The Project Owner is not required to accept, use, publish, or keep any Contribut
 
 ## 8. Acceptance and versions
 
-You accept this Agreement electronically through the signing process identified in [CONTRIBUTING.md](CONTRIBUTING.md). The signing record identifies Your GitHub account, the Agreement version, and the date of acceptance. A later version does not replace this version for You unless You accept the later version.
+You accept this Agreement by completing its signature section and sending a signed PDF or scanned copy as described in [CONTRIBUTING.md](CONTRIBUTING.md). A handwritten or electronic signature may be used. A later version does not replace this version for You unless You accept the later version.
 
 ## 9. Privacy
 
 The [CLA privacy notice](https://github.com/Dejniel/TiMini-Print/blob/master/CLA_PRIVACY.md) explains what personal data is recorded for the signing process, why it is needed, and how to exercise Your data-protection rights.
 
-## 10. General terms
+## 10. Signature
+
+Full legal name: ________________________________________________
+
+GitHub username: _______________________________________________
+
+Email address: __________________________________________________
+
+Related pull request: ___________________________________________
+
+Signature: ______________________________________________________
+
+Date: ___________________________________________________________
+
+## 11. General terms
 
 This Agreement is the entire agreement about the rights granted in Contributions and replaces earlier discussions about those rights. Changes to it must be presented as a new version and accepted by You. If a provision is unenforceable, the remaining provisions continue to apply, and the affected provision is interpreted as closely as legally possible to its intended effect. The Project Owner may assign this Agreement and the rights it grants to a successor or another operator of the Project. This Agreement is governed by the laws of Poland, excluding its conflict-of-law rules, except where mandatory law requires otherwise.
 
