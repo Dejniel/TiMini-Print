@@ -161,6 +161,38 @@ class BluetoothAdapterFallbackTests(unittest.TestCase):
         self.assertIsNotNone(callback_thread_id)
         self.assertNotEqual(caller_thread_id, callback_thread_id)
 
+    def test_direct_att_bulk_payload_is_unavailable_before_connect(self) -> None:
+        socket = _LinuxAttSocket()
+
+        self.assertFalse(socket.can_send_bulk_payload())
+        self.assertFalse(socket.send_bulk_payload(b"bulk", timeout=0.25))
+
+    def test_direct_att_bulk_payload_delegates_to_transport_session(self) -> None:
+        socket = _LinuxAttSocket()
+        client = object()
+        socket._connected = True
+        socket._client = client
+        socket._mtu_size = 244
+        socket._loop = asyncio.new_event_loop()
+        previous_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(previous_loop)
+        socket._transport.can_send_bulk_payload = mock.Mock(return_value=True)
+        socket._transport.send_bulk_payload = mock.AsyncMock(return_value=True)
+
+        try:
+            self.assertTrue(socket.can_send_bulk_payload())
+            self.assertTrue(socket.send_bulk_payload(b"bulk", timeout=0.25))
+            socket._transport.send_bulk_payload.assert_awaited_once_with(
+                client,
+                b"bulk",
+                mtu_size=244,
+                timeout=0.25,
+            )
+        finally:
+            asyncio.set_event_loop(None)
+            socket._loop.close()
+            socket._loop = None
+            previous_loop.close()
 
     def test_linux_att_connect_unpacks_address_channel_tuple(self) -> None:
         # The shared adapter-fallback wrapper iterates over RFCOMM channels and
