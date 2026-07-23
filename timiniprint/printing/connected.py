@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from .. import reporting
 from ..protocol import PrinterProtocol, ProtocolJob
 from ..protocol.runtime import RuntimePrintCapabilities
-from ..protocol.types import ImagePipelineConfig
+from ..protocol.types import ImagePipelineConfig, PageFlow
 from ..raster import RasterSet
 from .builder import PrintJobBuilder
 from .raster_job import build_raster_page_job as _build_raster_page_job
@@ -70,6 +70,7 @@ class ConnectedPrinter:
         settings: PrintSettings | None = None,
         page_index: int = 1,
         page_count: int = 1,
+        page_flow: PageFlow = PageFlow.PAGED,
         image_pipeline: ImagePipelineConfig | None = None,
     ) -> ProtocolJob:
         """Build one printable protocol page from an already rendered raster."""
@@ -81,6 +82,7 @@ class ConnectedPrinter:
             runtime_context=self._runtime_context,
             page_index=page_index,
             page_count=page_count,
+            page_flow=page_flow,
             image_pipeline=image_pipeline,
         )
 

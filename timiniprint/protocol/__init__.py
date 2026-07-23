@@ -2,7 +2,7 @@ from .family import ProtocolFamily
 from .job import PrinterProtocol, ProtocolJob
 from .runtime import RuntimePrintCapabilities
 from .steps import ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep, ProtocolStepOperation
-from .types import ImageEncoding, ImagePipelineConfig, PaperMode
+from .types import ImageEncoding, ImagePipelineConfig, PageFlow, PaperMode
 
 __all__ = [
     "ProtocolFamily",
@@ -15,5 +15,6 @@ __all__ = [
     "ProtocolStepOperation",
     "ImageEncoding",
     "ImagePipelineConfig",
+    "PageFlow",
     "PaperMode",
 ]

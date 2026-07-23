@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol import PaperMode, PrinterProtocol
+from timiniprint.protocol import PageFlow, PaperMode, PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
@@ -39,6 +39,20 @@ class PhomemoEscProtocolTests(unittest.TestCase):
                 )
             ),
         )
+
+    def test_m02_continuous_chunk_omits_intermediate_feed(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("phomemo_m02")
+        raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=True,
+            page_index=1,
+            page_count=2,
+            page_flow=PageFlow.CONTINUOUS,
+        )
+
+        self.assertNotIn(b"\x1b\x64", job.payload)
 
     def test_m02_raster_blocks_split_after_255_lines(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m02")

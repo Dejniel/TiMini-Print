@@ -142,6 +142,28 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertGreaterEqual(data.count(bytes([0xA1])), 2)
         self.assertIn(bytes([0xA3]), data)
 
+    def test_continuous_tiny_chunk_omits_intermediate_final_sequence(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=True,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.TINY,
+            feed_padding=12,
+            dev_dpi=203,
+            image_pipeline=self.tiny_raw,
+            page_index=1,
+            page_count=2,
+            page_flow=self.types.PageFlow.CONTINUOUS,
+        )
+
+        self.assertNotIn(bytes([0xA1]), data)
+        self.assertNotIn(bytes([0xA3]), data)
+
     def test_build_tiny_job_requires_speed(self) -> None:
         with self.assertRaisesRegex(ValueError, "requires speed defaults"):
             self.builders._build_job(
@@ -181,6 +203,34 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(bytes([0x51, 0x78, 0xA2, 0x00, 0x02, 0x00]), data)
         self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x90, 0x00, 0x11]), data)
         self.assertNotIn(bytes([0xA1, 0x00, 0x02, 0x00, 0x30, 0x00]), data)
+
+    def test_continuous_tiny_variants_omit_intermediate_tail_feed(self) -> None:
+        for variant in ("line_eight", "professional", "esc_star", "esc_star_eight"):
+            with self.subTest(variant=variant):
+                data = self.builders._build_job(
+                    pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+                    width=8,
+                    is_text=True,
+                    speed=10,
+                    energy=5000,
+                    density=None,
+                    blackening=3,
+                    lsb_first=True,
+                    protocol_family=ProtocolFamily.TINY,
+                    protocol_variant=variant,
+                    feed_padding=12,
+                    dev_dpi=203,
+                    post_print_feed_count=2,
+                    image_pipeline=self.tiny_raw,
+                    page_index=1,
+                    page_count=2,
+                    page_flow=self.types.PageFlow.CONTINUOUS,
+                )
+
+                if variant in ("line_eight", "professional"):
+                    self.assertNotIn(bytes([0x51, 0x78, 0xA1]), data)
+                else:
+                    self.assertNotIn(b"\x1b\x64", data)
 
     def test_line_eight_a4_sheet_uses_max_height_minus_raster_height(self) -> None:
         data = self.builders._build_job(
@@ -544,6 +594,27 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x1D, 0x0C])
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
+
+    def test_continuous_luck_chunk_omits_intermediate_line_feed(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=True,
+            speed=10,
+            energy=5000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.LUCK_NORMAL,
+            feed_padding=12,
+            dev_dpi=203,
+            image_pipeline=self.luck_normal_raw,
+            page_index=1,
+            page_count=2,
+            page_flow=self.types.PageFlow.CONTINUOUS,
+        )
+
+        self.assertNotIn(bytes([0x1B, 0x4A]), data)
 
     def test_build_lujiang_normal_plain_job_marks_last_page_only(self) -> None:
         first_page = self.builders._build_job(
@@ -1512,6 +1583,63 @@ class ProtocolJobTests(unittest.TestCase):
 
         self.assertIn(self.commands.make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G), data)
         self.assertNotIn(self.commands.make_packet(0xBE, bytes([0x01]), ProtocolFamily.V5G), data)
+
+    def test_continuous_v5g_chunk_omits_intermediate_media_feed(self) -> None:
+        data = self.builders._build_job(
+            pixels=[1, 0, 1, 0, 1, 0, 1, 0],
+            width=8,
+            is_text=True,
+            speed=None,
+            energy=15000,
+            density=None,
+            blackening=3,
+            lsb_first=True,
+            protocol_family=ProtocolFamily.V5G,
+            feed_padding=12,
+            dev_dpi=203,
+            post_print_feed_count=1,
+            image_pipeline=self.v5g_dot,
+            page_index=2,
+            page_count=3,
+            page_flow=self.types.PageFlow.CONTINUOUS,
+        )
+
+        self.assertNotIn(
+            self.commands.make_packet(0xBD, bytes([0x0A]), ProtocolFamily.V5G),
+            data,
+        )
+        self.assertNotIn(
+            self.commands.make_packet(0xBD, bytes([0x19]), ProtocolFamily.V5G),
+            data,
+        )
+        self.assertNotIn(
+            self.commands.make_packet(0xA1, bytes([0x30, 0x00]), ProtocolFamily.V5G),
+            data,
+        )
+
+    def test_continuous_page_jobs_wait_for_completion_only_after_last_page(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("v5g_small_203")
+        raster_set = self._raster_set(
+            self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0])
+        )
+
+        first = PrinterProtocol(device).build_job(
+            raster_set,
+            is_text=True,
+            page_index=1,
+            page_count=2,
+            page_flow=self.types.PageFlow.CONTINUOUS,
+        )
+        last = PrinterProtocol(device).build_job(
+            raster_set,
+            is_text=True,
+            page_index=2,
+            page_count=2,
+            page_flow=self.types.PageFlow.CONTINUOUS,
+        )
+
+        self.assertFalse(first.wait_for_completion)
+        self.assertTrue(last.wait_for_completion)
 
     def test_build_v5g_gray_job_uses_density_and_compressed_frame(self) -> None:
         raster_set = self._raster_set(

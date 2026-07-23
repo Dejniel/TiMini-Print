@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol import PaperMode, PrinterProtocol
+from timiniprint.protocol import PageFlow, PaperMode, PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
@@ -59,6 +59,20 @@ class InstaPrintCoreProtocolTests(unittest.TestCase):
 
         self.assertTrue(low.payload.startswith(b"\x1b\x40\x1d\x49\xf0\x0c"))
         self.assertTrue(high.payload.startswith(b"\x1b\x40\x1d\x49\xf0\x12"))
+
+    def test_ctp500_continuous_chunk_omits_intermediate_feed(self) -> None:
+        device = PrinterCatalog.load().device_from_model("instaprint_ctp500_coreprint")
+        raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=True,
+            page_index=1,
+            page_count=2,
+            page_flow=PageFlow.CONTINUOUS,
+        )
+
+        self.assertFalse(job.payload.endswith(b"\x0a" * 4))
 
     def test_ctp500_supports_plain_paper_only(self) -> None:
         device = PrinterCatalog.load().device_from_model("instaprint_ctp500_coreprint")

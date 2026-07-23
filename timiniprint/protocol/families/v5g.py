@@ -124,16 +124,17 @@ def _build_payload(request: PrintJobRequest) -> bytes:
     job += _lattice_packet(True, request.protocol_family)
     job += _energy_packet(request.energy, request.protocol_family)
     job += _print_mode_packet(request.protocol_family)
-    job += _feed_packet(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
+    if request.starts_media_page:
+        job += _feed_packet(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
 
     if request.image_pipeline.encoding == ImageEncoding.V5G_GRAY:
         job += _gray_frames(request)
     else:
         job += _dot_frames(request)
-    job += _feed_packet(_POST_IMAGE_FEED_SPEED, request.protocol_family)
-
-    for _ in range(max(0, request.post_print_feed_count)):
-        job += _paper_packet(request.dev_dpi, request.protocol_family)
+    if request.ends_media_page:
+        job += _feed_packet(_POST_IMAGE_FEED_SPEED, request.protocol_family)
+        for _ in range(max(0, request.post_print_feed_count)):
+            job += _paper_packet(request.dev_dpi, request.protocol_family)
     job += _lattice_packet(False, request.protocol_family)
     job += _state_query_packet(request.protocol_family)
     job += _state_query_packet(request.protocol_family)

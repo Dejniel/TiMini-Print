@@ -5,7 +5,7 @@ import unittest
 
 from timiniprint.devices.profiles import SpeedProfile
 from timiniprint.devices import PrinterCatalog
-from timiniprint.protocol import PaperMode, PrinterProtocol
+from timiniprint.protocol import PageFlow, PaperMode, PrinterProtocol
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
@@ -94,6 +94,21 @@ class TsplProtocolTests(unittest.TestCase):
         self.assertIn(b"SIZE 1 mm,6 mm\r\n", job.payload)
         self.assertIn(b"GAP 0 mm,0 mm\r\n", job.payload)
         self.assertNotIn(b"SPEED ", job.payload)
+
+    def test_p1_continuous_chunk_omits_intermediate_height_padding(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("eleph_tspl_p1")
+        raster = RasterBuffer(pixels=[0] * 64, width=8, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=True,
+            paper_mode=PaperMode.PLAIN,
+            page_index=1,
+            page_count=2,
+            page_flow=PageFlow.CONTINUOUS,
+        )
+
+        self.assertIn(b"SIZE 1 mm,1 mm\r\n", job.payload)
 
     def test_catalog_detects_eleph_p1_without_stealing_tiny_p1(self) -> None:
         catalog = PrinterCatalog.load()

@@ -8,7 +8,7 @@ from ...raster import PixelFormat, RasterSet
 from ..family import ProtocolFamily
 from ..packet import prefixed_packet_length
 from ..plan import ProtocolPlan
-from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
+from ..types import ImageEncoding, ImagePipelineConfig, PageFlow, PaperMode
 
 if TYPE_CHECKING:
     from ..runtime import RuntimePrintCapabilities
@@ -45,6 +45,8 @@ class PrintJobRequest:
 
     `page_index` and `page_count` let recipe code apply first-page or
     last-page marker steps without pulling pagination logic into transport.
+    `page_flow` distinguishes physical pages from render chunks of one
+    continuous document.
     """
 
     raster_set: RasterSet
@@ -68,6 +70,7 @@ class PrintJobRequest:
     paper_mode: PaperMode | None = None
     page_index: int = 1
     page_count: int = 1
+    page_flow: PageFlow = PageFlow.PAGED
     runtime_capabilities: "RuntimePrintCapabilities | None" = None
 
     def require_raster(self, pixel_format: PixelFormat) -> "RasterBuffer":
@@ -92,6 +95,14 @@ class PrintJobRequest:
     @property
     def is_last_page(self) -> bool:
         return self.page_index >= self.page_count
+
+    @property
+    def starts_media_page(self) -> bool:
+        return self.page_flow == PageFlow.PAGED or self.is_first_page
+
+    @property
+    def ends_media_page(self) -> bool:
+        return self.page_flow == PageFlow.PAGED or self.is_last_page
 
 
 @dataclass(frozen=True)

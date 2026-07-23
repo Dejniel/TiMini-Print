@@ -14,7 +14,7 @@ from tests.helpers import install_crc8_stub, reset_registry_cache
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.document_renderer import DocumentPage, DocumentPlan, RenderDocument, RenderedPage
 from timiniprint.printing.runtime.factory import runtime_controller_for_device
-from timiniprint.protocol import ImagePipelineConfig
+from timiniprint.protocol import ImagePipelineConfig, PageFlow
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
 from timiniprint.protocol.job import PrinterProtocol
@@ -40,6 +40,7 @@ class _FakeDocumentRenderer:
             kind="text",
             pages=tuple(DocumentPage(index) for index in range(len(self.pages))),
             source_page_count=len(self.pages),
+            page_flow=PageFlow.CONTINUOUS,
         )
 
     def print_page(self, plan, page, device, settings, runtime_capabilities=None):
@@ -119,6 +120,8 @@ class PrintingJobTests(unittest.TestCase):
         self.assertEqual(build_job_mock.call_args_list[0].kwargs["paper_mode"], PaperMode.TAG)
         self.assertEqual(build_job_mock.call_args_list[0].kwargs["page_index"], 1)
         self.assertEqual(build_job_mock.call_args_list[0].kwargs["page_count"], 2)
+        self.assertEqual(build_job_mock.call_args_list[0].kwargs["page_flow"], PageFlow.CONTINUOUS)
+        self.assertEqual(build_job_mock.call_args_list[1].kwargs["page_flow"], PageFlow.CONTINUOUS)
         self.assertEqual(build_job_mock.call_args_list[0].kwargs["image_pipeline"], pipeline)
         self.assertFalse(build_job_mock.call_args_list[0].kwargs["is_text"])
         self.assertTrue(build_job_mock.call_args_list[1].kwargs["is_text"])
@@ -146,6 +149,20 @@ class PrintingJobTests(unittest.TestCase):
         self.assertEqual([page.page_count for page in pages], [2, 2])
         self.assertEqual([page.image_pipeline for page in pages], [pipeline, pipeline])
         combine_mock.assert_not_called()
+
+    def test_long_text_chunks_form_one_continuous_print_flow(self) -> None:
+        builder = self.job_mod.PrintJobBuilder(self.device)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "long.txt"
+            path.write_text("\n".join(f"line {index}" for index in range(200)), encoding="utf-8")
+            pages = list(builder.iter_page_jobs(str(path)))
+
+        self.assertGreater(len(pages), 1)
+        for page in pages[:-1]:
+            self.assertNotIn(bytes([0x51, 0x78, 0xA1]), page.job.payload)
+            self.assertFalse(page.job.wait_for_completion)
+        self.assertIn(bytes([0x51, 0x78, 0xA1]), pages[-1].job.payload)
+        self.assertTrue(pages[-1].job.wait_for_completion)
 
     def test_build_from_file_applies_debug_row_markers_before_protocol_build(self) -> None:
         profile = replace(

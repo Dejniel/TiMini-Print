@@ -62,6 +62,8 @@ A lower-level file-to-job builder. It turns files into `ProtocolJob` objects usi
 
 Use it directly for preview/debug/streaming-page workflows where a caller wants jobs without immediately printing them.
 
+Renderer pages are not always physical pages. Text is divided into bounded raster chunks but marked as one continuous page flow; PDF and image plans remain paged. `PrintJobBuilder` carries that distinction into protocol requests so family recipes can omit intermediate paper positioning without making protocol code depend on file types.
+
 ### `PrinterProtocol`
 A protocol builder bound to one `PrinterDevice`. It builds `ProtocolJob` from raster input and may produce named protocol steps for families that need interleaved send/query/wait operations.
 

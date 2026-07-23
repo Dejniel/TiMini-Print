@@ -4,7 +4,7 @@ import unittest
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import UnsupportedModelMatch
-from timiniprint.protocol import PaperMode, PrinterProtocol
+from timiniprint.protocol import PageFlow, PaperMode, PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
@@ -65,6 +65,20 @@ class HprtEscProtocolTests(unittest.TestCase):
 
         self.assertTrue(plain.payload.startswith(b"\x10\xff\x10\x03\x01"))
         self.assertTrue(black_tag.payload.startswith(b"\x10\xff\x10\x03\x03"))
+
+    def test_zl1_continuous_chunk_omits_intermediate_position(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("toprint_hprt_esc_zl1")
+        raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=True,
+            page_index=1,
+            page_count=2,
+            page_flow=PageFlow.CONTINUOUS,
+        )
+
+        self.assertNotIn(b"\x1d\x0c", job.payload)
 
     def test_zl1_esc_image_pads_non_byte_aligned_width(self) -> None:
         device = PrinterCatalog.load().device_from_profile("toprint_hprt_esc_zl1")

@@ -15,7 +15,7 @@ from .family import ProtocolFamily
 from .plan import ProtocolPlan
 from .runtime import RuntimePrintCapabilities
 from .steps import ProtocolStep
-from .types import ImagePipelineConfig, PaperMode
+from .types import ImagePipelineConfig, PageFlow, PaperMode
 
 
 def _build_family_job(request: PrintJobRequest) -> ProtocolPlan | None:
@@ -96,6 +96,7 @@ def _build_request(
     paper_mode: PaperMode | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> PrintJobRequest:
     family = ProtocolFamily.from_value(protocol_family)
@@ -121,6 +122,7 @@ def _build_request(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        page_flow=page_flow,
         runtime_capabilities=runtime_capabilities,
     )
     _validate_request(request)
@@ -200,6 +202,7 @@ def _build_print_payload_from_raster_set(
     paper_mode: PaperMode | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     request = _build_request(
@@ -224,6 +227,7 @@ def _build_print_payload_from_raster_set(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        page_flow=page_flow,
         runtime_capabilities=runtime_capabilities,
     )
     family_plan = _build_family_job(request)
@@ -270,6 +274,7 @@ def _build_job(
     protocol_variant: str | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     raster = RasterBuffer(pixels=pixels, width=width, pixel_format=PixelFormat.BW1)
@@ -295,6 +300,7 @@ def _build_job(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        page_flow=page_flow,
         runtime_capabilities=runtime_capabilities,
     )
 
@@ -321,6 +327,7 @@ def _build_job_from_raster(
     protocol_variant: str | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     return _build_job_from_raster_set(
@@ -345,6 +352,7 @@ def _build_job_from_raster(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        page_flow=page_flow,
         runtime_capabilities=runtime_capabilities,
     )
 
@@ -371,6 +379,7 @@ def _build_job_from_raster_set(
     protocol_variant: str | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> bytes:
     payload, _steps = _build_job_model_from_raster_set(
@@ -395,6 +404,7 @@ def _build_job_from_raster_set(
         protocol_variant=protocol_variant,
         page_index=page_index,
         page_count=page_count,
+        page_flow=page_flow,
         runtime_capabilities=runtime_capabilities,
     )
     return payload
@@ -422,6 +432,7 @@ def _build_job_model_from_raster_set(
     protocol_variant: str | None = None,
     page_index: int = 1,
     page_count: int = 1,
+    page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> tuple[bytes, tuple[ProtocolStep, ...]]:
     request = _build_request(
@@ -446,6 +457,7 @@ def _build_job_model_from_raster_set(
         paper_mode=paper_mode,
         page_index=page_index,
         page_count=page_count,
+        page_flow=page_flow,
         runtime_capabilities=runtime_capabilities,
     )
     family_plan = _build_family_job(request)
@@ -466,9 +478,10 @@ def _build_job_model_from_raster_set(
         image_pipeline=request.image_pipeline,
         runtime_capabilities=runtime_capabilities,
     )
-    job += feed_paper_cmd(feed_padding, request.protocol_family)
-    for _ in range(max(0, request.post_print_feed_count)):
-        job += paper_cmd(dev_dpi, request.protocol_family)
-    job += feed_paper_cmd(feed_padding, request.protocol_family)
-    job += dev_state_cmd(request.protocol_family)
+    if request.ends_media_page:
+        job += feed_paper_cmd(feed_padding, request.protocol_family)
+        for _ in range(max(0, request.post_print_feed_count)):
+            job += paper_cmd(dev_dpi, request.protocol_family)
+        job += feed_paper_cmd(feed_padding, request.protocol_family)
+        job += dev_state_cmd(request.protocol_family)
     return bytes(job), ()

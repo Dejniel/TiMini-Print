@@ -13,7 +13,7 @@ from .family import ProtocolFamily
 from .plan import ProtocolPlan
 from .runtime import RuntimePrintCapabilities
 from .steps import ProtocolStep
-from .types import ImageEncoding, ImagePipelineConfig, PaperMode
+from .types import ImageEncoding, ImagePipelineConfig, PageFlow, PaperMode
 
 if TYPE_CHECKING:
     from ..devices.device import PrinterDevice
@@ -84,6 +84,7 @@ class PrinterProtocol:
         pixel_format_override: PixelFormat | None = None,
         page_index: int = 1,
         page_count: int = 1,
+        page_flow: PageFlow = PageFlow.PAGED,
         runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> ProtocolJob:
         """Build a printable job from raster input for this device."""
@@ -143,12 +144,13 @@ class PrinterProtocol:
             paper_mode=resolved_paper_mode,
             page_index=page_index,
             page_count=page_count,
+            page_flow=page_flow,
             runtime_capabilities=runtime_capabilities,
         )
         return ProtocolJob(
             payload=payload,
             steps=steps,
-            wait_for_completion=True,
+            wait_for_completion=page_flow == PageFlow.PAGED or page_index >= page_count,
         )
 
     def build_paper_motion(self, action: str) -> ProtocolJob:

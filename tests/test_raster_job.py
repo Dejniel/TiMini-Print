@@ -10,6 +10,7 @@ from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.raster_job import build_raster_job
 from timiniprint.printing.runtime.base import PreparedRuntimeContext
 from timiniprint.printing.settings import PrintSettings
+from timiniprint.protocol import PageFlow
 from timiniprint.protocol.runtime import RuntimePrintCapabilities
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
@@ -36,6 +37,7 @@ class RasterJobTests(unittest.TestCase):
         self.assertEqual(build_job_mock.call_args.kwargs["feed_padding"], 12)
         self.assertEqual(build_job_mock.call_args.kwargs["blackening"], 3)
         self.assertTrue(build_job_mock.call_args.kwargs["is_text"])
+        self.assertEqual(build_job_mock.call_args.kwargs["page_flow"], PageFlow.PAGED)
 
     def test_build_raster_job_accepts_settings_and_runtime_context(self) -> None:
         capabilities = RuntimePrintCapabilities(supports_gray=False)

@@ -6,7 +6,7 @@ from typing import Callable, Optional
 from PIL import Image
 
 from ..devices.device import PrinterDevice
-from ..protocol import ImagePipelineConfig
+from ..protocol import ImagePipelineConfig, PageFlow
 from ..protocol.job import PrinterProtocol
 from ..protocol.runtime import RuntimePrintCapabilities
 from ..raster import DitherMode, RasterSet
@@ -50,6 +50,7 @@ class DocumentPlan:
     kind: str
     pages: tuple[DocumentPage, ...]
     source_page_count: int | None = None
+    page_flow: PageFlow = PageFlow.PAGED
 
     @property
     def page_count(self) -> int:
@@ -119,6 +120,7 @@ class DocumentRenderer:
                 kind=kind,
                 pages=(DocumentPage(0, source_index=0, label="1"),),
                 source_page_count=1,
+                page_flow=PageFlow.PAGED,
             )
         planned_document = (
             _text_document(self._text_content(document))
@@ -138,6 +140,7 @@ class DocumentRenderer:
                     for index in range(source.page_count)
                 ),
                 source_page_count=source.source_page_count,
+                page_flow=PageFlow.CONTINUOUS if kind == "text" else PageFlow.PAGED,
             )
 
     def preview_page(

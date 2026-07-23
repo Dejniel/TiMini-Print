@@ -119,6 +119,7 @@ class PrintJobBuilder:
                 runtime_context=self.runtime_context,
                 page_index=page.number,
                 page_count=page_count,
+                page_flow=plan.page_flow,
                 image_pipeline=rendered.image_pipeline,
             )
             yield PreparedPageJob(

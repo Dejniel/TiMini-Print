@@ -56,6 +56,7 @@ class ElephTsplRecipe:
         width_bytes = _width_bytes(raster)
         density = _density(request.density, default=self.default_density)
         paper_recipe = self._paper_recipe(request.paper_mode)
+        height_extra_mm = paper_recipe.height_extra_mm if request.ends_media_page else 0.0
         bitmap = _bitmap_payload(raster)
 
         job = bytearray()
@@ -65,7 +66,7 @@ class ElephTsplRecipe:
             "SIZE",
             (
                 f"{_px_to_mm(raster.width, request.dev_dpi)} mm,"
-                f"{_px_to_mm(raster.height, request.dev_dpi, extra_mm=paper_recipe.height_extra_mm)} mm"
+                f"{_px_to_mm(raster.height, request.dev_dpi, extra_mm=height_extra_mm)} mm"
             ),
         )
         job += _command("DIRECTION", _direction_value(self.default_direction, self.default_mirror))

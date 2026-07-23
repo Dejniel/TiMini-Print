@@ -9,7 +9,7 @@ from PIL import Image
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.document_renderer import DocumentRenderer, RenderDocument
 from timiniprint.printing.settings import PrintSettings
-from timiniprint.protocol import ImageEncoding, RuntimePrintCapabilities
+from timiniprint.protocol import ImageEncoding, PageFlow, RuntimePrintCapabilities
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
 from timiniprint.raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
@@ -384,6 +384,21 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         renderer.print_page(plan, plan.pages[0], self.device, PrintSettings())
 
         self.assertEqual(calls, ["content://text"])
+
+    def test_text_is_continuous_while_images_and_pdfs_are_paged(self) -> None:
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image(),
+            pdf_renderer=_FakePdfRenderer(page_count=2),
+        )
+        settings = PrintSettings()
+
+        text = renderer.plan_text("hello", self.device, settings)
+        image = renderer.plan_document(RenderDocument("label.png"), self.device, settings)
+        pdf = renderer.plan_document(RenderDocument("document.pdf"), self.device, settings)
+
+        self.assertEqual(text.page_flow, PageFlow.CONTINUOUS)
+        self.assertEqual(image.page_flow, PageFlow.PAGED)
+        self.assertEqual(pdf.page_flow, PageFlow.PAGED)
 
     def _family_device(self, family: ProtocolFamily):
         return replace(

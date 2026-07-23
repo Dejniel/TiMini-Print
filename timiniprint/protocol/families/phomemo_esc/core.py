@@ -63,7 +63,7 @@ class PhomemoEscRecipe:
             lsb_first=False,
             mode=0,
         )
-        if request.post_print_feed_count > 0:
+        if request.ends_media_page and request.post_print_feed_count > 0:
             payload += _print_and_feed_lines(request.post_print_feed_count)
         return bytes(payload)
 

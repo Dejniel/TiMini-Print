@@ -135,10 +135,11 @@ def _build_line_eight_job(request: PrintJobRequest) -> bytes:
         lsb_first=request.lsb_first,
         family=request.protocol_family,
     )
-    payload += _paper_feed_check_black_cmd(
-        _line_eight_tail_feed(request),
-        request.protocol_family,
-    )
+    if request.ends_media_page:
+        payload += _paper_feed_check_black_cmd(
+            _line_eight_tail_feed(request),
+            request.protocol_family,
+        )
     payload += _dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
@@ -163,10 +164,11 @@ def _build_professional_raw_fallback_job(request: PrintJobRequest) -> bytes:
         family=request.protocol_family,
         periodic_speed=False,
     )
-    payload += _paper_feed_check_black_cmd(
-        _line_eight_tail_feed(request),
-        request.protocol_family,
-    )
+    if request.ends_media_page:
+        payload += _paper_feed_check_black_cmd(
+            _line_eight_tail_feed(request),
+            request.protocol_family,
+        )
     payload += _dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
@@ -233,7 +235,8 @@ def _build_esc_star_job(request: PrintJobRequest, *, eight: bool) -> bytes:
     payload.append(_esc_star_energy_byte(request.energy))
     payload += _esc_star_mode_cmd(request.is_text, request.protocol_family)
     payload += _esc_star_24dot_payload(request)
-    payload += b"\x1B\x64" + bytes([final_feed & 0xFF])
+    if request.ends_media_page:
+        payload += b"\x1B\x64" + bytes([final_feed & 0xFF])
     payload += _esc_star_dev_state_cmd(request.protocol_family)
     return bytes(payload)
 

@@ -34,7 +34,8 @@ def build_instaprint_core_job(request: PrintJobRequest) -> bytes:
         lsb_first=False,
         mode=0,
     )
-    payload += _FEED_AFTER_PRINT
+    if request.ends_media_page:
+        payload += _FEED_AFTER_PRINT
     return bytes(payload)
 
 

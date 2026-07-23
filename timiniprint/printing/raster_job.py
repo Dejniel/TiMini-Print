@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from ..protocol.job import PrinterProtocol, ProtocolJob
-from ..protocol.types import ImagePipelineConfig
+from ..protocol.types import ImagePipelineConfig, PageFlow
 from ..raster import RasterSet
 from .paper import apply_paper_layout_to_raster_set, resolve_paper
 from .runtime.base import PreparedRuntimeContext
@@ -23,6 +23,7 @@ def build_raster_page_job(
     runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
     page_index: int = 1,
     page_count: int = 1,
+    page_flow: PageFlow = PageFlow.PAGED,
     image_pipeline: ImagePipelineConfig | None = None,
 ) -> ProtocolJob:
     """Build one protocol page from an already prepared raster."""
@@ -42,6 +43,7 @@ def build_raster_page_job(
         pixel_format_override=effective_settings.pixel_format_override,
         page_index=page_index,
         page_count=page_count,
+        page_flow=page_flow,
         runtime_capabilities=runtime_context.capabilities,
     )
 

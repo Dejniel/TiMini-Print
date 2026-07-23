@@ -14,7 +14,7 @@ from timiniprint.printing.runtime.base import PreparedRuntimeContext
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.protocol import ProtocolJob
 from timiniprint.protocol.runtime import RuntimePrintCapabilities
-from timiniprint.protocol.types import ImageEncoding, ImagePipelineConfig
+from timiniprint.protocol.types import ImageEncoding, ImagePipelineConfig, PageFlow
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
@@ -146,6 +146,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
                     settings=settings,
                     page_index=2,
                     page_count=3,
+                    page_flow=PageFlow.CONTINUOUS,
                     image_pipeline=pipeline,
                 ),
                 page_job,
@@ -159,6 +160,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
             runtime_context=context,
             page_index=2,
             page_count=3,
+            page_flow=PageFlow.CONTINUOUS,
             image_pipeline=pipeline,
         )
 
@@ -188,6 +190,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
             runtime_context=context,
             page_index=1,
             page_count=1,
+            page_flow=PageFlow.PAGED,
             image_pipeline=pipeline,
         )
         combine_pages.assert_called_once_with(

@@ -103,6 +103,8 @@ async with await connect_printer(device, BleakBluetoothConnector()) as printer:
 
 `print_text(...)` uses the same text converter and print pipeline as a temporary `.txt` file.
 
+Long text is split into bounded raster chunks for rendering and preview, but those chunks form one continuous print flow. Intermediate chunks do not add the page-positioning commands used between PDF pages.
+
 ## Paper Choice
 
 For high-level file printing, select paper through `PrintSettings.paper_preset_key`.
@@ -144,7 +146,7 @@ If you later send these jobs through TiMini transport, use `ConnectedPrinter.sen
 Use `PrinterProtocol` when you already have raster data and do not want the repo file/rendering pipeline.
 
 ```python
-from timiniprint.protocol import PrinterProtocol
+from timiniprint.protocol import PageFlow, PrinterProtocol
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 raster = RasterBuffer(
@@ -162,6 +164,8 @@ job = PrinterProtocol(device).build_job(
 ```
 
 `PrinterProtocol` is stateless packet building. It does not connect to hardware and does not create runtime controllers.
+
+When an integration splits one continuous raster document into several calls, pass `page_index`, `page_count`, and `page_flow=PageFlow.CONTINUOUS` for every chunk. The default is `PageFlow.PAGED`, so existing one-page raster calls remain self-contained.
 
 ## Custom Connector
 

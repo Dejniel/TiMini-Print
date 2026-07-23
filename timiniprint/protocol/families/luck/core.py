@@ -265,12 +265,18 @@ class LuckNormalFamilyRecipe:
         if self._should_run_scope(recipe.adjust_before_scope, request) and recipe.adjust_before is not None:
             steps.append(ProtocolStep.send("adjust before", dialect.adjust_position_auto(recipe.adjust_before)))
         steps.append(ProtocolStep.send("bitmap", self.bitmap_encoder.encode(request)))
-        if recipe.finish_action == "position":
-            steps.append(ProtocolStep.send("position", dialect.position_command))
-        elif recipe.finish_action == "line_feed":
-            steps.append(ProtocolStep.send("line feed", dialect.line_feed(self.end_line_dots_for_request(request))))
-        else:
-            raise ValueError(f"Unsupported Luck normal finish action: {recipe.finish_action}")
+        if request.ends_media_page:
+            if recipe.finish_action == "position":
+                steps.append(ProtocolStep.send("position", dialect.position_command))
+            elif recipe.finish_action == "line_feed":
+                steps.append(
+                    ProtocolStep.send(
+                        "line feed",
+                        dialect.line_feed(self.end_line_dots_for_request(request)),
+                    )
+                )
+            else:
+                raise ValueError(f"Unsupported Luck normal finish action: {recipe.finish_action}")
         if self._should_run_scope(recipe.adjust_after_scope, request) and recipe.adjust_after is not None:
             steps.append(ProtocolStep.send("adjust after", dialect.adjust_position_auto(recipe.adjust_after)))
         if self._should_run_scope(recipe.mark_last_scope, request):

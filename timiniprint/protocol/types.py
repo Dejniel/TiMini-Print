@@ -51,6 +51,11 @@ class PaperMode(str, Enum):
         return labels[self]
 
 
+class PageFlow(str, Enum):
+    PAGED = "paged"
+    CONTINUOUS = "continuous"
+
+
 @dataclass(frozen=True)
 class ImagePipelineConfig:
     formats: Tuple[PixelFormat, ...]
