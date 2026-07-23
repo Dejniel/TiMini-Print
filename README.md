@@ -1,5 +1,5 @@
 # TiMini Print Bluetooth Printer Tool
-Alternative [desktop](https://github.com/Dejniel/TiMini-Print/releases) and [Android](https://timiniprint.com/) software for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Funny Print”, “Dolewa”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “InstaPrint”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
+Alternative [desktop software](https://github.com/Dejniel/TiMini-Print/releases) and [Android app](https://play.google.com/store/apps/details?id=pl.wtrymiga.timiniprint) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Funny Print”, “Dolewa”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “InstaPrint”, “ToPrint”, “Eleph-label”, or “NIIMBOT”.
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 It lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode, plus [custom integrations](#library-integration)
 
@@ -19,12 +19,16 @@ I bought a Chinese mini printer and could not find any decent desktop software t
 ## Looking for broader support or implementation?
 - If you need security/reverse engineering, broader commercial support, or a custom implementation, feel free to [reach out](https://inajiffy.eu/). I work on broken systems, neglected integrations, and projects that are already end-of-life, unsupported — or simply unsupportable. I also handle custom implementation work that sits outside the usual support model
 
-# Requirements
-You can find the latest standalone executable files on the [releases page](https://github.com/Dejniel/TiMini-Print/releases) and choose the asset that starts with `TiMini-Print-GUI-...` or `TiMini-Print-Command-Line-...` for your platform, or you can build the project yourself
+# Download
+TiMini Print is available for Android and desktop:
 
-Theoretically, I support [Android](https://play.google.com/store/apps/details?id=pl.wtrymiga.timiniprint), Windows, macOS, and Linux, but I test builds only on Ubuntu-like and Android systems—if you need to run this elsewhere, please report issues or submit a fix :P
+- Get the Android app from the [Google Play Store](https://play.google.com/store/apps/details?id=pl.wtrymiga.timiniprint)
+- For Windows, Linux, or macOS, download the latest standalone version from the [releases page](https://github.com/Dejniel/TiMini-Print/releases). Choose a file starting with `TiMini-Print-GUI-...` or `TiMini-Print-Command-Line-...`
+- Or build it yourself using the instructions below
 
-## Manual building requirements
+I mainly test TiMini Print on Ubuntu-like systems and Android. Windows and macOS builds are available too, but if something breaks there, please report it or submit a fix :P
+
+## Build from source
 - Python 3.8+
 - `pip install -r requirements.txt`
   - Windows + Python 3.13+: installing `winsdk` may require building binaries during download
@@ -38,7 +42,7 @@ If you build or run from source instead, use `python3 timiniprint_gui.py` or `py
 
 ## Graphical user interface
 You can scan, connect or disconnect with one button, choose a file, and print.
-Start the graphical app by running the [downloaded executable file](#requirements).
+Start the graphical app by running the [downloaded executable file](#download).
 On Linux, make sure it has execute permission first.
 
 ```bash
