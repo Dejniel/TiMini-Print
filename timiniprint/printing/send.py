@@ -78,12 +78,12 @@ async def _send_protocol_steps(
             )
             return False
     if any(step.operation is ProtocolStepOperation.WAIT for step in steps):
-        if not session.can_wait_for_notification():
+        if not session.can_wait_for_reply():
             session.report_warning(
                 short="Protocol wait unavailable",
                 detail=(
-                    "This job needs a protocol notification wait, but the current transport "
-                    "cannot wait for BLE notifications. Falling back to stream-only send."
+                    "This job needs a passive protocol reply wait, but the current transport "
+                    "cannot receive protocol replies. Falling back to stream-only send."
                 ),
             )
             return False

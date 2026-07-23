@@ -35,6 +35,8 @@ class RuntimeProbeConnection(PrinterConnection, Protocol):
 
     def can_query_control_packet(self) -> bool: ...
 
+    def can_wait_for_reply(self) -> bool: ...
+
     def can_wait_for_notification(self) -> bool: ...
 
     def can_send_control_packet_wait_notification(self) -> bool: ...
@@ -47,6 +49,15 @@ class RuntimeProbeConnection(PrinterConnection, Protocol):
         *,
         timeout: float = 1.0,
         reply_complete: Callable[[bytes], bool] | None = None,
+    ) -> bytes | None: ...
+
+    async def wait_for_reply(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
     ) -> bytes | None: ...
 
     async def wait_for_notification(

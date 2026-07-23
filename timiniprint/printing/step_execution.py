@@ -47,7 +47,7 @@ async def _execute_wait_step(
     if reply_complete is None:
         return None
     wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
-    reply = await session.wait_for_notification(
+    reply = await session.wait_for_reply(
         step.label,
         reply_complete,
         timeout=wait_timeout,

@@ -49,6 +49,12 @@ class RuntimeConnectionSession:
             return bool(can_wait_for_notification())
         return False
 
+    def can_wait_for_reply(self) -> bool:
+        can_wait_for_reply = getattr(self._connection, "can_wait_for_reply", None)
+        if callable(can_wait_for_reply):
+            return bool(can_wait_for_reply())
+        return False
+
     def can_send_control_packet_wait_notification(self) -> bool:
         can_send_wait = getattr(self._connection, "can_send_control_packet_wait_notification", None)
         if callable(can_send_wait):
@@ -103,6 +109,26 @@ class RuntimeConnectionSession:
                 raise RuntimeError("Connection does not support BLE notification waits")
             return None
         return await wait_for_notification(
+            label,
+            match,
+            timeout=timeout,
+            required=required,
+        )
+
+    async def wait_for_reply(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        wait_for_reply = getattr(self._connection, "wait_for_reply", None)
+        if not callable(wait_for_reply):
+            if required:
+                raise RuntimeError("Connection does not support passive protocol reply waits")
+            return None
+        return await wait_for_reply(
             label,
             match,
             timeout=timeout,

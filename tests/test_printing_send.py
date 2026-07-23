@@ -117,10 +117,10 @@ class _WaitOnlyConnection(_Connection):
         self.wait_timeouts: list[float] = []
         self.wait_match_results: list[bool] = []
 
-    def can_wait_for_notification(self) -> bool:
+    def can_wait_for_reply(self) -> bool:
         return True
 
-    async def wait_for_notification(
+    async def wait_for_reply(
         self,
         label: str,
         match,

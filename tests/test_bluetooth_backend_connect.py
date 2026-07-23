@@ -86,6 +86,16 @@ class _BleNotificationQuerySocket(_Socket):
         return reply if match(reply) else None
 
 
+class _BleWaitSocket(_Socket):
+    def can_wait_for_notification(self):
+        return True
+
+    def wait_for_notification(self, label, match, *, timeout, required=True):
+        _ = label, timeout, required
+        reply = b"ACK"
+        return reply if match(reply) else None
+
+
 class _BulkSocket(_Socket):
     def __init__(self, *, can_send_bulk: bool = True):
         super().__init__(fail=False)
@@ -390,6 +400,41 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         backend._transport = DeviceTransport.BLE
         self.assertFalse(backend.can_query_control_packet())
+
+    def test_wait_for_reply_blocking_reads_classic_without_sending(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        sock = _QuerySocket([b"A", b"CK", b"extra"])
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+
+        self.assertTrue(backend.can_wait_for_reply())
+        reply = backend._wait_for_reply_blocking(
+            "completion",
+            lambda data: data == b"ACK",
+            0.1,
+            True,
+        )
+
+        self.assertEqual(reply, b"ACK")
+        self.assertEqual(sock.sent, [])
+        self.assertEqual(sock._replies, [b"extra"])
+
+    def test_wait_for_reply_blocking_delegates_ble_notification_wait(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        backend._sock = _BleWaitSocket()
+        backend._connected = True
+        backend._transport = DeviceTransport.BLE
+
+        self.assertTrue(backend.can_wait_for_reply())
+        reply = backend._wait_for_reply_blocking(
+            "completion",
+            lambda data: data == b"ACK",
+            0.1,
+            True,
+        )
+
+        self.assertEqual(reply, b"ACK")
 
     def test_ble_notification_query_capability_requires_socket_support(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)

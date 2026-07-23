@@ -34,6 +34,9 @@ class SerialConnection:
     def can_query_control_packet(self) -> bool:
         return False
 
+    def can_wait_for_reply(self) -> bool:
+        return False
+
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         _ = packet, timeout
         return False
@@ -46,6 +49,19 @@ class SerialConnection:
         reply_complete: Callable[[bytes], bool] | None = None,
     ) -> bytes | None:
         _ = packet, timeout, reply_complete
+        return None
+
+    async def wait_for_reply(
+        self,
+        label: str,
+        match: Callable[[bytes], bool],
+        *,
+        timeout: float,
+        required: bool = True,
+    ) -> bytes | None:
+        _ = label, match, timeout
+        if required:
+            raise RuntimeError("Serial connection does not support protocol reply waits")
         return None
 
     async def send(self, job: ProtocolJob) -> None:
