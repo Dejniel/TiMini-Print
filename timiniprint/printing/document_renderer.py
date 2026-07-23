@@ -218,14 +218,25 @@ class DocumentRenderer:
             return self._apply_paper_layout(source.page(page.index), paper)
 
     def _apply_paper_layout(self, page: Page, paper: ResolvedPaper) -> Page:
-        if paper.left_padding_px or paper.paper_width_px <= page.image.width:
+        if paper.raster_height_px is not None and page.image.height > paper.raster_height_px:
+            raise ValueError(
+                f"Rendered page height {page.image.height}px exceeds paper raster height "
+                f"{paper.raster_height_px}px"
+            )
+        final_width = (
+            paper.paper_width_px
+            if not paper.left_padding_px and paper.paper_width_px > page.image.width
+            else page.image.width
+        )
+        final_height = paper.raster_height_px or page.image.height
+        if (final_width, final_height) == page.image.size:
             return page
         canvas = Image.new(
             page.image.mode,
-            (paper.paper_width_px, page.image.height),
+            (final_width, final_height),
             _white_for_mode(page.image.mode),
         )
-        canvas.paste(page.image, ((paper.paper_width_px - page.image.width) // 2, 0))
+        canvas.paste(page.image, ((final_width - page.image.width) // 2, 0))
         return Page(canvas, dither=page.dither, is_text=page.is_text)
 
     def _open_source(

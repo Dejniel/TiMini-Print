@@ -378,6 +378,7 @@ class DevicesModelsTests(unittest.TestCase):
                 "label": "Plain roll",
                 "paper_width_px": 384,
                 "render_width_px": 384,
+                "raster_height_px": 640,
                 "paper_mode": "plain",
             },
             {
@@ -393,6 +394,7 @@ class DevicesModelsTests(unittest.TestCase):
         profile = model_from_json(PrinterProfile, payload)
 
         self.assertEqual(profile.default_paper_mode, PaperMode.TAG)
+        self.assertEqual(profile.paper_presets[0].raster_height_px, 640)
 
     def test_model_codec_rejects_missing_paper_presets(self) -> None:
         payload = _profile_payload()

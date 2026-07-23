@@ -18,6 +18,7 @@ class ResolvedPaper:
     render_width_px: int
     left_padding_px: int = 0
     max_height_px: int | None = None
+    raster_height_px: int | None = None
 
 
 def paper_presets_for_device(device: PrinterDevice | None) -> tuple[PaperPreset, ...]:
@@ -42,6 +43,7 @@ def resolve_paper(device: PrinterDevice, settings: PrintSettings) -> ResolvedPap
         render_width_px=preset.render_width_px,
         left_padding_px=preset.left_padding_px,
         max_height_px=preset.max_height_px,
+        raster_height_px=preset.raster_height_px,
     )
 
 
@@ -75,19 +77,42 @@ def _available_paper_presets_message(presets: tuple[PaperPreset, ...]) -> str:
 
 
 def apply_paper_layout_to_raster_set(raster_set: RasterSet, paper: ResolvedPaper) -> RasterSet:
-    if paper.left_padding_px or paper.paper_width_px <= raster_set.width:
+    if paper.raster_height_px is not None and raster_set.height > paper.raster_height_px:
+        raise ValueError(
+            f"Raster height {raster_set.height}px exceeds paper raster height "
+            f"{paper.raster_height_px}px"
+        )
+    horizontal_padding = not paper.left_padding_px and paper.paper_width_px > raster_set.width
+    vertical_padding = (
+        paper.raster_height_px is not None and paper.raster_height_px > raster_set.height
+    )
+    if not horizontal_padding and not vertical_padding:
         return raster_set
-    left_padding = (paper.paper_width_px - raster_set.width) // 2
-    right_padding = paper.paper_width_px - raster_set.width - left_padding
+    final_width = paper.paper_width_px if horizontal_padding else raster_set.width
+    left_padding = (final_width - raster_set.width) // 2
+    right_padding = final_width - raster_set.width - left_padding
+    bottom_padding = (
+        paper.raster_height_px - raster_set.height if paper.raster_height_px is not None else 0
+    )
     return RasterSet(
         rasters={
-            pixel_format: _pad_raster_buffer(raster, left_padding, right_padding)
+            pixel_format: _pad_raster_buffer(
+                raster,
+                left_padding,
+                right_padding,
+                bottom_padding,
+            )
             for pixel_format, raster in raster_set.rasters.items()
         }
     )
 
 
-def _pad_raster_buffer(raster: RasterBuffer, left_padding: int, right_padding: int) -> RasterBuffer:
+def _pad_raster_buffer(
+    raster: RasterBuffer,
+    left_padding: int,
+    right_padding: int,
+    bottom_padding: int,
+) -> RasterBuffer:
     white = _white_pixel_for_format(raster.pixel_format)
     padded: list[int] = []
     for row in range(raster.height):
@@ -95,6 +120,7 @@ def _pad_raster_buffer(raster: RasterBuffer, left_padding: int, right_padding: i
         padded.extend([white] * left_padding)
         padded.extend(raster.pixels[start : start + raster.width])
         padded.extend([white] * right_padding)
+    padded.extend([white] * ((raster.width + left_padding + right_padding) * bottom_padding))
     return RasterBuffer(
         pixels=padded,
         width=raster.width + left_padding + right_padding,

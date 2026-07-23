@@ -172,6 +172,35 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(preview.width, 128)
         self.assertEqual(rendered.raster_set.width, 128)
 
+    def test_paper_preset_exact_raster_height_is_used_for_preview_and_print(self) -> None:
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: _test_image(),
+        )
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    raster_height_px=192,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], device, settings)
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+        preview_image = Image.open(io.BytesIO(preview.png))
+
+        self.assertEqual(preview.height, 192)
+        self.assertEqual(rendered.raster_set.height, 192)
+        self.assertEqual(preview_image.getpixel((0, 191)), 255)
+
     def test_print_render_uses_runtime_capabilities(self) -> None:
         image_renderer = _RecordingImageRenderer()
         renderer = DocumentRenderer(

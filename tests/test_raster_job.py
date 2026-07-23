@@ -122,6 +122,61 @@ class RasterJobTests(unittest.TestCase):
         self.assertEqual(job.payload, b"D")
         self.assertEqual(raster_set.width, 8)
 
+    def test_build_raster_job_pads_to_exact_raster_height(self) -> None:
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=8,
+                    render_width_px=8,
+                    raster_height_px=3,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        raster = RasterSet.from_single(
+            RasterBuffer(
+                pixels=[1] * 8,
+                width=8,
+                pixel_format=PixelFormat.BW1,
+            )
+        )
+
+        with patch(
+            "timiniprint.protocol.job._build_job_model_from_raster_set",
+            return_value=(b"E", ()),
+        ) as build_job_mock:
+            job = build_raster_job(device, raster, is_text=False)
+
+        raster_set = build_job_mock.call_args.kwargs["raster_set"]
+        bw = raster_set.require(PixelFormat.BW1)
+        self.assertEqual(job.payload, b"E")
+        self.assertEqual((bw.width, bw.height), (8, 3))
+        self.assertEqual(list(bw.pixels), [1] * 8 + [0] * 16)
+
+    def test_build_raster_job_rejects_raster_taller_than_exact_height(self) -> None:
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    raster_height_px=1,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        raster = RasterSet.from_single(
+            RasterBuffer(
+                pixels=[0] * 16,
+                width=8,
+                pixel_format=PixelFormat.BW1,
+            )
+        )
+
+        with self.assertRaisesRegex(ValueError, "exceeds paper raster height 1px"):
+            build_raster_job(device, raster, is_text=False)
+
     def test_raster_job_import_does_not_load_rendering_layer(self) -> None:
         script = """
 import sys

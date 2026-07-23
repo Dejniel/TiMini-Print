@@ -140,6 +140,7 @@ class PaperPreset:
     paper_mode: Optional[PaperMode] = None
     left_padding_px: int = 0
     max_height_px: Optional[int] = None
+    raster_height_px: Optional[int] = None
 
     def __post_init__(self) -> None:
         if not self.key:
@@ -151,6 +152,7 @@ class PaperPreset:
             "render_width_px",
             "left_padding_px",
             "max_height_px",
+            "raster_height_px",
         ):
             value = getattr(self, field_name)
             if value is not None and value < 0:
@@ -159,6 +161,8 @@ class PaperPreset:
             raise ValueError(f"paper preset {self.key} paper_width_px must be greater than zero")
         if self.render_width_px <= 0:
             raise ValueError(f"paper preset {self.key} render_width_px must be greater than zero")
+        if self.raster_height_px == 0:
+            raise ValueError(f"paper preset {self.key} raster_height_px must be greater than zero")
         if self.paper_width_px % 8 != 0:
             raise ValueError(f"paper preset {self.key} paper_width_px must be divisible by 8")
         if self.paper_width_px < self.render_width_px:
