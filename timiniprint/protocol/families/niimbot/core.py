@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Callable, Iterable
@@ -62,11 +63,45 @@ class NiimbotPacket:
 
 
 @dataclass(frozen=True)
-class NiimbotRecipe:
-    protocol_variant: str
+class _NiimbotRowEncoder:
     printhead_pixels: int
-    page_size_bytes: int
-    finish_wait: str
+    indexed_row_threshold: int = 6
+
+    def build_steps(self, raster: RasterBuffer) -> tuple[ProtocolStep, ...]:
+        rows = _coalesced_rows(raster)
+        steps: list[ProtocolStep] = []
+        for row in rows:
+            for offset, repeat in _repeat_chunks(row.repeat):
+                row_number = row.row_number + offset
+                if row.row_data is None:
+                    packet = frame(
+                        NiimbotRequest.PRINT_EMPTY_ROW,
+                        _u16be(row_number) + bytes([repeat]),
+                    )
+                elif row.black_pixels_count <= self.indexed_row_threshold:
+                    packet = frame(
+                        NiimbotRequest.PRINT_BITMAP_ROW_INDEXED,
+                        _u16be(row_number)
+                        + bytes(_count_pixels(row.row_data, self.printhead_pixels))
+                        + bytes([repeat])
+                        + _index_pixels(row.row_data),
+                    )
+                else:
+                    packet = frame(
+                        NiimbotRequest.PRINT_BITMAP_ROW,
+                        _u16be(row_number)
+                        + bytes(_count_pixels(row.row_data, self.printhead_pixels))
+                        + bytes([repeat])
+                        + row.row_data,
+                    )
+                steps.append(ProtocolStep.send(f"image row {row_number}", packet))
+        return tuple(steps)
+
+
+@dataclass(frozen=True)
+class _NiimbotPrintTask(ABC):
+    protocol_variant: str
+    row_encoder: _NiimbotRowEncoder
     label_type: int = int(NiimbotLabelType.WITH_GAPS)
     packet_timeout_sec: float = 1.0
     page_timeout_sec: float = 10.0
@@ -80,93 +115,18 @@ class NiimbotRecipe:
             )
         raster = request.require_raster(PixelFormat.BW1)
         raster.validate()
-        if raster.width != self.printhead_pixels:
+        if raster.width != self.row_encoder.printhead_pixels:
             raise ValueError(
-                f"NIIMBOT {self.protocol_variant} jobs require {self.printhead_pixels}px raster width"
+                f"NIIMBOT {self.protocol_variant} jobs require "
+                f"{self.row_encoder.printhead_pixels}px raster width"
             )
         density = request.density if request.density is not None else 2
-        quantity = 1
         steps: list[ProtocolStep] = []
         if request.is_first_page:
-            steps.extend(
-                [
-                    self._query(
-                        "set density",
-                        frame(NiimbotRequest.SET_DENSITY, bytes([density & 0xFF])),
-                        NiimbotResponse.SET_DENSITY,
-                    ),
-                    self._query(
-                        "set label type",
-                        frame(NiimbotRequest.SET_LABEL_TYPE, bytes([self.label_type & 0xFF])),
-                        NiimbotResponse.SET_LABEL_TYPE,
-                    ),
-                    self._query(
-                        "print start",
-                        frame(NiimbotRequest.PRINT_START),
-                        NiimbotResponse.PRINT_START,
-                    ),
-                ]
-            )
-        steps.extend(
-            [
-                self._query(
-                    "print clear",
-                    frame(NiimbotRequest.PRINT_CLEAR),
-                    NiimbotResponse.PRINT_CLEAR,
-                ),
-                self._query(
-                    "page start",
-                    frame(NiimbotRequest.PAGE_START),
-                    NiimbotResponse.PAGE_START,
-                ),
-                self._query(
-                    "set page size",
-                    frame(NiimbotRequest.SET_PAGE_SIZE, self._page_size_data(raster)),
-                    NiimbotResponse.SET_PAGE_SIZE,
-                    timeout_sec=self.page_timeout_sec,
-                ),
-                self._query(
-                    "print quantity",
-                    frame(NiimbotRequest.PRINT_QUANTITY, _u16be(quantity)),
-                    NiimbotResponse.PRINT_QUANTITY,
-                ),
-            ]
-        )
-        steps.extend(_image_row_steps(raster, printhead_pixels=self.printhead_pixels))
-        steps.append(
-            self._query(
-                "page end",
-                frame(NiimbotRequest.PAGE_END),
-                NiimbotResponse.PAGE_END,
-                timeout_sec=self.page_timeout_sec,
-            )
-        )
-        if self.finish_wait == "status_poll":
-            steps.append(
-                ProtocolStep.query(
-                    "print status",
-                    frame(NiimbotRequest.PRINT_STATUS),
-                    expect=ProtocolReplyExpectation.NONE,
-                    timeout_sec=self.packet_timeout_sec,
-                    reply_matcher=print_status_done_matcher(request.page_index),
-                    repeat_interval_sec=self.status_poll_interval_sec,
-                    repeat_timeout_sec=self.status_timeout_sec,
-                    include_in_payload=False,
-                )
-            )
+            steps.extend(self._print_start_steps(density))
+        steps.extend(self._page_steps(raster))
+        steps.extend(self._completion_steps(request))
         if request.is_last_page:
-            if self.finish_wait == "page_index":
-                # TODO: this mirrors the source D11_V1 flow: wait for page-index
-                # after PageEnd. If hardware shows the notification can arrive
-                # before this waiter is registered, add a NIIMBOT notification
-                # accumulator instead of moving this logic into transport.
-                steps.append(
-                    ProtocolStep.wait(
-                        "page index",
-                        reply_matcher=page_index_done_matcher(request.page_count),
-                        timeout_sec=self.status_timeout_sec,
-                    )
-                )
             steps.append(
                 self._query(
                     "print end",
@@ -177,14 +137,67 @@ class NiimbotRecipe:
             )
         return tuple(steps)
 
-    def _page_size_data(self, raster: RasterBuffer) -> bytes:
-        if self.page_size_bytes == 2:
-            return _u16be(raster.height)
-        if self.page_size_bytes == 4:
-            return _u16be(raster.height) + _u16be(raster.width)
-        raise ValueError(
-            f"Unsupported NIIMBOT page size format: {self.page_size_bytes} bytes"
+    def _print_start_steps(self, density: int) -> tuple[ProtocolStep, ...]:
+        return (
+            self._query(
+                "set density",
+                frame(NiimbotRequest.SET_DENSITY, bytes([density & 0xFF])),
+                NiimbotResponse.SET_DENSITY,
+            ),
+            self._query(
+                "set label type",
+                frame(NiimbotRequest.SET_LABEL_TYPE, bytes([self.label_type & 0xFF])),
+                NiimbotResponse.SET_LABEL_TYPE,
+            ),
+            self._query(
+                "print start",
+                frame(NiimbotRequest.PRINT_START),
+                NiimbotResponse.PRINT_START,
+            ),
         )
+
+    def _page_steps(self, raster: RasterBuffer) -> tuple[ProtocolStep, ...]:
+        steps = [
+            self._query(
+                "print clear",
+                frame(NiimbotRequest.PRINT_CLEAR),
+                NiimbotResponse.PRINT_CLEAR,
+            ),
+            self._query(
+                "page start",
+                frame(NiimbotRequest.PAGE_START),
+                NiimbotResponse.PAGE_START,
+            ),
+            self._query(
+                "set page size",
+                frame(NiimbotRequest.SET_PAGE_SIZE, self._page_size_data(raster)),
+                NiimbotResponse.SET_PAGE_SIZE,
+                timeout_sec=self.page_timeout_sec,
+            ),
+            self._query(
+                "print quantity",
+                frame(NiimbotRequest.PRINT_QUANTITY, _u16be(1)),
+                NiimbotResponse.PRINT_QUANTITY,
+            ),
+        ]
+        steps.extend(self.row_encoder.build_steps(raster))
+        steps.append(
+            self._query(
+                "page end",
+                frame(NiimbotRequest.PAGE_END),
+                NiimbotResponse.PAGE_END,
+                timeout_sec=self.page_timeout_sec,
+            )
+        )
+        return tuple(steps)
+
+    @abstractmethod
+    def _page_size_data(self, raster: RasterBuffer) -> bytes:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _completion_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+        raise NotImplementedError
 
     def _query(
         self,
@@ -201,6 +214,45 @@ class NiimbotRecipe:
             expect=ProtocolReplyExpectation.NONE,
             timeout_sec=self.packet_timeout_sec if timeout_sec is None else timeout_sec,
             reply_matcher=matcher or response_matcher(expected),
+        )
+
+
+class _D11V1PrintTask(_NiimbotPrintTask):
+    def _page_size_data(self, raster: RasterBuffer) -> bytes:
+        return _u16be(raster.height)
+
+    def _completion_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+        if not request.is_last_page:
+            return ()
+        # TODO: this mirrors the source D11_V1 flow: wait for page-index after
+        # PageEnd. If hardware shows the notification can arrive before this
+        # waiter is registered, add a NIIMBOT notification accumulator instead
+        # of moving this logic into transport.
+        return (
+            ProtocolStep.wait(
+                "page index",
+                reply_matcher=page_index_done_matcher(request.page_count),
+                timeout_sec=self.status_timeout_sec,
+            ),
+        )
+
+
+class _D110PrintTask(_NiimbotPrintTask):
+    def _page_size_data(self, raster: RasterBuffer) -> bytes:
+        return _u16be(raster.height) + _u16be(raster.width)
+
+    def _completion_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+        return (
+            ProtocolStep.query(
+                "print status",
+                frame(NiimbotRequest.PRINT_STATUS),
+                expect=ProtocolReplyExpectation.NONE,
+                timeout_sec=self.packet_timeout_sec,
+                reply_matcher=print_status_done_matcher(request.page_index),
+                repeat_interval_sec=self.status_poll_interval_sec,
+                repeat_timeout_sec=self.status_timeout_sec,
+                include_in_payload=False,
+            ),
         )
 
 
@@ -304,10 +356,10 @@ def print_end_success_matcher() -> ProtocolReplyMatcher:
 
 
 def build_niimbot_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    recipe = RECIPE_BY_VARIANT.get(request.protocol_variant or "d110")
-    if recipe is None:
+    print_task = PRINT_TASK_BY_VARIANT.get(request.protocol_variant or "d110")
+    if print_task is None:
         raise ValueError(f"Unsupported NIIMBOT protocol variant: {request.protocol_variant!r}")
-    return recipe.build_job(request)
+    return print_task.build_job(request)
 
 
 def connect_packet() -> bytes:
@@ -352,34 +404,6 @@ def protocol_version_from_status_data(raw: bytes | None) -> int | None:
             return 4
         return 0
     return None
-
-
-def _image_row_steps(raster: RasterBuffer, *, printhead_pixels: int) -> tuple[ProtocolStep, ...]:
-    rows = _coalesced_rows(raster)
-    steps: list[ProtocolStep] = []
-    for row in rows:
-        for offset, repeat in _repeat_chunks(row.repeat):
-            row_number = row.row_number + offset
-            if row.row_data is None:
-                packet = frame(NiimbotRequest.PRINT_EMPTY_ROW, _u16be(row_number) + bytes([repeat]))
-            elif row.black_pixels_count <= 6:
-                packet = frame(
-                    NiimbotRequest.PRINT_BITMAP_ROW_INDEXED,
-                    _u16be(row_number)
-                    + bytes(_count_pixels(row.row_data, printhead_pixels))
-                    + bytes([repeat])
-                    + _index_pixels(row.row_data),
-                )
-            else:
-                packet = frame(
-                    NiimbotRequest.PRINT_BITMAP_ROW,
-                    _u16be(row_number)
-                    + bytes(_count_pixels(row.row_data, printhead_pixels))
-                    + bytes([repeat])
-                    + row.row_data,
-                )
-            steps.append(ProtocolStep.send(f"image row {row_number}", packet))
-    return tuple(steps)
 
 
 @dataclass(frozen=True)
@@ -485,19 +509,17 @@ def _u16be(value: int) -> bytes:
     return int(value).to_bytes(2, "big", signed=False)
 
 
-D11_RECIPE = NiimbotRecipe(
+_SHARED_96PX_ROW_ENCODER = _NiimbotRowEncoder(printhead_pixels=96)
+
+D11_PRINT_TASK = _D11V1PrintTask(
     protocol_variant="d11_v1",
-    printhead_pixels=96,
-    page_size_bytes=2,
-    finish_wait="page_index",
+    row_encoder=_SHARED_96PX_ROW_ENCODER,
 )
-D110_RECIPE = NiimbotRecipe(
+D110_PRINT_TASK = _D110PrintTask(
     protocol_variant="d110",
-    printhead_pixels=96,
-    page_size_bytes=4,
-    finish_wait="status_poll",
+    row_encoder=_SHARED_96PX_ROW_ENCODER,
 )
-RECIPE_BY_VARIANT = {
-    D11_RECIPE.protocol_variant: D11_RECIPE,
-    D110_RECIPE.protocol_variant: D110_RECIPE,
+PRINT_TASK_BY_VARIANT = {
+    D11_PRINT_TASK.protocol_variant: D11_PRINT_TASK,
+    D110_PRINT_TASK.protocol_variant: D110_PRINT_TASK,
 }

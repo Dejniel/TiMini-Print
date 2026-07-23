@@ -46,6 +46,9 @@ class NiimbotProtocolTests(unittest.TestCase):
         self.assertTrue(any(step.data[2] == int(NiimbotRequest.PRINT_BITMAP_ROW_INDEXED) for step in job.steps))
         self.assertEqual(job.steps[-1].data[2], int(NiimbotRequest.PRINT_END))
 
+        page_size = next(step for step in job.steps if step.label == "set page size")
+        self.assertEqual(parse_packets(page_size.data)[0].data, b"\x00\x02\x00\x60")
+
         ack = frame(NiimbotResponse.SET_DENSITY, b"\x01")
         self.assertTrue(job.steps[0].reply_matcher.matches(ack))
 
@@ -104,6 +107,7 @@ class NiimbotProtocolTests(unittest.TestCase):
         page_size = next(step for step in job.steps if step.label == "set page size")
         self.assertEqual(page_size.data[2], int(NiimbotRequest.SET_PAGE_SIZE))
         self.assertEqual(page_size.data[3], 2)
+        self.assertEqual(parse_packets(page_size.data)[0].data, b"\x00\x01")
 
         page_index = next(step for step in job.steps if step.label == "page index")
         self.assertEqual(page_index.operation, ProtocolStepOperation.WAIT)
@@ -114,6 +118,68 @@ class NiimbotProtocolTests(unittest.TestCase):
             )
         )
         self.assertEqual(job.steps[-1].data[2], int(NiimbotRequest.PRINT_END))
+
+    def test_d11_multipage_job_waits_for_the_final_page_index_only(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("niimbot_d11")
+        raster = RasterBuffer(pixels=[0] * 96, width=96, pixel_format=PixelFormat.BW1)
+        protocol = PrinterProtocol(device)
+
+        first = protocol.build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            page_index=1,
+            page_count=2,
+        )
+        second = protocol.build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            page_index=2,
+            page_count=2,
+        )
+
+        first_labels = [step.label for step in first.steps]
+        second_labels = [step.label for step in second.steps]
+        self.assertNotIn("page index", first_labels)
+        self.assertNotIn("print end", first_labels)
+        self.assertIn("page index", second_labels)
+        self.assertIn("print end", second_labels)
+
+        page_index = next(step for step in second.steps if step.label == "page index")
+        self.assertFalse(
+            page_index.reply_matcher.matches(
+                frame(NiimbotResponse.PRINTER_PAGE_INDEX, b"\x00\x01")
+            )
+        )
+        self.assertTrue(
+            page_index.reply_matcher.matches(
+                frame(NiimbotResponse.PRINTER_PAGE_INDEX, b"\x00\x02")
+            )
+        )
+
+    def test_d11_and_d110_keep_the_same_row_encoding(self) -> None:
+        pixels = [0] * 96 + [1] + [0] * 95
+        raster = RasterBuffer(pixels=pixels, width=96, pixel_format=PixelFormat.BW1)
+
+        encoded_rows = []
+        for profile_key in ("niimbot_d11", "niimbot_d110"):
+            device = PrinterCatalog.load().device_from_profile(profile_key)
+            job = PrinterProtocol(device).build_job(
+                RasterSet.from_single(raster),
+                is_text=False,
+                page_count=1,
+            )
+            encoded_rows.append(
+                [step.data for step in job.steps if step.label.startswith("image row ")]
+            )
+
+        self.assertEqual(encoded_rows[0], encoded_rows[1])
+        self.assertEqual(
+            [parse_packets(packet)[0].command for packet in encoded_rows[0]],
+            [
+                int(NiimbotRequest.PRINT_EMPTY_ROW),
+                int(NiimbotRequest.PRINT_BITMAP_ROW_INDEXED),
+            ],
+        )
 
     def test_catalog_detects_d110_as_niimbot(self) -> None:
         detected = PrinterCatalog.load().detect_device("D110-1234")
