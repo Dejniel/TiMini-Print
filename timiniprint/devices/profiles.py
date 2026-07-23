@@ -361,6 +361,7 @@ class PrinterModel:
     detections: Tuple[NamedModelDetection, ...]
     marketing_name: Optional[str] = None
     origin_app_packages: Tuple[str, ...] = ()
+    detection_ambiguity_group: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.model_key:
@@ -372,6 +373,13 @@ class PrinterModel:
             object.__setattr__(self, "marketing_name", marketing_name)
         if not self.detections:
             raise ValueError(f"Printer model {self.model_key} requires detections")
+        if self.detection_ambiguity_group is not None:
+            group = self.detection_ambiguity_group.strip()
+            if not group:
+                raise ValueError(
+                    f"Printer model {self.model_key} has blank detection_ambiguity_group"
+                )
+            object.__setattr__(self, "detection_ambiguity_group", group)
 
     @property
     def names(self) -> Tuple[str, ...]:

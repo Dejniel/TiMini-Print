@@ -147,6 +147,44 @@ class CatalogAuditTests(unittest.TestCase):
         errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_body"]
         self.assertEqual(errors, [{"kind": "mergeable_model_body", "model_keys": ["first", "second"]}])
 
+    def test_catalog_audit_allows_declared_detection_ambiguity_group(self) -> None:
+        profiles = [
+            _profile_payload("first_profile"),
+            _profile_payload("second_profile"),
+        ]
+        profiles[1]["one_length"] = 9
+        models = [
+            {
+                "model_key": "first",
+                "detections": [{"name": "FOO", "detection": {"exact_names": ["FOO"]}}],
+                "profile_key": "first_profile",
+                "protocol_override": {"type": "tiny"},
+                "origin_app_packages": ["com.example.source"],
+                "detection_ambiguity_group": "foo_protocol",
+            },
+            {
+                "model_key": "second",
+                "detections": [{"name": "FOO", "detection": {"exact_names": ["FOO"]}}],
+                "profile_key": "second_profile",
+                "protocol_override": {"type": "tiny"},
+                "origin_app_packages": ["com.example.source"],
+                "detection_ambiguity_group": "foo_protocol",
+            },
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = Path(tmp) / "profiles.json"
+            model_path = Path(tmp) / "models.json"
+            profile_path.write_text(json.dumps(profiles), encoding="utf-8")
+            model_path.write_text(json.dumps(models), encoding="utf-8")
+
+            report = self.tool.generate_report(
+                profile_path=profile_path,
+                model_path=model_path,
+            )
+
+        self.assertEqual(report["errors"], [])
+
     def test_catalog_audit_detects_unsupported_model_that_is_already_supported(self) -> None:
         profiles = [_profile_payload("base")]
         models = [

@@ -67,6 +67,12 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
             matches = catalog.detect_model(sample, address=address)
             if len(matches) > 1:
                 if model["model_key"] in {candidate.model.model_key for candidate in matches}:
+                    ambiguity_group = model.get("detection_ambiguity_group")
+                    if ambiguity_group and all(
+                        candidate.model.detection_ambiguity_group == ambiguity_group
+                        for candidate in matches
+                    ):
+                        return None
                     if not model_origins:
                         return {
                             "kind": "ambiguous_model",
