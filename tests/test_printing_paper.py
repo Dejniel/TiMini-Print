@@ -67,6 +67,25 @@ class PrintingPaperPresetTests(unittest.TestCase):
         self.assertEqual(paper.key, "narrow")
         self.assertEqual(paper.render_width_px, 128)
 
+    def test_profile_paper_preset_can_define_fixed_render_height(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("x6h")
+        profile = replace(
+            device.profile,
+            paper_presets=(
+                replace(
+                    device.profile.default_paper_preset,
+                    render_height_px=256,
+                    raster_height_px=320,
+                ),
+            ),
+        )
+        device = replace(device, profile=profile)
+
+        paper = resolve_paper(device, PrintSettings())
+
+        self.assertEqual(paper.render_height_px, 256)
+        self.assertEqual(paper.raster_height_px, 320)
+
     def test_resolve_paper_keeps_source_render_width_when_final_width_is_byte_aligned(self) -> None:
         device = PrinterCatalog.load().device_from_profile("15p3")
 

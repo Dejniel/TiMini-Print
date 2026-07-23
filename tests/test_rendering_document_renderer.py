@@ -201,6 +201,42 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(rendered.raster_set.height, 192)
         self.assertEqual(preview_image.getpixel((0, 191)), 255)
 
+    def test_paper_preset_fits_tall_page_to_fixed_render_area_before_padding(self) -> None:
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: Image.new("RGB", (16, 16), "black"),
+        )
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=128,
+                    render_width_px=128,
+                    render_height_px=64,
+                    raster_height_px=96,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], device, settings)
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+        preview_image = Image.open(io.BytesIO(preview.png))
+
+        self.assertEqual((preview.width, preview.height), (128, 96))
+        self.assertEqual((rendered.raster_set.width, rendered.raster_set.height), (128, 96))
+        self.assertEqual(preview_image.getpixel((31, 0)), 255)
+        self.assertEqual(preview_image.getpixel((32, 0)), 0)
+        self.assertEqual(preview_image.getpixel((95, 63)), 0)
+        self.assertEqual(preview_image.getpixel((96, 63)), 255)
+        self.assertEqual(preview_image.getpixel((64, 64)), 255)
+
     def test_print_render_uses_runtime_capabilities(self) -> None:
         image_renderer = _RecordingImageRenderer()
         renderer = DocumentRenderer(

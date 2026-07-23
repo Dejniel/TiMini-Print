@@ -16,6 +16,7 @@ class ResolvedPaper:
     paper_mode: PaperMode | None
     paper_width_px: int
     render_width_px: int
+    render_height_px: int | None = None
     left_padding_px: int = 0
     max_height_px: int | None = None
     raster_height_px: int | None = None
@@ -41,6 +42,7 @@ def resolve_paper(device: PrinterDevice, settings: PrintSettings) -> ResolvedPap
         paper_mode=preset.paper_mode,
         paper_width_px=preset.paper_width_px,
         render_width_px=preset.render_width_px,
+        render_height_px=preset.render_height_px,
         left_padding_px=preset.left_padding_px,
         max_height_px=preset.max_height_px,
         raster_height_px=preset.raster_height_px,

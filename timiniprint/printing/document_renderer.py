@@ -218,25 +218,35 @@ class DocumentRenderer:
             return self._apply_paper_layout(source.page(page.index), paper)
 
     def _apply_paper_layout(self, page: Page, paper: ResolvedPaper) -> Page:
-        if paper.raster_height_px is not None and page.image.height > paper.raster_height_px:
+        image = page.image
+        if paper.render_height_px is not None and image.height > paper.render_height_px:
+            width = max(1, round(image.width * paper.render_height_px / image.height))
+            image = image.resize(
+                (width, paper.render_height_px),
+                Image.Resampling.LANCZOS,
+            )
+        if paper.raster_height_px is not None and image.height > paper.raster_height_px:
             raise ValueError(
-                f"Rendered page height {page.image.height}px exceeds paper raster height "
+                f"Rendered page height {image.height}px exceeds paper raster height "
                 f"{paper.raster_height_px}px"
             )
-        final_width = (
-            paper.paper_width_px
-            if not paper.left_padding_px and paper.paper_width_px > page.image.width
-            else page.image.width
+        layout_width = (
+            paper.render_width_px if paper.left_padding_px else paper.paper_width_px
         )
-        final_height = paper.raster_height_px or page.image.height
-        if (final_width, final_height) == page.image.size:
+        final_width = max(image.width, layout_width)
+        final_height = (
+            paper.raster_height_px
+            or paper.render_height_px
+            or image.height
+        )
+        if image is page.image and (final_width, final_height) == image.size:
             return page
         canvas = Image.new(
-            page.image.mode,
+            image.mode,
             (final_width, final_height),
-            _white_for_mode(page.image.mode),
+            _white_for_mode(image.mode),
         )
-        canvas.paste(page.image, ((final_width - page.image.width) // 2, 0))
+        canvas.paste(image, ((final_width - image.width) // 2, 0))
         return Page(canvas, dither=page.dither, is_text=page.is_text)
 
     def _open_source(
@@ -246,13 +256,19 @@ class DocumentRenderer:
         device: PrinterDevice,
         settings: PrintSettings,
     ) -> PageSource:
-        width = resolve_paper(device, settings).render_width_px
+        paper = resolve_paper(device, settings)
+        width = paper.render_width_px
         if kind == "text":
+            page_height_to_width = (
+                paper.render_height_px / paper.render_width_px
+                if paper.render_height_px is not None
+                else self.text_page_height_to_width
+            )
             return TextConverter(
                 font_path=self.text_font_resolver(settings.text_font),
                 columns=settings.text_columns,
                 wrap_lines=settings.text_wrap,
-                page_height_to_width=self.text_page_height_to_width,
+                page_height_to_width=page_height_to_width,
                 rotate_90_clockwise=settings.rotate_90_clockwise,
             ).open_text(self._text_content(document), width)
         if kind == "image":
