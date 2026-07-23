@@ -52,6 +52,25 @@ class NiimbotProtocolTests(unittest.TestCase):
         ack = frame(NiimbotResponse.SET_DENSITY, b"\x01")
         self.assertTrue(job.steps[0].reply_matcher.matches(ack))
 
+    def test_d110_task_uses_raster_width_for_row_geometry(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("niimbot_d110")
+        raster = RasterBuffer(pixels=[1] * 384, width=384, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            page_count=1,
+        )
+
+        page_size = next(step for step in job.steps if step.label == "set page size")
+        self.assertEqual(parse_packets(page_size.data)[0].data, b"\x00\x01\x01\x80")
+
+        image_row = next(step for step in job.steps if step.label == "image row 0")
+        row_packet = parse_packets(image_row.data)[0]
+        self.assertEqual(row_packet.command, int(NiimbotRequest.PRINT_BITMAP_ROW))
+        self.assertEqual(row_packet.data[:6], b"\x00\x00\x80\x80\x80\x01")
+        self.assertEqual(row_packet.data[6:], b"\xff" * 48)
+
     def test_d110_multipage_job_keeps_one_print_task_boundary(self) -> None:
         device = PrinterCatalog.load().device_from_profile("niimbot_d110")
         raster = RasterBuffer(pixels=[0] * 96, width=96, pixel_format=PixelFormat.BW1)

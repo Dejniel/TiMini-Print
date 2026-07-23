@@ -64,7 +64,6 @@ class NiimbotPacket:
 
 @dataclass(frozen=True)
 class _NiimbotRowEncoder:
-    printhead_pixels: int
     indexed_row_threshold: int = 6
 
     def build_steps(self, raster: RasterBuffer) -> tuple[ProtocolStep, ...]:
@@ -82,7 +81,7 @@ class _NiimbotRowEncoder:
                     packet = frame(
                         NiimbotRequest.PRINT_BITMAP_ROW_INDEXED,
                         _u16be(row_number)
-                        + bytes(_count_pixels(row.row_data, self.printhead_pixels))
+                        + bytes(_count_pixels(row.row_data, raster.width))
                         + bytes([repeat])
                         + _index_pixels(row.row_data),
                     )
@@ -90,7 +89,7 @@ class _NiimbotRowEncoder:
                     packet = frame(
                         NiimbotRequest.PRINT_BITMAP_ROW,
                         _u16be(row_number)
-                        + bytes(_count_pixels(row.row_data, self.printhead_pixels))
+                        + bytes(_count_pixels(row.row_data, raster.width))
                         + bytes([repeat])
                         + row.row_data,
                     )
@@ -115,29 +114,21 @@ class _NiimbotPrintTask(ABC):
             )
         raster = request.require_raster(PixelFormat.BW1)
         raster.validate()
-        if raster.width != self.row_encoder.printhead_pixels:
-            raise ValueError(
-                f"NIIMBOT {self.protocol_variant} jobs require "
-                f"{self.row_encoder.printhead_pixels}px raster width"
-            )
         density = request.density if request.density is not None else 2
         steps: list[ProtocolStep] = []
         if request.is_first_page:
-            steps.extend(self._print_start_steps(density))
+            steps.extend(self._print_start_steps(request, density))
         steps.extend(self._page_steps(raster))
-        steps.extend(self._completion_steps(request))
+        steps.extend(self._after_page_steps(request))
         if request.is_last_page:
-            steps.append(
-                self._query(
-                    "print end",
-                    frame(NiimbotRequest.PRINT_END),
-                    NiimbotResponse.PRINT_END,
-                    matcher=print_end_success_matcher(),
-                )
-            )
+            steps.extend(self._finish_steps(request))
         return tuple(steps)
 
-    def _print_start_steps(self, density: int) -> tuple[ProtocolStep, ...]:
+    def _print_start_steps(
+        self,
+        request: PrintJobRequest,
+        density: int,
+    ) -> tuple[ProtocolStep, ...]:
         return (
             self._query(
                 "set density",
@@ -196,8 +187,18 @@ class _NiimbotPrintTask(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _completion_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+    def _after_page_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
         raise NotImplementedError
+
+    def _finish_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+        return (
+            self._query(
+                "print end",
+                frame(NiimbotRequest.PRINT_END),
+                NiimbotResponse.PRINT_END,
+                matcher=print_end_success_matcher(),
+            ),
+        )
 
     def _query(
         self,
@@ -221,7 +222,7 @@ class _D11V1PrintTask(_NiimbotPrintTask):
     def _page_size_data(self, raster: RasterBuffer) -> bytes:
         return _u16be(raster.height)
 
-    def _completion_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+    def _after_page_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
         if not request.is_last_page:
             return ()
         # TODO: this mirrors the source D11_V1 flow: wait for page-index after
@@ -241,7 +242,7 @@ class _D110PrintTask(_NiimbotPrintTask):
     def _page_size_data(self, raster: RasterBuffer) -> bytes:
         return _u16be(raster.height) + _u16be(raster.width)
 
-    def _completion_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+    def _after_page_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
         return (
             ProtocolStep.query(
                 "print status",
@@ -460,8 +461,8 @@ def _repeat_chunks(repeat: int) -> tuple[tuple[int, int], ...]:
     return tuple(chunks)
 
 
-def _count_pixels(row_data: bytes, printhead_pixels: int) -> tuple[int, int, int]:
-    chunk_size = printhead_pixels // 8 // 3
+def _count_pixels(row_data: bytes, row_width_pixels: int) -> tuple[int, int, int]:
+    chunk_size = row_width_pixels // 8 // 3
     split = chunk_size > 0 and len(row_data) <= chunk_size * 3
     total = 0
     parts = [0, 0, 0]
@@ -509,15 +510,15 @@ def _u16be(value: int) -> bytes:
     return int(value).to_bytes(2, "big", signed=False)
 
 
-_SHARED_96PX_ROW_ENCODER = _NiimbotRowEncoder(printhead_pixels=96)
+_SHARED_ROW_ENCODER = _NiimbotRowEncoder()
 
 D11_PRINT_TASK = _D11V1PrintTask(
     protocol_variant="d11_v1",
-    row_encoder=_SHARED_96PX_ROW_ENCODER,
+    row_encoder=_SHARED_ROW_ENCODER,
 )
 D110_PRINT_TASK = _D110PrintTask(
     protocol_variant="d110",
-    row_encoder=_SHARED_96PX_ROW_ENCODER,
+    row_encoder=_SHARED_ROW_ENCODER,
 )
 PRINT_TASK_BY_VARIANT = {
     D11_PRINT_TASK.protocol_variant: D11_PRINT_TASK,
