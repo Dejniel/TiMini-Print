@@ -90,6 +90,8 @@ A `PaperPreset` contains:
 - `label`: user-facing label
 - `paper_width_px`: full protocol paper/canvas width, including margins
 - `render_width_px`: width rendered by file/raster pipeline before protocol padding/centering
+- optional `render_height_px`: fixed content area height; taller pages are scaled to fit and text pagination uses this height
+- optional `raster_height_px`: exact final raster height; shorter output is padded with white rows at the trailing edge
 - optional `left_padding_px`: protocol-side left padding
 - optional `paper_mode`: low-level protocol recipe selector
 - optional `max_height_px`: sheet/page height cap when the protocol needs one
@@ -97,6 +99,8 @@ A `PaperPreset` contains:
 High-level callers select paper through `PrintSettings(paper_preset_key=...)`. They should not select low-level `paper_mode` directly. `paper_mode` exists because some wire protocols change feed/end-page behavior depending on medium type.
 
 If `paper_width_px` is wider than `render_width_px` and `left_padding_px` is zero, the printing layer centers the rendered page on a white canvas. If `left_padding_px` is set, the protocol builder applies that padding and the raster remains at `render_width_px`.
+
+`render_height_px` and `raster_height_px` model different stages. The first constrains file/text rendering. The second describes the final raster sent to the protocol builder. When both are present, `render_height_px` must not exceed `raster_height_px`. A raw raster taller than `raster_height_px` is rejected instead of being cropped.
 
 ## Printer Configs
 

@@ -206,7 +206,9 @@ async with await connect_printer(device, MyConnector()) as printer:
     await printer.print_file("example.png")
 ```
 
-For full support of runtime-sensitive families, the connection may also implement optional methods from `RuntimeProbeConnection` in `timiniprint.transport.base`, such as `send_control_packet(...)`, `query_control_packet(...)`, `wait_for_notification(...)`, and `send_control_packet_wait_notification(...)`. If they are missing, runtime-sensitive families degrade or fail according to their controller.
+For full support of runtime-sensitive families, the connection may also implement optional methods from `RuntimeProbeConnection` in `timiniprint.transport.base`, such as `send_control_packet(...)`, `query_control_packet(...)`, `wait_for_reply(...)`, `wait_for_notification(...)`, and `send_control_packet_wait_notification(...)`. If they are missing, runtime-sensitive families degrade or fail according to their controller.
+
+`wait_for_reply(...)` is the transport-neutral passive receive operation used by protocol steps and completion controllers. A Classic SPP connection reads from its socket; a BLE connection can satisfy the same operation through notifications. `wait_for_notification(...)` remains available for controllers whose behavior is specifically tied to BLE notification state.
 
 ## Editable Printer Configs
 
