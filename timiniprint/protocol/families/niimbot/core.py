@@ -22,6 +22,7 @@ class NiimbotRequest(IntEnum):
     PRINT_BITMAP_ROW_INDEXED = 0x83
     PRINT_BITMAP_ROW = 0x85
     PRINT_EMPTY_ROW = 0x84
+    PRINTER_CHECK_LINE = 0x86
     PRINT_CLEAR = 0x20
     PAGE_END = 0xE3
     PRINT_STATUS = 0xA3
@@ -45,6 +46,7 @@ class NiimbotResponse(IntEnum):
     PRINT_STATUS = 0xB3
     PRINT_END = 0xF4
     PRINT_ERROR = 0xDB
+    PRINTER_CHECK_LINE = 0xD3
     PRINTER_INFO_MODEL_ID = 0x48
     PRINTER_STATUS_DATA = 0xB5
     SET_DENSITY = 0x31
@@ -65,12 +67,19 @@ class NiimbotPacket:
 @dataclass(frozen=True)
 class _NiimbotRowEncoder:
     indexed_row_threshold: int = 6
+    counts_mode: str = "auto"
+    check_line_interval: int | None = None
+    check_line_timeout_sec: float = 10.0
 
     def build_steps(self, raster: RasterBuffer) -> tuple[ProtocolStep, ...]:
         rows = _coalesced_rows(raster)
         steps: list[ProtocolStep] = []
         for row in rows:
-            for offset, repeat in _repeat_chunks(row.repeat):
+            for offset, repeat, check_line in _repeat_chunks(
+                row.repeat,
+                row_number=row.row_number,
+                check_line_interval=self.check_line_interval,
+            ):
                 row_number = row.row_number + offset
                 if row.row_data is None:
                     packet = frame(
@@ -81,7 +90,13 @@ class _NiimbotRowEncoder:
                     packet = frame(
                         NiimbotRequest.PRINT_BITMAP_ROW_INDEXED,
                         _u16be(row_number)
-                        + bytes(_count_pixels(row.row_data, raster.width))
+                        + bytes(
+                            _count_pixels(
+                                row.row_data,
+                                raster.width,
+                                mode=self.counts_mode,
+                            )
+                        )
                         + bytes([repeat])
                         + _index_pixels(row.row_data),
                     )
@@ -89,11 +104,36 @@ class _NiimbotRowEncoder:
                     packet = frame(
                         NiimbotRequest.PRINT_BITMAP_ROW,
                         _u16be(row_number)
-                        + bytes(_count_pixels(row.row_data, raster.width))
+                        + bytes(
+                            _count_pixels(
+                                row.row_data,
+                                raster.width,
+                                mode=self.counts_mode,
+                            )
+                        )
                         + bytes([repeat])
                         + row.row_data,
                     )
                 steps.append(ProtocolStep.send(f"image row {row_number}", packet))
+                if check_line is not None:
+                    expected_check = _u16be(check_line) + b"\x01"
+                    steps.append(
+                        ProtocolStep.query(
+                            f"check line {check_line}",
+                            frame(
+                                NiimbotRequest.PRINTER_CHECK_LINE,
+                                expected_check,
+                            ),
+                            expect=ProtocolReplyExpectation.NONE,
+                            timeout_sec=self.check_line_timeout_sec,
+                            reply_matcher=response_matcher(
+                                NiimbotResponse.PRINTER_CHECK_LINE,
+                                data_matches=lambda payload, expected=expected_check: (
+                                    payload == expected
+                                ),
+                            ),
+                        )
+                    )
         return tuple(steps)
 
 
@@ -449,21 +489,46 @@ def _same_row(left: _EncodedRow, right: _EncodedRow) -> bool:
     return left.row_data == right.row_data
 
 
-def _repeat_chunks(repeat: int) -> tuple[tuple[int, int], ...]:
+def _repeat_chunks(
+    repeat: int,
+    *,
+    row_number: int = 0,
+    check_line_interval: int | None = None,
+) -> tuple[tuple[int, int, int | None], ...]:
     chunks = []
     remaining = max(0, int(repeat))
     offset = 0
     while remaining > 0:
         chunk = min(255, remaining)
-        chunks.append((offset, chunk))
+        check_line = None
+        if check_line_interval is not None:
+            if check_line_interval <= 0:
+                raise ValueError("NIIMBOT check-line interval must be positive")
+            absolute_row = row_number + offset
+            rows_to_check = check_line_interval - (absolute_row % check_line_interval)
+            chunk = min(chunk, rows_to_check)
+            if (absolute_row + chunk) % check_line_interval == 0:
+                check_line = absolute_row + chunk - 1
+        chunks.append((offset, chunk, check_line))
         offset += chunk
         remaining -= chunk
     return tuple(chunks)
 
 
-def _count_pixels(row_data: bytes, row_width_pixels: int) -> tuple[int, int, int]:
+def _count_pixels(
+    row_data: bytes,
+    row_width_pixels: int,
+    *,
+    mode: str = "auto",
+) -> tuple[int, int, int]:
+    if mode not in {"auto", "split", "total"}:
+        raise ValueError(f"Unsupported NIIMBOT pixel-count mode: {mode}")
     chunk_size = row_width_pixels // 8 // 3
-    split = chunk_size > 0 and len(row_data) <= chunk_size * 3
+    split = (
+        mode != "total"
+        and chunk_size > 0
+        and len(row_data) <= chunk_size * 3
+    )
     total = 0
     parts = [0, 0, 0]
     for byte_index, value in enumerate(row_data):

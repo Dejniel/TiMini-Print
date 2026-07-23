@@ -71,6 +71,41 @@ class NiimbotProtocolTests(unittest.TestCase):
         self.assertEqual(row_packet.data[:6], b"\x00\x00\x80\x80\x80\x01")
         self.assertEqual(row_packet.data[6:], b"\xff" * 48)
 
+    def test_row_encoder_can_use_total_counts_and_check_lines(self) -> None:
+        from timiniprint.protocol.families.niimbot.core import _NiimbotRowEncoder
+
+        raster = RasterBuffer(
+            pixels=[1] * (384 * 201),
+            width=384,
+            pixel_format=PixelFormat.BW1,
+        )
+
+        steps = _NiimbotRowEncoder(
+            counts_mode="total",
+            check_line_interval=200,
+        ).build_steps(raster)
+
+        self.assertEqual(
+            [step.label for step in steps],
+            ["image row 0", "check line 199", "image row 200"],
+        )
+        first_row = parse_packets(steps[0].data)[0]
+        self.assertEqual(first_row.data[:6], b"\x00\x00\x00\x80\x01\xc8")
+        check_line = parse_packets(steps[1].data)[0]
+        self.assertEqual(check_line.command, int(NiimbotRequest.PRINTER_CHECK_LINE))
+        self.assertEqual(check_line.data, b"\x00\xc7\x01")
+        self.assertEqual(steps[1].operation, ProtocolStepOperation.QUERY)
+        self.assertFalse(
+            steps[1].reply_matcher.matches(
+                frame(NiimbotResponse.PRINTER_CHECK_LINE, b"\x00\xc7\x00")
+            )
+        )
+        self.assertTrue(
+            steps[1].reply_matcher.matches(
+                frame(NiimbotResponse.PRINTER_CHECK_LINE, b"\x00\xc7\x01")
+            )
+        )
+
     def test_d110_multipage_job_keeps_one_print_task_boundary(self) -> None:
         device = PrinterCatalog.load().device_from_profile("niimbot_d110")
         raster = RasterBuffer(pixels=[0] * 96, width=96, pixel_format=PixelFormat.BW1)
