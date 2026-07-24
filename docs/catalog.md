@@ -93,6 +93,8 @@ A `PaperPreset` contains:
 - optional `render_height_px`: fixed content area height; taller pages are scaled to fit and text pagination uses this height
 - optional `raster_height_px`: exact final raster height; shorter output is padded with white rows at the trailing edge
 - optional `left_padding_px`: protocol-side left padding
+- optional `top_padding_px`: leading blank raster rows reserved before rendered content
+- optional `mirror_horizontal`: mirror the complete paper raster before protocol encoding
 - optional `paper_mode`: low-level protocol recipe selector
 - optional `max_height_px`: sheet/page height cap when the protocol needs one
 
@@ -100,7 +102,9 @@ High-level callers select paper through `PrintSettings(paper_preset_key=...)`. T
 
 If `paper_width_px` is wider than `render_width_px` and `left_padding_px` is zero, the printing layer centers the rendered page on a white canvas. If `left_padding_px` is set, the protocol builder applies that padding and the raster remains at `render_width_px`.
 
-`render_height_px` and `raster_height_px` model different stages. The first constrains file/text rendering. The second describes the final raster sent to the protocol builder. When both are present, `render_height_px` must not exceed `raster_height_px`. A raw raster taller than `raster_height_px` is rejected instead of being cropped.
+`render_height_px` and `raster_height_px` model different stages. The first constrains file/text rendering. The second describes the final raster sent to the protocol builder. When both are present, `render_height_px + top_padding_px` must not exceed `raster_height_px`. Remaining rows are padded at the trailing edge. A raw raster that does not fit together with its leading padding is rejected instead of being cropped.
+
+Paper mirroring is a rendering/layout operation, not an image-codec flag. File previews and file printing receive the same transform. Callers that build jobs from an already prepared `RasterSet` receive the equivalent raster transform from the printing layer.
 
 ## Printer Configs
 

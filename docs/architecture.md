@@ -120,7 +120,12 @@ Transport owns scanning mechanics. Devices own turning raw endpoints into logica
 
 User-facing paper choices are catalog data. Profiles list exact paper preset keys; `PrintSettings.paper_preset_key` selects one for file printing.
 
-Rendering uses the preset's render width and optional fixed content height. The printing layer applies final paper/canvas padding, including an optional exact raster height, before protocol building. Protocol families receive only low-level values they understand, such as left padding, maximum sheet height, or `paper_mode`. Transport does not receive media data.
+Rendering uses the preset's render width, optional fixed content height, leading
+padding, and orientation transform. The printing layer applies the equivalent
+layout to callers that provide an already prepared raster. Final paper/canvas
+padding can include an exact raster height. Protocol families receive only
+low-level values they understand, such as left padding, maximum sheet height,
+or `paper_mode`. Transport does not receive media data.
 
 `paper_mode` is a protocol recipe value. It must not become the GUI/CLI data source for paper selection.
 
