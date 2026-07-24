@@ -237,6 +237,44 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(preview_image.getpixel((96, 63)), 255)
         self.assertEqual(preview_image.getpixel((64, 64)), 255)
 
+    def test_paper_preset_applies_top_padding_and_horizontal_mirror(self) -> None:
+        source = Image.new("RGB", (8, 1), "white")
+        source.putpixel((0, 0), (0, 0, 0))
+        renderer = DocumentRenderer(image_loader=lambda _path: source)
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=8,
+                    render_width_px=8,
+                    top_padding_px=1,
+                    raster_height_px=3,
+                    mirror_horizontal=True,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], device, settings)
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+        preview_image = Image.open(io.BytesIO(preview.png))
+        bw = rendered.raster_set.require(PixelFormat.BW1)
+
+        self.assertEqual((preview.width, preview.height), (8, 3))
+        self.assertEqual(preview_image.getpixel((0, 0)), 255)
+        self.assertEqual(preview_image.getpixel((7, 1)), 0)
+        self.assertEqual(
+            list(bw.pixels),
+            [0] * 8 + [0, 0, 0, 0, 0, 0, 0, 1] + [0] * 8,
+        )
+
     def test_print_render_uses_runtime_capabilities(self) -> None:
         image_renderer = _RecordingImageRenderer()
         renderer = DocumentRenderer(

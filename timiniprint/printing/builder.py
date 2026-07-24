@@ -121,6 +121,7 @@ class PrintJobBuilder:
                 page_count=page_count,
                 page_flow=plan.page_flow,
                 image_pipeline=rendered.image_pipeline,
+                _paper_layout_applied=True,
             )
             yield PreparedPageJob(
                 page_index=page.number,

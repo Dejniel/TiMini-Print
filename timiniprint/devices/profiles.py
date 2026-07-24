@@ -140,8 +140,10 @@ class PaperPreset:
     render_height_px: Optional[int] = None
     paper_mode: Optional[PaperMode] = None
     left_padding_px: int = 0
+    top_padding_px: int = 0
     max_height_px: Optional[int] = None
     raster_height_px: Optional[int] = None
+    mirror_horizontal: bool = False
 
     def __post_init__(self) -> None:
         if not self.key:
@@ -153,6 +155,7 @@ class PaperPreset:
             "render_width_px",
             "render_height_px",
             "left_padding_px",
+            "top_padding_px",
             "max_height_px",
             "raster_height_px",
         ):
@@ -170,10 +173,11 @@ class PaperPreset:
         if (
             self.render_height_px is not None
             and self.raster_height_px is not None
-            and self.render_height_px > self.raster_height_px
+            and self.render_height_px + self.top_padding_px > self.raster_height_px
         ):
             raise ValueError(
-                f"paper preset {self.key} render_height_px must not exceed raster_height_px"
+                f"paper preset {self.key} render_height_px plus top_padding_px "
+                "must not exceed raster_height_px"
             )
         if self.paper_width_px % 8 != 0:
             raise ValueError(f"paper preset {self.key} paper_width_px must be divisible by 8")

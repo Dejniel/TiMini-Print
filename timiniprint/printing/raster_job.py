@@ -25,11 +25,13 @@ def build_raster_page_job(
     page_count: int = 1,
     page_flow: PageFlow = PageFlow.PAGED,
     image_pipeline: ImagePipelineConfig | None = None,
+    _paper_layout_applied: bool = False,
 ) -> ProtocolJob:
     """Build one protocol page from an already prepared raster."""
     effective_settings = settings or PrintSettings()
     paper = resolve_paper(device, effective_settings)
-    raster_set = apply_paper_layout_to_raster_set(raster_set, paper)
+    if not _paper_layout_applied:
+        raster_set = apply_paper_layout_to_raster_set(raster_set, paper)
     return PrinterProtocol(device).build_job(
         raster_set,
         is_text=is_text,

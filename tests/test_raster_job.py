@@ -155,6 +155,44 @@ class RasterJobTests(unittest.TestCase):
         self.assertEqual((bw.width, bw.height), (8, 3))
         self.assertEqual(list(bw.pixels), [1] * 8 + [0] * 16)
 
+    def test_build_raster_job_applies_top_padding_and_horizontal_mirror(self) -> None:
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=8,
+                    render_width_px=8,
+                    top_padding_px=1,
+                    raster_height_px=3,
+                    mirror_horizontal=True,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        raster = RasterSet.from_single(
+            RasterBuffer(
+                pixels=[1, 0, 0, 0, 0, 0, 0, 0],
+                width=8,
+                pixel_format=PixelFormat.BW1,
+            )
+        )
+
+        with patch(
+            "timiniprint.protocol.job._build_job_model_from_raster_set",
+            return_value=(b"F", ()),
+        ) as build_job_mock:
+            job = build_raster_job(device, raster, is_text=False)
+
+        raster_set = build_job_mock.call_args.kwargs["raster_set"]
+        bw = raster_set.require(PixelFormat.BW1)
+        self.assertEqual(job.payload, b"F")
+        self.assertEqual((bw.width, bw.height), (8, 3))
+        self.assertEqual(
+            list(bw.pixels),
+            [0] * 8 + [0, 0, 0, 0, 0, 0, 0, 1] + [0] * 8,
+        )
+
     def test_build_raster_job_rejects_raster_taller_than_exact_height(self) -> None:
         profile = replace(
             self.device.profile,

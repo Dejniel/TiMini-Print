@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Optional
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from ..devices.device import PrinterDevice
 from ..protocol import ImagePipelineConfig, PageFlow
@@ -225,9 +225,18 @@ class DocumentRenderer:
                 (width, paper.render_height_px),
                 Image.Resampling.LANCZOS,
             )
-        if paper.raster_height_px is not None and image.height > paper.raster_height_px:
+        if (
+            paper.raster_height_px is not None
+            and paper.top_padding_px + image.height > paper.raster_height_px
+        ):
+            if not paper.top_padding_px:
+                raise ValueError(
+                    f"Rendered page height {image.height}px exceeds paper raster height "
+                    f"{paper.raster_height_px}px"
+                )
             raise ValueError(
-                f"Rendered page height {image.height}px exceeds paper raster height "
+                f"Rendered page height {image.height}px plus top padding "
+                f"{paper.top_padding_px}px exceeds paper raster height "
                 f"{paper.raster_height_px}px"
             )
         layout_width = (
@@ -236,17 +245,22 @@ class DocumentRenderer:
         final_width = max(image.width, layout_width)
         final_height = (
             paper.raster_height_px
-            or paper.render_height_px
-            or image.height
+            or paper.top_padding_px + (paper.render_height_px or image.height)
         )
-        if image is page.image and (final_width, final_height) == image.size:
+        if (
+            image is page.image
+            and (final_width, final_height) == image.size
+            and not paper.mirror_horizontal
+        ):
             return page
         canvas = Image.new(
             image.mode,
             (final_width, final_height),
             _white_for_mode(image.mode),
         )
-        canvas.paste(image, ((final_width - image.width) // 2, 0))
+        canvas.paste(image, ((final_width - image.width) // 2, paper.top_padding_px))
+        if paper.mirror_horizontal:
+            canvas = ImageOps.mirror(canvas)
         return Page(canvas, dither=page.dither, is_text=page.is_text)
 
     def _open_source(

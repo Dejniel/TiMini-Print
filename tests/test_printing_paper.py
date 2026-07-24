@@ -75,7 +75,9 @@ class PrintingPaperPresetTests(unittest.TestCase):
                 replace(
                     device.profile.default_paper_preset,
                     render_height_px=256,
+                    top_padding_px=32,
                     raster_height_px=320,
+                    mirror_horizontal=True,
                 ),
             ),
         )
@@ -84,7 +86,9 @@ class PrintingPaperPresetTests(unittest.TestCase):
         paper = resolve_paper(device, PrintSettings())
 
         self.assertEqual(paper.render_height_px, 256)
+        self.assertEqual(paper.top_padding_px, 32)
         self.assertEqual(paper.raster_height_px, 320)
+        self.assertTrue(paper.mirror_horizontal)
 
     def test_resolve_paper_keeps_source_render_width_when_final_width_is_byte_aligned(self) -> None:
         device = PrinterCatalog.load().device_from_profile("15p3")

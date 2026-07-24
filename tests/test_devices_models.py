@@ -378,7 +378,9 @@ class DevicesModelsTests(unittest.TestCase):
                 "label": "Plain roll",
                 "paper_width_px": 384,
                 "render_width_px": 384,
+                "top_padding_px": 80,
                 "raster_height_px": 640,
+                "mirror_horizontal": True,
                 "paper_mode": "plain",
             },
             {
@@ -394,7 +396,29 @@ class DevicesModelsTests(unittest.TestCase):
         profile = model_from_json(PrinterProfile, payload)
 
         self.assertEqual(profile.default_paper_mode, PaperMode.TAG)
+        self.assertEqual(profile.paper_presets[0].top_padding_px, 80)
         self.assertEqual(profile.paper_presets[0].raster_height_px, 640)
+        self.assertTrue(profile.paper_presets[0].mirror_horizontal)
+
+    def test_model_codec_rejects_paper_content_that_overlaps_trailing_boundary(self) -> None:
+        payload = _with_optional_speed(_profile_payload(), None)
+        payload["paper_presets"] = [
+            {
+                "key": "sheet",
+                "label": "Sheet",
+                "paper_width_px": 384,
+                "render_width_px": 384,
+                "render_height_px": 256,
+                "top_padding_px": 80,
+                "raster_height_px": 320,
+            },
+        ]
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "render_height_px plus top_padding_px must not exceed raster_height_px",
+        ):
+            model_from_json(PrinterProfile, payload)
 
     def test_model_codec_rejects_missing_paper_presets(self) -> None:
         payload = _profile_payload()

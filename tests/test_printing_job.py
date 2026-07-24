@@ -208,6 +208,44 @@ class PrintingJobTests(unittest.TestCase):
         self.assertEqual(marked.pixels[31], 1)
         self.assertGreater(sum(marked.pixels[160:176]), 2)
 
+    def test_build_from_file_does_not_reapply_renderer_paper_layout(self) -> None:
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    mirror_horizontal=True,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        pipeline = PrinterProtocol(device).resolve_image_pipeline()
+        raster_set = RasterSet.from_single(
+            RasterBuffer(
+                pixels=[1, 0, 0, 0, 0, 0, 0, 0],
+                width=8,
+                pixel_format=PixelFormat.BW1,
+            )
+        )
+        builder = self.job_mod.PrintJobBuilder(
+            device,
+            document_renderer=_FakeDocumentRenderer(
+                [_rendered_page(pipeline=pipeline, raster_set=raster_set)]
+            ),
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "a.txt"
+            path.write_text("x", encoding="utf-8")
+            with patch(
+                "timiniprint.protocol.job._build_job_model_from_raster_set",
+                return_value=(b"A", ()),
+            ) as build_job_mock:
+                builder.build_from_file(str(path))
+
+        built = build_job_mock.call_args.kwargs["raster_set"].require(PixelFormat.BW1)
+        self.assertEqual(list(built.pixels), list(raster_set.require(PixelFormat.BW1).pixels))
+
     def test_builder_passes_runtime_capabilities_to_renderer(self) -> None:
         device = self._family_device(ProtocolFamily.V5C)
         pipeline = PrinterProtocol(device).resolve_image_pipeline()
