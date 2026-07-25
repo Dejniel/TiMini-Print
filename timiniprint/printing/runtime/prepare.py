@@ -27,8 +27,35 @@ async def prepare_connection_runtime(
     session = RuntimeConnectionSession(connection, reporter=reporter)
     await session.attach_runtime_controller(controller, timeout=timeout)
     await controller.probe_capabilities(session, timeout=timeout)
+    resolved_device = controller.resolve_device(device)
+    _validate_runtime_resolved_device(device, resolved_device)
     return PreparedRuntimeContext(
         runtime_controller=controller,
         capabilities=controller.runtime_capabilities(),
-        resolved_device=controller.resolve_device(device),
+        resolved_device=resolved_device,
     )
+
+
+def _validate_runtime_resolved_device(
+    connected_device: PrinterDevice,
+    resolved_device: PrinterDevice,
+) -> None:
+    changed: list[str] = []
+    if resolved_device.protocol_family != connected_device.protocol_family:
+        changed.append("protocol_family")
+    if resolved_device.transport_target != connected_device.transport_target:
+        changed.append("transport_target")
+    if resolved_device.profile.use_spp != connected_device.profile.use_spp:
+        changed.append("profile.use_spp")
+    if resolved_device.profile.stream != connected_device.profile.stream:
+        changed.append("profile.stream")
+    if (
+        resolved_device.profile.ble_mtu_request
+        != connected_device.profile.ble_mtu_request
+    ):
+        changed.append("profile.ble_mtu_request")
+    if changed:
+        raise RuntimeError(
+            "Runtime device resolution cannot change active transport fields: "
+            + ", ".join(changed)
+        )

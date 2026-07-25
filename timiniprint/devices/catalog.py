@@ -125,77 +125,18 @@ class PrinterCatalog:
         )
 
     @staticmethod
-    def _trigger_specificity(
-        trigger: str,
-        *,
-        match_rank: int,
-        has_mac_suffix: bool,
-    ) -> tuple[int, int, int, int, int]:
-        trigger_length = len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
-        return (
-            trigger_length,
-            int(has_mac_suffix),
-            match_rank,
-            len(trigger),
-            sum(1 for char in trigger if char.isupper()),
-        )
-
-    @classmethod
     def _matched_detection_specificity(
-        cls,
         detection: NamedModelDetection,
         device_name: str,
         address: Optional[str],
         *,
         case_sensitive: bool,
     ) -> tuple[int, int, int, int, int] | None:
-        model_detection = detection.detection
-        has_mac_suffix = bool(model_detection.mac_suffixes)
-        if has_mac_suffix:
-            if not address or not DetectionNormalizer.is_mac_like_address(address):
-                return None
-            normalized = DetectionNormalizer.normalize_mac_candidate(address)
-            if not any(normalized.endswith(suffix) for suffix in model_detection.mac_suffixes):
-                return None
-
-        normalized_name = DetectionNormalizer.normalize_name(device_name)
-        folded_name = DetectionNormalizer.fold_name(device_name)
-        matched: list[tuple[int, int, int, int, int]] = []
-        for exact_name in model_detection.exact_names:
-            candidate = exact_name if case_sensitive else DetectionNormalizer.fold_name(exact_name)
-            if (normalized_name if case_sensitive else folded_name) == candidate:
-                matched.append(
-                    cls._trigger_specificity(
-                        exact_name,
-                        match_rank=2,
-                        has_mac_suffix=has_mac_suffix,
-                    )
-                )
-        for prefix in model_detection.prefixes:
-            candidate = prefix if case_sensitive else DetectionNormalizer.fold_name(prefix)
-            if (normalized_name if case_sensitive else folded_name).startswith(candidate):
-                matched.append(
-                    cls._trigger_specificity(
-                        prefix,
-                        match_rank=1,
-                        has_mac_suffix=has_mac_suffix,
-                    )
-                )
-        for substring in model_detection.substrings:
-            candidate = (
-                substring
-                if case_sensitive
-                else DetectionNormalizer.fold_name(substring)
-            )
-            if candidate in (normalized_name if case_sensitive else folded_name):
-                matched.append(
-                    cls._trigger_specificity(
-                        substring,
-                        match_rank=0,
-                        has_mac_suffix=has_mac_suffix,
-                    )
-                )
-        return max(matched, default=None)
+        return detection.detection.matched_specificity(
+            device_name,
+            address,
+            case_sensitive=case_sensitive,
+        )
 
     @classmethod
     def _sorted_detection_entries(
@@ -486,11 +427,7 @@ class PrinterCatalog:
     @staticmethod
     def _profile_supported_paper_modes(profile: PrinterProfile):
         behavior = get_protocol_behavior(profile.protocol_default.type)
-        if behavior.supported_paper_modes_resolver is not None:
-            return behavior.supported_paper_modes_resolver(
-                profile.protocol_default.packets_type
-            )
-        return behavior.supported_paper_modes
+        return behavior.supported_paper_modes_for(profile.protocol_default.packets_type)
 
     @property
     def profiles(self) -> List[PrinterProfile]:

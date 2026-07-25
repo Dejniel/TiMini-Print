@@ -1,18 +1,22 @@
 from __future__ import annotations
 
-from ..compression import compress_lzo1x_1
+from .._prefixed_commands import (
+    blackening_cmd,
+    dev_state_cmd,
+    energy_cmd,
+    feed_paper_cmd,
+    paper_cmd,
+    print_mode_cmd,
+)
 from ..encoding import pack_line
-from ..family import ProtocolFamily
 from ..packet import make_packet
 from ..plan import ProtocolPlan
 from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import PrintJobRequest, ProtocolBehavior
+from .v5_common import build_lzo_band_frames
 
-# Firmware blackening 1-5 maps to the protocol A4 quality bytes, not to
-# literal energy values. Keep this as a lookup table rather than arithmetic.
-_QUALITY_BY_LEVEL = (0x31, 0x32, 0x33, 0x34, 0x35)
 # These A6 payloads are the fixed "lattice" envelopes used before and after
 # a V5G print job.
 _START_LATTICE = bytes.fromhex("AA551738445F5F5F44382C")
@@ -43,36 +47,6 @@ def decode_density_payload(payload: bytes) -> int | None:
     return payload[1]
 
 
-def _quality_packet(blackening: int, protocol_family) -> bytes:
-    level = max(1, min(5, blackening))
-    return make_packet(0xA4, bytes([_QUALITY_BY_LEVEL[level - 1]]), protocol_family)
-
-
-def _energy_packet(energy: int, protocol_family) -> bytes:
-    if energy <= 0:
-        return b""
-    return make_packet(0xAF, int(energy).to_bytes(2, "little", signed=False), protocol_family)
-
-
-def _print_mode_packet(protocol_family) -> bytes:
-    return make_packet(0xBE, bytes([0x00]), protocol_family)
-
-
-def _feed_packet(speed: int, protocol_family) -> bytes:
-    return make_packet(0xBD, bytes([speed & 0xFF]), protocol_family)
-
-
-def _paper_packet(dev_dpi: int, protocol_family) -> bytes:
-    # The paper motion distance differs between 203 dpi and 300 dpi heads.
-    payload = bytes([0x48, 0x00]) if int(dev_dpi) == 300 else bytes([0x30, 0x00])
-    return make_packet(0xA1, payload, protocol_family)
-
-
-def _state_query_packet(protocol_family) -> bytes:
-    family = ProtocolFamily.from_value(protocol_family)
-    return make_packet(0xA3, bytes([0x00]), family)
-
-
 def _lattice_packet(start: bool, protocol_family) -> bytes:
     payload = _START_LATTICE if start else _FINISH_LATTICE
     return make_packet(0xA6, payload, protocol_family)
@@ -93,51 +67,42 @@ def _dot_frames(request: PrintJobRequest) -> bytes:
     return bytes(job)
 
 
-def _gray_band_payload(raw_block: bytes) -> bytes:
-    compressed = compress_lzo1x_1(raw_block)
-    return (
-        len(raw_block).to_bytes(2, "little")
-        + len(compressed).to_bytes(2, "little")
-        + compressed
-    )
-
-
 def _gray_frames(request: PrintJobRequest) -> bytes:
     raster = request.default_raster
     if raster.pixel_format not in (PixelFormat.GRAY4, PixelFormat.GRAY8):
         raise ValueError("V5G gray jobs require GRAY4 or GRAY8 raster data")
 
-    job = bytearray()
-    for row in range(0, raster.height, _GRAY_BAND_ROWS):
-        rows = min(_GRAY_BAND_ROWS, raster.height - row)
-        block = raster.slice_rows(row, rows).packed_bytes()
-        job += make_packet(0xCF, _gray_band_payload(block), request.protocol_family)
-    return bytes(job)
+    return build_lzo_band_frames(
+        raster,
+        opcode=0xCF,
+        rows_per_band=_GRAY_BAND_ROWS,
+        protocol_family=request.protocol_family,
+    )
 
 
 def _build_payload(request: PrintJobRequest) -> bytes:
     job = bytearray()
     if request.density is not None:
         job += _density_packet(request.density, request.protocol_family)
-    job += _state_query_packet(request.protocol_family)
-    job += _quality_packet(request.blackening, request.protocol_family)
+    job += dev_state_cmd(request.protocol_family)
+    job += blackening_cmd(request.blackening, request.protocol_family)
     job += _lattice_packet(True, request.protocol_family)
-    job += _energy_packet(request.energy, request.protocol_family)
-    job += _print_mode_packet(request.protocol_family)
+    job += energy_cmd(request.energy, request.protocol_family)
+    job += print_mode_cmd(False, request.protocol_family)
     if request.starts_media_page:
-        job += _feed_packet(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
+        job += feed_paper_cmd(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
 
     if request.image_pipeline.encoding == ImageEncoding.V5G_GRAY:
         job += _gray_frames(request)
     else:
         job += _dot_frames(request)
     if request.ends_media_page:
-        job += _feed_packet(_POST_IMAGE_FEED_SPEED, request.protocol_family)
+        job += feed_paper_cmd(_POST_IMAGE_FEED_SPEED, request.protocol_family)
         for _ in range(max(0, request.post_print_feed_count)):
-            job += _paper_packet(request.dev_dpi, request.protocol_family)
+            job += paper_cmd(request.dev_dpi, request.protocol_family)
     job += _lattice_packet(False, request.protocol_family)
-    job += _state_query_packet(request.protocol_family)
-    job += _state_query_packet(request.protocol_family)
+    job += dev_state_cmd(request.protocol_family)
+    job += dev_state_cmd(request.protocol_family)
     return bytes(job)
 
 

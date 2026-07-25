@@ -193,10 +193,8 @@ class PrinterProtocol:
                 formats=pipeline.formats,
                 encoding=image_encoding_override,
             )
-        image_encoding_support = (
-            behavior.image_encoding_support_resolver(self.device.protocol_variant)
-            if behavior.image_encoding_support_resolver is not None
-            else behavior.image_encoding_support
+        image_encoding_support = behavior.image_encoding_support_for(
+            self.device.protocol_variant
         )
         supported_formats = image_encoding_support.get(pipeline.encoding)
         if supported_formats is None:
@@ -234,9 +232,7 @@ class PrinterProtocol:
     def supported_paper_modes(self) -> tuple[PaperMode, ...]:
         """Return low-level paper recipes supported by this protocol variant."""
         behavior = get_protocol_behavior(self.device.protocol_family)
-        if behavior.supported_paper_modes_resolver is not None:
-            return behavior.supported_paper_modes_resolver(self.device.protocol_variant)
-        return behavior.supported_paper_modes
+        return behavior.supported_paper_modes_for(self.device.protocol_variant)
 
     @staticmethod
     def _apply_runtime_capabilities(

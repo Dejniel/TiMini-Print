@@ -6,12 +6,12 @@ from typing import Mapping
 
 from ....raster import PixelFormat, RasterBuffer
 from ...compression import compress_zlib_wbits_10
-from ...encoding import pack_line
 from ...family import ProtocolFamily
 from ...plan import ProtocolPlan
 from ...steps import ProtocolReplyExpectation, ProtocolStep
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest
+from ..bitmap import pack_bw1_rows, packed_row_width_bytes
 
 LUCK_PRINT_QUERY_TIMEOUT_SEC = 3.0
 
@@ -103,7 +103,7 @@ class LuckNormalBitmapEncoder:
         raise ValueError(f"Unsupported Luck normal image encoding: {encoding.value}")
 
     def _encode_raw(self, raster: RasterBuffer) -> bytes:
-        width_bytes = (raster.width + 7) // 8
+        width_bytes = packed_row_width_bytes(raster.width)
         header = bytes(
             [
                 0x1D,
@@ -116,11 +116,11 @@ class LuckNormalBitmapEncoder:
                 (raster.height >> 8) & 0xFF,
             ]
         )
-        return header + self._pack_bw1_rows(raster)
+        return header + pack_bw1_rows(raster)
 
     def _encode_compressed(self, raster: RasterBuffer) -> bytes:
-        width_bytes = (raster.width + 7) // 8
-        raw_bitmap = self._pack_bw1_rows(raster)
+        width_bytes = packed_row_width_bytes(raster.width)
+        raw_bitmap = pack_bw1_rows(raster)
         compressed_bitmap = compress_zlib_wbits_10(raw_bitmap)
         header = bytes(
             [
@@ -134,16 +134,8 @@ class LuckNormalBitmapEncoder:
         ) + len(compressed_bitmap).to_bytes(4, "big")
         return header + compressed_bitmap
 
-    def _pack_bw1_rows(self, raster: RasterBuffer) -> bytes:
-        body = bytearray()
-        pixels = list(raster.pixels)
-        for row in range(raster.height):
-            line = pixels[row * raster.width : (row + 1) * raster.width]
-            body += pack_line(list(line), lsb_first=False)
-        return bytes(body)
-
     def _encode_gray(self, raster: RasterBuffer, gray_level: int) -> bytes:
-        width_bytes = (raster.width + 7) // 8
+        width_bytes = packed_row_width_bytes(raster.width)
         header = bytes(
             [
                 0x1D,

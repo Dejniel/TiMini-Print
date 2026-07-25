@@ -43,6 +43,22 @@ class ProtocolBehavior:
     retract_paper_builder: ManualMotionBuilder | None = None
     job_builder: FamilyJobBuilder | None = None
 
+    def image_encoding_support_for(
+        self,
+        protocol_variant: str | None,
+    ) -> Mapping[ImageEncoding, tuple[PixelFormat, ...]]:
+        if self.image_encoding_support_resolver is not None:
+            return self.image_encoding_support_resolver(protocol_variant)
+        return self.image_encoding_support
+
+    def supported_paper_modes_for(
+        self,
+        protocol_variant: str | None,
+    ) -> tuple[PaperMode, ...]:
+        if self.supported_paper_modes_resolver is not None:
+            return self.supported_paper_modes_resolver(protocol_variant)
+        return self.supported_paper_modes
+
 
 @dataclass(frozen=True)
 class PrintJobRequest:

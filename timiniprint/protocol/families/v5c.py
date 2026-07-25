@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from ..compression import compress_lzo1x_1
 from ..encoding import pack_line
 from ..packet import make_packet
 from ..plan import ProtocolPlan
@@ -8,6 +7,7 @@ from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import PrintJobRequest, ProtocolBehavior
+from .v5_common import build_lzo_band_frames
 
 
 def _hex_bytes(value: str) -> bytes:
@@ -35,15 +35,6 @@ def _settings_payload(blackening: int, is_text: bool) -> bytes:
     return bytes([density, mode])
 
 
-def _a5_payload(raw_block: bytes) -> bytes:
-    compressed = compress_lzo1x_1(raw_block)
-    return (
-        len(raw_block).to_bytes(2, "little")
-        + len(compressed).to_bytes(2, "little")
-        + compressed
-    )
-
-
 def _build_a4_frames(request: PrintJobRequest) -> bytes:
     raster = request.require_raster(PixelFormat.BW1)
     job = bytearray()
@@ -59,14 +50,12 @@ def _build_a5_frames(request: PrintJobRequest) -> bytes:
     if gray_raster.pixel_format not in (PixelFormat.GRAY4, PixelFormat.GRAY8):
         raise ValueError("V5C compressed jobs require GRAY4 or GRAY8 source raster")
 
-    height = gray_raster.height
-    job = bytearray()
-    for row in range(0, height, _V5C_BAND_ROWS):
-        rows = min(_V5C_BAND_ROWS, height - row)
-        block = gray_raster.slice_rows(row, rows).packed_bytes()
-        payload = _a5_payload(block)
-        job += make_packet(0xA5, payload, request.protocol_family)
-    return bytes(job)
+    return build_lzo_band_frames(
+        gray_raster,
+        opcode=0xA5,
+        rows_per_band=_V5C_BAND_ROWS,
+        protocol_family=request.protocol_family,
+    )
 
 
 def _build_payload(request: PrintJobRequest) -> bytes:

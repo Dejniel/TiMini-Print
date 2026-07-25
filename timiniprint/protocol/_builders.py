@@ -38,21 +38,12 @@ def _resolve_image_pipeline(
 def _validate_request(request: PrintJobRequest) -> None:
     request.raster_set.validate()
     behavior = get_protocol_behavior(request.protocol_family)
-    if behavior.supported_paper_modes_resolver is not None:
-        supported_paper_modes = behavior.supported_paper_modes_resolver(
-            request.protocol_variant
-        )
-    else:
-        supported_paper_modes = behavior.supported_paper_modes
+    supported_paper_modes = behavior.supported_paper_modes_for(request.protocol_variant)
     if request.paper_mode is not None and request.paper_mode not in supported_paper_modes:
         raise ValueError(
             f"{request.protocol_family.value} does not support paper mode {request.paper_mode.value}"
         )
-    image_encoding_support = (
-        behavior.image_encoding_support_resolver(request.protocol_variant)
-        if behavior.image_encoding_support_resolver is not None
-        else behavior.image_encoding_support
-    )
+    image_encoding_support = behavior.image_encoding_support_for(request.protocol_variant)
     supported_by_encoding = image_encoding_support.get(request.image_pipeline.encoding)
     if supported_by_encoding is None:
         raise ValueError(

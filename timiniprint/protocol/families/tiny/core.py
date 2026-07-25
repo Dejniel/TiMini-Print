@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 from ....raster import PixelFormat
+from ..._prefixed_commands import (
+    blackening_cmd,
+    dev_state_cmd,
+    energy_cmd,
+    feed_paper_cmd,
+    print_mode_cmd,
+)
 from ...encoding import pack_line, rle_encode_line
 from ...family import ProtocolFamily
 from ...packet import make_packet
@@ -20,29 +27,6 @@ def _speed(request: PrintJobRequest) -> int:
     if request.speed is None:
         raise ValueError(f"{request.protocol_family.value} requires speed defaults")
     return request.speed
-
-
-def _blackening_cmd(level: int, family: ProtocolFamily | str) -> bytes:
-    level = max(1, min(5, level))
-    return make_packet(0xA4, bytes([0x30 + level]), family)
-
-
-def _energy_cmd(energy: int, family: ProtocolFamily | str) -> bytes:
-    if energy <= 0:
-        return b""
-    return make_packet(0xAF, energy.to_bytes(2, "little"), family)
-
-
-def _print_mode_cmd(is_text: bool, family: ProtocolFamily | str) -> bytes:
-    return make_packet(0xBE, bytes([1 if is_text else 0]), family)
-
-
-def _speed_cmd(speed: int, family: ProtocolFamily | str) -> bytes:
-    return make_packet(0xBD, bytes([speed & 0xFF]), family)
-
-
-def _dev_state_cmd(family: ProtocolFamily | str) -> bytes:
-    return make_packet(0xA3, b"\x00", family)
 
 
 def _stop_print_cmd(family: ProtocolFamily | str) -> bytes:
@@ -101,7 +85,7 @@ def _line_packets(
         else:
             raise ValueError(f"Unsupported tiny image encoding: {encoding.value}")
         if periodic_speed and (row + 1) % 200 == 0:
-            out += _speed_cmd(speed, family)
+            out += feed_paper_cmd(speed, family)
     return bytes(out)
 
 
@@ -123,10 +107,10 @@ def _build_line_eight_job(request: PrintJobRequest) -> bytes:
     pixels, width = _left_padded_pixels(request)
     speed = _speed(request)
     payload = bytearray()
-    payload += _blackening_cmd(request.blackening, request.protocol_family)
-    payload += _energy_cmd(request.energy, request.protocol_family)
-    payload += _print_mode_cmd(request.is_text, request.protocol_family)
-    payload += _speed_cmd(speed, request.protocol_family)
+    payload += blackening_cmd(request.blackening, request.protocol_family)
+    payload += energy_cmd(request.energy, request.protocol_family)
+    payload += print_mode_cmd(request.is_text, request.protocol_family)
+    payload += feed_paper_cmd(speed, request.protocol_family)
     payload += _line_packets(
         pixels=pixels,
         width=width,
@@ -140,7 +124,7 @@ def _build_line_eight_job(request: PrintJobRequest) -> bytes:
             _line_eight_tail_feed(request),
             request.protocol_family,
         )
-    payload += _dev_state_cmd(request.protocol_family)
+    payload += dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
 
@@ -151,10 +135,10 @@ def _build_professional_raw_fallback_job(request: PrintJobRequest) -> bytes:
     speed = _speed(request)
     payload = bytearray()
     payload += _stop_print_cmd(request.protocol_family)
-    payload += _blackening_cmd(request.blackening, request.protocol_family)
-    payload += _energy_cmd(request.energy, request.protocol_family)
-    payload += _print_mode_cmd(request.is_text, request.protocol_family)
-    payload += _speed_cmd(speed, request.protocol_family)
+    payload += blackening_cmd(request.blackening, request.protocol_family)
+    payload += energy_cmd(request.energy, request.protocol_family)
+    payload += print_mode_cmd(request.is_text, request.protocol_family)
+    payload += feed_paper_cmd(speed, request.protocol_family)
     payload += _line_packets(
         pixels=pixels,
         width=width,
@@ -169,7 +153,7 @@ def _build_professional_raw_fallback_job(request: PrintJobRequest) -> bytes:
             _line_eight_tail_feed(request),
             request.protocol_family,
         )
-    payload += _dev_state_cmd(request.protocol_family)
+    payload += dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
 
@@ -177,18 +161,6 @@ def _esc_star_energy_byte(energy: int) -> int:
     if energy <= 0:
         return 0
     return energy.to_bytes(max(1, (energy.bit_length() + 7) // 8), "big")[0]
-
-
-def _esc_star_mode_cmd(is_text: bool, family: ProtocolFamily | str) -> bytes:
-    return make_packet(
-        0xBE,
-        bytes([1 if is_text else 0]),
-        family,
-    )
-
-
-def _esc_star_dev_state_cmd(family: ProtocolFamily | str) -> bytes:
-    return make_packet(0xA3, b"\x00", family)
 
 
 def _esc_star_24dot_payload(request: PrintJobRequest) -> bytes:
@@ -233,11 +205,11 @@ def _build_esc_star_job(request: PrintJobRequest, *, eight: bool) -> bytes:
     payload = bytearray()
     payload += b"\x1B\x40\x12\x23"
     payload.append(_esc_star_energy_byte(request.energy))
-    payload += _esc_star_mode_cmd(request.is_text, request.protocol_family)
+    payload += print_mode_cmd(request.is_text, request.protocol_family)
     payload += _esc_star_24dot_payload(request)
     if request.ends_media_page:
         payload += b"\x1B\x64" + bytes([final_feed & 0xFF])
-    payload += _esc_star_dev_state_cmd(request.protocol_family)
+    payload += dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
 

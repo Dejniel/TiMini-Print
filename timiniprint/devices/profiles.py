@@ -352,28 +352,84 @@ class ModelDetection:
         *,
         case_sensitive: bool = True,
     ) -> bool:
+        return self.matched_specificity(
+            device_name,
+            address,
+            case_sensitive=case_sensitive,
+        ) is not None
+
+    def matched_specificity(
+        self,
+        device_name: str,
+        address: Optional[str],
+        *,
+        case_sensitive: bool = True,
+    ) -> Tuple[int, int, int, int, int] | None:
+        has_mac_suffix = bool(self.mac_suffixes)
+        if has_mac_suffix:
+            if not address or not DetectionNormalizer.is_mac_like_address(address):
+                return None
+            normalized_address = DetectionNormalizer.normalize_mac_candidate(address)
+            if not any(normalized_address.endswith(suffix) for suffix in self.mac_suffixes):
+                return None
+
         normalized_name = DetectionNormalizer.normalize_name(device_name)
         if case_sensitive:
-            matches_name = (
-                normalized_name in self.exact_names
-                or any(normalized_name.startswith(prefix) for prefix in self.prefixes)
-                or any(value in normalized_name for value in self.substrings)
-            )
+            target_name = normalized_name
+            exact_names = zip(self.exact_names, self.exact_names)
+            prefixes = zip(self.prefixes, self.prefixes)
+            substrings = zip(self.substrings, self.substrings)
         else:
-            folded_name = DetectionNormalizer.fold_name(device_name)
-            matches_name = (
-                folded_name in self._folded_exact_names
-                or any(folded_name.startswith(prefix) for prefix in self._folded_prefixes)
-                or any(value in folded_name for value in self._folded_substrings)
-            )
-        if not matches_name:
-            return False
-        if not self.mac_suffixes:
-            return True
-        if not address or not DetectionNormalizer.is_mac_like_address(address):
-            return False
-        normalized = DetectionNormalizer.normalize_mac_candidate(address)
-        return any(normalized.endswith(suffix) for suffix in self.mac_suffixes)
+            target_name = DetectionNormalizer.fold_name(device_name)
+            exact_names = zip(self.exact_names, self._folded_exact_names)
+            prefixes = zip(self.prefixes, self._folded_prefixes)
+            substrings = zip(self.substrings, self._folded_substrings)
+
+        matched: list[Tuple[int, int, int, int, int]] = []
+        for trigger, candidate in exact_names:
+            if target_name == candidate:
+                matched.append(
+                    self._trigger_specificity(
+                        trigger,
+                        match_rank=2,
+                        has_mac_suffix=has_mac_suffix,
+                    )
+                )
+        for trigger, candidate in prefixes:
+            if target_name.startswith(candidate):
+                matched.append(
+                    self._trigger_specificity(
+                        trigger,
+                        match_rank=1,
+                        has_mac_suffix=has_mac_suffix,
+                    )
+                )
+        for trigger, candidate in substrings:
+            if candidate in target_name:
+                matched.append(
+                    self._trigger_specificity(
+                        trigger,
+                        match_rank=0,
+                        has_mac_suffix=has_mac_suffix,
+                    )
+                )
+        return max(matched, default=None)
+
+    @staticmethod
+    def _trigger_specificity(
+        trigger: str,
+        *,
+        match_rank: int,
+        has_mac_suffix: bool,
+    ) -> Tuple[int, int, int, int, int]:
+        trigger_length = len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
+        return (
+            trigger_length,
+            int(has_mac_suffix),
+            match_rank,
+            len(trigger),
+            sum(1 for char in trigger if char.isupper()),
+        )
 
 
 @dataclass(frozen=True)

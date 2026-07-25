@@ -31,6 +31,30 @@ class ModelDetectionTests(unittest.TestCase):
         self.assertTrue(detection.matches("X6", None))
         self.assertFalse(detection.matches("X6H-1234", None))
 
+    def test_matched_specificity_prefers_exact_name_over_prefix(self) -> None:
+        detection = ModelDetection(
+            prefixes=("X6",),
+            exact_names=("X6",),
+        )
+
+        self.assertEqual(
+            detection.matched_specificity("X6", None),
+            (2, 0, 2, 2, 1),
+        )
+
+    def test_matched_specificity_uses_the_same_case_folding_as_matches(self) -> None:
+        detection = ModelDetection(prefixes=("WalkPrint-",))
+
+        self.assertIsNone(detection.matched_specificity("walkprint-1234", None))
+        self.assertEqual(
+            detection.matched_specificity(
+                "walkprint-1234",
+                None,
+                case_sensitive=False,
+            ),
+            (9, 0, 1, 10, 2),
+        )
+
     def test_separator_suffix_prefix_does_not_create_base_alias(self) -> None:
         detection = ModelDetection(
             prefixes=("PPA2_",),

@@ -95,6 +95,8 @@ A `PaperPreset` contains:
 - optional `left_padding_px`: protocol-side left padding
 - optional `top_padding_px`: leading blank raster rows reserved before rendered content
 - optional `mirror_horizontal`: mirror the complete paper raster before protocol encoding
+- optional `dither_mode`: paper-specific raster dithering recipe
+- optional `render_height_scale`: vertical content scale applied before fixed-height fitting
 - optional `paper_mode`: low-level protocol recipe selector
 - optional `max_height_px`: sheet/page height cap when the protocol needs one
 

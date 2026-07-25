@@ -17,7 +17,7 @@ from ..rendering.converters.pdf import PdfConverter, PdfRenderer
 from ..rendering.converters.text import TextConverter
 from ..rendering.formats import document_kind, mm_to_px
 from ..rendering.renderer import PrintImageRenderer
-from .paper import ResolvedPaper, resolve_paper
+from .paper import ResolvedPaper, _plan_paper_layout, resolve_paper
 from .settings import PrintSettings, resolve_gray_preprocessing
 
 TextFontResolver = Callable[[Optional[str]], Optional[str]]
@@ -230,40 +230,28 @@ class DocumentRenderer:
                 (width, paper.render_height_px),
                 Image.Resampling.LANCZOS,
             )
-        if (
-            paper.raster_height_px is not None
-            and paper.top_padding_px + image.height > paper.raster_height_px
-        ):
-            if not paper.top_padding_px:
-                raise ValueError(
-                    f"Rendered page height {image.height}px exceeds paper raster height "
-                    f"{paper.raster_height_px}px"
-                )
-            raise ValueError(
-                f"Rendered page height {image.height}px plus top padding "
-                f"{paper.top_padding_px}px exceeds paper raster height "
-                f"{paper.raster_height_px}px"
-            )
-        layout_width = (
-            paper.render_width_px if paper.left_padding_px else paper.paper_width_px
-        )
-        final_width = max(image.width, layout_width)
-        final_height = (
-            paper.raster_height_px
-            or paper.top_padding_px + (paper.render_height_px or image.height)
+        layout = _plan_paper_layout(
+            paper,
+            content_width=image.width,
+            content_height=image.height,
+            minimum_width=(
+                paper.render_width_px if paper.left_padding_px else paper.paper_width_px
+            ),
+            content_box_height=paper.render_height_px,
+            content_label="Rendered page",
         )
         if (
             image is page.image
-            and (final_width, final_height) == image.size
+            and (layout.width, layout.height) == image.size
             and not paper.mirror_horizontal
         ):
             return page
         canvas = Image.new(
             image.mode,
-            (final_width, final_height),
+            (layout.width, layout.height),
             _white_for_mode(image.mode),
         )
-        canvas.paste(image, ((final_width - image.width) // 2, paper.top_padding_px))
+        canvas.paste(image, (layout.left_padding, layout.top_padding))
         if paper.mirror_horizontal:
             canvas = ImageOps.mirror(canvas)
         return Page(canvas, dither=page.dither, is_text=page.is_text)

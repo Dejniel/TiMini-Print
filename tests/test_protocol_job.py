@@ -1395,7 +1395,7 @@ class ProtocolJobTests(unittest.TestCase):
         )
         captured_blocks = []
         with patch(
-            "timiniprint.protocol.families.v5c.compress_lzo1x_1",
+            "timiniprint.protocol.families.v5_common.compress_lzo1x_1",
             side_effect=lambda data: captured_blocks.append(data) or bytes.fromhex("AABBCC"),
         ):
             data = self.builders._build_job_from_raster_set(
@@ -1435,7 +1435,7 @@ class ProtocolJobTests(unittest.TestCase):
         )
         captured_blocks = []
         with patch(
-            "timiniprint.protocol.families.v5c.compress_lzo1x_1",
+            "timiniprint.protocol.families.v5_common.compress_lzo1x_1",
             side_effect=lambda data: captured_blocks.append(data) or bytes.fromhex("AABBCC"),
         ):
             data = self.builders._build_job_from_raster_set(
@@ -1652,7 +1652,7 @@ class ProtocolJobTests(unittest.TestCase):
         )
 
         with patch(
-            "timiniprint.protocol.families.v5g.compress_lzo1x_1",
+            "timiniprint.protocol.families.v5_common.compress_lzo1x_1",
             return_value=bytes.fromhex("AABB"),
         ):
             data = self.builders._build_job_from_raster_set(

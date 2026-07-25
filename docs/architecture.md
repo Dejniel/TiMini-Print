@@ -6,14 +6,14 @@ Read [protocol.md](protocol.md) first if you want to use TiMini-Print from your 
 
 The app-level flow is:
 
-1. `devices` resolves a `PrinterDevice`
+1. `devices` resolves an initial `PrinterDevice`
 2. `transport` opens a connector-specific connection
-3. `printing.connected.connect_printer(...)` prepares runtime state
+3. `printing.connected.connect_printer(...)` prepares runtime state and may refine print capabilities from a documented device query
 4. `ConnectedPrinter` prints files/text or sends prepared jobs
 5. `protocol` builds packet payloads and optional protocol steps
 6. `transport` writes bytes and exposes generic query/wait primitives
 
-The important object at runtime is `PrinterDevice`. It is the shared description used by protocol, printing, and transport without making those packages own each other.
+The important object at runtime is `PrinterDevice`. It is the shared description used by protocol, printing, and transport without making those packages own each other. After runtime preparation, `ConnectedPrinter.printer_device` exposes the refined immutable device description used to build jobs.
 
 ## Package Boundaries
 
@@ -102,7 +102,9 @@ There are two kinds of protocol-related behavior:
 
 Stateless packet formats belong in `timiniprint.protocol.families.*`. Runtime behavior belongs in `timiniprint.printing.runtime.*` when it depends on current session state, notifications, timing, previous writes, firmware replies, or completion waits.
 
-`prepare_connection_runtime(...)` selects a runtime controller for the resolved `PrinterDevice`. If no controller is needed, it returns an empty context. If a controller is needed, it may attach to the connection, probe capabilities, run a handshake, or prepare notification state.
+`prepare_connection_runtime(...)` selects a runtime controller for the initial `PrinterDevice`. If no controller is needed, it returns an empty context. If a controller is needed, it may attach to the connection, probe capabilities, run a handshake, prepare notification state, or return a refined immutable device description.
+
+Runtime resolution happens after the connection has already been opened. It may therefore refine print-facing fields such as image width, paper presets, image pipeline, or runtime capabilities, but it must not change the active protocol family, transport target, SPP/BLE selection, stream settings, or BLE MTU request. A controller that attempts to change those connection-facing fields is rejected.
 
 GATT write response is not a printer protocol ACK. If a family needs ACKs, status, or completion waits, model that as protocol steps and runtime controller behavior, not as transport adapter policy.
 
@@ -136,6 +138,7 @@ Detailed paper preset data rules are in [catalog.md](catalog.md).
 Allowed direction is:
 
 - `rendering -> raster`
+- `devices -> raster`
 - `devices -> protocol.family|protocol.types`
 - `protocol -> raster`
 - `printing -> devices`
