@@ -135,6 +135,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
             connected = await connect_printer(device, connector)
 
         self.assertIs(connected.raster_capabilities(), capabilities)
+        self.assertIs(connected.printer_device(), device)
         with patch(
             "timiniprint.printing.connected._build_raster_page_job",
             return_value=page_job,
@@ -221,6 +222,25 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(connection.disconnects, 1)
         self.assertEqual(connection.sent_jobs[0].payload, b"context")
+
+    async def test_connect_printer_uses_runtime_resolved_device(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("x6h")
+        resolved = PrinterCatalog.load().device_from_profile(
+            "x6h",
+            display_name="resolved",
+        )
+        connection = _Connection()
+        connector = _Connector(connection)
+        context = PreparedRuntimeContext(resolved_device=resolved)
+
+        with patch(
+            "timiniprint.printing.connected.prepare_connection_runtime",
+            new=AsyncMock(return_value=context),
+        ):
+            connected = await connect_printer(device, connector)
+
+        self.assertIs(connected.printer_device(), resolved)
+        self.assertEqual(connector.connected_devices, [device])
 
     async def test_connect_printer_disconnects_when_runtime_prepare_fails(self) -> None:
         device = PrinterCatalog.load().device_from_profile("x6h")

@@ -48,7 +48,12 @@ def _validate_request(request: PrintJobRequest) -> None:
         raise ValueError(
             f"{request.protocol_family.value} does not support paper mode {request.paper_mode.value}"
         )
-    supported_by_encoding = behavior.image_encoding_support.get(request.image_pipeline.encoding)
+    image_encoding_support = (
+        behavior.image_encoding_support_resolver(request.protocol_variant)
+        if behavior.image_encoding_support_resolver is not None
+        else behavior.image_encoding_support
+    )
+    supported_by_encoding = image_encoding_support.get(request.image_pipeline.encoding)
     if supported_by_encoding is None:
         raise ValueError(
             f"{request.protocol_family.value} does not support image encoding "
@@ -56,7 +61,7 @@ def _validate_request(request: PrintJobRequest) -> None:
         )
     supported_formats = {
         pixel_format
-        for formats in behavior.image_encoding_support.values()
+        for formats in image_encoding_support.values()
         for pixel_format in formats
     }
     for pixel_format in request.image_pipeline.formats:

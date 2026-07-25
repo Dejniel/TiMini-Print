@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import List, Optional, Tuple
 
 from .adapters import _get_ble_adapter, _get_classic_adapter
+from .classic_receive import ClassicReceiveHub
 from .constants import IS_MACOS, IS_WINDOWS, RFCOMM_CHANNELS
 from .types import DeviceInfo, DeviceTransport, ScanFailure, SocketLike
 from ... import reporting
@@ -14,6 +15,22 @@ from ... import reporting
 _MACOS_FALLBACK_COOLDOWN_SEC = 0.35
 _MACOS_BLE_REFRESH_TIMEOUT_SEC = 3.0
 _CONNECT_TIMEOUT_SEC = 12.0
+
+
+class _ClassicRuntimeSession:
+    """Notification-side runtime adapter without protocol knowledge."""
+
+    def __init__(self, reporter: reporting.Reporter) -> None:
+        self._reporter = reporter
+
+    def report_debug(self, message: str) -> None:
+        self._reporter.debug(short="Runtime", detail=message)
+
+    def report_warning(self, *, short: str, detail: str) -> None:
+        self._reporter.warning(short=short, detail=detail)
+
+    def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
+        _ = paused, payload
 
 
 class SppBackend:
@@ -24,6 +41,9 @@ class SppBackend:
         self._channel: Optional[int] = None
         self._transport: Optional[DeviceTransport] = None
         self._reporter = reporter
+        self._classic_receive_hub: ClassicReceiveHub | None = None
+        self._classic_runtime_controller = None
+        self._classic_runtime_session = _ClassicRuntimeSession(reporter)
 
     @staticmethod
     async def scan(timeout: float = 5.0) -> List[DeviceInfo]:
@@ -386,6 +406,7 @@ class SppBackend:
         raise RuntimeError("Bluetooth connection failed (" + detail + ")")
 
     def _disconnect_blocking(self) -> None:
+        self._stop_classic_receive_hub()
         if not self._sock:
             self._connected = False
             self._channel = None
@@ -401,6 +422,15 @@ class SppBackend:
 
     def _attach_runtime_controller_blocking(self, runtime_controller, timeout: float) -> None:
         if runtime_controller is None or not self._sock or not self._connected:
+            return
+        if self._transport == DeviceTransport.CLASSIC:
+            previous = self._classic_runtime_controller
+            if runtime_controller is not previous:
+                runtime_controller.adopt_previous(previous)
+                self._classic_runtime_controller = runtime_controller
+            hub = self._ensure_classic_receive_hub()
+            hub.set_listener(self._handle_classic_payload)
+            hub.start()
             return
         attach_runtime_controller = getattr(self._sock, "attach_runtime_controller", None)
         if callable(attach_runtime_controller):
@@ -496,13 +526,12 @@ class SppBackend:
                     reply_complete=reply_complete,
                 )
             return None
+        hub = self._ensure_classic_receive_hub()
+        waiter = hub.register(hub.mark(), reply_complete)
         with self._lock:
-            return _query_control_packet(
-                self._sock,
-                packet,
-                timeout=timeout,
-                reply_complete=reply_complete,
-            )
+            _send_all(self._sock, packet)
+        hub.start()
+        return hub.wait(waiter, timeout=timeout)
 
     def _wait_for_notification_blocking(
         self,
@@ -549,12 +578,10 @@ class SppBackend:
             if required:
                 raise RuntimeError("Protocol reply wait unavailable")
             return None
-        with self._lock:
-            return _recv_until_match_or_timeout(
-                self._sock,
-                timeout=timeout,
-                reply_complete=match,
-            )
+        hub = self._ensure_classic_receive_hub()
+        waiter = hub.register_passive(match)
+        hub.start()
+        return hub.wait(waiter, timeout=timeout, claim_passive=True)
 
     def _send_control_packet_wait_notification_blocking(
         self,
@@ -629,6 +656,39 @@ class SppBackend:
                 f"elapsed_ms={elapsed_ms}"
             ),
         )
+
+    def _ensure_classic_receive_hub(self) -> ClassicReceiveHub:
+        if not self._sock or not self._connected or self._transport != DeviceTransport.CLASSIC:
+            raise RuntimeError("Classic Bluetooth receive hub unavailable")
+        if self._classic_receive_hub is None:
+            self._classic_receive_hub = ClassicReceiveHub(
+                self._sock,
+                listener=(
+                    self._handle_classic_payload
+                    if self._classic_runtime_controller is not None
+                    else None
+                ),
+            )
+        return self._classic_receive_hub
+
+    def _stop_classic_receive_hub(self) -> None:
+        hub = self._classic_receive_hub
+        self._classic_receive_hub = None
+        self._classic_runtime_controller = None
+        if hub is not None:
+            hub.stop()
+
+    def _handle_classic_payload(self, payload: bytes) -> None:
+        controller = self._classic_runtime_controller
+        if controller is None:
+            return
+        try:
+            controller.handle_notification(self._classic_runtime_session, payload)
+        except Exception as exc:
+            self._reporter.debug(
+                short="Bluetooth",
+                detail=f"Classic runtime notification handler failed: {exc}",
+            )
 
 
 def _scan_blocking(

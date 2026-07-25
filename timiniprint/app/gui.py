@@ -574,7 +574,7 @@ class TiMiniPrintGUI(tk.Tk):
             try:
                 self.connected_printer = fut.result()
                 self._queue_status(reporting.STATUS_CONNECT_DONE)
-                self.queue.put(("connected", device))
+                self.queue.put(("connected", self.connected_printer.printer_device()))
             except Exception as exc:
                 self._queue_error(reporting.ERROR_CONNECT_FAILED, detail=str(exc), exc=exc)
                 self.queue.put(("connecting", False))

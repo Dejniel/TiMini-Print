@@ -46,6 +46,19 @@ class ModelDetectionTests(unittest.TestCase):
         self.assertTrue(detection.matches("GT01-1234", None))
         self.assertTrue(detection.matches("GT01_1234", None))
 
+    def test_substring_rule_matches_inside_normalized_name(self) -> None:
+        detection = ModelDetection(substrings=("FDT4-0",))
+
+        self.assertTrue(detection.matches("Printer FDT4-0 A", None))
+        self.assertTrue(
+            detection.matches(
+                "printer fdt4-0 a",
+                None,
+                case_sensitive=False,
+            )
+        )
+        self.assertFalse(detection.matches("FDT4-1", None))
+
 
 if __name__ == "__main__":
     unittest.main()

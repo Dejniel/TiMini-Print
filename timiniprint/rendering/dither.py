@@ -14,6 +14,10 @@ class Ditherer:
         self._render = self._render_method(mode)
 
     def render_bw(self, img: "Image.Image") -> "Image.Image":
+        if self.mode == DitherMode.COLUMN_FLOYD_STEINBERG:
+            return self._column_floyd_steinberg(img)
+        if self.mode == DitherMode.RED_CHANNEL_3_8:
+            return self._red_channel_3_8(img)
         return self._render(img.convert("L"))
 
     def _render_method(self, mode: DitherMode):
@@ -27,7 +31,85 @@ class Ditherer:
             return self._bayer_8
         if mode == DitherMode.ATKINSON:
             return self._atkinson
+        if mode in {
+            DitherMode.COLUMN_FLOYD_STEINBERG,
+            DitherMode.RED_CHANNEL_3_8,
+        }:
+            return None
         raise ValueError(f"Unsupported dither mode: {mode.value}")
+
+    def _column_floyd_steinberg(self, img: "Image.Image") -> "Image.Image":
+        rgb = img.convert("RGB")
+        width, height = rgb.size
+        values = [
+            ((38 * red) + (75 * green) + (15 * blue)) >> 7
+            for red, green, blue in rgb.get_flattened_data()
+        ]
+        output = [255] * (width * height)
+        for x in range(width):
+            for y in range(height):
+                index = (y * width) + x
+                value = values[index]
+                quantized = 0 if value < 128 else 255
+                output[index] = quantized
+                error = value - quantized
+                self._add_error(values, width, height, x, y + 1, error, 7, 16)
+                self._add_error(values, width, height, x + 1, y - 1, error, 3, 16)
+                self._add_error(values, width, height, x + 1, y, error, 5, 16)
+                self._add_error(values, width, height, x + 1, y + 1, error, 1, 16)
+        return self._bw_image(rgb.size, output)
+
+    def _red_channel_3_8(self, img: "Image.Image") -> "Image.Image":
+        rgb = img.convert("RGB")
+        width, height = rgb.size
+        values = [red for red, _green, _blue in rgb.get_flattened_data()]
+        output = [255] * (width * height)
+        for y in range(height):
+            for x in range(width):
+                index = (y * width) + x
+                value = values[index]
+                quantized = 0 if value < 128 else 255
+                output[index] = quantized
+                error = value - quantized
+                if x < width - 1 and y < height - 1:
+                    self._add_error(
+                        values, width, height, x + 1, y, error, 3, 8, clamp=False
+                    )
+                    self._add_error(
+                        values, width, height, x, y + 1, error, 3, 8, clamp=False
+                    )
+                    self._add_error(
+                        values, width, height, x + 1, y + 1, error, 1, 4, clamp=False
+                    )
+                elif x == width - 1 and y < height - 1:
+                    self._add_error(
+                        values, width, height, x, y + 1, error, 3, 8, clamp=False
+                    )
+                elif x < width - 1:
+                    self._add_error(
+                        values, width, height, x + 1, y, error, 1, 4, clamp=False
+                    )
+        return self._bw_image(rgb.size, output)
+
+    @staticmethod
+    def _add_error(
+        values: list[int],
+        width: int,
+        height: int,
+        x: int,
+        y: int,
+        error: int,
+        numerator: int,
+        denominator: int,
+        *,
+        clamp: bool = True,
+    ) -> None:
+        if not (0 <= x < width and 0 <= y < height):
+            return
+        delta = int((error * numerator) / denominator)
+        index = (y * width) + x
+        value = values[index] + delta
+        values[index] = max(0, min(255, value)) if clamp else value
 
     def _floyd_steinberg(self, gray: "Image.Image") -> "Image.Image":
         return gray.convert("1", dither=self._pillow_floyd_steinberg())

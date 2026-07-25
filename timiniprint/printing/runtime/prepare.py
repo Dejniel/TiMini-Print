@@ -30,4 +30,5 @@ async def prepare_connection_runtime(
     return PreparedRuntimeContext(
         runtime_controller=controller,
         capabilities=controller.runtime_capabilities(),
+        resolved_device=controller.resolve_device(device),
     )

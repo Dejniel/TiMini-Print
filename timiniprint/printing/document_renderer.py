@@ -219,6 +219,11 @@ class DocumentRenderer:
 
     def _apply_paper_layout(self, page: Page, paper: ResolvedPaper) -> Page:
         image = page.image
+        if paper.render_height_scale != 1.0:
+            image = image.resize(
+                (image.width, max(1, int(image.height * paper.render_height_scale))),
+                Image.Resampling.LANCZOS,
+            )
         if paper.render_height_px is not None and image.height > paper.render_height_px:
             width = max(1, round(image.width * paper.render_height_px / image.height))
             image = image.resize(
@@ -321,9 +326,15 @@ class DocumentRenderer:
             device.protocol_family,
             pipeline.encoding,
         )
+        paper_dither = resolve_paper(device, settings).dither_mode
+        dither_mode = (
+            paper_dither
+            if paper_dither is not None
+            else settings.dither_mode
+        )
         return (
             pipeline,
-            settings.dither_mode if page.dither else DitherMode.NONE,
+            dither_mode if page.dither else DitherMode.NONE,
             gamma_handle,
             gamma_value,
         )

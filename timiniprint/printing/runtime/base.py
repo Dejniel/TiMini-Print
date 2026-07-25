@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 from ...protocol.runtime import RuntimePrintCapabilities
 
 if TYPE_CHECKING:
+    from ...devices import PrinterDevice
     from ...protocol import ProtocolStep
 
 
@@ -16,6 +17,7 @@ class PreparedRuntimeContext:
 
     runtime_controller: "RuntimeController | None" = None
     capabilities: RuntimePrintCapabilities | None = None
+    resolved_device: "PrinterDevice | None" = None
 
 
 class RuntimeSessionApi(Protocol):
@@ -119,6 +121,10 @@ class RuntimeController:
 
     def runtime_capabilities(self) -> RuntimePrintCapabilities | None:
         return None
+
+    def resolve_device(self, device: "PrinterDevice") -> "PrinterDevice":
+        """Return the immutable device description resolved for this live session."""
+        return device
 
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
         return None

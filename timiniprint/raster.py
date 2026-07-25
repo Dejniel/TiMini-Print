@@ -17,6 +17,8 @@ class DitherMode(str, Enum):
     BAYER_4 = "bayer_4"
     BAYER_8 = "bayer_8"
     ATKINSON = "atkinson"
+    COLUMN_FLOYD_STEINBERG = "column_floyd_steinberg"
+    RED_CHANNEL_3_8 = "red_channel_3_8"
 
 
 @dataclass(frozen=True)

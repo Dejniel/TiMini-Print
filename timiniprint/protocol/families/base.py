@@ -16,6 +16,10 @@ if TYPE_CHECKING:
 ManualMotionBuilder = Callable[[int, ProtocolFamily, Optional[str]], bytes]
 FamilyJobBuilder = Callable[["PrintJobRequest"], Optional[ProtocolPlan]]
 PaperModeResolver = Callable[[Optional[str]], Tuple[PaperMode, ...]]
+ImageEncodingSupportResolver = Callable[
+    [Optional[str]],
+    Mapping[ImageEncoding, tuple[PixelFormat, ...]],
+]
 
 
 @dataclass(frozen=True)
@@ -31,6 +35,7 @@ class ProtocolBehavior:
     image_encoding_support: Mapping[ImageEncoding, tuple[PixelFormat, ...]] = field(
         default_factory=dict
     )
+    image_encoding_support_resolver: ImageEncodingSupportResolver | None = None
     supported_protocol_variants: tuple[str, ...] = ()
     supported_paper_modes: tuple[PaperMode, ...] = ()
     supported_paper_modes_resolver: PaperModeResolver | None = None

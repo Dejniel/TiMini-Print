@@ -62,6 +62,10 @@ class ConnectedPrinter:
         """Return live-session capabilities that affect raster rendering and encoding."""
         return self._runtime_context.capabilities
 
+    def printer_device(self) -> "PrinterDevice":
+        """Return the immutable printer description resolved for this connection."""
+        return self._device
+
     def raster_page_job(
         self,
         raster_set: RasterSet,
@@ -193,7 +197,7 @@ async def connect_printer(
             pass
         raise
     return ConnectedPrinter(
-        device,
+        runtime_context.resolved_device or device,
         connection,
         runtime_context,
         reporter=reporter,

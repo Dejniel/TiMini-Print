@@ -193,7 +193,12 @@ class PrinterProtocol:
                 formats=pipeline.formats,
                 encoding=image_encoding_override,
             )
-        supported_formats = behavior.image_encoding_support.get(pipeline.encoding)
+        image_encoding_support = (
+            behavior.image_encoding_support_resolver(self.device.protocol_variant)
+            if behavior.image_encoding_support_resolver is not None
+            else behavior.image_encoding_support
+        )
+        supported_formats = image_encoding_support.get(pipeline.encoding)
         if supported_formats is None:
             raise ValueError(
                 f"{self.device.protocol_family.value} does not support image encoding {pipeline.encoding.value}"

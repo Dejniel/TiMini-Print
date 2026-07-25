@@ -103,6 +103,41 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(preview.width, 128)
         self.assertEqual(rendered.raster_set.width, 128)
 
+    def test_paper_preset_controls_dither_recipe_and_height_scale(self) -> None:
+        image_renderer = _RecordingImageRenderer()
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: Image.new("RGB", (16, 8), "black"),
+            image_renderer=image_renderer,
+        )
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=128,
+                    render_width_px=128,
+                    dither_mode=DitherMode.COLUMN_FLOYD_STEINBERG,
+                    render_height_scale=0.9,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        settings = PrintSettings(
+            dither_mode=DitherMode.ATKINSON,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        rendered = renderer.print_page(plan, plan.pages[0], device, settings)
+
+        self.assertEqual(rendered.raster_set.width, 128)
+        self.assertEqual(rendered.raster_set.height, 57)
+        self.assertEqual(
+            image_renderer.raster_dither_modes,
+            [DitherMode.COLUMN_FLOYD_STEINBERG],
+        )
+
     def test_paper_preset_centers_render_width_on_full_paper_width(self) -> None:
         renderer = DocumentRenderer(
             image_loader=lambda _path: _test_image(),
@@ -521,15 +556,19 @@ class _RecordingImageRenderer:
         self.raster_calls = 0
         self.preview_formats = []
         self.raster_formats = []
+        self.preview_dither_modes = []
+        self.raster_dither_modes = []
 
     def preview_image(self, img, pixel_format, *, dither_mode, gamma_handle=False, gamma_value=None):
         self.preview_calls += 1
         self.preview_formats.append(pixel_format)
+        self.preview_dither_modes.append(dither_mode)
         return img.convert("L")
 
     def raster_set(self, img, pixel_formats, *, dither_mode, gamma_handle=False, gamma_value=None):
         self.raster_calls += 1
         self.raster_formats.append(pixel_formats)
+        self.raster_dither_modes.append(dither_mode)
         return RasterSet.from_single(
             RasterBuffer(
                 pixels=[1 for _ in range(img.width * img.height)],

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from ..devices.device import PrinterDevice
 from ..devices.profiles import PaperPreset
 from ..protocol.types import PaperMode
-from ..raster import PixelFormat, RasterBuffer, RasterSet
+from ..raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
 from .settings import PrintSettings
 
 
@@ -22,6 +22,8 @@ class ResolvedPaper:
     max_height_px: int | None = None
     raster_height_px: int | None = None
     mirror_horizontal: bool = False
+    dither_mode: DitherMode | None = None
+    render_height_scale: float = 1.0
 
 
 def paper_presets_for_device(device: PrinterDevice | None) -> tuple[PaperPreset, ...]:
@@ -50,6 +52,8 @@ def resolve_paper(device: PrinterDevice, settings: PrintSettings) -> ResolvedPap
         max_height_px=preset.max_height_px,
         raster_height_px=preset.raster_height_px,
         mirror_horizontal=preset.mirror_horizontal,
+        dither_mode=preset.dither_mode,
+        render_height_scale=preset.render_height_scale,
     )
 
 

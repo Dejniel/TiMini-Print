@@ -45,6 +45,52 @@ class RenderingDitherTests(unittest.TestCase):
 
         self.assertEqual(pixels, {0, 255})
 
+    def test_column_floyd_steinberg_uses_weighted_rgb_luminance(self) -> None:
+        img = Image.new("RGB", (2, 1))
+        img.putdata([(255, 0, 0), (0, 255, 0)])
+
+        pixels = list(
+            Ditherer(DitherMode.COLUMN_FLOYD_STEINBERG)
+            .render_bw(img)
+            .convert("L")
+            .get_flattened_data()
+        )
+
+        self.assertEqual(pixels, [0, 255])
+
+    def test_red_channel_diffusion_uses_red_channel(self) -> None:
+        img = Image.new("RGB", (2, 1))
+        img.putdata([(0, 255, 255), (255, 0, 0)])
+
+        pixels = list(
+            Ditherer(DitherMode.RED_CHANNEL_3_8)
+            .render_bw(img)
+            .convert("L")
+            .get_flattened_data()
+        )
+
+        self.assertEqual(pixels, [0, 255])
+
+    def test_red_channel_diffusion_preserves_unclamped_error_values(self) -> None:
+        img = Image.new("RGB", (2, 2))
+        img.putdata(
+            [
+                (32, 0, 0),
+                (127, 0, 0),
+                (255, 0, 0),
+                (160, 0, 0),
+            ]
+        )
+
+        pixels = list(
+            Ditherer(DitherMode.RED_CHANNEL_3_8)
+            .render_bw(img)
+            .convert("L")
+            .get_flattened_data()
+        )
+
+        self.assertEqual(pixels, [0, 255, 255, 255])
+
 
 if __name__ == "__main__":
     unittest.main()

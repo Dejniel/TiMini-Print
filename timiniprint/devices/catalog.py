@@ -93,6 +93,7 @@ class PrinterCatalog:
             detection = named_detection.detection
             triggers.extend(detection.exact_names)
             triggers.extend(detection.prefixes)
+            triggers.extend(detection.substrings)
             triggers.extend(detection.mac_suffixes)
         max_trigger_length = max((len(trigger) for trigger in triggers), default=0)
         return (max_trigger_length, len(triggers))
@@ -102,6 +103,7 @@ class PrinterCatalog:
         name_triggers = [
             *detection.detection.exact_names,
             *detection.detection.prefixes,
+            *detection.detection.substrings,
         ]
         trigger_lengths = [
             len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
@@ -126,14 +128,14 @@ class PrinterCatalog:
     def _trigger_specificity(
         trigger: str,
         *,
-        exact: bool,
+        match_rank: int,
         has_mac_suffix: bool,
     ) -> tuple[int, int, int, int, int]:
         trigger_length = len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
         return (
             trigger_length,
             int(has_mac_suffix),
-            int(exact),
+            match_rank,
             len(trigger),
             sum(1 for char in trigger if char.isupper()),
         )
@@ -165,7 +167,7 @@ class PrinterCatalog:
                 matched.append(
                     cls._trigger_specificity(
                         exact_name,
-                        exact=True,
+                        match_rank=2,
                         has_mac_suffix=has_mac_suffix,
                     )
                 )
@@ -175,7 +177,21 @@ class PrinterCatalog:
                 matched.append(
                     cls._trigger_specificity(
                         prefix,
-                        exact=False,
+                        match_rank=1,
+                        has_mac_suffix=has_mac_suffix,
+                    )
+                )
+        for substring in model_detection.substrings:
+            candidate = (
+                substring
+                if case_sensitive
+                else DetectionNormalizer.fold_name(substring)
+            )
+            if candidate in (normalized_name if case_sensitive else folded_name):
+                matched.append(
+                    cls._trigger_specificity(
+                        substring,
+                        match_rank=0,
                         has_mac_suffix=has_mac_suffix,
                     )
                 )

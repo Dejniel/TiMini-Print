@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from dataclasses import replace
 
-from timiniprint.devices import PrinterCatalog
+from timiniprint.devices import PaperPreset, PrinterCatalog
 from timiniprint.printing.paper import (
     default_paper_preset_for_device,
     paper_presets_for_device,
@@ -11,9 +11,20 @@ from timiniprint.printing.paper import (
 )
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.protocol import PaperMode
+from timiniprint.raster import DitherMode
 
 
 class PrintingPaperPresetTests(unittest.TestCase):
+    def test_paper_preset_allows_non_byte_aligned_geometry(self) -> None:
+        preset = PaperPreset(
+            key="document_112mm",
+            label="112 mm document",
+            paper_width_px=887,
+            render_width_px=887,
+        )
+
+        self.assertEqual(preset.paper_width_px, 887)
+
     def test_plain_profile_resolves_explicit_default_preset(self) -> None:
         device = PrinterCatalog.load().device_from_profile("x6h")
 
@@ -89,6 +100,25 @@ class PrintingPaperPresetTests(unittest.TestCase):
         self.assertEqual(paper.top_padding_px, 32)
         self.assertEqual(paper.raster_height_px, 320)
         self.assertTrue(paper.mirror_horizontal)
+
+    def test_profile_paper_preset_carries_rendering_recipe(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("x6h")
+        profile = replace(
+            device.profile,
+            paper_presets=(
+                replace(
+                    device.profile.default_paper_preset,
+                    dither_mode=DitherMode.COLUMN_FLOYD_STEINBERG,
+                    render_height_scale=0.9,
+                ),
+            ),
+        )
+        device = replace(device, profile=profile)
+
+        paper = resolve_paper(device, PrintSettings())
+
+        self.assertEqual(paper.dither_mode, DitherMode.COLUMN_FLOYD_STEINBERG)
+        self.assertEqual(paper.render_height_scale, 0.9)
 
     def test_resolve_paper_keeps_source_render_width_when_final_width_is_byte_aligned(self) -> None:
         device = PrinterCatalog.load().device_from_profile("15p3")

@@ -6,7 +6,7 @@ from typing import Optional, Tuple, Union
 
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImageEncoding, ImagePipelineConfig, PaperMode
-from ..raster import PixelFormat
+from ..raster import DitherMode, PixelFormat
 
 
 class DetectionNormalizer:
@@ -144,6 +144,8 @@ class PaperPreset:
     max_height_px: Optional[int] = None
     raster_height_px: Optional[int] = None
     mirror_horizontal: bool = False
+    dither_mode: Optional[DitherMode] = None
+    render_height_scale: float = 1.0
 
     def __post_init__(self) -> None:
         if not self.key:
@@ -170,6 +172,10 @@ class PaperPreset:
             raise ValueError(f"paper preset {self.key} render_height_px must be greater than zero")
         if self.raster_height_px == 0:
             raise ValueError(f"paper preset {self.key} raster_height_px must be greater than zero")
+        if self.render_height_scale <= 0:
+            raise ValueError(
+                f"paper preset {self.key} render_height_scale must be greater than zero"
+            )
         if (
             self.render_height_px is not None
             and self.raster_height_px is not None
@@ -179,8 +185,6 @@ class PaperPreset:
                 f"paper preset {self.key} render_height_px plus top_padding_px "
                 "must not exceed raster_height_px"
             )
-        if self.paper_width_px % 8 != 0:
-            raise ValueError(f"paper preset {self.key} paper_width_px must be divisible by 8")
         if self.paper_width_px < self.render_width_px:
             raise ValueError(
                 f"paper preset {self.key} paper_width_px must not be smaller than render_width_px"
@@ -301,17 +305,25 @@ class PrinterProfile:
 class ModelDetection:
     prefixes: Tuple[str, ...] = ()
     exact_names: Tuple[str, ...] = ()
+    substrings: Tuple[str, ...] = ()
     mac_suffixes: Tuple[str, ...] = ()
     _folded_prefixes: Tuple[str, ...] = field(init=False, repr=False)
     _folded_exact_names: Tuple[str, ...] = field(init=False, repr=False)
+    _folded_substrings: Tuple[str, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         prefixes = tuple(DetectionNormalizer.normalize_name(prefix) for prefix in self.prefixes)
         exact_names = tuple(DetectionNormalizer.normalize_name(name) for name in self.exact_names)
-        if not prefixes and not exact_names:
-            raise ValueError("Model detection requires at least one prefix or exact_name")
+        substrings = tuple(
+            DetectionNormalizer.normalize_name(value) for value in self.substrings
+        )
+        if not prefixes and not exact_names and not substrings:
+            raise ValueError(
+                "Model detection requires at least one prefix, exact_name, or substring"
+            )
         object.__setattr__(self, "prefixes", prefixes)
         object.__setattr__(self, "exact_names", exact_names)
+        object.__setattr__(self, "substrings", substrings)
         object.__setattr__(
             self,
             "mac_suffixes",
@@ -327,6 +339,11 @@ class ModelDetection:
             "_folded_exact_names",
             tuple(DetectionNormalizer.fold_name(name) for name in exact_names),
         )
+        object.__setattr__(
+            self,
+            "_folded_substrings",
+            tuple(DetectionNormalizer.fold_name(value) for value in substrings),
+        )
 
     def matches(
         self,
@@ -340,12 +357,14 @@ class ModelDetection:
             matches_name = (
                 normalized_name in self.exact_names
                 or any(normalized_name.startswith(prefix) for prefix in self.prefixes)
+                or any(value in normalized_name for value in self.substrings)
             )
         else:
             folded_name = DetectionNormalizer.fold_name(device_name)
             matches_name = (
                 folded_name in self._folded_exact_names
                 or any(folded_name.startswith(prefix) for prefix in self._folded_prefixes)
+                or any(value in folded_name for value in self._folded_substrings)
             )
         if not matches_name:
             return False

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import threading
 import unittest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, call, patch
@@ -117,6 +118,19 @@ class _Reporter:
 
     def debug(self, *, short=None, detail=None, **_kwargs):
         self.debugs.append((short, detail))
+
+
+class _RuntimeControllerSpy:
+    def __init__(self) -> None:
+        self.payloads = []
+        self.received = threading.Event()
+
+    def adopt_previous(self, _previous):
+        return None
+
+    def handle_notification(self, _session, payload):
+        self.payloads.append(bytes(payload))
+        self.received.set()
 
 
 class _Adapter:
@@ -350,6 +364,7 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
     def test_query_control_packet_blocking_reads_classic_reply(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        self.addCleanup(backend._stop_classic_receive_hub)
         sock = _QuerySocket([b"PPA2L_GY"])
         backend._sock = sock
         backend._connected = True
@@ -362,6 +377,7 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
     def test_query_control_packet_blocking_stops_when_reply_matches(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        self.addCleanup(backend._stop_classic_receive_hub)
         sock = _QuerySocket([b"O", b"K", b"extra"])
         backend._sock = sock
         backend._connected = True
@@ -374,10 +390,19 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         )
 
         self.assertEqual(reply, b"OK")
-        self.assertEqual(sock._replies, [b"extra"])
+        trailing = backend._wait_for_reply_blocking(
+            "trailing",
+            lambda data: data.endswith(b"extra"),
+            0.1,
+            True,
+        )
+        self.assertIsNotNone(trailing)
+        assert trailing is not None
+        self.assertTrue(trailing.endswith(b"extra"))
 
     def test_query_control_packet_blocking_returns_unmatched_reply_at_timeout(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        self.addCleanup(backend._stop_classic_receive_hub)
         sock = _QuerySocket([b"B", b"A", b"D"])
         backend._sock = sock
         backend._connected = True
@@ -403,6 +428,7 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
     def test_wait_for_reply_blocking_reads_classic_without_sending(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        self.addCleanup(backend._stop_classic_receive_hub)
         sock = _QuerySocket([b"A", b"CK", b"extra"])
         backend._sock = sock
         backend._connected = True
@@ -418,7 +444,28 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         self.assertEqual(reply, b"ACK")
         self.assertEqual(sock.sent, [])
-        self.assertEqual(sock._replies, [b"extra"])
+        trailing = backend._wait_for_reply_blocking(
+            "trailing",
+            lambda data: data.endswith(b"extra"),
+            0.1,
+            True,
+        )
+        self.assertIsNotNone(trailing)
+        assert trailing is not None
+        self.assertTrue(trailing.endswith(b"extra"))
+
+    def test_classic_receive_hub_forwards_payloads_to_runtime_controller(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        self.addCleanup(backend._stop_classic_receive_hub)
+        backend._sock = _QuerySocket([b"err:\x02."])
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        controller = _RuntimeControllerSpy()
+
+        backend._attach_runtime_controller_blocking(controller, 0.1)
+
+        self.assertTrue(controller.received.wait(0.2))
+        self.assertEqual(controller.payloads, [b"err:\x02."])
 
     def test_wait_for_reply_blocking_delegates_ble_notification_wait(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
