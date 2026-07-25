@@ -37,6 +37,7 @@ class SppBackend:
     def __init__(self, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
         self._sock: Optional[SocketLike] = None
         self._lock = threading.Lock()
+        self._classic_query_lock = threading.Lock()
         self._connected = False
         self._channel: Optional[int] = None
         self._transport: Optional[DeviceTransport] = None
@@ -526,12 +527,13 @@ class SppBackend:
                     reply_complete=reply_complete,
                 )
             return None
-        hub = self._ensure_classic_receive_hub()
-        waiter = hub.register(hub.mark(), reply_complete)
-        with self._lock:
-            _send_all(self._sock, packet)
-        hub.start()
-        return hub.wait(waiter, timeout=timeout)
+        with self._classic_query_lock:
+            hub = self._ensure_classic_receive_hub()
+            waiter = hub.register(hub.mark(), reply_complete)
+            with self._lock:
+                _send_all(self._sock, packet)
+            hub.start()
+            return hub.wait(waiter, timeout=timeout)
 
     def _wait_for_notification_blocking(
         self,
@@ -795,69 +797,10 @@ def _send_all(sock: SocketLike, data: bytes) -> None:
         offset += sent
 
 
-def _recv_until_match_or_timeout(
-    sock: SocketLike,
-    *,
-    timeout: float,
-    reply_complete: Callable[[bytes], bool] | None = None,
-) -> bytes | None:
-    recv = getattr(sock, "recv", None)
-    if not callable(recv):
-        return None
-    settimeout = getattr(sock, "settimeout", None)
-    gettimeout = getattr(sock, "gettimeout", None)
-    previous_timeout = None
-    if callable(gettimeout):
-        try:
-            previous_timeout = gettimeout()
-        except Exception:
-            previous_timeout = None
-    deadline = time.monotonic() + max(0.0, timeout)
-    chunks = bytearray()
-    try:
-        while True:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                break
-            if callable(settimeout):
-                settimeout(remaining)
-            try:
-                chunk = recv(4096)
-            except Exception as exc:
-                if _is_timeout_error(exc):
-                    break
-                raise
-            if not chunk:
-                break
-            chunks.extend(chunk)
-            if reply_complete is not None and reply_complete(bytes(chunks)):
-                break
-    finally:
-        if callable(settimeout):
-            try:
-                settimeout(previous_timeout)
-            except Exception:
-                pass
-    if not chunks:
-        return None
-    return bytes(chunks)
-
-
 def _send_control_packet(sock: SocketLike, packet: bytes, *, timeout: float) -> bool:
     _ = timeout
     _send_all(sock, packet)
     return True
-
-
-def _query_control_packet(
-    sock: SocketLike,
-    packet: bytes,
-    *,
-    timeout: float,
-    reply_complete: Callable[[bytes], bool] | None = None,
-) -> bytes | None:
-    _send_all(sock, packet)
-    return _recv_until_match_or_timeout(sock, timeout=timeout, reply_complete=reply_complete)
 
 
 def _is_timeout_error(exc: Exception) -> bool:

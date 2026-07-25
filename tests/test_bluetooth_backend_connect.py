@@ -64,6 +64,40 @@ class _QuerySocket(_Socket):
         raise TimeoutError()
 
 
+class _BlockingQuerySocket(_Socket):
+    def __init__(self):
+        super().__init__(fail=False)
+        self._condition = threading.Condition()
+        self._replies = []
+        self.first_sent = threading.Event()
+        self.second_sent = threading.Event()
+
+    def gettimeout(self):
+        return self.timeout
+
+    def sendall(self, data):
+        with self._condition:
+            self.sent.append(bytes(data))
+            if len(self.sent) == 1:
+                self.first_sent.set()
+            elif len(self.sent) == 2:
+                self.second_sent.set()
+            self._condition.notify_all()
+
+    def recv(self, _size):
+        with self._condition:
+            if not self._replies:
+                self._condition.wait(timeout=0.1)
+            if self._replies:
+                return self._replies.pop(0)
+        raise TimeoutError()
+
+    def queue_reply(self, reply):
+        with self._condition:
+            self._replies.append(bytes(reply))
+            self._condition.notify_all()
+
+
 class _BleNotificationQuerySocket(_Socket):
     def __init__(self, *, can_send_wait: bool = True):
         super().__init__(fail=False)
@@ -415,6 +449,54 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         )
 
         self.assertEqual(reply, b"BAD")
+
+    def test_query_control_packet_blocking_serializes_classic_transactions(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        self.addCleanup(backend._stop_classic_receive_hub)
+        sock = _BlockingQuerySocket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        replies = {}
+
+        first = threading.Thread(
+            target=lambda: replies.setdefault(
+                "first",
+                backend._query_control_packet_blocking(
+                    b"Q1",
+                    0.5,
+                    lambda data: data == b"R1",
+                ),
+            )
+        )
+        second = threading.Thread(
+            target=lambda: replies.setdefault(
+                "second",
+                backend._query_control_packet_blocking(
+                    b"Q2",
+                    0.5,
+                    lambda data: data == b"R2",
+                ),
+            )
+        )
+        first.start()
+        self.assertTrue(sock.first_sent.wait(0.2))
+        second.start()
+        try:
+            self.assertFalse(sock.second_sent.wait(0.05))
+            sock.queue_reply(b"R1")
+            self.assertTrue(sock.second_sent.wait(0.2))
+            sock.queue_reply(b"R2")
+        finally:
+            sock.queue_reply(b"R1")
+            sock.queue_reply(b"R2")
+            first.join(timeout=1.0)
+            second.join(timeout=1.0)
+
+        self.assertFalse(first.is_alive())
+        self.assertFalse(second.is_alive())
+        self.assertEqual(sock.sent, [b"Q1", b"Q2"])
+        self.assertEqual(replies, {"first": b"R1", "second": b"R2"})
 
     def test_can_query_control_packet_distinguishes_classic_and_ble(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
