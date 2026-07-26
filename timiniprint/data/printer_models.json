@@ -7,433 +7,50 @@
     },
     "detections": [
       {
-        "name": "YT01",
-        "detection": {
-          "exact_names": [
-            "YT01"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "YT02",
-        "detection": {
-          "exact_names": [
-            "YT02"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX01",
-        "detection": {
-          "exact_names": [
-            "MX01"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX05",
-        "detection": {
-          "exact_names": [
-            "MX05"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX06",
-        "detection": {
-          "exact_names": [
-            "MX06"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX08",
-        "detection": {
-          "exact_names": [
-            "MX08"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX09",
-        "detection": {
-          "exact_names": [
-            "MX09"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX10",
-        "detection": {
-          "exact_names": [
-            "MX10"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX11",
-        "detection": {
-          "exact_names": [
-            "MX11"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX12",
-        "detection": {
-          "exact_names": [
-            "MX12"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MX13",
-        "detection": {
-          "exact_names": [
-            "MX13"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MXTP-100",
-        "detection": {
-          "exact_names": [
-            "MXTP-100"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MXPC-100",
-        "detection": {
-          "exact_names": [
-            "MXPC-100"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "AZ-P2108X",
-        "detection": {
-          "exact_names": [
-            "AZ-P2108X"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "PD01",
-        "detection": {
-          "exact_names": [
-            "PD01"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "URBANWORXKIDSCAMERA",
-        "detection": {
-          "exact_names": [
-            "URBANWORXKIDSCAMERA"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "CYLOBTPRINTER",
-        "detection": {
-          "exact_names": [
-            "CYLOBTPRINTER"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "XOPOPPY",
-        "detection": {
-          "exact_names": [
-            "XOPOPPY"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ01",
-        "detection": {
-          "exact_names": [
-            "BQ01"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "EWTTOET-Z0499",
-        "detection": {
-          "exact_names": [
-            "EWTTOET-Z0499"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ05",
-        "detection": {
-          "exact_names": [
-            "BQ05"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ95B",
-        "detection": {
-          "exact_names": [
-            "BQ95B"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ95C",
-        "detection": {
-          "exact_names": [
-            "BQ95C"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ95",
-        "detection": {
-          "exact_names": [
-            "BQ95"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ06B",
-        "detection": {
-          "exact_names": [
-            "BQ06B"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ06",
-        "detection": {
-          "exact_names": [
-            "BQ06"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ07",
-        "detection": {
-          "exact_names": [
-            "BQ07"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ7A",
-        "detection": {
-          "exact_names": [
-            "BQ7A"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ7B",
-        "detection": {
-          "exact_names": [
-            "BQ7B"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ08",
-        "detection": {
-          "exact_names": [
-            "BQ08"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ96",
-        "detection": {
-          "exact_names": [
-            "BQ96"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MXW009",
-        "detection": {
-          "exact_names": [
-            "MXW009"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "MXW010",
-        "detection": {
-          "exact_names": [
-            "MXW010"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "EWTTOET-N3689",
-        "detection": {
-          "exact_names": [
-            "EWTTOET-N3689"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "EWTTOET-N3687",
-        "detection": {
-          "exact_names": [
-            "EWTTOET-N3687"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "KP-IM606",
-        "detection": {
-          "exact_names": [
-            "KP-IM606"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "GV-MA211",
-        "detection": {
-          "exact_names": [
-            "GV-MA211"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "X6",
-        "detection": {
-          "exact_names": [
-            "X6"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "K06",
-        "detection": {
-          "exact_names": [
-            "K06"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
+        "exact_names": [
+          "YT01",
+          "YT02",
+          "MX01",
+          "MX05",
+          "MX06",
+          "MX08",
+          "MX09",
+          "MX10",
+          "MX11",
+          "MX12",
+          "MX13",
+          "MXTP-100",
+          "MXPC-100",
+          "AZ-P2108X",
+          "PD01",
+          "URBANWORXKIDSCAMERA",
+          "CYLOBTPRINTER",
+          "XOPOPPY",
+          "BQ01",
+          "EWTTOET-Z0499",
+          "BQ05",
+          "BQ95B",
+          "BQ95C",
+          "BQ95",
+          "BQ06B",
+          "BQ06",
+          "BQ07",
+          "BQ7A",
+          "BQ7B",
+          "BQ08",
+          "BQ96",
+          "MXW009",
+          "MXW010",
+          "EWTTOET-N3689",
+          "EWTTOET-N3687",
+          "KP-IM606",
+          "GV-MA211",
+          "X6",
+          "K06"
+        ],
+        "mac_suffixes": [
+          "59"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -449,15 +66,12 @@
     },
     "detections": [
       {
-        "name": "MX02",
-        "detection": {
-          "exact_names": [
-            "MX02"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
+        "exact_names": [
+          "MX02"
+        ],
+        "mac_suffixes": [
+          "59"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -473,15 +87,12 @@
     },
     "detections": [
       {
-        "name": "MX03",
-        "detection": {
-          "exact_names": [
-            "MX03"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
+        "exact_names": [
+          "MX03"
+        ],
+        "mac_suffixes": [
+          "59"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -497,15 +108,12 @@
     },
     "detections": [
       {
-        "name": "MX07",
-        "detection": {
-          "exact_names": [
-            "MX07"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
+        "exact_names": [
+          "MX07"
+        ],
+        "mac_suffixes": [
+          "59"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -521,26 +129,13 @@
     },
     "detections": [
       {
-        "name": "MINIPRINTER",
-        "detection": {
-          "exact_names": [
-            "MINIPRINTER"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "JL-BR22",
-        "detection": {
-          "exact_names": [
-            "JL-BR22"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
+        "exact_names": [
+          "MINIPRINTER",
+          "JL-BR22"
+        ],
+        "mac_suffixes": [
+          "59"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -556,37 +151,14 @@
     },
     "detections": [
       {
-        "name": "BQ02",
-        "detection": {
-          "exact_names": [
-            "BQ02"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ03",
-        "detection": {
-          "exact_names": [
-            "BQ03"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
-      },
-      {
-        "name": "BQ17",
-        "detection": {
-          "exact_names": [
-            "BQ17"
-          ],
-          "mac_suffixes": [
-            "59"
-          ]
-        }
+        "exact_names": [
+          "BQ02",
+          "BQ03",
+          "BQ17"
+        ],
+        "mac_suffixes": [
+          "59"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -599,28 +171,11 @@
     "profile_key": "x5",
     "detections": [
       {
-        "name": "IprintIt",
-        "detection": {
-          "prefixes": [
-            "IprintIt"
-          ]
-        }
-      },
-      {
-        "name": "DY01",
-        "detection": {
-          "prefixes": [
-            "DY01"
-          ]
-        }
-      },
-      {
-        "name": "LP6",
-        "detection": {
-          "prefixes": [
-            "LP6"
-          ]
-        }
+        "prefixes": [
+          "IprintIt",
+          "DY01",
+          "LP6"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -632,268 +187,41 @@
     "profile_key": "d1",
     "detections": [
       {
-        "name": "Pocket Printer",
-        "detection": {
-          "prefixes": [
-            "Pocket Printer"
-          ]
-        }
-      },
-      {
-        "name": "Luxorp.PX10",
-        "detection": {
-          "prefixes": [
-            "Luxorp.PX10"
-          ]
-        }
-      },
-      {
-        "name": "EMX-040256",
-        "detection": {
-          "prefixes": [
-            "EMX-040256"
-          ]
-        }
-      },
-      {
-        "name": "SeznikEcho",
-        "detection": {
-          "prefixes": [
-            "SeznikEcho"
-          ]
-        }
-      },
-      {
-        "name": "TCM690464",
-        "detection": {
-          "prefixes": [
-            "TCM690464"
-          ]
-        }
-      },
-      {
-        "name": "UXPORTMIP",
-        "detection": {
-          "prefixes": [
-            "UXPORTMIP"
-          ]
-        }
-      },
-      {
-        "name": "DL_GE225",
-        "detection": {
-          "prefixes": [
-            "DL_GE225"
-          ]
-        }
-      },
-      {
-        "name": "ML-MP-01",
-        "detection": {
-          "prefixes": [
-            "ML-MP-01"
-          ]
-        }
-      },
-      {
-        "name": "ROSSMANN",
-        "detection": {
-          "prefixes": [
-            "ROSSMANN"
-          ]
-        }
-      },
-      {
-        "name": "0019B-C",
-        "detection": {
-          "prefixes": [
-            "0019B-C"
-          ]
-        }
-      },
-      {
-        "name": "0019B-D",
-        "detection": {
-          "prefixes": [
-            "0019B-D"
-          ]
-        }
-      },
-      {
-        "name": "DTR-R0",
-        "detection": {
-          "prefixes": [
-            "DTR-R0"
-          ]
-        }
-      },
-      {
-        "name": "GB03PL",
-        "detection": {
-          "prefixes": [
-            "GB03PL"
-          ]
-        }
-      },
-      {
-        "name": "HT0125",
-        "detection": {
-          "prefixes": [
-            "HT0125"
-          ]
-        }
-      },
-      {
-        "name": "RT034h",
-        "detection": {
-          "prefixes": [
-            "RT034h"
-          ]
-        }
-      },
-      {
-        "name": "DT1-0",
-        "detection": {
-          "prefixes": [
-            "DT1-0"
-          ]
-        }
-      },
-      {
-        "name": "SC03h",
-        "detection": {
-          "prefixes": [
-            "SC03h"
-          ]
-        }
-      },
-      {
-        "name": "SC04h",
-        "detection": {
-          "prefixes": [
-            "SC04h"
-          ]
-        }
-      },
-      {
-        "name": "X103h",
-        "detection": {
-          "prefixes": [
-            "X103h"
-          ]
-        }
-      },
-      {
-        "name": "DY03",
-        "detection": {
-          "prefixes": [
-            "DY03"
-          ]
-        }
-      },
-      {
-        "name": "X100",
-        "detection": {
-          "prefixes": [
-            "X100"
-          ]
-        }
-      },
-      {
-        "name": "X2h",
-        "detection": {
-          "prefixes": [
-            "X2h"
-          ]
-        }
-      },
-      {
-        "name": "X5h",
-        "detection": {
-          "prefixes": [
-            "X5h"
-          ]
-        }
-      },
-      {
-        "name": "X6h",
-        "detection": {
-          "prefixes": [
-            "X6h"
-          ]
-        }
-      },
-      {
-        "name": "X7h",
-        "detection": {
-          "prefixes": [
-            "X7h"
-          ]
-        }
-      },
-      {
-        "name": "XC9",
-        "detection": {
-          "prefixes": [
-            "XC9"
-          ]
-        }
-      },
-      {
-        "name": "D1",
-        "detection": {
-          "prefixes": [
-            "D1"
-          ]
-        }
-      },
-      {
-        "name": "X18",
-        "detection": {
-          "prefixes": [
-            "X18"
-          ]
-        }
-      },
-      {
-        "name": "DT1-R",
-        "detection": {
-          "prefixes": [
-            "DT1-R"
-          ]
-        }
-      },
-      {
-        "name": "TD-11308",
-        "detection": {
-          "prefixes": [
-            "TD-11308"
-          ]
-        }
-      },
-      {
-        "name": "XC9-FL01",
-        "detection": {
-          "prefixes": [
-            "XC9-FL01"
-          ]
-        }
-      },
-      {
-        "name": "P1",
-        "detection": {
-          "prefixes": [
-            "P1"
-          ]
-        }
-      },
-      {
-        "name": "P2",
-        "detection": {
-          "prefixes": [
-            "P2"
-          ]
-        }
+        "prefixes": [
+          "Pocket Printer",
+          "Luxorp.PX10",
+          "EMX-040256",
+          "SeznikEcho",
+          "TCM690464",
+          "UXPORTMIP",
+          "DL_GE225",
+          "ML-MP-01",
+          "ROSSMANN",
+          "0019B-C",
+          "0019B-D",
+          "DTR-R0",
+          "GB03PL",
+          "HT0125",
+          "RT034h",
+          "DT1-0",
+          "SC03h",
+          "SC04h",
+          "X103h",
+          "DY03",
+          "X100",
+          "X2h",
+          "X5h",
+          "X6h",
+          "X7h",
+          "XC9",
+          "D1",
+          "X18",
+          "DT1-R",
+          "TD-11308",
+          "XC9-FL01",
+          "P1",
+          "P2"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -905,100 +233,20 @@
     "profile_key": "x6h",
     "detections": [
       {
-        "name": "ewtto ET-Z0504",
-        "detection": {
-          "prefixes": [
-            "ewtto ET-Z0504"
-          ]
-        }
-      },
-      {
-        "name": "IM.04",
-        "detection": {
-          "prefixes": [
-            "IM.04"
-          ]
-        }
-      },
-      {
-        "name": "X103H",
-        "detection": {
-          "prefixes": [
-            "X103H"
-          ]
-        }
-      },
-      {
-        "name": "SC05",
-        "detection": {
-          "prefixes": [
-            "SC05"
-          ]
-        }
-      },
-      {
-        "name": "X102",
-        "detection": {
-          "prefixes": [
-            "X102"
-          ]
-        }
-      },
-      {
-        "name": "X5HP",
-        "detection": {
-          "prefixes": [
-            "X5HP"
-          ]
-        }
-      },
-      {
-        "name": "X6HP",
-        "detection": {
-          "prefixes": [
-            "X6HP"
-          ]
-        }
-      },
-      {
-        "name": "P7H",
-        "detection": {
-          "prefixes": [
-            "P7H"
-          ]
-        }
-      },
-      {
-        "name": "X2H",
-        "detection": {
-          "prefixes": [
-            "X2H"
-          ]
-        }
-      },
-      {
-        "name": "X5H",
-        "detection": {
-          "prefixes": [
-            "X5H"
-          ]
-        }
-      },
-      {
-        "name": "X6H",
-        "detection": {
-          "prefixes": [
-            "X6H"
-          ]
-        }
-      },
-      {
-        "name": "X7H",
-        "detection": {
-          "prefixes": [
-            "X7H"
-          ]
-        }
+        "prefixes": [
+          "ewtto ET-Z0504",
+          "IM.04",
+          "X103H",
+          "SC05",
+          "X102",
+          "X5HP",
+          "X6HP",
+          "P7H",
+          "X2H",
+          "X5H",
+          "X6H",
+          "X7H"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1010,116 +258,22 @@
     "profile_key": "cp01",
     "detections": [
       {
-        "name": "SeznikNeo",
-        "detection": {
-          "prefixes": [
-            "SeznikNeo"
-          ]
-        }
-      },
-      {
-        "name": "RS9000",
-        "detection": {
-          "prefixes": [
-            "RS9000"
-          ]
-        }
-      },
-      {
-        "name": "XiaoWa",
-        "detection": {
-          "prefixes": [
-            "XiaoWa"
-          ]
-        }
-      },
-      {
-        "name": "JRX01",
-        "detection": {
-          "prefixes": [
-            "JRX01"
-          ]
-        }
-      },
-      {
-        "name": "QDX01",
-        "detection": {
-          "prefixes": [
-            "QDX01"
-          ]
-        }
-      },
-      {
-        "name": "wts07",
-        "detection": {
-          "prefixes": [
-            "wts07"
-          ]
-        }
-      },
-      {
-        "name": "CP01",
-        "detection": {
-          "prefixes": [
-            "CP01"
-          ]
-        }
-      },
-      {
-        "name": "DY49",
-        "detection": {
-          "prefixes": [
-            "DY49"
-          ]
-        }
-      },
-      {
-        "name": "S5A",
-        "detection": {
-          "prefixes": [
-            "S5A"
-          ]
-        }
-      },
-      {
-        "name": "P20 max",
-        "detection": {
-          "prefixes": [
-            "P20 max"
-          ]
-        }
-      },
-      {
-        "name": "S9A",
-        "detection": {
-          "prefixes": [
-            "S9A"
-          ]
-        }
-      },
-      {
-        "name": "DY33A",
-        "detection": {
-          "prefixes": [
-            "DY33A"
-          ]
-        }
-      },
-      {
-        "name": "YMS-BT01",
-        "detection": {
-          "prefixes": [
-            "YMS-BT01"
-          ]
-        }
-      },
-      {
-        "name": "WJ-HOT-PRT",
-        "detection": {
-          "prefixes": [
-            "WJ-HOT-PRT"
-          ]
-        }
+        "prefixes": [
+          "SeznikNeo",
+          "RS9000",
+          "XiaoWa",
+          "JRX01",
+          "QDX01",
+          "wts07",
+          "CP01",
+          "DY49",
+          "S5A",
+          "P20 max",
+          "S9A",
+          "DY33A",
+          "YMS-BT01",
+          "WJ-HOT-PRT"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1131,36 +285,12 @@
     "profile_key": "gb03",
     "detections": [
       {
-        "name": "CMT-0510",
-        "detection": {
-          "prefixes": [
-            "CMT-0510"
-          ]
-        }
-      },
-      {
-        "name": "SC03",
-        "detection": {
-          "prefixes": [
-            "SC03"
-          ]
-        }
-      },
-      {
-        "name": "SC04",
-        "detection": {
-          "prefixes": [
-            "SC04"
-          ]
-        }
-      },
-      {
-        "name": "GV-MA211",
-        "detection": {
-          "prefixes": [
-            "GV-MA211"
-          ]
-        }
+        "prefixes": [
+          "CMT-0510",
+          "SC03",
+          "SC04",
+          "GV-MA211"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1172,20 +302,10 @@
     "profile_key": "p5",
     "detections": [
       {
-        "name": "DL_X2Pro",
-        "detection": {
-          "prefixes": [
-            "DL_X2Pro"
-          ]
-        }
-      },
-      {
-        "name": "P5",
-        "detection": {
-          "prefixes": [
-            "P5"
-          ]
-        }
+        "prefixes": [
+          "DL_X2Pro",
+          "P5"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1197,12 +317,9 @@
     "profile_key": "jxm800",
     "detections": [
       {
-        "name": "JXM800",
-        "detection": {
-          "prefixes": [
-            "JXM800"
-          ]
-        }
+        "prefixes": [
+          "JXM800"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1214,12 +331,9 @@
     "profile_key": "professional_printer",
     "detections": [
       {
-        "name": "Professional Printer",
-        "detection": {
-          "prefixes": [
-            "Professional Printer"
-          ]
-        }
+        "prefixes": [
+          "Professional Printer"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1231,12 +345,9 @@
     "profile_key": "shipping_printer",
     "detections": [
       {
-        "name": "Shipping Printer",
-        "detection": {
-          "prefixes": [
-            "Shipping Printer"
-          ]
-        }
+        "prefixes": [
+          "Shipping Printer"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1248,36 +359,12 @@
     "profile_key": "x9",
     "detections": [
       {
-        "name": "MV-B530",
-        "detection": {
-          "prefixes": [
-            "MV-B530"
-          ]
-        }
-      },
-      {
-        "name": "GL-VS9",
-        "detection": {
-          "prefixes": [
-            "GL-VS9"
-          ]
-        }
-      },
-      {
-        "name": "QDID",
-        "detection": {
-          "prefixes": [
-            "QDID"
-          ]
-        }
-      },
-      {
-        "name": "X9",
-        "detection": {
-          "prefixes": [
-            "X9"
-          ]
-        }
+        "prefixes": [
+          "MV-B530",
+          "GL-VS9",
+          "QDID",
+          "X9"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1289,12 +376,9 @@
     "profile_key": "a41iii",
     "detections": [
       {
-        "name": "A41III",
-        "detection": {
-          "prefixes": [
-            "A41III"
-          ]
-        }
+        "prefixes": [
+          "A41III"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1306,12 +390,9 @@
     "profile_key": "gb02sh",
     "detections": [
       {
-        "name": "GB02SH",
-        "detection": {
-          "prefixes": [
-            "GB02SH"
-          ]
-        }
+        "prefixes": [
+          "GB02SH"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1323,20 +404,10 @@
     "profile_key": "gb03ph",
     "detections": [
       {
-        "name": "GB03PH",
-        "detection": {
-          "prefixes": [
-            "GB03PH"
-          ]
-        }
-      },
-      {
-        "name": "GB03SH",
-        "detection": {
-          "prefixes": [
-            "GB03SH"
-          ]
-        }
+        "prefixes": [
+          "GB03PH",
+          "GB03SH"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1348,12 +419,9 @@
     "profile_key": "gb03sl",
     "detections": [
       {
-        "name": "GB03SL",
-        "detection": {
-          "prefixes": [
-            "GB03SL"
-          ]
-        }
+        "prefixes": [
+          "GB03SL"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1365,12 +433,9 @@
     "profile_key": "zpa4z1",
     "detections": [
       {
-        "name": "ZPA4Z1",
-        "detection": {
-          "prefixes": [
-            "ZPA4Z1"
-          ]
-        }
+        "prefixes": [
+          "ZPA4Z1"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1382,44 +447,13 @@
     "profile_key": "pr89",
     "detections": [
       {
-        "name": "ZP801",
-        "detection": {
-          "prefixes": [
-            "ZP801"
-          ]
-        }
-      },
-      {
-        "name": "XW006",
-        "detection": {
-          "prefixes": [
-            "XW006"
-          ]
-        }
-      },
-      {
-        "name": "PR89",
-        "detection": {
-          "prefixes": [
-            "PR89"
-          ]
-        }
-      },
-      {
-        "name": "X8-L",
-        "detection": {
-          "prefixes": [
-            "X8-L"
-          ]
-        }
-      },
-      {
-        "name": "X8-W",
-        "detection": {
-          "prefixes": [
-            "X8-W"
-          ]
-        }
+        "prefixes": [
+          "ZP801",
+          "XW006",
+          "PR89",
+          "X8-L",
+          "X8-W"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1431,28 +465,11 @@
     "profile_key": "a200",
     "detections": [
       {
-        "name": "A41II",
-        "detection": {
-          "prefixes": [
-            "A41II"
-          ]
-        }
-      },
-      {
-        "name": "A42II",
-        "detection": {
-          "prefixes": [
-            "A42II"
-          ]
-        }
-      },
-      {
-        "name": "A200",
-        "detection": {
-          "prefixes": [
-            "A200"
-          ]
-        }
+        "prefixes": [
+          "A41II",
+          "A42II",
+          "A200"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1464,12 +481,9 @@
     "profile_key": "a4300",
     "detections": [
       {
-        "name": "A4300",
-        "detection": {
-          "prefixes": [
-            "A4300"
-          ]
-        }
+        "prefixes": [
+          "A4300"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1481,12 +495,9 @@
     "profile_key": "label_printer",
     "detections": [
       {
-        "name": "Label Printer",
-        "detection": {
-          "prefixes": [
-            "Label Printer"
-          ]
-        }
+        "prefixes": [
+          "Label Printer"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1498,12 +509,9 @@
     "profile_key": "mini_printer",
     "detections": [
       {
-        "name": "Mini Printer",
-        "detection": {
-          "prefixes": [
-            "Mini Printer"
-          ]
-        }
+        "prefixes": [
+          "Mini Printer"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1515,12 +523,9 @@
     "profile_key": "dl_x2",
     "detections": [
       {
-        "name": "DL_X2",
-        "detection": {
-          "prefixes": [
-            "DL_X2"
-          ]
-        }
+        "prefixes": [
+          "DL_X2"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1532,12 +537,9 @@
     "profile_key": "dl_x7",
     "detections": [
       {
-        "name": "DL_X7",
-        "detection": {
-          "prefixes": [
-            "DL_X7"
-          ]
-        }
+        "prefixes": [
+          "DL_X7"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1549,12 +551,9 @@
     "profile_key": "dl_x7pro",
     "detections": [
       {
-        "name": "DL_X7Pro",
-        "detection": {
-          "prefixes": [
-            "DL_X7Pro"
-          ]
-        }
+        "prefixes": [
+          "DL_X7Pro"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1566,20 +565,10 @@
     "profile_key": "x7hp",
     "detections": [
       {
-        "name": "LGM01",
-        "detection": {
-          "prefixes": [
-            "LGM01"
-          ]
-        }
-      },
-      {
-        "name": "X7HP",
-        "detection": {
-          "prefixes": [
-            "X7HP"
-          ]
-        }
+        "prefixes": [
+          "LGM01",
+          "X7HP"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1591,12 +580,9 @@
     "profile_key": "mpa81",
     "detections": [
       {
-        "name": "MPA81",
-        "detection": {
-          "prefixes": [
-            "MPA81"
-          ]
-        }
+        "prefixes": [
+          "MPA81"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1608,20 +594,10 @@
     "profile_key": "pr893",
     "detections": [
       {
-        "name": "PR893",
-        "detection": {
-          "prefixes": [
-            "PR893"
-          ]
-        }
-      },
-      {
-        "name": "XW007",
-        "detection": {
-          "prefixes": [
-            "XW007"
-          ]
-        }
+        "prefixes": [
+          "PR893",
+          "XW007"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1633,12 +609,9 @@
     "profile_key": "pt001",
     "detections": [
       {
-        "name": "PT001",
-        "detection": {
-          "prefixes": [
-            "PT001"
-          ]
-        }
+        "prefixes": [
+          "PT001"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1650,20 +623,10 @@
     "profile_key": "fc02",
     "detections": [
       {
-        "name": "SC03H",
-        "detection": {
-          "prefixes": [
-            "SC03H"
-          ]
-        }
-      },
-      {
-        "name": "FC02",
-        "detection": {
-          "prefixes": [
-            "FC02"
-          ]
-        }
+        "prefixes": [
+          "SC03H",
+          "FC02"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1675,12 +638,9 @@
     "profile_key": "x101h",
     "detections": [
       {
-        "name": "X101H",
-        "detection": {
-          "prefixes": [
-            "X101H"
-          ]
-        }
+        "prefixes": [
+          "X101H"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1692,12 +652,9 @@
     "profile_key": "ytb01",
     "detections": [
       {
-        "name": "YTB01",
-        "detection": {
-          "exact_names": [
-            "YTB01"
-          ]
-        }
+        "exact_names": [
+          "YTB01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1710,12 +667,9 @@
     "profile_key": "zp802",
     "detections": [
       {
-        "name": "ZP802",
-        "detection": {
-          "prefixes": [
-            "ZP802"
-          ]
-        }
+        "prefixes": [
+          "ZP802"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1727,20 +681,10 @@
     "profile_key": "15p3",
     "detections": [
       {
-        "name": "15P3",
-        "detection": {
-          "prefixes": [
-            "15P3"
-          ]
-        }
-      },
-      {
-        "name": "YK06",
-        "detection": {
-          "prefixes": [
-            "YK06"
-          ]
-        }
+        "prefixes": [
+          "15P3",
+          "YK06"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1752,12 +696,9 @@
     "profile_key": "wq02",
     "detections": [
       {
-        "name": "WQ02",
-        "detection": {
-          "prefixes": [
-            "WQ02"
-          ]
-        }
+        "prefixes": [
+          "WQ02"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1769,20 +710,10 @@
     "profile_key": "l1_u2",
     "detections": [
       {
-        "name": "L1",
-        "detection": {
-          "prefixes": [
-            "L1"
-          ]
-        }
-      },
-      {
-        "name": "U2",
-        "detection": {
-          "prefixes": [
-            "U2"
-          ]
-        }
+        "prefixes": [
+          "L1",
+          "U2"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1794,20 +725,10 @@
     "profile_key": "58p5",
     "detections": [
       {
-        "name": "58P5",
-        "detection": {
-          "prefixes": [
-            "58P5"
-          ]
-        }
-      },
-      {
-        "name": "WL01",
-        "detection": {
-          "prefixes": [
-            "WL01"
-          ]
-        }
+        "prefixes": [
+          "58P5",
+          "WL01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1819,12 +740,9 @@
     "profile_key": "ai01",
     "detections": [
       {
-        "name": "AI01",
-        "detection": {
-          "exact_names": [
-            "AI01"
-          ]
-        }
+        "exact_names": [
+          "AI01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1837,12 +755,9 @@
     "profile_key": "an01",
     "detections": [
       {
-        "name": "AN01",
-        "detection": {
-          "prefixes": [
-            "AN01"
-          ]
-        }
+        "prefixes": [
+          "AN01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1854,12 +769,9 @@
     "profile_key": "d100",
     "detections": [
       {
-        "name": "D100",
-        "detection": {
-          "prefixes": [
-            "D100"
-          ]
-        }
+        "prefixes": [
+          "D100"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1871,20 +783,10 @@
     "profile_key": "fl01",
     "detections": [
       {
-        "name": "FL01",
-        "detection": {
-          "prefixes": [
-            "FL01"
-          ]
-        }
-      },
-      {
-        "name": "KF-5",
-        "detection": {
-          "prefixes": [
-            "KF-5"
-          ]
-        }
+        "prefixes": [
+          "FL01",
+          "KF-5"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1896,12 +798,9 @@
     "profile_key": "gb01",
     "detections": [
       {
-        "name": "GB01",
-        "detection": {
-          "prefixes": [
-            "GB01"
-          ]
-        }
+        "prefixes": [
+          "GB01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1913,12 +812,9 @@
     "profile_key": "gb02",
     "detections": [
       {
-        "name": "GB02",
-        "detection": {
-          "prefixes": [
-            "GB02"
-          ]
-        }
+        "prefixes": [
+          "GB02"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1930,20 +826,10 @@
     "profile_key": "gb03_2",
     "detections": [
       {
-        "name": "GB03",
-        "detection": {
-          "prefixes": [
-            "GB03"
-          ]
-        }
-      },
-      {
-        "name": "GB06",
-        "detection": {
-          "prefixes": [
-            "GB06"
-          ]
-        }
+        "prefixes": [
+          "GB03",
+          "GB06"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1955,12 +841,9 @@
     "profile_key": "gb04",
     "detections": [
       {
-        "name": "GB04",
-        "detection": {
-          "prefixes": [
-            "GB04"
-          ]
-        }
+        "prefixes": [
+          "GB04"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1972,12 +855,9 @@
     "profile_key": "gb05",
     "detections": [
       {
-        "name": "GB05",
-        "detection": {
-          "prefixes": [
-            "GB05"
-          ]
-        }
+        "prefixes": [
+          "GB05"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -1989,20 +869,10 @@
     "profile_key": "gt01",
     "detections": [
       {
-        "name": "GT01",
-        "detection": {
-          "prefixes": [
-            "GT01"
-          ]
-        }
-      },
-      {
-        "name": "GT03",
-        "detection": {
-          "prefixes": [
-            "GT03"
-          ]
-        }
+        "prefixes": [
+          "GT01",
+          "GT03"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2014,12 +884,9 @@
     "profile_key": "gt02",
     "detections": [
       {
-        "name": "GT02",
-        "detection": {
-          "prefixes": [
-            "GT02"
-          ]
-        }
+        "prefixes": [
+          "GT02"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2031,12 +898,9 @@
     "profile_key": "gt04",
     "detections": [
       {
-        "name": "GT04",
-        "detection": {
-          "prefixes": [
-            "GT04"
-          ]
-        }
+        "prefixes": [
+          "GT04"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2048,28 +912,11 @@
     "profile_key": "gt08",
     "detections": [
       {
-        "name": "GT08",
-        "detection": {
-          "prefixes": [
-            "GT08"
-          ]
-        }
-      },
-      {
-        "name": "GW08",
-        "detection": {
-          "prefixes": [
-            "GW08"
-          ]
-        }
-      },
-      {
-        "name": "XW005",
-        "detection": {
-          "prefixes": [
-            "XW005"
-          ]
-        }
+        "prefixes": [
+          "GT08",
+          "GW08",
+          "XW005"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2081,12 +928,9 @@
     "profile_key": "pr88",
     "detections": [
       {
-        "name": "PR88",
-        "detection": {
-          "prefixes": [
-            "PR88"
-          ]
-        }
+        "prefixes": [
+          "PR88"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2098,20 +942,10 @@
     "profile_key": "gt09",
     "detections": [
       {
-        "name": "GT09",
-        "detection": {
-          "prefixes": [
-            "GT09"
-          ]
-        }
-      },
-      {
-        "name": "GT10",
-        "detection": {
-          "prefixes": [
-            "GT10"
-          ]
-        }
+        "prefixes": [
+          "GT09",
+          "GT10"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2123,12 +957,9 @@
     "profile_key": "gw09",
     "detections": [
       {
-        "name": "GW09",
-        "detection": {
-          "prefixes": [
-            "GW09"
-          ]
-        }
+        "prefixes": [
+          "GW09"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2140,52 +971,14 @@
     "profile_key": "jx001",
     "detections": [
       {
-        "name": "JX001",
-        "detection": {
-          "prefixes": [
-            "JX001"
-          ]
-        }
-      },
-      {
-        "name": "JX002",
-        "detection": {
-          "prefixes": [
-            "JX002"
-          ]
-        }
-      },
-      {
-        "name": "JX003",
-        "detection": {
-          "prefixes": [
-            "JX003"
-          ]
-        }
-      },
-      {
-        "name": "JX004",
-        "detection": {
-          "prefixes": [
-            "JX004"
-          ]
-        }
-      },
-      {
-        "name": "JX005",
-        "detection": {
-          "prefixes": [
-            "JX005"
-          ]
-        }
-      },
-      {
-        "name": "JX006",
-        "detection": {
-          "prefixes": [
-            "JX006"
-          ]
-        }
+        "prefixes": [
+          "JX001",
+          "JX002",
+          "JX003",
+          "JX004",
+          "JX005",
+          "JX006"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2197,12 +990,9 @@
     "profile_key": "lt01",
     "detections": [
       {
-        "name": "LT01",
-        "detection": {
-          "prefixes": [
-            "LT01"
-          ]
-        }
+        "prefixes": [
+          "LT01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2214,12 +1004,9 @@
     "profile_key": "ly01",
     "detections": [
       {
-        "name": "LY01",
-        "detection": {
-          "prefixes": [
-            "LY01"
-          ]
-        }
+        "prefixes": [
+          "LY01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2231,12 +1018,9 @@
     "profile_key": "ly02",
     "detections": [
       {
-        "name": "LY02",
-        "detection": {
-          "prefixes": [
-            "LY02"
-          ]
-        }
+        "prefixes": [
+          "LY02"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2248,12 +1032,9 @@
     "profile_key": "ly03",
     "detections": [
       {
-        "name": "LY03",
-        "detection": {
-          "prefixes": [
-            "LY03"
-          ]
-        }
+        "prefixes": [
+          "LY03"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2265,12 +1046,9 @@
     "profile_key": "ly05",
     "detections": [
       {
-        "name": "LY05",
-        "detection": {
-          "prefixes": [
-            "LY05"
-          ]
-        }
+        "prefixes": [
+          "LY05"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2282,12 +1060,9 @@
     "profile_key": "ly10",
     "detections": [
       {
-        "name": "LY10",
-        "detection": {
-          "prefixes": [
-            "LY10"
-          ]
-        }
+        "prefixes": [
+          "LY10"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2299,15 +1074,12 @@
     "profile_key": "lp100",
     "detections": [
       {
-        "name": "LP100",
-        "detection": {
-          "exact_names": [
-            "LP100"
-          ],
-          "prefixes": [
-            "LP100"
-          ]
-        }
+        "exact_names": [
+          "LP100"
+        ],
+        "prefixes": [
+          "LP100"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2319,12 +1091,9 @@
     "profile_key": "ly11",
     "detections": [
       {
-        "name": "LY11",
-        "detection": {
-          "prefixes": [
-            "LY11"
-          ]
-        }
+        "prefixes": [
+          "LY11"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2336,12 +1105,9 @@
     "profile_key": "mx02",
     "detections": [
       {
-        "name": "MX02",
-        "detection": {
-          "exact_names": [
-            "MX02"
-          ]
-        }
+        "exact_names": [
+          "MX02"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2354,12 +1120,9 @@
     "profile_key": "mx03",
     "detections": [
       {
-        "name": "MX03",
-        "detection": {
-          "exact_names": [
-            "MX03"
-          ]
-        }
+        "exact_names": [
+          "MX03"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2372,44 +1135,13 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "MX05",
-        "detection": {
-          "exact_names": [
-            "MX05"
-          ]
-        }
-      },
-      {
-        "name": "MX06",
-        "detection": {
-          "exact_names": [
-            "MX06"
-          ]
-        }
-      },
-      {
-        "name": "MXTP-100",
-        "detection": {
-          "exact_names": [
-            "MXTP-100"
-          ]
-        }
-      },
-      {
-        "name": "CYLOBTPRINTER",
-        "detection": {
-          "exact_names": [
-            "CYLOBTPRINTER"
-          ]
-        }
-      },
-      {
-        "name": "EWTTOET-Z0499",
-        "detection": {
-          "exact_names": [
-            "EWTTOET-Z0499"
-          ]
-        }
+        "exact_names": [
+          "MX05",
+          "MX06",
+          "MXTP-100",
+          "CYLOBTPRINTER",
+          "EWTTOET-Z0499"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2423,12 +1155,9 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "MX08",
-        "detection": {
-          "exact_names": [
-            "MX08"
-          ]
-        }
+        "exact_names": [
+          "MX08"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2442,12 +1171,9 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "MX09",
-        "detection": {
-          "exact_names": [
-            "MX09"
-          ]
-        }
+        "exact_names": [
+          "MX09"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2461,44 +1187,13 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "MX10",
-        "detection": {
-          "exact_names": [
-            "MX10"
-          ]
-        }
-      },
-      {
-        "name": "AZ-P2108X",
-        "detection": {
-          "exact_names": [
-            "AZ-P2108X"
-          ]
-        }
-      },
-      {
-        "name": "MXW009",
-        "detection": {
-          "exact_names": [
-            "MXW009"
-          ]
-        }
-      },
-      {
-        "name": "KP-IM606",
-        "detection": {
-          "exact_names": [
-            "KP-IM606"
-          ]
-        }
-      },
-      {
-        "name": "GV-MA211",
-        "detection": {
-          "exact_names": [
-            "GV-MA211"
-          ]
-        }
+        "exact_names": [
+          "MX10",
+          "AZ-P2108X",
+          "MXW009",
+          "KP-IM606",
+          "GV-MA211"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2512,20 +1207,10 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "MX11",
-        "detection": {
-          "exact_names": [
-            "MX11"
-          ]
-        }
-      },
-      {
-        "name": "MX12",
-        "detection": {
-          "exact_names": [
-            "MX12"
-          ]
-        }
+        "exact_names": [
+          "MX11",
+          "MX12"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2539,52 +1224,14 @@
     "profile_key": "m01",
     "detections": [
       {
-        "name": "P5AI",
-        "detection": {
-          "prefixes": [
-            "P5AI"
-          ]
-        }
-      },
-      {
-        "name": "PR07",
-        "detection": {
-          "prefixes": [
-            "PR07"
-          ]
-        }
-      },
-      {
-        "name": "XW003",
-        "detection": {
-          "prefixes": [
-            "XW003"
-          ]
-        }
-      },
-      {
-        "name": "XW009",
-        "detection": {
-          "prefixes": [
-            "XW009"
-          ]
-        }
-      },
-      {
-        "name": "M01",
-        "detection": {
-          "prefixes": [
-            "M01"
-          ]
-        }
-      },
-      {
-        "name": "AI01",
-        "detection": {
-          "prefixes": [
-            "AI01"
-          ]
-        }
+        "prefixes": [
+          "P5AI",
+          "PR07",
+          "XW003",
+          "XW009",
+          "M01",
+          "AI01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2596,20 +1243,10 @@
     "profile_key": "pr02",
     "detections": [
       {
-        "name": "PR02",
-        "detection": {
-          "prefixes": [
-            "PR02"
-          ]
-        }
-      },
-      {
-        "name": "XW008",
-        "detection": {
-          "prefixes": [
-            "XW008"
-          ]
-        }
+        "prefixes": [
+          "PR02",
+          "XW008"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2621,12 +1258,9 @@
     "profile_key": "xw001",
     "detections": [
       {
-        "name": "XW001",
-        "detection": {
-          "prefixes": [
-            "XW001"
-          ]
-        }
+        "prefixes": [
+          "XW001"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2638,12 +1272,9 @@
     "profile_key": "pr30",
     "detections": [
       {
-        "name": "PR30",
-        "detection": {
-          "prefixes": [
-            "PR30"
-          ]
-        }
+        "prefixes": [
+          "PR30"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2655,12 +1286,9 @@
     "profile_key": "xw002",
     "detections": [
       {
-        "name": "XW002",
-        "detection": {
-          "prefixes": [
-            "XW002"
-          ]
-        }
+        "prefixes": [
+          "XW002"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2672,20 +1300,10 @@
     "profile_key": "pr35",
     "detections": [
       {
-        "name": "XW004",
-        "detection": {
-          "prefixes": [
-            "XW004"
-          ]
-        }
-      },
-      {
-        "name": "PR35",
-        "detection": {
-          "prefixes": [
-            "PR35"
-          ]
-        }
+        "prefixes": [
+          "XW004",
+          "PR35"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2697,12 +1315,9 @@
     "profile_key": "s101",
     "detections": [
       {
-        "name": "S101",
-        "detection": {
-          "prefixes": [
-            "S101"
-          ]
-        }
+        "prefixes": [
+          "S101"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2714,12 +1329,9 @@
     "profile_key": "s102_2",
     "detections": [
       {
-        "name": "S102",
-        "detection": {
-          "prefixes": [
-            "S102"
-          ]
-        }
+        "prefixes": [
+          "S102"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2731,12 +1343,9 @@
     "profile_key": "zhhc",
     "detections": [
       {
-        "name": "ZHHC",
-        "detection": {
-          "prefixes": [
-            "ZHHC"
-          ]
-        }
+        "prefixes": [
+          "ZHHC"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2748,12 +1357,9 @@
     "profile_key": "a33",
     "detections": [
       {
-        "name": "A33",
-        "detection": {
-          "prefixes": [
-            "A33"
-          ]
-        }
+        "prefixes": [
+          "A33"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2765,12 +1371,9 @@
     "profile_key": "a43",
     "detections": [
       {
-        "name": "A43",
-        "detection": {
-          "prefixes": [
-            "A43"
-          ]
-        }
+        "prefixes": [
+          "A43"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2782,12 +1385,9 @@
     "profile_key": "hd1",
     "detections": [
       {
-        "name": "HD1",
-        "detection": {
-          "prefixes": [
-            "HD1"
-          ]
-        }
+        "prefixes": [
+          "HD1"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2799,12 +1399,9 @@
     "profile_key": "p10",
     "detections": [
       {
-        "name": "P10",
-        "detection": {
-          "prefixes": [
-            "P10"
-          ]
-        }
+        "prefixes": [
+          "P10"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2816,12 +1413,9 @@
     "profile_key": "s01",
     "detections": [
       {
-        "name": "S01",
-        "detection": {
-          "prefixes": [
-            "S01"
-          ]
-        }
+        "prefixes": [
+          "S01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2833,124 +1427,23 @@
     "profile_key": "v5x",
     "detections": [
       {
-        "name": "V5X",
-        "detection": {
-          "exact_names": [
-            "V5X"
-          ]
-        }
-      },
-      {
-        "name": "X1",
-        "detection": {
-          "exact_names": [
-            "X1"
-          ]
-        }
-      },
-      {
-        "name": "X2",
-        "detection": {
-          "exact_names": [
-            "X2"
-          ]
-        }
-      },
-      {
-        "name": "MXW01",
-        "detection": {
-          "exact_names": [
-            "MXW01"
-          ]
-        }
-      },
-      {
-        "name": "MXW01-1",
-        "detection": {
-          "exact_names": [
-            "MXW01-1"
-          ]
-        }
-      },
-      {
-        "name": "C17",
-        "detection": {
-          "exact_names": [
-            "C17"
-          ]
-        }
-      },
-      {
-        "name": "MXW-W5",
-        "detection": {
-          "exact_names": [
-            "MXW-W5"
-          ]
-        }
-      },
-      {
-        "name": "AC695X_PRINT",
-        "detection": {
-          "exact_names": [
-            "AC695X_PRINT"
-          ]
-        }
-      },
-      {
-        "name": "JK01",
-        "detection": {
-          "exact_names": [
-            "JK01"
-          ]
-        }
-      },
-      {
-        "name": "PORTABLEPRINTER",
-        "detection": {
-          "exact_names": [
-            "PORTABLEPRINTER"
-          ]
-        }
-      },
-      {
-        "name": "INSTANTPRINTPLUS",
-        "detection": {
-          "exact_names": [
-            "INSTANTPRINTPLUS"
-          ]
-        }
-      },
-      {
-        "name": "REKA",
-        "detection": {
-          "exact_names": [
-            "REKA"
-          ]
-        }
-      },
-      {
-        "name": "HDMDT-00",
-        "detection": {
-          "exact_names": [
-            "HDMDT-00"
-          ]
-        }
-      },
-      {
-        "name": "KERUI",
-        "detection": {
-          "exact_names": [
-            "KERUI"
-          ]
-        }
-      },
-      {
-        "name": "BH03",
-        "detection": {
-          "exact_names": [
-            "BH03"
-          ]
-        }
+        "exact_names": [
+          "V5X",
+          "X1",
+          "X2",
+          "MXW01",
+          "MXW01-1",
+          "C17",
+          "MXW-W5",
+          "AC695X_PRINT",
+          "JK01",
+          "PORTABLEPRINTER",
+          "INSTANTPRINTPLUS",
+          "REKA",
+          "HDMDT-00",
+          "KERUI",
+          "BH03"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -2963,36 +1456,12 @@
     "profile_key": "x16",
     "detections": [
       {
-        "name": "X16",
-        "detection": {
-          "prefixes": [
-            "X16"
-          ]
-        }
-      },
-      {
-        "name": "Audio Print",
-        "detection": {
-          "prefixes": [
-            "Audio Print"
-          ]
-        }
-      },
-      {
-        "name": "A2",
-        "detection": {
-          "prefixes": [
-            "A2"
-          ]
-        }
-      },
-      {
-        "name": "A3",
-        "detection": {
-          "prefixes": [
-            "A3"
-          ]
-        }
+        "prefixes": [
+          "X16",
+          "Audio Print",
+          "A2",
+          "A3"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3004,12 +1473,9 @@
     "profile_key": "m2",
     "detections": [
       {
-        "name": "M2",
-        "detection": {
-          "prefixes": [
-            "M2"
-          ]
-        }
+        "prefixes": [
+          "M2"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3021,12 +1487,9 @@
     "profile_key": "p4",
     "detections": [
       {
-        "name": "P4",
-        "detection": {
-          "prefixes": [
-            "P4"
-          ]
-        }
+        "prefixes": [
+          "P4"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3038,12 +1501,9 @@
     "profile_key": "p6",
     "detections": [
       {
-        "name": "P6",
-        "detection": {
-          "prefixes": [
-            "P6"
-          ]
-        }
+        "prefixes": [
+          "P6"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3055,12 +1515,9 @@
     "profile_key": "p7",
     "detections": [
       {
-        "name": "P7",
-        "detection": {
-          "prefixes": [
-            "P7"
-          ]
-        }
+        "prefixes": [
+          "P7"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3072,12 +1529,9 @@
     "profile_key": "u1",
     "detections": [
       {
-        "name": "U1",
-        "detection": {
-          "prefixes": [
-            "U1"
-          ]
-        }
+        "prefixes": [
+          "U1"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3089,12 +1543,9 @@
     "profile_key": "x1",
     "detections": [
       {
-        "name": "X1",
-        "detection": {
-          "prefixes": [
-            "X1"
-          ]
-        }
+        "prefixes": [
+          "X1"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3106,12 +1557,9 @@
     "profile_key": "x5_2",
     "detections": [
       {
-        "name": "X5",
-        "detection": {
-          "prefixes": [
-            "X5"
-          ]
-        }
+        "prefixes": [
+          "X5"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3123,12 +1571,9 @@
     "profile_key": "x6",
     "detections": [
       {
-        "name": "X6",
-        "detection": {
-          "prefixes": [
-            "X6"
-          ]
-        }
+        "prefixes": [
+          "X6"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3140,12 +1585,9 @@
     "profile_key": "x7",
     "detections": [
       {
-        "name": "X7",
-        "detection": {
-          "prefixes": [
-            "X7"
-          ]
-        }
+        "prefixes": [
+          "X7"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3157,12 +1599,9 @@
     "profile_key": "x8",
     "detections": [
       {
-        "name": "X8",
-        "detection": {
-          "prefixes": [
-            "X8"
-          ]
-        }
+        "prefixes": [
+          "X8"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3174,172 +1613,29 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "YT01",
-        "detection": {
-          "exact_names": [
-            "YT01"
-          ]
-        }
-      },
-      {
-        "name": "YT02",
-        "detection": {
-          "exact_names": [
-            "YT02"
-          ]
-        }
-      },
-      {
-        "name": "MX01",
-        "detection": {
-          "exact_names": [
-            "MX01"
-          ]
-        }
-      },
-      {
-        "name": "MXPC-100",
-        "detection": {
-          "exact_names": [
-            "MXPC-100"
-          ]
-        }
-      },
-      {
-        "name": "URBANWORXKIDSCAMERA",
-        "detection": {
-          "exact_names": [
-            "URBANWORXKIDSCAMERA"
-          ]
-        }
-      },
-      {
-        "name": "BQ01",
-        "detection": {
-          "exact_names": [
-            "BQ01"
-          ]
-        }
-      },
-      {
-        "name": "BQ05",
-        "detection": {
-          "exact_names": [
-            "BQ05"
-          ]
-        }
-      },
-      {
-        "name": "BQ95B",
-        "detection": {
-          "exact_names": [
-            "BQ95B"
-          ]
-        }
-      },
-      {
-        "name": "BQ95C",
-        "detection": {
-          "exact_names": [
-            "BQ95C"
-          ]
-        }
-      },
-      {
-        "name": "BQ95",
-        "detection": {
-          "exact_names": [
-            "BQ95"
-          ]
-        }
-      },
-      {
-        "name": "BQ06B",
-        "detection": {
-          "exact_names": [
-            "BQ06B"
-          ]
-        }
-      },
-      {
-        "name": "BQ06",
-        "detection": {
-          "exact_names": [
-            "BQ06"
-          ]
-        }
-      },
-      {
-        "name": "BQ07",
-        "detection": {
-          "exact_names": [
-            "BQ07"
-          ]
-        }
-      },
-      {
-        "name": "BQ7A",
-        "detection": {
-          "exact_names": [
-            "BQ7A"
-          ]
-        }
-      },
-      {
-        "name": "BQ7B",
-        "detection": {
-          "exact_names": [
-            "BQ7B"
-          ]
-        }
-      },
-      {
-        "name": "BQ08",
-        "detection": {
-          "exact_names": [
-            "BQ08"
-          ]
-        }
-      },
-      {
-        "name": "BQ96",
-        "detection": {
-          "exact_names": [
-            "BQ96"
-          ]
-        }
-      },
-      {
-        "name": "EWTTOET-N3689",
-        "detection": {
-          "exact_names": [
-            "EWTTOET-N3689"
-          ]
-        }
-      },
-      {
-        "name": "EWTTOET-N3687",
-        "detection": {
-          "exact_names": [
-            "EWTTOET-N3687"
-          ]
-        }
-      },
-      {
-        "name": "X6",
-        "detection": {
-          "exact_names": [
-            "X6"
-          ]
-        }
-      },
-      {
-        "name": "K06",
-        "detection": {
-          "exact_names": [
-            "K06"
-          ]
-        }
+        "exact_names": [
+          "YT01",
+          "YT02",
+          "MX01",
+          "MXPC-100",
+          "URBANWORXKIDSCAMERA",
+          "BQ01",
+          "BQ05",
+          "BQ95B",
+          "BQ95C",
+          "BQ95",
+          "BQ06B",
+          "BQ06",
+          "BQ07",
+          "BQ7A",
+          "BQ7B",
+          "BQ08",
+          "BQ96",
+          "EWTTOET-N3689",
+          "EWTTOET-N3687",
+          "X6",
+          "K06"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3352,12 +1648,9 @@
     "profile_key": "mx07",
     "detections": [
       {
-        "name": "MX07",
-        "detection": {
-          "exact_names": [
-            "MX07"
-          ]
-        }
+        "exact_names": [
+          "MX07"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3370,20 +1663,10 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "MX13",
-        "detection": {
-          "exact_names": [
-            "MX13"
-          ]
-        }
-      },
-      {
-        "name": "XOPOPPY",
-        "detection": {
-          "exact_names": [
-            "XOPOPPY"
-          ]
-        }
+        "exact_names": [
+          "MX13",
+          "XOPOPPY"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3397,12 +1680,9 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "PD01",
-        "detection": {
-          "exact_names": [
-            "PD01"
-          ]
-        }
+        "exact_names": [
+          "PD01"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3416,20 +1696,10 @@
     "profile_key": "gt02_v5g",
     "detections": [
       {
-        "name": "MINIPRINTER",
-        "detection": {
-          "exact_names": [
-            "MINIPRINTER"
-          ]
-        }
-      },
-      {
-        "name": "JL-BR22",
-        "detection": {
-          "exact_names": [
-            "JL-BR22"
-          ]
-        }
+        "exact_names": [
+          "MINIPRINTER",
+          "JL-BR22"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3442,28 +1712,11 @@
     "profile_key": "bq02",
     "detections": [
       {
-        "name": "BQ02",
-        "detection": {
-          "exact_names": [
-            "BQ02"
-          ]
-        }
-      },
-      {
-        "name": "BQ03",
-        "detection": {
-          "exact_names": [
-            "BQ03"
-          ]
-        }
-      },
-      {
-        "name": "BQ17",
-        "detection": {
-          "exact_names": [
-            "BQ17"
-          ]
-        }
+        "exact_names": [
+          "BQ02",
+          "BQ03",
+          "BQ17"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3476,12 +1729,9 @@
     "profile_key": "v5g_small_203",
     "detections": [
       {
-        "name": "MXW010",
-        "detection": {
-          "exact_names": [
-            "MXW010"
-          ]
-        }
+        "exact_names": [
+          "MXW010"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3495,36 +1745,14 @@
     "profile_key": "luck_a2",
     "detections": [
       {
-        "name": "PPA2",
-        "detection": {
-          "prefixes": [
-            "PPA2_"
-          ]
-        }
-      },
-      {
-        "name": "A2",
-        "detection": {
-          "prefixes": [
-            "PPA2_"
-          ]
-        }
-      },
-      {
-        "name": "A2_EY48D",
-        "detection": {
-          "prefixes": [
-            "PPA2_"
-          ]
-        }
-      },
-      {
-        "name": "A2_LYiN48D_ITSR",
-        "detection": {
-          "prefixes": [
-            "PPA2_"
-          ]
-        }
+        "prefixes": [
+          "PPA2_"
+        ],
+        "marketing_names": [
+          "A2",
+          "A2_EY48D",
+          "A2_LYiN48D_ITSR"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3536,28 +1764,13 @@
     "profile_key": "luck_a2h",
     "detections": [
       {
-        "name": "PPA2H",
-        "detection": {
-          "prefixes": [
-            "PPA2H_"
-          ]
-        }
-      },
-      {
-        "name": "A2H",
-        "detection": {
-          "prefixes": [
-            "PPA2H_"
-          ]
-        }
-      },
-      {
-        "name": "A2_LYiN48DH",
-        "detection": {
-          "prefixes": [
-            "PPA2H_"
-          ]
-        }
+        "prefixes": [
+          "PPA2H_"
+        ],
+        "marketing_names": [
+          "A2H",
+          "A2_LYiN48DH"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3572,12 +1785,9 @@
     },
     "detections": [
       {
-        "name": "PPA2L",
-        "detection": {
-          "prefixes": [
-            "PPA2L_"
-          ]
-        }
+        "prefixes": [
+          "PPA2L_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3592,12 +1802,9 @@
     },
     "detections": [
       {
-        "name": "PPA2LH",
-        "detection": {
-          "prefixes": [
-            "PPA2LH_"
-          ]
-        }
+        "prefixes": [
+          "PPA2LH_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3609,12 +1816,9 @@
     "profile_key": "luck_a40",
     "detections": [
       {
-        "name": "A40",
-        "detection": {
-          "prefixes": [
-            "A40_"
-          ]
-        }
+        "prefixes": [
+          "A40_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3626,28 +1830,11 @@
     "profile_key": "luck_lujiang_a4",
     "detections": [
       {
-        "name": "APA40",
-        "detection": {
-          "prefixes": [
-            "APA40_"
-          ]
-        }
-      },
-      {
-        "name": "APA42",
-        "detection": {
-          "prefixes": [
-            "APA42_"
-          ]
-        }
-      },
-      {
-        "name": "APA43",
-        "detection": {
-          "prefixes": [
-            "APA43_"
-          ]
-        }
+        "prefixes": [
+          "APA40_",
+          "APA42_",
+          "APA43_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3659,36 +1846,18 @@
     "profile_key": "luck_lujiang_a4_dense",
     "detections": [
       {
-        "name": "APA41",
-        "detection": {
-          "prefixes": [
-            "APA41_"
-          ]
-        }
+        "prefixes": [
+          "APA41_",
+          "E49_"
+        ]
       },
       {
-        "name": "APA49",
-        "detection": {
-          "prefixes": [
-            "APA49_"
-          ]
-        }
-      },
-      {
-        "name": "A49",
-        "detection": {
-          "prefixes": [
-            "APA49_"
-          ]
-        }
-      },
-      {
-        "name": "E49",
-        "detection": {
-          "prefixes": [
-            "E49_"
-          ]
-        }
+        "prefixes": [
+          "APA49_"
+        ],
+        "marketing_names": [
+          "A49"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3700,12 +1869,9 @@
     "profile_key": "luck_a49h",
     "detections": [
       {
-        "name": "APA49H",
-        "detection": {
-          "prefixes": [
-            "APA49H_"
-          ]
-        }
+        "prefixes": [
+          "APA49H_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3717,68 +1883,22 @@
     "profile_key": "luck_a4_compressed_tattoo",
     "detections": [
       {
-        "name": "ITP05",
-        "detection": {
-          "prefixes": [
-            "ITP05_"
-          ]
-        }
+        "prefixes": [
+          "ITP05_"
+        ],
+        "marketing_names": [
+          "ITP05H",
+          "DYA46"
+        ]
       },
       {
-        "name": "ITP05H",
-        "detection": {
-          "prefixes": [
-            "ITP05_"
-          ]
-        }
-      },
-      {
-        "name": "DYA46",
-        "detection": {
-          "prefixes": [
-            "ITP05_"
-          ]
-        }
-      },
-      {
-        "name": "DP_ITP05",
-        "detection": {
-          "prefixes": [
-            "DP_ITP05_"
-          ]
-        }
-      },
-      {
-        "name": "TPA46",
-        "detection": {
-          "prefixes": [
-            "TPA46_"
-          ]
-        }
-      },
-      {
-        "name": "DP_A4",
-        "detection": {
-          "prefixes": [
-            "DP_A4_"
-          ]
-        }
-      },
-      {
-        "name": "DP-A4",
-        "detection": {
-          "prefixes": [
-            "DP-A4_"
-          ]
-        }
-      },
-      {
-        "name": "DP_8038",
-        "detection": {
-          "prefixes": [
-            "DP_8038_"
-          ]
-        }
+        "prefixes": [
+          "DP_ITP05_",
+          "TPA46_",
+          "DP_A4_",
+          "DP-A4_",
+          "DP_8038_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3790,36 +1910,18 @@
     "profile_key": "luck_a4_compressed_tattoo_96_dense",
     "detections": [
       {
-        "name": "ITP06",
-        "detection": {
-          "prefixes": [
-            "ITP06_"
-          ]
-        }
+        "prefixes": [
+          "ITP06_"
+        ],
+        "marketing_names": [
+          "DYA49"
+        ]
       },
       {
-        "name": "DYA49",
-        "detection": {
-          "prefixes": [
-            "ITP06_"
-          ]
-        }
-      },
-      {
-        "name": "DP_ITP06",
-        "detection": {
-          "prefixes": [
-            "DP_ITP06_"
-          ]
-        }
-      },
-      {
-        "name": "TPA46Pro",
-        "detection": {
-          "prefixes": [
-            "TPA46Pro_"
-          ]
-        }
+        "prefixes": [
+          "DP_ITP06_",
+          "TPA46Pro_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3831,12 +1933,9 @@
     "profile_key": "luck_a4_compressed_tattoo_96",
     "detections": [
       {
-        "name": "APA46Y",
-        "detection": {
-          "prefixes": [
-            "APA46Y_"
-          ]
-        }
+        "prefixes": [
+          "APA46Y_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3848,28 +1947,13 @@
     "profile_key": "luck_apl86",
     "detections": [
       {
-        "name": "APL86",
-        "detection": {
-          "prefixes": [
-            "APL86_"
-          ]
-        }
-      },
-      {
-        "name": "L86",
-        "detection": {
-          "prefixes": [
-            "APL86_"
-          ]
-        }
-      },
-      {
-        "name": "L86_Printer",
-        "detection": {
-          "prefixes": [
-            "APL86_"
-          ]
-        }
+        "prefixes": [
+          "APL86_"
+        ],
+        "marketing_names": [
+          "L86",
+          "L86_Printer"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3881,28 +1965,13 @@
     "profile_key": "luck_apl86h",
     "detections": [
       {
-        "name": "APL86H",
-        "detection": {
-          "prefixes": [
-            "APL86H_"
-          ]
-        }
-      },
-      {
-        "name": "APL86HL",
-        "detection": {
-          "prefixes": [
-            "APL86H_"
-          ]
-        }
-      },
-      {
-        "name": "L86H_Printer",
-        "detection": {
-          "prefixes": [
-            "APL86H_"
-          ]
-        }
+        "prefixes": [
+          "APL86H_"
+        ],
+        "marketing_names": [
+          "APL86HL",
+          "L86H_Printer"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3914,12 +1983,9 @@
     "profile_key": "luck_u8",
     "detections": [
       {
-        "name": "U8",
-        "detection": {
-          "prefixes": [
-            "U8_"
-          ]
-        }
+        "prefixes": [
+          "U8_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3931,61 +1997,23 @@
     "profile_key": "luck_d80",
     "detections": [
       {
-        "name": "D80",
-        "detection": {
-          "prefixes": [
-            "D80-",
-            "D80_"
-          ]
-        }
+        "prefixes": [
+          "D80-",
+          "D80_",
+          "DP_D80_",
+          "DP-D80_",
+          "E80_",
+          "CASA-01_"
+        ]
       },
       {
-        "name": "PeriPage_A40",
-        "detection": {
-          "prefixes": [
-            "D80_"
-          ]
-        }
-      },
-      {
-        "name": "DYD80",
-        "detection": {
-          "prefixes": [
-            "D80_"
-          ]
-        }
-      },
-      {
-        "name": "DP_D80",
-        "detection": {
-          "prefixes": [
-            "DP_D80_"
-          ]
-        }
-      },
-      {
-        "name": "DP-D80",
-        "detection": {
-          "prefixes": [
-            "DP-D80_"
-          ]
-        }
-      },
-      {
-        "name": "E80",
-        "detection": {
-          "prefixes": [
-            "E80_"
-          ]
-        }
-      },
-      {
-        "name": "CASA-01",
-        "detection": {
-          "prefixes": [
-            "CASA-01_"
-          ]
-        }
+        "prefixes": [
+          "D80_"
+        ],
+        "marketing_names": [
+          "PeriPage_A40",
+          "DYD80"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -3997,20 +2025,12 @@
     "profile_key": "luck_d80h",
     "detections": [
       {
-        "name": "DYD80H",
-        "detection": {
-          "prefixes": [
-            "DP_D80H_"
-          ]
-        }
-      },
-      {
-        "name": "DP_D80H",
-        "detection": {
-          "prefixes": [
-            "DP_D80H_"
-          ]
-        }
+        "prefixes": [
+          "DP_D80H_"
+        ],
+        "marketing_names": [
+          "DYD80H"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4025,20 +2045,12 @@
     },
     "detections": [
       {
-        "name": "A80H-HD",
-        "detection": {
-          "prefixes": [
-            "DP_A80H_"
-          ]
-        }
-      },
-      {
-        "name": "DP_A80H",
-        "detection": {
-          "prefixes": [
-            "DP_A80H_"
-          ]
-        }
+        "prefixes": [
+          "DP_A80H_"
+        ],
+        "marketing_names": [
+          "A80H-HD"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4050,12 +2062,9 @@
     "profile_key": "luck_qirui_q1",
     "detections": [
       {
-        "name": "QIRUI_Q1",
-        "detection": {
-          "prefixes": [
-            "QIRUI_Q1_"
-          ]
-        }
+        "prefixes": [
+          "QIRUI_Q1_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4067,12 +2076,9 @@
     "profile_key": "luck_qirui_q2",
     "detections": [
       {
-        "name": "QIRUI_Q2",
-        "detection": {
-          "prefixes": [
-            "QIRUI_Q2_"
-          ]
-        }
+        "prefixes": [
+          "QIRUI_Q2_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4084,12 +2090,9 @@
     "profile_key": "luck_a41_luckp",
     "detections": [
       {
-        "name": "LuckP_A41",
-        "detection": {
-          "prefixes": [
-            "LuckP_A41_"
-          ]
-        }
+        "prefixes": [
+          "LuckP_A41_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4101,12 +2104,9 @@
     "profile_key": "luck_a42_luckp",
     "detections": [
       {
-        "name": "LuckP_A42",
-        "detection": {
-          "prefixes": [
-            "LuckP_A42_"
-          ]
-        }
+        "prefixes": [
+          "LuckP_A42_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4121,12 +2121,9 @@
     },
     "detections": [
       {
-        "name": "P1",
-        "detection": {
-          "prefixes": [
-            "P1_"
-          ]
-        }
+        "prefixes": [
+          "P1_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4141,12 +2138,9 @@
     },
     "detections": [
       {
-        "name": "P1",
-        "detection": {
-          "prefixes": [
-            "P1"
-          ]
-        }
+        "prefixes": [
+          "P1"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4161,36 +2155,12 @@
     },
     "detections": [
       {
-        "name": "P11",
-        "detection": {
-          "prefixes": [
-            "P11"
-          ]
-        }
-      },
-      {
-        "name": "P2",
-        "detection": {
-          "prefixes": [
-            "P2"
-          ]
-        }
-      },
-      {
-        "name": "P5",
-        "detection": {
-          "prefixes": [
-            "P5"
-          ]
-        }
-      },
-      {
-        "name": "YHK",
-        "detection": {
-          "prefixes": [
-            "YHK"
-          ]
-        }
+        "prefixes": [
+          "P11",
+          "P2",
+          "P5",
+          "YHK"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4202,28 +2172,16 @@
     "profile_key": "niimbot_d11",
     "detections": [
       {
-        "name": "D11",
-        "detection": {
-          "prefixes": [
-            "D11-",
-            "D11_"
-          ],
-          "exact_names": [
-            "D11"
-          ]
-        }
-      },
-      {
-        "name": "D11S",
-        "detection": {
-          "prefixes": [
-            "D11S-",
-            "D11S_"
-          ],
-          "exact_names": [
-            "D11S"
-          ]
-        }
+        "exact_names": [
+          "D11",
+          "D11S"
+        ],
+        "prefixes": [
+          "D11-",
+          "D11_",
+          "D11S-",
+          "D11S_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4235,16 +2193,13 @@
     "profile_key": "niimbot_d110",
     "detections": [
       {
-        "name": "D110",
-        "detection": {
-          "prefixes": [
-            "D110-",
-            "D110_"
-          ],
-          "exact_names": [
-            "D110"
-          ]
-        }
+        "exact_names": [
+          "D110"
+        ],
+        "prefixes": [
+          "D110-",
+          "D110_"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4259,20 +2214,10 @@
     },
     "detections": [
       {
-        "name": "M02S",
-        "detection": {
-          "exact_names": [
-            "M02S"
-          ]
-        }
-      },
-      {
-        "name": "Mr.in_M02S",
-        "detection": {
-          "exact_names": [
-            "Mr.in_M02S"
-          ]
-        }
+        "exact_names": [
+          "M02S",
+          "Mr.in_M02S"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4287,28 +2232,11 @@
     },
     "detections": [
       {
-        "name": "M02",
-        "detection": {
-          "exact_names": [
-            "M02"
-          ]
-        }
-      },
-      {
-        "name": "Mr.in",
-        "detection": {
-          "exact_names": [
-            "Mr.in"
-          ]
-        }
-      },
-      {
-        "name": "Mr.in_M02",
-        "detection": {
-          "exact_names": [
-            "Mr.in_M02"
-          ]
-        }
+        "exact_names": [
+          "M02",
+          "Mr.in",
+          "Mr.in_M02"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4323,52 +2251,14 @@
     },
     "detections": [
       {
-        "name": "M02X",
-        "detection": {
-          "exact_names": [
-            "M02X"
-          ]
-        }
-      },
-      {
-        "name": "M02D",
-        "detection": {
-          "exact_names": [
-            "M02D"
-          ]
-        }
-      },
-      {
-        "name": "M02E",
-        "detection": {
-          "exact_names": [
-            "M02E"
-          ]
-        }
-      },
-      {
-        "name": "MR2",
-        "detection": {
-          "exact_names": [
-            "MR2"
-          ]
-        }
-      },
-      {
-        "name": "M02A",
-        "detection": {
-          "exact_names": [
-            "M02A"
-          ]
-        }
-      },
-      {
-        "name": "KP-Q1",
-        "detection": {
-          "exact_names": [
-            "KP-Q1"
-          ]
-        }
+        "exact_names": [
+          "M02X",
+          "M02D",
+          "M02E",
+          "MR2",
+          "M02A",
+          "KP-Q1"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4383,36 +2273,12 @@
     },
     "detections": [
       {
-        "name": "T02",
-        "detection": {
-          "exact_names": [
-            "T02"
-          ]
-        }
-      },
-      {
-        "name": "T02E",
-        "detection": {
-          "exact_names": [
-            "T02E"
-          ]
-        }
-      },
-      {
-        "name": "Q02E",
-        "detection": {
-          "exact_names": [
-            "Q02E"
-          ]
-        }
-      },
-      {
-        "name": "C02E",
-        "detection": {
-          "exact_names": [
-            "C02E"
-          ]
-        }
+        "exact_names": [
+          "T02",
+          "T02E",
+          "Q02E",
+          "C02E"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4427,20 +2293,10 @@
     },
     "detections": [
       {
-        "name": "M02 Pro",
-        "detection": {
-          "exact_names": [
-            "M02 Pro"
-          ]
-        }
-      },
-      {
-        "name": "M02PRO",
-        "detection": {
-          "exact_names": [
-            "M02PRO"
-          ]
-        }
+        "exact_names": [
+          "M02 Pro",
+          "M02PRO"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4455,26 +2311,14 @@
     },
     "detections": [
       {
-        "name": "M110",
-        "detection": {
-          "exact_names": [
-            "M110"
-          ],
-          "prefixes": [
-            "M110"
-          ]
-        }
-      },
-      {
-        "name": "M120",
-        "detection": {
-          "exact_names": [
-            "M120"
-          ],
-          "prefixes": [
-            "M120"
-          ]
-        }
+        "exact_names": [
+          "M110",
+          "M120"
+        ],
+        "prefixes": [
+          "M110",
+          "M120"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4489,15 +2333,12 @@
     },
     "detections": [
       {
-        "name": "M220",
-        "detection": {
-          "exact_names": [
-            "M220"
-          ],
-          "prefixes": [
-            "M220"
-          ]
-        }
+        "exact_names": [
+          "M220"
+        ],
+        "prefixes": [
+          "M220"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4512,116 +2353,40 @@
     },
     "detections": [
       {
-        "name": "M108",
-        "detection": {
-          "exact_names": [
-            "M108"
-          ],
-          "prefixes": [
-            "Q042",
-            "Q045",
-            "Q061",
-            "Q062",
-            "Q194",
-            "Q431",
-            "Q437"
-          ]
-        }
-      },
-      {
-        "name": "M108_Z",
-        "detection": {
-          "exact_names": [
-            "M108_Z"
-          ],
-          "prefixes": [
-            "Q120"
-          ]
-        }
-      },
-      {
-        "name": "M108TA",
-        "detection": {
-          "exact_names": [
-            "M108TA"
-          ],
-          "prefixes": [
-            "Q524",
-            "Q593"
-          ]
-        }
-      },
-      {
-        "name": "M109",
-        "detection": {
-          "exact_names": [
-            "M109"
-          ],
-          "prefixes": [
-            "Q043"
-          ]
-        }
-      },
-      {
-        "name": "M105",
-        "detection": {
-          "exact_names": [
-            "M105"
-          ],
-          "prefixes": [
-            "Q317"
-          ]
-        }
-      },
-      {
-        "name": "M110",
-        "detection": {
-          "exact_names": [
-            "M110"
-          ],
-          "prefixes": [
-            "M002",
-            "Q002",
-            "Q011",
-            "Q026",
-            "Q034",
-            "Q119",
-            "Q192",
-            "Q468"
-          ]
-        }
-      },
-      {
-        "name": "M110S",
-        "detection": {
-          "exact_names": [
-            "M110S"
-          ]
-        }
-      },
-      {
-        "name": "M110s",
-        "detection": {
-          "exact_names": [
-            "M110s"
-          ]
-        }
-      },
-      {
-        "name": "M110R",
-        "detection": {
-          "exact_names": [
-            "M110R"
-          ]
-        }
-      },
-      {
-        "name": "M110r",
-        "detection": {
-          "exact_names": [
-            "M110r"
-          ]
-        }
+        "exact_names": [
+          "M108",
+          "M108_Z",
+          "M108TA",
+          "M109",
+          "M105",
+          "M110",
+          "M110S",
+          "M110s",
+          "M110R",
+          "M110r"
+        ],
+        "prefixes": [
+          "Q042",
+          "Q045",
+          "Q061",
+          "Q062",
+          "Q194",
+          "Q431",
+          "Q437",
+          "Q120",
+          "Q524",
+          "Q593",
+          "Q043",
+          "Q317",
+          "M002",
+          "Q002",
+          "Q011",
+          "Q026",
+          "Q034",
+          "Q119",
+          "Q192",
+          "Q468"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4636,31 +2401,19 @@
     },
     "detections": [
       {
-        "name": "M102",
-        "detection": {
-          "exact_names": [
-            "M102"
-          ],
-          "prefixes": [
-            "Q306",
-            "Q481",
-            "Q485"
-          ]
-        }
-      },
-      {
-        "name": "M120",
-        "detection": {
-          "exact_names": [
-            "M120"
-          ],
-          "prefixes": [
-            "Q009",
-            "Q244",
-            "Q451",
-            "Q592"
-          ]
-        }
+        "exact_names": [
+          "M102",
+          "M120"
+        ],
+        "prefixes": [
+          "Q306",
+          "Q481",
+          "Q485",
+          "Q009",
+          "Q244",
+          "Q451",
+          "Q592"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4669,126 +2422,37 @@
   },
   {
     "model_key": "instaprint_ctp500_coreprint",
+    "marketing_names": [
+      "CTP-500"
+    ],
     "profile_key": "instaprint_ctp500",
-    "marketing_name": "CTP-500",
     "detections": [
       {
-        "name": "CorePrint",
-        "detection": {
-          "exact_names": [
-            "CorePrint"
-          ],
-          "prefixes": [
-            "CorePrint"
-          ]
-        }
-      },
-      {
-        "name": "Teal Printer",
-        "detection": {
-          "exact_names": [
-            "Teal Printer"
-          ],
-          "prefixes": [
-            "Teal Printer"
-          ]
-        }
-      },
-      {
-        "name": "Purple Printer",
-        "detection": {
-          "exact_names": [
-            "Purple Printer"
-          ],
-          "prefixes": [
-            "Purple Printer"
-          ]
-        }
-      },
-      {
-        "name": "B Pink Printer",
-        "detection": {
-          "exact_names": [
-            "B Pink Printer"
-          ],
-          "prefixes": [
-            "B Pink Printer"
-          ]
-        }
-      },
-      {
-        "name": "Cherry Printer",
-        "detection": {
-          "exact_names": [
-            "Cherry Printer"
-          ],
-          "prefixes": [
-            "Cherry Printer"
-          ]
-        }
-      },
-      {
-        "name": "Floral Printer",
-        "detection": {
-          "exact_names": [
-            "Floral Printer"
-          ],
-          "prefixes": [
-            "Floral Printer"
-          ]
-        }
-      },
-      {
-        "name": "Check Printer",
-        "detection": {
-          "exact_names": [
-            "Check Printer"
-          ],
-          "prefixes": [
-            "Check Printer"
-          ]
-        }
-      },
-      {
-        "name": "Smiley Printer",
-        "detection": {
-          "exact_names": [
-            "Smiley Printer"
-          ],
-          "prefixes": [
-            "Smiley Printer"
-          ]
-        }
-      },
-      {
-        "name": "Stone Printer",
-        "detection": {
-          "exact_names": [
-            "Stone Printer"
-          ],
-          "prefixes": [
-            "Stone Printer"
-          ]
-        }
-      },
-      {
-        "name": "P Pink Printer",
-        "detection": {
-          "exact_names": [
-            "P Pink Printer"
-          ],
-          "prefixes": [
-            "P Pink Printer"
-          ]
-        }
-      },
-      {
-        "name": "YHK",
-        "detection": {
-          "prefixes": [
-            "YHK"
-          ]
-        }
+        "exact_names": [
+          "CorePrint",
+          "Teal Printer",
+          "Purple Printer",
+          "B Pink Printer",
+          "Cherry Printer",
+          "Floral Printer",
+          "Check Printer",
+          "Smiley Printer",
+          "Stone Printer",
+          "P Pink Printer"
+        ],
+        "prefixes": [
+          "CorePrint",
+          "Teal Printer",
+          "Purple Printer",
+          "B Pink Printer",
+          "Cherry Printer",
+          "Floral Printer",
+          "Check Printer",
+          "Smiley Printer",
+          "Stone Printer",
+          "P Pink Printer",
+          "YHK"
+        ]
       }
     ],
     "origin_app_packages": [
@@ -4797,144 +2461,31 @@
   },
   {
     "model_key": "funny_lx_d",
+    "marketing_names": [
+      "BH-01"
+    ],
     "profile_key": "funny_lx_384",
-    "marketing_name": "BH-01",
     "detections": [
       {
-        "name": "LX-D01",
-        "detection": {
-          "exact_names": [
-            "LX-D01"
-          ]
-        }
-      },
-      {
-        "name": "LX-D02",
-        "detection": {
-          "exact_names": [
-            "LX-D02"
-          ]
-        }
-      },
-      {
-        "name": "LX-D2",
-        "detection": {
-          "exact_names": [
-            "LX-D2"
-          ]
-        }
-      },
-      {
-        "name": "LX-D3",
-        "detection": {
-          "exact_names": [
-            "LX-D3"
-          ]
-        }
-      },
-      {
-        "name": "LX-D4",
-        "detection": {
-          "exact_names": [
-            "LX-D4"
-          ]
-        }
-      },
-      {
-        "name": "LX-D5",
-        "detection": {
-          "exact_names": [
-            "LX-D5"
-          ]
-        }
-      },
-      {
-        "name": "LX-D6",
-        "detection": {
-          "exact_names": [
-            "LX-D6"
-          ]
-        }
-      },
-      {
-        "name": "LX-D7",
-        "detection": {
-          "exact_names": [
-            "LX-D7"
-          ]
-        }
-      },
-      {
-        "name": "LX-D8",
-        "detection": {
-          "exact_names": [
-            "LX-D8"
-          ]
-        }
-      },
-      {
-        "name": "LX-D9",
-        "detection": {
-          "exact_names": [
-            "LX-D9"
-          ]
-        }
-      },
-      {
-        "name": "LX-D03",
-        "detection": {
-          "exact_names": [
-            "LX-D03"
-          ]
-        }
-      },
-      {
-        "name": "LX-D04",
-        "detection": {
-          "exact_names": [
-            "LX-D04"
-          ]
-        }
-      },
-      {
-        "name": "LX-D05",
-        "detection": {
-          "exact_names": [
-            "LX-D05"
-          ]
-        }
-      },
-      {
-        "name": "LX-D06",
-        "detection": {
-          "exact_names": [
-            "LX-D06"
-          ]
-        }
-      },
-      {
-        "name": "LX-D07",
-        "detection": {
-          "exact_names": [
-            "LX-D07"
-          ]
-        }
-      },
-      {
-        "name": "LX-D08",
-        "detection": {
-          "exact_names": [
-            "LX-D08"
-          ]
-        }
-      },
-      {
-        "name": "LX-D09",
-        "detection": {
-          "exact_names": [
-            "LX-D09"
-          ]
-        }
+        "exact_names": [
+          "LX-D01",
+          "LX-D02",
+          "LX-D2",
+          "LX-D3",
+          "LX-D4",
+          "LX-D5",
+          "LX-D6",
+          "LX-D7",
+          "LX-D8",
+          "LX-D9",
+          "LX-D03",
+          "LX-D04",
+          "LX-D05",
+          "LX-D06",
+          "LX-D07",
+          "LX-D08",
+          "LX-D09"
+        ]
       }
     ],
     "origin_app_packages": [

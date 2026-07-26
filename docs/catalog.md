@@ -19,15 +19,15 @@ Catalog data lives in `timiniprint/data`:
 A supported model entry represents a source-backed printer model that TiMini can print with. It contains:
 
 - `model_key`: stable public model key used by CLI/configs/manual selection
-- optional `marketing_name`: README-only product/store/manual name
-- `detections`: Bluetooth names, prefixes, and optional MAC suffix filters
+- optional `marketing_names`: product/store/manual aliases
+- `detections`: Bluetooth matching rules and optional aliases associated with each rule
 - `origin_app_packages`: source app package names
 - `profile_key`: shared printable profile recipe
 - optional `protocol_override`, `image_pipeline_override`, and runtime override fields
 
 Several model entries may point to the same profile when they use the same protocol recipe. If two source apps use the same advertised Bluetooth name for different protocols or values, keep both variants explicit and let automatic detection stay conservative.
 
-`marketing_name` is presentation metadata only. It must not be used as a Bluetooth detection trigger, CLI alias, GUI selector, or routing hint.
+Marketing names never trigger automatic Bluetooth detection. They are public catalog names, so they are shown in model inventories and can be used for explicit CLI/GUI selection.
 
 ## Unsupported Models
 
@@ -43,17 +43,37 @@ Use unsupported entries to:
 
 ## Detection Rules
 
-Each model has named detections. The displayed/public model name is attached to its own detection rule instead of being global metadata.
+Each model has one or more flat detection objects. A detection may also carry `marketing_names` when an alias belongs specifically to that rule:
+
+```json
+{
+  "marketing_names": ["Product family"],
+  "detections": [
+    {
+      "exact_names": ["BT-01"],
+      "prefixes": ["BT01-"],
+      "substrings": ["Core"],
+      "mac_suffixes": ["59"],
+      "marketing_names": ["Retail model"]
+    }
+  ]
+}
+```
+
+Put alternative triggers with the same MAC constraint and the same rule-specific marketing names in the arrays of one detection object. Add another detection object only when those constraints or associations differ.
 
 Detection supports:
 
 - `exact_names`: normalized advertised name must match exactly
 - `prefixes`: normalized advertised name must start with the prefix
+- `substrings`: normalized advertised name must contain the value
 - `mac_suffixes`: optional address suffix filter
 
 Matching is sorted by specificity. Longer and more constrained rules win over broader rules. Supported matches win over unsupported matches at equal specificity. If multiple supported models tie, automatic `detect_device(...)` returns `None` so the caller can ask the user to choose a model/source explicitly.
 
-Name normalization removes whitespace. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
+Raw trigger spelling is preserved for the public catalog. Private matching copies remove whitespace. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
+
+Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and `substrings`. One trailing `-` or `_` is removed from prefix/substring display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC suffixes are not public model names.
 
 ## Profiles
 
@@ -124,7 +144,7 @@ If `model_key` is present, deleting an override falls back to the current catalo
 
 ## README Rendering
 
-README model lists are generated from catalog data. Supported and unsupported lists should not duplicate separate presentation-only source files. README-only grouping should be derived from model entries, `marketing_name`, `profile_key`, or `profile_key_prediction` depending on whether the model is implemented.
+README model lists are generated from the same public-name union used by manual catalog lookup. Supported and unsupported lists should not duplicate separate presentation-only source files. Grouping should be derived from model entries, `profile_key`, or `profile_key_prediction` depending on whether the model is implemented.
 
 ## Audit Rules
 

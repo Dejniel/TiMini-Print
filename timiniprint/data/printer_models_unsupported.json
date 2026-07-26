@@ -6,12 +6,9 @@
     ],
     "detections": [
       {
-        "name": "P3",
-        "detection": {
-          "prefixes": [
-            "P3"
-          ]
-        }
+        "prefixes": [
+          "P3"
+        ]
       }
     ]
   },
@@ -22,12 +19,9 @@
     ],
     "detections": [
       {
-        "name": "GT08",
-        "detection": {
-          "prefixes": [
-            "GT08"
-          ]
-        }
+        "prefixes": [
+          "GT08"
+        ]
       }
     ]
   },
@@ -38,12 +32,9 @@
     ],
     "detections": [
       {
-        "name": "GW08",
-        "detection": {
-          "prefixes": [
-            "GW08"
-          ]
-        }
+        "prefixes": [
+          "GW08"
+        ]
       }
     ]
   },
@@ -55,26 +46,14 @@
     ],
     "detections": [
       {
-        "name": "CoreLargePrint",
-        "detection": {
-          "exact_names": [
-            "CoreLargePrint"
-          ],
-          "prefixes": [
-            "CoreLargePrint"
-          ]
-        }
-      },
-      {
-        "name": "Pro Printer",
-        "detection": {
-          "exact_names": [
-            "Pro Printer"
-          ],
-          "prefixes": [
-            "Pro Printer"
-          ]
-        }
+        "exact_names": [
+          "CoreLargePrint",
+          "Pro Printer"
+        ],
+        "prefixes": [
+          "CoreLargePrint",
+          "Pro Printer"
+        ]
       }
     ]
   },
@@ -86,15 +65,12 @@
     ],
     "detections": [
       {
-        "name": "Label Printer",
-        "detection": {
-          "exact_names": [
-            "Label Printer"
-          ],
-          "prefixes": [
-            "Label Printer"
-          ]
-        }
+        "exact_names": [
+          "Label Printer"
+        ],
+        "prefixes": [
+          "Label Printer"
+        ]
       }
     ]
   },
@@ -106,15 +82,12 @@
     ],
     "detections": [
       {
-        "name": "P12",
-        "detection": {
-          "prefixes": [
-            "P12"
-          ],
-          "exact_names": [
-            "P12"
-          ]
-        }
+        "exact_names": [
+          "P12"
+        ],
+        "prefixes": [
+          "P12"
+        ]
       }
     ]
   },
@@ -126,16 +99,13 @@
     ],
     "detections": [
       {
-        "name": "P12 Pro",
-        "detection": {
-          "prefixes": [
-            "P12 Pro",
-            "P12PRO"
-          ],
-          "exact_names": [
-            "P12 Pro"
-          ]
-        }
+        "exact_names": [
+          "P12 Pro"
+        ],
+        "prefixes": [
+          "P12 Pro",
+          "P12PRO"
+        ]
       }
     ]
   },
@@ -147,15 +117,12 @@
     ],
     "detections": [
       {
-        "name": "A30",
-        "detection": {
-          "prefixes": [
-            "A30"
-          ],
-          "exact_names": [
-            "A30"
-          ]
-        }
+        "exact_names": [
+          "A30"
+        ],
+        "prefixes": [
+          "A30"
+        ]
       }
     ]
   },
@@ -167,12 +134,9 @@
     ],
     "detections": [
       {
-        "name": "M03",
-        "detection": {
-          "exact_names": [
-            "M03"
-          ]
-        }
+        "exact_names": [
+          "M03"
+        ]
       }
     ]
   },
@@ -184,15 +148,12 @@
     ],
     "detections": [
       {
-        "name": "M200",
-        "detection": {
-          "prefixes": [
-            "M200"
-          ],
-          "exact_names": [
-            "M200"
-          ]
-        }
+        "exact_names": [
+          "M200"
+        ],
+        "prefixes": [
+          "M200"
+        ]
       }
     ]
   },
@@ -204,15 +165,12 @@
     ],
     "detections": [
       {
-        "name": "M250",
-        "detection": {
-          "prefixes": [
-            "M250"
-          ],
-          "exact_names": [
-            "M250"
-          ]
-        }
+        "exact_names": [
+          "M250"
+        ],
+        "prefixes": [
+          "M250"
+        ]
       }
     ]
   },
@@ -224,15 +182,12 @@
     ],
     "detections": [
       {
-        "name": "M221",
-        "detection": {
-          "prefixes": [
-            "M221"
-          ],
-          "exact_names": [
-            "M221"
-          ]
-        }
+        "exact_names": [
+          "M221"
+        ],
+        "prefixes": [
+          "M221"
+        ]
       }
     ]
   },
@@ -244,15 +199,12 @@
     ],
     "detections": [
       {
-        "name": "M260",
-        "detection": {
-          "prefixes": [
-            "M260"
-          ],
-          "exact_names": [
-            "M260"
-          ]
-        }
+        "exact_names": [
+          "M260"
+        ],
+        "prefixes": [
+          "M260"
+        ]
       }
     ]
   },
@@ -264,12 +216,9 @@
     ],
     "detections": [
       {
-        "name": "M04S",
-        "detection": {
-          "exact_names": [
-            "M04S"
-          ]
-        }
+        "exact_names": [
+          "M04S"
+        ]
       }
     ]
   },
@@ -281,12 +230,9 @@
     ],
     "detections": [
       {
-        "name": "M04AS",
-        "detection": {
-          "exact_names": [
-            "M04AS"
-          ]
-        }
+        "exact_names": [
+          "M04AS"
+        ]
       }
     ]
   },
@@ -298,15 +244,12 @@
     ],
     "detections": [
       {
-        "name": "D30",
-        "detection": {
-          "prefixes": [
-            "D30"
-          ],
-          "exact_names": [
-            "D30"
-          ]
-        }
+        "exact_names": [
+          "D30"
+        ],
+        "prefixes": [
+          "D30"
+        ]
       }
     ]
   },
@@ -318,15 +261,12 @@
     ],
     "detections": [
       {
-        "name": "D35",
-        "detection": {
-          "prefixes": [
-            "D35"
-          ],
-          "exact_names": [
-            "D35"
-          ]
-        }
+        "exact_names": [
+          "D35"
+        ],
+        "prefixes": [
+          "D35"
+        ]
       }
     ]
   },
@@ -338,15 +278,12 @@
     ],
     "detections": [
       {
-        "name": "D50",
-        "detection": {
-          "prefixes": [
-            "D50"
-          ],
-          "exact_names": [
-            "D50"
-          ]
-        }
+        "exact_names": [
+          "D50"
+        ],
+        "prefixes": [
+          "D50"
+        ]
       }
     ]
   },
@@ -358,15 +295,12 @@
     ],
     "detections": [
       {
-        "name": "Q30",
-        "detection": {
-          "prefixes": [
-            "Q30"
-          ],
-          "exact_names": [
-            "Q30"
-          ]
-        }
+        "exact_names": [
+          "Q30"
+        ],
+        "prefixes": [
+          "Q30"
+        ]
       }
     ]
   },
@@ -378,15 +312,12 @@
     ],
     "detections": [
       {
-        "name": "Q30S",
-        "detection": {
-          "prefixes": [
-            "Q30S"
-          ],
-          "exact_names": [
-            "Q30S"
-          ]
-        }
+        "exact_names": [
+          "Q30S"
+        ],
+        "prefixes": [
+          "Q30S"
+        ]
       }
     ]
   },
@@ -398,36 +329,12 @@
     ],
     "detections": [
       {
-        "name": "P3100",
-        "detection": {
-          "exact_names": [
-            "P3100"
-          ]
-        }
-      },
-      {
-        "name": "P3100D",
-        "detection": {
-          "exact_names": [
-            "P3100D"
-          ]
-        }
-      },
-      {
-        "name": "P3100J",
-        "detection": {
-          "exact_names": [
-            "P3100J"
-          ]
-        }
-      },
-      {
-        "name": "P3100DJ",
-        "detection": {
-          "exact_names": [
-            "P3100DJ"
-          ]
-        }
+        "exact_names": [
+          "P3100",
+          "P3100D",
+          "P3100J",
+          "P3100DJ"
+        ]
       }
     ]
   },
@@ -439,28 +346,11 @@
     ],
     "detections": [
       {
-        "name": "M02PRE",
-        "detection": {
-          "exact_names": [
-            "M02PRE"
-          ]
-        }
-      },
-      {
-        "name": "M02S-H",
-        "detection": {
-          "exact_names": [
-            "M02S-H"
-          ]
-        }
-      },
-      {
-        "name": "M02H",
-        "detection": {
-          "exact_names": [
-            "M02H"
-          ]
-        }
+        "exact_names": [
+          "M02PRE",
+          "M02S-H",
+          "M02H"
+        ]
       }
     ]
   },
@@ -472,20 +362,10 @@
     ],
     "detections": [
       {
-        "name": "M02X/L",
-        "detection": {
-          "exact_names": [
-            "M02X/L"
-          ]
-        }
-      },
-      {
-        "name": "M02L",
-        "detection": {
-          "exact_names": [
-            "M02L"
-          ]
-        }
+        "exact_names": [
+          "M02X/L",
+          "M02L"
+        ]
       }
     ]
   },
@@ -497,12 +377,9 @@
     ],
     "detections": [
       {
-        "name": "Q02",
-        "detection": {
-          "exact_names": [
-            "Q02"
-          ]
-        }
+        "exact_names": [
+          "Q02"
+        ]
       }
     ]
   },
@@ -514,20 +391,10 @@
     ],
     "detections": [
       {
-        "name": "Y02C",
-        "detection": {
-          "exact_names": [
-            "Y02C"
-          ]
-        }
-      },
-      {
-        "name": "Y02S",
-        "detection": {
-          "exact_names": [
-            "Y02S"
-          ]
-        }
+        "exact_names": [
+          "Y02C",
+          "Y02S"
+        ]
       }
     ]
   },
@@ -539,12 +406,9 @@
     ],
     "detections": [
       {
-        "name": "PM-241-BT",
-        "detection": {
-          "prefixes": [
-            "PM-241-BT"
-          ]
-        }
+        "prefixes": [
+          "PM-241-BT"
+        ]
       }
     ]
   },
@@ -556,22 +420,10 @@
     ],
     "detections": [
       {
-        "name": "PM241",
-        "detection": {
-          "prefixes": [
-            "PM241",
-            "PM 241"
-          ]
-        }
-      },
-      {
-        "name": "PM 241",
-        "detection": {
-          "prefixes": [
-            "PM241",
-            "PM 241"
-          ]
-        }
+        "prefixes": [
+          "PM241",
+          "PM 241"
+        ]
       }
     ]
   },
@@ -583,12 +435,9 @@
     ],
     "detections": [
       {
-        "name": "LP100",
-        "detection": {
-          "exact_names": [
-            "LP100"
-          ]
-        }
+        "exact_names": [
+          "LP100"
+        ]
       }
     ]
   },
@@ -600,12 +449,9 @@
     ],
     "detections": [
       {
-        "name": "LP220",
-        "detection": {
-          "exact_names": [
-            "LP220"
-          ]
-        }
+        "exact_names": [
+          "LP220"
+        ]
       }
     ]
   },
@@ -617,12 +463,9 @@
     ],
     "detections": [
       {
-        "name": "LY100_BLE",
-        "detection": {
-          "exact_names": [
-            "LY100_BLE"
-          ]
-        }
+        "exact_names": [
+          "LY100_BLE"
+        ]
       }
     ]
   },
@@ -634,12 +477,9 @@
     ],
     "detections": [
       {
-        "name": "LP100S",
-        "detection": {
-          "exact_names": [
-            "LP100S"
-          ]
-        }
+        "exact_names": [
+          "LP100S"
+        ]
       }
     ]
   },
@@ -651,12 +491,9 @@
     ],
     "detections": [
       {
-        "name": "LP220S",
-        "detection": {
-          "exact_names": [
-            "LP220S"
-          ]
-        }
+        "exact_names": [
+          "LP220S"
+        ]
       }
     ]
   },
@@ -668,12 +505,9 @@
     ],
     "detections": [
       {
-        "name": "P100",
-        "detection": {
-          "exact_names": [
-            "P100"
-          ]
-        }
+        "exact_names": [
+          "P100"
+        ]
       }
     ]
   },
@@ -685,12 +519,9 @@
     ],
     "detections": [
       {
-        "name": "MP100",
-        "detection": {
-          "exact_names": [
-            "MP100"
-          ]
-        }
+        "exact_names": [
+          "MP100"
+        ]
       }
     ]
   },
@@ -702,12 +533,9 @@
     ],
     "detections": [
       {
-        "name": "MP200",
-        "detection": {
-          "exact_names": [
-            "MP200"
-          ]
-        }
+        "exact_names": [
+          "MP200"
+        ]
       }
     ]
   },
@@ -719,12 +547,9 @@
     ],
     "detections": [
       {
-        "name": "MP220",
-        "detection": {
-          "exact_names": [
-            "MP220"
-          ]
-        }
+        "exact_names": [
+          "MP220"
+        ]
       }
     ]
   },
@@ -736,12 +561,9 @@
     ],
     "detections": [
       {
-        "name": "YINTIBAO-V5",
-        "detection": {
-          "exact_names": [
-            "YINTIBAO-V5"
-          ]
-        }
+        "exact_names": [
+          "YINTIBAO-V5"
+        ]
       }
     ]
   },
@@ -753,12 +575,9 @@
     ],
     "detections": [
       {
-        "name": "AEQ918N4",
-        "detection": {
-          "exact_names": [
-            "AEQ918N4"
-          ]
-        }
+        "exact_names": [
+          "AEQ918N4"
+        ]
       }
     ]
   },
@@ -770,12 +589,9 @@
     ],
     "detections": [
       {
-        "name": "P100S",
-        "detection": {
-          "exact_names": [
-            "P100S"
-          ]
-        }
+        "exact_names": [
+          "P100S"
+        ]
       }
     ]
   },
@@ -787,12 +603,9 @@
     ],
     "detections": [
       {
-        "name": "MP100S",
-        "detection": {
-          "exact_names": [
-            "MP100S"
-          ]
-        }
+        "exact_names": [
+          "MP100S"
+        ]
       }
     ]
   },
@@ -804,12 +617,9 @@
     ],
     "detections": [
       {
-        "name": "MP200S",
-        "detection": {
-          "exact_names": [
-            "MP200S"
-          ]
-        }
+        "exact_names": [
+          "MP200S"
+        ]
       }
     ]
   },
@@ -821,12 +631,9 @@
     ],
     "detections": [
       {
-        "name": "MP220S",
-        "detection": {
-          "exact_names": [
-            "MP220S"
-          ]
-        }
+        "exact_names": [
+          "MP220S"
+        ]
       }
     ]
   },
@@ -838,12 +645,9 @@
     ],
     "detections": [
       {
-        "name": "YINTIBAO-V5PRO",
-        "detection": {
-          "exact_names": [
-            "YINTIBAO-V5PRO"
-          ]
-        }
+        "exact_names": [
+          "YINTIBAO-V5PRO"
+        ]
       }
     ]
   },
@@ -854,12 +658,9 @@
     ],
     "detections": [
       {
-        "name": "MP300",
-        "detection": {
-          "exact_names": [
-            "MP300"
-          ]
-        }
+        "exact_names": [
+          "MP300"
+        ]
       }
     ]
   },
@@ -871,12 +672,9 @@
     ],
     "detections": [
       {
-        "name": "P3S",
-        "detection": {
-          "exact_names": [
-            "P3S"
-          ]
-        }
+        "exact_names": [
+          "P3S"
+        ]
       }
     ]
   },
@@ -888,12 +686,9 @@
     ],
     "detections": [
       {
-        "name": "MP300S",
-        "detection": {
-          "exact_names": [
-            "MP300S"
-          ]
-        }
+        "exact_names": [
+          "MP300S"
+        ]
       }
     ]
   },
@@ -905,12 +700,9 @@
     ],
     "detections": [
       {
-        "name": "M08F",
-        "detection": {
-          "exact_names": [
-            "M08F"
-          ]
-        }
+        "exact_names": [
+          "M08F"
+        ]
       }
     ]
   },
@@ -922,12 +714,9 @@
     ],
     "detections": [
       {
-        "name": "TP81",
-        "detection": {
-          "exact_names": [
-            "TP81"
-          ]
-        }
+        "exact_names": [
+          "TP81"
+        ]
       }
     ]
   },
@@ -939,12 +728,9 @@
     ],
     "detections": [
       {
-        "name": "TP84",
-        "detection": {
-          "exact_names": [
-            "TP84"
-          ]
-        }
+        "exact_names": [
+          "TP84"
+        ]
       }
     ]
   },
@@ -956,12 +742,9 @@
     ],
     "detections": [
       {
-        "name": "TP85",
-        "detection": {
-          "exact_names": [
-            "TP85"
-          ]
-        }
+        "exact_names": [
+          "TP85"
+        ]
       }
     ]
   },
@@ -973,12 +756,9 @@
     ],
     "detections": [
       {
-        "name": "TP86",
-        "detection": {
-          "exact_names": [
-            "TP86"
-          ]
-        }
+        "exact_names": [
+          "TP86"
+        ]
       }
     ]
   },
@@ -990,12 +770,9 @@
     ],
     "detections": [
       {
-        "name": "TP87",
-        "detection": {
-          "exact_names": [
-            "TP87"
-          ]
-        }
+        "exact_names": [
+          "TP87"
+        ]
       }
     ]
   },
@@ -1007,12 +784,9 @@
     ],
     "detections": [
       {
-        "name": "TP88",
-        "detection": {
-          "exact_names": [
-            "TP88"
-          ]
-        }
+        "exact_names": [
+          "TP88"
+        ]
       }
     ]
   },
@@ -1024,12 +798,9 @@
     ],
     "detections": [
       {
-        "name": "M832",
-        "detection": {
-          "exact_names": [
-            "M832"
-          ]
-        }
+        "exact_names": [
+          "M832"
+        ]
       }
     ]
   },
@@ -1041,12 +812,9 @@
     ],
     "detections": [
       {
-        "name": "M836",
-        "detection": {
-          "exact_names": [
-            "M836"
-          ]
-        }
+        "exact_names": [
+          "M836"
+        ]
       }
     ]
   },
@@ -1058,12 +826,9 @@
     ],
     "detections": [
       {
-        "name": "Q302",
-        "detection": {
-          "exact_names": [
-            "Q302"
-          ]
-        }
+        "exact_names": [
+          "Q302"
+        ]
       }
     ]
   },
@@ -1075,12 +840,9 @@
     ],
     "detections": [
       {
-        "name": "Q580",
-        "detection": {
-          "exact_names": [
-            "Q580"
-          ]
-        }
+        "exact_names": [
+          "Q580"
+        ]
       }
     ]
   },
@@ -1092,12 +854,9 @@
     ],
     "detections": [
       {
-        "name": "MXW-A4",
-        "detection": {
-          "exact_names": [
-            "MXW-A4"
-          ]
-        }
+        "exact_names": [
+          "MXW-A4"
+        ]
       }
     ]
   },
@@ -1109,12 +868,9 @@
     ],
     "detections": [
       {
-        "name": "JXPRINTER",
-        "detection": {
-          "exact_names": [
-            "JXPRINTER"
-          ]
-        }
+        "exact_names": [
+          "JXPRINTER"
+        ]
       }
     ]
   },
@@ -1126,12 +882,9 @@
     ],
     "detections": [
       {
-        "name": "PRINTER",
-        "detection": {
-          "exact_names": [
-            "PRINTER"
-          ]
-        }
+        "exact_names": [
+          "PRINTER"
+        ]
       }
     ]
   },
@@ -1143,12 +896,9 @@
     ],
     "detections": [
       {
-        "name": "BAYPAGE",
-        "detection": {
-          "prefixes": [
-            "BAYPAGE"
-          ]
-        }
+        "prefixes": [
+          "BAYPAGE"
+        ]
       }
     ]
   },
@@ -1160,12 +910,9 @@
     ],
     "detections": [
       {
-        "name": "YINTIBAO-V8S",
-        "detection": {
-          "prefixes": [
-            "YINTIBAO-V8S"
-          ]
-        }
+        "prefixes": [
+          "YINTIBAO-V8S"
+        ]
       }
     ]
   },
@@ -1176,12 +923,9 @@
     ],
     "detections": [
       {
-        "name": "JX400R06P",
-        "detection": {
-          "prefixes": [
-            "JX400R06P"
-          ]
-        }
+        "prefixes": [
+          "JX400R06P"
+        ]
       }
     ]
   },
@@ -1192,12 +936,9 @@
     ],
     "detections": [
       {
-        "name": "JX400R",
-        "detection": {
-          "prefixes": [
-            "JX400R"
-          ]
-        }
+        "prefixes": [
+          "JX400R"
+        ]
       }
     ]
   },
@@ -1209,12 +950,9 @@
     ],
     "detections": [
       {
-        "name": "YINTIBAO",
-        "detection": {
-          "exact_names": [
-            "YINTIBAO"
-          ]
-        }
+        "exact_names": [
+          "YINTIBAO"
+        ]
       }
     ]
   },
@@ -1226,12 +964,9 @@
     ],
     "detections": [
       {
-        "name": "PAPERGO",
-        "detection": {
-          "exact_names": [
-            "PAPERGO"
-          ]
-        }
+        "exact_names": [
+          "PAPERGO"
+        ]
       }
     ]
   },
@@ -1243,12 +978,9 @@
     ],
     "detections": [
       {
-        "name": "B1",
-        "detection": {
-          "prefixes": [
-            "B1"
-          ]
-        }
+        "prefixes": [
+          "B1"
+        ]
       }
     ]
   },
@@ -1260,12 +992,9 @@
     ],
     "detections": [
       {
-        "name": "B1 Pro",
-        "detection": {
-          "prefixes": [
-            "B1 Pro"
-          ]
-        }
+        "prefixes": [
+          "B1 Pro"
+        ]
       }
     ]
   },
@@ -1277,12 +1006,9 @@
     ],
     "detections": [
       {
-        "name": "B18",
-        "detection": {
-          "prefixes": [
-            "B18"
-          ]
-        }
+        "prefixes": [
+          "B18"
+        ]
       }
     ]
   },
@@ -1294,12 +1020,9 @@
     ],
     "detections": [
       {
-        "name": "B18S",
-        "detection": {
-          "prefixes": [
-            "B18S"
-          ]
-        }
+        "prefixes": [
+          "B18S"
+        ]
       }
     ]
   },
@@ -1311,12 +1034,9 @@
     ],
     "detections": [
       {
-        "name": "B21",
-        "detection": {
-          "prefixes": [
-            "B21"
-          ]
-        }
+        "prefixes": [
+          "B21"
+        ]
       }
     ]
   },
@@ -1328,12 +1048,9 @@
     ],
     "detections": [
       {
-        "name": "B21-C2B",
-        "detection": {
-          "prefixes": [
-            "B21-C2B"
-          ]
-        }
+        "prefixes": [
+          "B21-C2B"
+        ]
       }
     ]
   },
@@ -1345,12 +1062,9 @@
     ],
     "detections": [
       {
-        "name": "B21-L2B",
-        "detection": {
-          "prefixes": [
-            "B21-L2B"
-          ]
-        }
+        "prefixes": [
+          "B21-L2B"
+        ]
       }
     ]
   },
@@ -1362,12 +1076,9 @@
     ],
     "detections": [
       {
-        "name": "B21S",
-        "detection": {
-          "prefixes": [
-            "B21S"
-          ]
-        }
+        "prefixes": [
+          "B21S"
+        ]
       }
     ]
   },
@@ -1379,12 +1090,9 @@
     ],
     "detections": [
       {
-        "name": "B21S-C2B",
-        "detection": {
-          "prefixes": [
-            "B21S-C2B"
-          ]
-        }
+        "prefixes": [
+          "B21S-C2B"
+        ]
       }
     ]
   },
@@ -1396,12 +1104,9 @@
     ],
     "detections": [
       {
-        "name": "B21_Pro",
-        "detection": {
-          "prefixes": [
-            "B21_Pro"
-          ]
-        }
+        "prefixes": [
+          "B21_Pro"
+        ]
       }
     ]
   },
@@ -1413,12 +1118,9 @@
     ],
     "detections": [
       {
-        "name": "B24",
-        "detection": {
-          "prefixes": [
-            "B24"
-          ]
-        }
+        "prefixes": [
+          "B24"
+        ]
       }
     ]
   },
@@ -1430,12 +1132,9 @@
     ],
     "detections": [
       {
-        "name": "B3S",
-        "detection": {
-          "prefixes": [
-            "B3S"
-          ]
-        }
+        "prefixes": [
+          "B3S"
+        ]
       }
     ]
   },
@@ -1447,12 +1146,9 @@
     ],
     "detections": [
       {
-        "name": "B3S_P",
-        "detection": {
-          "prefixes": [
-            "B3S_P"
-          ]
-        }
+        "prefixes": [
+          "B3S_P"
+        ]
       }
     ]
   },
@@ -1464,12 +1160,9 @@
     ],
     "detections": [
       {
-        "name": "D101",
-        "detection": {
-          "prefixes": [
-            "D101"
-          ]
-        }
+        "prefixes": [
+          "D101"
+        ]
       }
     ]
   },
@@ -1481,12 +1174,9 @@
     ],
     "detections": [
       {
-        "name": "D11_H",
-        "detection": {
-          "prefixes": [
-            "D11_H"
-          ]
-        }
+        "prefixes": [
+          "D11_H"
+        ]
       }
     ]
   },
@@ -1497,12 +1187,9 @@
     ],
     "detections": [
       {
-        "name": "D110_M",
-        "detection": {
-          "prefixes": [
-            "D110_M"
-          ]
-        }
+        "prefixes": [
+          "D110_M"
+        ]
       }
     ]
   },
@@ -1513,12 +1200,9 @@
     ],
     "detections": [
       {
-        "name": "Hi-D110",
-        "detection": {
-          "prefixes": [
-            "Hi-D110"
-          ]
-        }
+        "prefixes": [
+          "Hi-D110"
+        ]
       }
     ]
   },
@@ -1530,12 +1214,9 @@
     ],
     "detections": [
       {
-        "name": "Hi-NB-D11",
-        "detection": {
-          "prefixes": [
-            "Hi-NB-D11"
-          ]
-        }
+        "prefixes": [
+          "Hi-NB-D11"
+        ]
       }
     ]
   },
@@ -1547,12 +1228,9 @@
     ],
     "detections": [
       {
-        "name": "JCB3S",
-        "detection": {
-          "prefixes": [
-            "JCB3S"
-          ]
-        }
+        "prefixes": [
+          "JCB3S"
+        ]
       }
     ]
   },
@@ -1564,12 +1242,9 @@
     ],
     "detections": [
       {
-        "name": "M2_H",
-        "detection": {
-          "prefixes": [
-            "M2_H"
-          ]
-        }
+        "prefixes": [
+          "M2_H"
+        ]
       }
     ]
   },
@@ -1581,12 +1256,9 @@
     ],
     "detections": [
       {
-        "name": "N1",
-        "detection": {
-          "prefixes": [
-            "N1"
-          ]
-        }
+        "prefixes": [
+          "N1"
+        ]
       }
     ]
   },
@@ -1598,12 +1270,9 @@
     ],
     "detections": [
       {
-        "name": "S6",
-        "detection": {
-          "prefixes": [
-            "S6"
-          ]
-        }
+        "prefixes": [
+          "S6"
+        ]
       }
     ]
   },
@@ -1615,36 +1284,12 @@
     ],
     "detections": [
       {
-        "name": "MPL11",
-        "detection": {
-          "prefixes": [
-            "MPL11_"
-          ]
-        }
-      },
-      {
-        "name": "D11s",
-        "detection": {
-          "prefixes": [
-            "D11s_"
-          ]
-        }
-      },
-      {
-        "name": "FICHERO_5836",
-        "detection": {
-          "prefixes": [
-            "FICHERO_5836"
-          ]
-        }
-      },
-      {
-        "name": "MULLER_6473",
-        "detection": {
-          "prefixes": [
-            "MULLER_6473"
-          ]
-        }
+        "prefixes": [
+          "MPL11_",
+          "D11s_",
+          "FICHERO_5836",
+          "MULLER_6473"
+        ]
       }
     ]
   },
@@ -1656,12 +1301,9 @@
     ],
     "detections": [
       {
-        "name": "AL200",
-        "detection": {
-          "prefixes": [
-            "AL200-"
-          ]
-        }
+        "prefixes": [
+          "AL200-"
+        ]
       }
     ]
   },
@@ -1673,12 +1315,9 @@
     ],
     "detections": [
       {
-        "name": "AL2",
-        "detection": {
-          "prefixes": [
-            "AL2_"
-          ]
-        }
+        "prefixes": [
+          "AL2_"
+        ]
       }
     ]
   },
@@ -1690,12 +1329,9 @@
     ],
     "detections": [
       {
-        "name": "RPP02N",
-        "detection": {
-          "prefixes": [
-            "RPP02N"
-          ]
-        }
+        "prefixes": [
+          "RPP02N"
+        ]
       }
     ]
   },
@@ -1707,12 +1343,9 @@
     ],
     "detections": [
       {
-        "name": "D12",
-        "detection": {
-          "prefixes": [
-            "D12_"
-          ]
-        }
+        "prefixes": [
+          "D12_"
+        ]
       }
     ]
   },
@@ -1724,12 +1357,12 @@
     ],
     "detections": [
       {
-        "name": "C2",
-        "detection": {
-          "prefixes": [
-            "PPC2_"
-          ]
-        }
+        "prefixes": [
+          "PPC2_"
+        ],
+        "marketing_names": [
+          "C2"
+        ]
       }
     ]
   },
@@ -1741,13 +1374,13 @@
     ],
     "detections": [
       {
-        "name": "C3",
-        "detection": {
-          "prefixes": [
-            "LPC3_",
-            "DP_ITP07_"
-          ]
-        }
+        "prefixes": [
+          "LPC3_",
+          "DP_ITP07_"
+        ],
+        "marketing_names": [
+          "C3"
+        ]
       }
     ]
   },
@@ -1759,13 +1392,13 @@
     ],
     "detections": [
       {
-        "name": "C16",
-        "detection": {
-          "prefixes": [
-            "MPC16_",
-            "15P3Pro_"
-          ]
-        }
+        "prefixes": [
+          "MPC16_",
+          "15P3Pro_"
+        ],
+        "marketing_names": [
+          "C16"
+        ]
       }
     ]
   },
@@ -1777,12 +1410,9 @@
     ],
     "detections": [
       {
-        "name": "D82",
-        "detection": {
-          "prefixes": [
-            "D82_"
-          ]
-        }
+        "prefixes": [
+          "D82_"
+        ]
       }
     ]
   },
@@ -1794,12 +1424,9 @@
     ],
     "detections": [
       {
-        "name": "D82S",
-        "detection": {
-          "prefixes": [
-            "D82S_"
-          ]
-        }
+        "prefixes": [
+          "D82S_"
+        ]
       }
     ]
   },
@@ -1811,12 +1438,9 @@
     ],
     "detections": [
       {
-        "name": "D83",
-        "detection": {
-          "prefixes": [
-            "D83_"
-          ]
-        }
+        "prefixes": [
+          "D83_"
+        ]
       }
     ]
   },
@@ -1828,12 +1452,9 @@
     ],
     "detections": [
       {
-        "name": "A10",
-        "detection": {
-          "prefixes": [
-            "A10_"
-          ]
-        }
+        "prefixes": [
+          "A10_"
+        ]
       }
     ]
   },
@@ -1845,12 +1466,9 @@
     ],
     "detections": [
       {
-        "name": "FICHERO_6181",
-        "detection": {
-          "prefixes": [
-            "FICHERO_6181"
-          ]
-        }
+        "prefixes": [
+          "FICHERO_6181"
+        ]
       }
     ]
   },
@@ -1862,12 +1480,9 @@
     ],
     "detections": [
       {
-        "name": "D400",
-        "detection": {
-          "prefixes": [
-            "D400_"
-          ]
-        }
+        "prefixes": [
+          "D400_"
+        ]
       }
     ]
   },
@@ -1879,12 +1494,9 @@
     ],
     "detections": [
       {
-        "name": "Y810BT",
-        "detection": {
-          "prefixes": [
-            "Y810BT-"
-          ]
-        }
+        "prefixes": [
+          "Y810BT-"
+        ]
       }
     ]
   },
@@ -1896,13 +1508,10 @@
     ],
     "detections": [
       {
-        "name": "QR380A",
-        "detection": {
-          "prefixes": [
-            "QR380A_",
-            "QR380A-"
-          ]
-        }
+        "prefixes": [
+          "QR380A_",
+          "QR380A-"
+        ]
       }
     ]
   },
@@ -1914,12 +1523,9 @@
     ],
     "detections": [
       {
-        "name": "TB41",
-        "detection": {
-          "prefixes": [
-            "TB41_"
-          ]
-        }
+        "prefixes": [
+          "TB41_"
+        ]
       }
     ]
   },
@@ -1931,13 +1537,10 @@
     ],
     "detections": [
       {
-        "name": "QR_386A",
-        "detection": {
-          "prefixes": [
-            "QR_386A_",
-            "QR-386A-"
-          ]
-        }
+        "prefixes": [
+          "QR_386A_",
+          "QR-386A-"
+        ]
       }
     ]
   },
@@ -1949,12 +1552,9 @@
     ],
     "detections": [
       {
-        "name": "ITPP941",
-        "detection": {
-          "prefixes": [
-            "ITPP941_"
-          ]
-        }
+        "prefixes": [
+          "ITPP941_"
+        ]
       }
     ]
   },
@@ -1966,12 +1566,9 @@
     ],
     "detections": [
       {
-        "name": "P80S",
-        "detection": {
-          "prefixes": [
-            "P80S-"
-          ]
-        }
+        "prefixes": [
+          "P80S-"
+        ]
       }
     ]
   },
@@ -1983,12 +1580,9 @@
     ],
     "detections": [
       {
-        "name": "ITPP130B",
-        "detection": {
-          "prefixes": [
-            "ITPP130B-"
-          ]
-        }
+        "prefixes": [
+          "ITPP130B-"
+        ]
       }
     ]
   },
@@ -2000,12 +1594,12 @@
     ],
     "detections": [
       {
-        "name": "ITP05N",
-        "detection": {
-          "prefixes": [
-            "DP_ITP05N_"
-          ]
-        }
+        "prefixes": [
+          "DP_ITP05N_"
+        ],
+        "marketing_names": [
+          "ITP05N"
+        ]
       }
     ]
   },
@@ -2017,12 +1611,12 @@
     ],
     "detections": [
       {
-        "name": "ITP06N",
-        "detection": {
-          "prefixes": [
-            "DP_ITP06N_"
-          ]
-        }
+        "prefixes": [
+          "DP_ITP06N_"
+        ],
+        "marketing_names": [
+          "ITP06N"
+        ]
       }
     ]
   },
@@ -2034,12 +1628,9 @@
     ],
     "detections": [
       {
-        "name": "PCPS_D80",
-        "detection": {
-          "prefixes": [
-            "PCPS_D80_"
-          ]
-        }
+        "prefixes": [
+          "PCPS_D80_"
+        ]
       }
     ]
   },
@@ -2051,12 +1642,9 @@
     ],
     "detections": [
       {
-        "name": "DP_A80",
-        "detection": {
-          "prefixes": [
-            "DP_A80_"
-          ]
-        }
+        "prefixes": [
+          "DP_A80_"
+        ]
       }
     ]
   },
@@ -2068,12 +1656,9 @@
     ],
     "detections": [
       {
-        "name": "DP_A80S",
-        "detection": {
-          "prefixes": [
-            "DP_A80S_"
-          ]
-        }
+        "prefixes": [
+          "DP_A80S_"
+        ]
       }
     ]
   },
@@ -2085,12 +1670,9 @@
     ],
     "detections": [
       {
-        "name": "DP_A80W",
-        "detection": {
-          "prefixes": [
-            "DP_A80W_"
-          ]
-        }
+        "prefixes": [
+          "DP_A80W_"
+        ]
       }
     ]
   },
@@ -2102,12 +1684,9 @@
     ],
     "detections": [
       {
-        "name": "PD_A4",
-        "detection": {
-          "prefixes": [
-            "PD_A4"
-          ]
-        }
+        "prefixes": [
+          "PD_A4"
+        ]
       }
     ]
   },
@@ -2119,12 +1698,9 @@
     ],
     "detections": [
       {
-        "name": "GD-88",
-        "detection": {
-          "prefixes": [
-            "GD-88_"
-          ]
-        }
+        "prefixes": [
+          "GD-88_"
+        ]
       }
     ]
   },
@@ -2136,12 +1712,9 @@
     ],
     "detections": [
       {
-        "name": "D61",
-        "detection": {
-          "prefixes": [
-            "D61"
-          ]
-        }
+        "prefixes": [
+          "D61"
+        ]
       }
     ]
   },
@@ -2153,12 +1726,9 @@
     ],
     "detections": [
       {
-        "name": "D41",
-        "detection": {
-          "prefixes": [
-            "D41"
-          ]
-        }
+        "prefixes": [
+          "D41"
+        ]
       }
     ]
   },
@@ -2170,12 +1740,9 @@
     ],
     "detections": [
       {
-        "name": "Dxx",
-        "detection": {
-          "prefixes": [
-            "Dxx"
-          ]
-        }
+        "prefixes": [
+          "Dxx"
+        ]
       }
     ]
   },
@@ -2187,12 +1754,9 @@
     ],
     "detections": [
       {
-        "name": "Fust",
-        "detection": {
-          "prefixes": [
-            "Fust"
-          ]
-        }
+        "prefixes": [
+          "Fust"
+        ]
       }
     ]
   },
@@ -2204,12 +1768,9 @@
     ],
     "detections": [
       {
-        "name": "D11_Pro",
-        "detection": {
-          "prefixes": [
-            "D11_Pro"
-          ]
-        }
+        "prefixes": [
+          "D11_Pro"
+        ]
       }
     ]
   },
@@ -2221,12 +1782,9 @@
     ],
     "detections": [
       {
-        "name": "Betty",
-        "detection": {
-          "prefixes": [
-            "Betty"
-          ]
-        }
+        "prefixes": [
+          "Betty"
+        ]
       }
     ]
   },
@@ -2238,12 +1796,9 @@
     ],
     "detections": [
       {
-        "name": "S6_P",
-        "detection": {
-          "prefixes": [
-            "S6_P"
-          ]
-        }
+        "prefixes": [
+          "S6_P"
+        ]
       }
     ]
   },
@@ -2255,26 +1810,14 @@
     ],
     "detections": [
       {
-        "name": "BMW-M3",
-        "detection": {
-          "exact_names": [
-            "BMW-M3"
-          ],
-          "prefixes": [
-            "BMW-M3"
-          ]
-        }
-      },
-      {
-        "name": "YCN-M3",
-        "detection": {
-          "exact_names": [
-            "YCN-M3"
-          ],
-          "prefixes": [
-            "YCN-M3"
-          ]
-        }
+        "exact_names": [
+          "BMW-M3",
+          "YCN-M3"
+        ],
+        "prefixes": [
+          "BMW-M3",
+          "YCN-M3"
+        ]
       }
     ]
   },
@@ -2286,37 +1829,16 @@
     ],
     "detections": [
       {
-        "name": "M8",
-        "detection": {
-          "exact_names": [
-            "M8"
-          ],
-          "prefixes": [
-            "M8"
-          ]
-        }
-      },
-      {
-        "name": "D68",
-        "detection": {
-          "exact_names": [
-            "D68"
-          ],
-          "prefixes": [
-            "D68"
-          ]
-        }
-      },
-      {
-        "name": "D80",
-        "detection": {
-          "exact_names": [
-            "D80"
-          ],
-          "prefixes": [
-            "D80"
-          ]
-        }
+        "exact_names": [
+          "M8",
+          "D68",
+          "D80"
+        ],
+        "prefixes": [
+          "M8",
+          "D68",
+          "D80"
+        ]
       }
     ]
   },
@@ -2328,44 +1850,18 @@
     ],
     "detections": [
       {
-        "name": "M110C",
-        "detection": {
-          "exact_names": [
-            "M110C"
-          ],
-          "prefixes": [
-            "Q199",
-            "Q450",
-            "Q467"
-          ]
-        }
-      },
-      {
-        "name": "M110SA",
-        "detection": {
-          "exact_names": [
-            "M110SA"
-          ],
-          "prefixes": [
-            "Q522"
-          ]
-        }
-      },
-      {
-        "name": "111",
-        "detection": {
-          "exact_names": [
-            "111"
-          ]
-        }
-      },
-      {
-        "name": "A42",
-        "detection": {
-          "exact_names": [
-            "A42"
-          ]
-        }
+        "exact_names": [
+          "M110C",
+          "M110SA",
+          "111",
+          "A42"
+        ],
+        "prefixes": [
+          "Q199",
+          "Q450",
+          "Q467",
+          "Q522"
+        ]
       }
     ]
   },
@@ -2377,38 +1873,17 @@
     ],
     "detections": [
       {
-        "name": "M120C",
-        "detection": {
-          "exact_names": [
-            "M120C"
-          ],
-          "prefixes": [
-            "Q158",
-            "Q193"
-          ]
-        }
-      },
-      {
-        "name": "M126",
-        "detection": {
-          "exact_names": [
-            "M126"
-          ],
-          "prefixes": [
-            "Q038"
-          ]
-        }
-      },
-      {
-        "name": "M8-BK",
-        "detection": {
-          "exact_names": [
-            "M8-BK"
-          ],
-          "prefixes": [
-            "Q274"
-          ]
-        }
+        "exact_names": [
+          "M120C",
+          "M126",
+          "M8-BK"
+        ],
+        "prefixes": [
+          "Q158",
+          "Q193",
+          "Q038",
+          "Q274"
+        ]
       }
     ]
   },
@@ -2420,40 +1895,18 @@
     ],
     "detections": [
       {
-        "name": "M150",
-        "detection": {
-          "exact_names": [
-            "M150"
-          ],
-          "prefixes": [
-            "Q377",
-            "Q424",
-            "Q448"
-          ]
-        }
-      },
-      {
-        "name": "M100",
-        "detection": {
-          "exact_names": [
-            "M100"
-          ],
-          "prefixes": [
-            "Q378",
-            "Q449"
-          ]
-        }
-      },
-      {
-        "name": "M160",
-        "detection": {
-          "exact_names": [
-            "M160"
-          ],
-          "prefixes": [
-            "Q424"
-          ]
-        }
+        "exact_names": [
+          "M150",
+          "M100",
+          "M160"
+        ],
+        "prefixes": [
+          "Q377",
+          "Q424",
+          "Q448",
+          "Q378",
+          "Q449"
+        ]
       }
     ]
   },
@@ -2465,212 +1918,56 @@
     ],
     "detections": [
       {
-        "name": "M200",
-        "detection": {
-          "exact_names": [
-            "M200"
-          ],
-          "prefixes": [
-            "Q006",
-            "Q086",
-            "Q104",
-            "Q121",
-            "Q156",
-            "Q452"
-          ]
-        }
-      },
-      {
-        "name": "M206",
-        "detection": {
-          "exact_names": [
-            "M206"
-          ],
-          "prefixes": [
-            "Q017"
-          ]
-        }
-      },
-      {
-        "name": "M208",
-        "detection": {
-          "exact_names": [
-            "M208"
-          ],
-          "prefixes": [
-            "Q053"
-          ]
-        }
-      },
-      {
-        "name": "M209",
-        "detection": {
-          "exact_names": [
-            "M209"
-          ],
-          "prefixes": [
-            "Q305"
-          ]
-        }
-      },
-      {
-        "name": "M220",
-        "detection": {
-          "exact_names": [
-            "M220"
-          ],
-          "prefixes": [
-            "Q054",
-            "Q155"
-          ]
-        }
-      },
-      {
-        "name": "M220S",
-        "detection": {
-          "exact_names": [
-            "M220S"
-          ],
-          "prefixes": [
-            "Q058"
-          ]
-        }
-      },
-      {
-        "name": "M220C",
-        "detection": {
-          "exact_names": [
-            "M220C"
-          ],
-          "prefixes": [
-            "Q198",
-            "Q453",
-            "Q584"
-          ]
-        }
-      },
-      {
-        "name": "M219",
-        "detection": {
-          "exact_names": [
-            "M219"
-          ],
-          "prefixes": [
-            "Q057",
-            "Q157"
-          ]
-        }
-      },
-      {
-        "name": "M200C",
-        "detection": {
-          "exact_names": [
-            "M200C"
-          ],
-          "prefixes": [
-            "Q197"
-          ]
-        }
-      },
-      {
-        "name": "M221",
-        "detection": {
-          "exact_names": [
-            "M221"
-          ],
-          "prefixes": [
-            "Q218",
-            "Q420",
-            "Q421",
-            "Q454",
-            "Q523",
-            "Q525",
-            "Q526",
-            "Q554",
-            "Q555",
-            "Q632",
-            "Q633"
-          ]
-        }
-      },
-      {
-        "name": "M250",
-        "detection": {
-          "exact_names": [
-            "M250"
-          ],
-          "prefixes": [
-            "Q420",
-            "Q554"
-          ]
-        }
-      },
-      {
-        "name": "M260",
-        "detection": {
-          "exact_names": [
-            "M260"
-          ],
-          "prefixes": [
-            "Q421",
-            "Q555"
-          ]
-        }
-      },
-      {
-        "name": "M220A",
-        "detection": {
-          "exact_names": [
-            "M220A"
-          ],
-          "prefixes": [
-            "Q523"
-          ]
-        }
-      },
-      {
-        "name": "M320",
-        "detection": {
-          "exact_names": [
-            "M320"
-          ],
-          "prefixes": [
-            "Q526"
-          ]
-        }
-      },
-      {
-        "name": "M321",
-        "detection": {
-          "exact_names": [
-            "M321"
-          ],
-          "prefixes": [
-            "Q525"
-          ]
-        }
-      },
-      {
-        "name": "A43",
-        "detection": {
-          "exact_names": [
-            "A43"
-          ],
-          "prefixes": [
-            "Q632"
-          ]
-        }
-      },
-      {
-        "name": "A431",
-        "detection": {
-          "exact_names": [
-            "A431"
-          ],
-          "prefixes": [
-            "Q633"
-          ]
-        }
+        "exact_names": [
+          "M200",
+          "M206",
+          "M208",
+          "M209",
+          "M220",
+          "M220S",
+          "M220C",
+          "M219",
+          "M200C",
+          "M221",
+          "M250",
+          "M260",
+          "M220A",
+          "M320",
+          "M321",
+          "A43",
+          "A431"
+        ],
+        "prefixes": [
+          "Q006",
+          "Q086",
+          "Q104",
+          "Q121",
+          "Q156",
+          "Q452",
+          "Q017",
+          "Q053",
+          "Q305",
+          "Q054",
+          "Q155",
+          "Q058",
+          "Q198",
+          "Q453",
+          "Q584",
+          "Q057",
+          "Q157",
+          "Q197",
+          "Q218",
+          "Q420",
+          "Q421",
+          "Q454",
+          "Q523",
+          "Q525",
+          "Q526",
+          "Q554",
+          "Q555",
+          "Q632",
+          "Q633"
+        ]
       }
     ]
   },
@@ -2682,15 +1979,12 @@
     ],
     "detections": [
       {
-        "name": "M210",
-        "detection": {
-          "exact_names": [
-            "M210"
-          ],
-          "prefixes": [
-            "YCN-M210"
-          ]
-        }
+        "exact_names": [
+          "M210"
+        ],
+        "prefixes": [
+          "YCN-M210"
+        ]
       }
     ]
   },
@@ -2702,26 +1996,14 @@
     ],
     "detections": [
       {
-        "name": "M330",
-        "detection": {
-          "exact_names": [
-            "M330"
-          ],
-          "prefixes": [
-            "Q464"
-          ]
-        }
-      },
-      {
-        "name": "M332",
-        "detection": {
-          "exact_names": [
-            "M332"
-          ],
-          "prefixes": [
-            "Q465"
-          ]
-        }
+        "exact_names": [
+          "M330",
+          "M332"
+        ],
+        "prefixes": [
+          "Q464",
+          "Q465"
+        ]
       }
     ]
   },
@@ -2733,26 +2015,14 @@
     ],
     "detections": [
       {
-        "name": "M420",
-        "detection": {
-          "exact_names": [
-            "M420"
-          ],
-          "prefixes": [
-            "Q380"
-          ]
-        }
-      },
-      {
-        "name": "M421",
-        "detection": {
-          "exact_names": [
-            "M421"
-          ],
-          "prefixes": [
-            "Q379"
-          ]
-        }
+        "exact_names": [
+          "M420",
+          "M421"
+        ],
+        "prefixes": [
+          "Q380",
+          "Q379"
+        ]
       }
     ]
   },
@@ -2764,20 +2034,17 @@
     ],
     "detections": [
       {
-        "name": "B246D",
-        "detection": {
-          "exact_names": [
-            "B246D"
-          ],
-          "prefixes": [
-            "Q027",
-            "Q081",
-            "Q100",
-            "Q101",
-            "Q102",
-            "Q103"
-          ]
-        }
+        "exact_names": [
+          "B246D"
+        ],
+        "prefixes": [
+          "Q027",
+          "Q081",
+          "Q100",
+          "Q101",
+          "Q102",
+          "Q103"
+        ]
       }
     ]
   },
@@ -2789,50 +2056,21 @@
     ],
     "detections": [
       {
-        "name": "E600S",
-        "detection": {
-          "exact_names": [
-            "E600S"
-          ],
-          "prefixes": [
-            "Q019",
-            "Q023",
-            "Q447",
-            "Q497"
-          ]
-        }
-      },
-      {
-        "name": "E6000",
-        "detection": {
-          "exact_names": [
-            "E6000"
-          ]
-        }
-      },
-      {
-        "name": "E8000",
-        "detection": {
-          "exact_names": [
-            "E8000"
-          ],
-          "prefixes": [
-            "Q296",
-            "Q314",
-            "Q625"
-          ]
-        }
-      },
-      {
-        "name": "QT-800",
-        "detection": {
-          "exact_names": [
-            "QT-800"
-          ],
-          "prefixes": [
-            "Q447"
-          ]
-        }
+        "exact_names": [
+          "E600S",
+          "E6000",
+          "E8000",
+          "QT-800"
+        ],
+        "prefixes": [
+          "Q019",
+          "Q023",
+          "Q447",
+          "Q497",
+          "Q296",
+          "Q314",
+          "Q625"
+        ]
       }
     ]
   },
@@ -2844,35 +2082,15 @@
     ],
     "detections": [
       {
-        "name": "E9000",
-        "detection": {
-          "exact_names": [
-            "E9000"
-          ],
-          "prefixes": [
-            "Q402",
-            "Q477"
-          ]
-        }
-      },
-      {
-        "name": "E93",
-        "detection": {
-          "exact_names": [
-            "E93"
-          ]
-        }
-      },
-      {
-        "name": "E9000Pro",
-        "detection": {
-          "exact_names": [
-            "E9000Pro"
-          ],
-          "prefixes": [
-            "Q477"
-          ]
-        }
+        "exact_names": [
+          "E9000",
+          "E93",
+          "E9000Pro"
+        ],
+        "prefixes": [
+          "Q402",
+          "Q477"
+        ]
       }
     ]
   },
@@ -2884,26 +2102,14 @@
     ],
     "detections": [
       {
-        "name": "E50",
-        "detection": {
-          "exact_names": [
-            "E50"
-          ],
-          "prefixes": [
-            "Q575"
-          ]
-        }
-      },
-      {
-        "name": "E50Pro",
-        "detection": {
-          "exact_names": [
-            "E50Pro"
-          ],
-          "prefixes": [
-            "Q458"
-          ]
-        }
+        "exact_names": [
+          "E50",
+          "E50Pro"
+        ],
+        "prefixes": [
+          "Q575",
+          "Q458"
+        ]
       }
     ]
   },
@@ -2915,155 +2121,60 @@
     ],
     "detections": [
       {
-        "name": "D30",
-        "detection": {
-          "exact_names": [
-            "D30"
-          ],
-          "prefixes": [
-            "MIHP",
-            "Q018",
-            "Q040",
-            "Q046",
-            "Q050",
-            "Q069",
-            "Q092",
-            "Q093",
-            "Q107",
-            "Q109",
-            "Q110",
-            "Q138",
-            "Q159",
-            "Q162",
-            "Q172",
-            "Q189",
-            "Q223",
-            "Q455"
-          ]
-        }
-      },
-      {
-        "name": "D30S",
-        "detection": {
-          "exact_names": [
-            "D30S"
-          ],
-          "prefixes": [
-            "Q036",
-            "Q048",
-            "Q097",
-            "Q111",
-            "Q125",
-            "Q149",
-            "Q150",
-            "Q183",
-            "Q543",
-            "Q601",
-            "Q628"
-          ]
-        }
-      },
-      {
-        "name": "D30S New",
-        "detection": {
-          "exact_names": [
-            "D30S New"
-          ],
-          "prefixes": [
-            "Q586"
-          ]
-        }
-      },
-      {
-        "name": "D30S Pro",
-        "detection": {
-          "exact_names": [
-            "D30S Pro"
-          ]
-        }
-      },
-      {
-        "name": "D30N",
-        "detection": {
-          "exact_names": [
-            "D30N"
-          ],
-          "prefixes": [
-            "Q628"
-          ]
-        }
-      },
-      {
-        "name": "D30Pro",
-        "detection": {
-          "exact_names": [
-            "D30Pro"
-          ],
-          "prefixes": [
-            "Q049",
-            "Q099",
-            "Q135",
-            "Q168"
-          ]
-        }
-      },
-      {
-        "name": "D20",
-        "detection": {
-          "exact_names": [
-            "D20"
-          ],
-          "prefixes": [
-            "Q152"
-          ]
-        }
-      },
-      {
-        "name": "D35",
-        "detection": {
-          "exact_names": [
-            "D35"
-          ],
-          "prefixes": [
-            "Q126",
-            "Q139",
-            "Q587"
-          ]
-        }
-      },
-      {
-        "name": "D10",
-        "detection": {
-          "exact_names": [
-            "D10"
-          ],
-          "prefixes": [
-            "Q222",
-            "Q601"
-          ]
-        }
-      },
-      {
-        "name": "D30AT",
-        "detection": {
-          "exact_names": [
-            "D30AT"
-          ],
-          "prefixes": [
-            "Q455"
-          ]
-        }
-      },
-      {
-        "name": "CNL-D35",
-        "detection": {
-          "exact_names": [
-            "CNL-D35"
-          ],
-          "prefixes": [
-            "Q587"
-          ]
-        }
+        "exact_names": [
+          "D30",
+          "D30S",
+          "D30S New",
+          "D30S Pro",
+          "D30N",
+          "D30Pro",
+          "D20",
+          "D35",
+          "D10",
+          "D30AT",
+          "CNL-D35"
+        ],
+        "prefixes": [
+          "MIHP",
+          "Q018",
+          "Q040",
+          "Q046",
+          "Q050",
+          "Q069",
+          "Q092",
+          "Q093",
+          "Q107",
+          "Q109",
+          "Q110",
+          "Q138",
+          "Q159",
+          "Q162",
+          "Q172",
+          "Q189",
+          "Q223",
+          "Q455",
+          "Q036",
+          "Q048",
+          "Q097",
+          "Q111",
+          "Q125",
+          "Q149",
+          "Q150",
+          "Q183",
+          "Q543",
+          "Q601",
+          "Q628",
+          "Q586",
+          "Q049",
+          "Q099",
+          "Q135",
+          "Q168",
+          "Q152",
+          "Q126",
+          "Q139",
+          "Q587",
+          "Q222"
+        ]
       }
     ]
   },
@@ -3075,103 +2186,35 @@
     ],
     "detections": [
       {
-        "name": "Q30",
-        "detection": {
-          "exact_names": [
-            "Q30"
-          ],
-          "prefixes": [
-            "Q082",
-            "Q130",
-            "Q190",
-            "Q224",
-            "Q591"
-          ]
-        }
-      },
-      {
-        "name": "Q31",
-        "detection": {
-          "exact_names": [
-            "Q31"
-          ],
-          "prefixes": [
-            "Q179",
-            "Q205",
-            "Q226"
-          ]
-        }
-      },
-      {
-        "name": "Q32",
-        "detection": {
-          "exact_names": [
-            "Q32"
-          ],
-          "prefixes": [
-            "Q191",
-            "Q227"
-          ]
-        }
-      },
-      {
-        "name": "Q30S",
-        "detection": {
-          "exact_names": [
-            "Q30S"
-          ],
-          "prefixes": [
-            "Q163",
-            "Q169",
-            "Q225"
-          ]
-        }
-      },
-      {
-        "name": "D31",
-        "detection": {
-          "exact_names": [
-            "D31"
-          ],
-          "prefixes": [
-            "Q269"
-          ]
-        }
-      },
-      {
-        "name": "D32",
-        "detection": {
-          "exact_names": [
-            "D32"
-          ],
-          "prefixes": [
-            "Q268",
-            "Q582",
-            "Q588"
-          ]
-        }
-      },
-      {
-        "name": "A10",
-        "detection": {
-          "exact_names": [
-            "A10"
-          ],
-          "prefixes": [
-            "Q582"
-          ]
-        }
-      },
-      {
-        "name": "CNL-D32",
-        "detection": {
-          "exact_names": [
-            "CNL-D32"
-          ],
-          "prefixes": [
-            "Q588"
-          ]
-        }
+        "exact_names": [
+          "Q30",
+          "Q31",
+          "Q32",
+          "Q30S",
+          "D31",
+          "D32",
+          "A10",
+          "CNL-D32"
+        ],
+        "prefixes": [
+          "Q082",
+          "Q130",
+          "Q190",
+          "Q224",
+          "Q591",
+          "Q179",
+          "Q205",
+          "Q226",
+          "Q191",
+          "Q227",
+          "Q163",
+          "Q169",
+          "Q225",
+          "Q269",
+          "Q268",
+          "Q582",
+          "Q588"
+        ]
       }
     ]
   },
@@ -3183,28 +2226,16 @@
     ],
     "detections": [
       {
-        "name": "D50",
-        "detection": {
-          "exact_names": [
-            "D50"
-          ],
-          "prefixes": [
-            "Q083",
-            "Q136",
-            "Q518"
-          ]
-        }
-      },
-      {
-        "name": "P50",
-        "detection": {
-          "exact_names": [
-            "P50"
-          ],
-          "prefixes": [
-            "Q264"
-          ]
-        }
+        "exact_names": [
+          "D50",
+          "P50"
+        ],
+        "prefixes": [
+          "Q083",
+          "Q136",
+          "Q518",
+          "Q264"
+        ]
       }
     ]
   },
@@ -3216,15 +2247,12 @@
     ],
     "detections": [
       {
-        "name": "P15",
-        "detection": {
-          "exact_names": [
-            "P15"
-          ],
-          "prefixes": [
-            "Q295"
-          ]
-        }
+        "exact_names": [
+          "P15"
+        ],
+        "prefixes": [
+          "Q295"
+        ]
       }
     ]
   },
@@ -3236,17 +2264,14 @@
     ],
     "detections": [
       {
-        "name": "F12",
-        "detection": {
-          "exact_names": [
-            "F12"
-          ],
-          "prefixes": [
-            "Q408",
-            "Q643",
-            "Q644"
-          ]
-        }
+        "exact_names": [
+          "F12"
+        ],
+        "prefixes": [
+          "Q408",
+          "Q643",
+          "Q644"
+        ]
       }
     ]
   },
@@ -3258,17 +2283,14 @@
     ],
     "detections": [
       {
-        "name": "A30",
-        "detection": {
-          "exact_names": [
-            "A30"
-          ],
-          "prefixes": [
-            "Q294",
-            "Q295",
-            "Q574"
-          ]
-        }
+        "exact_names": [
+          "A30"
+        ],
+        "prefixes": [
+          "Q294",
+          "Q295",
+          "Q574"
+        ]
       }
     ]
   },
@@ -3280,15 +2302,12 @@
     ],
     "detections": [
       {
-        "name": "P5100",
-        "detection": {
-          "exact_names": [
-            "P5100"
-          ],
-          "prefixes": [
-            "Q007"
-          ]
-        }
+        "exact_names": [
+          "P5100"
+        ],
+        "prefixes": [
+          "Q007"
+        ]
       }
     ]
   },
@@ -3300,19 +2319,16 @@
     ],
     "detections": [
       {
-        "name": "P1000",
-        "detection": {
-          "exact_names": [
-            "P1000"
-          ],
-          "prefixes": [
-            "Q004",
-            "Q030",
-            "Q031",
-            "Q035",
-            "Q079"
-          ]
-        }
+        "exact_names": [
+          "P1000"
+        ],
+        "prefixes": [
+          "Q004",
+          "Q030",
+          "Q031",
+          "Q035",
+          "Q079"
+        ]
       }
     ]
   },
@@ -3324,33 +2340,21 @@
     ],
     "detections": [
       {
-        "name": "P12",
-        "detection": {
-          "exact_names": [
-            "P12"
-          ],
-          "prefixes": [
-            "Q037",
-            "Q090",
-            "Q091",
-            "Q094",
-            "Q112",
-            "Q129",
-            "Q245"
-          ]
-        }
-      },
-      {
-        "name": "P12Pro",
-        "detection": {
-          "exact_names": [
-            "P12Pro"
-          ],
-          "prefixes": [
-            "Q113",
-            "Q534"
-          ]
-        }
+        "exact_names": [
+          "P12",
+          "P12Pro"
+        ],
+        "prefixes": [
+          "Q037",
+          "Q090",
+          "Q091",
+          "Q094",
+          "Q112",
+          "Q129",
+          "Q245",
+          "Q113",
+          "Q534"
+        ]
       }
     ]
   },
@@ -3362,26 +2366,14 @@
     ],
     "detections": [
       {
-        "name": "D1600",
-        "detection": {
-          "exact_names": [
-            "D1600"
-          ],
-          "prefixes": [
-            "Q175"
-          ]
-        }
-      },
-      {
-        "name": "D1600D",
-        "detection": {
-          "exact_names": [
-            "D1600D"
-          ],
-          "prefixes": [
-            "Q176"
-          ]
-        }
+        "exact_names": [
+          "D1600",
+          "D1600D"
+        ],
+        "prefixes": [
+          "Q175",
+          "Q176"
+        ]
       }
     ]
   },
@@ -3393,26 +2385,14 @@
     ],
     "detections": [
       {
-        "name": "M960",
-        "detection": {
-          "exact_names": [
-            "M960"
-          ],
-          "prefixes": [
-            "Q186"
-          ]
-        }
-      },
-      {
-        "name": "M960D",
-        "detection": {
-          "exact_names": [
-            "M960D"
-          ],
-          "prefixes": [
-            "Q187"
-          ]
-        }
+        "exact_names": [
+          "M960",
+          "M960D"
+        ],
+        "prefixes": [
+          "Q186",
+          "Q187"
+        ]
       }
     ]
   },
@@ -3424,26 +2404,14 @@
     ],
     "detections": [
       {
-        "name": "P3200",
-        "detection": {
-          "exact_names": [
-            "P3200"
-          ],
-          "prefixes": [
-            "Q173"
-          ]
-        }
-      },
-      {
-        "name": "P3200D",
-        "detection": {
-          "exact_names": [
-            "P3200D"
-          ],
-          "prefixes": [
-            "Q174"
-          ]
-        }
+        "exact_names": [
+          "P3200",
+          "P3200D"
+        ],
+        "prefixes": [
+          "Q173",
+          "Q174"
+        ]
       }
     ]
   },
@@ -3455,27 +2423,15 @@
     ],
     "detections": [
       {
-        "name": "P3100D",
-        "detection": {
-          "exact_names": [
-            "P3100D"
-          ],
-          "prefixes": [
-            "Q032",
-            "Q051"
-          ]
-        }
-      },
-      {
-        "name": "P3100DJ",
-        "detection": {
-          "exact_names": [
-            "P3100DJ"
-          ],
-          "prefixes": [
-            "Q133"
-          ]
-        }
+        "exact_names": [
+          "P3100D",
+          "P3100DJ"
+        ],
+        "prefixes": [
+          "Q032",
+          "Q051",
+          "Q133"
+        ]
       }
     ]
   },
@@ -3487,36 +2443,17 @@
     ],
     "detections": [
       {
-        "name": "D480",
-        "detection": {
-          "exact_names": [
-            "D480"
-          ]
-        }
-      },
-      {
-        "name": "D480BT",
-        "detection": {
-          "exact_names": [
-            "D480BT"
-          ],
-          "prefixes": [
-            "Q215",
-            "Q486"
-          ]
-        }
-      },
-      {
-        "name": "D480BT PRO",
-        "detection": {
-          "exact_names": [
-            "D480BT PRO"
-          ],
-          "prefixes": [
-            "Q360",
-            "Q407"
-          ]
-        }
+        "exact_names": [
+          "D480",
+          "D480BT",
+          "D480BT PRO"
+        ],
+        "prefixes": [
+          "Q215",
+          "Q486",
+          "Q360",
+          "Q407"
+        ]
       }
     ]
   },
@@ -3528,56 +2465,19 @@
     ],
     "detections": [
       {
-        "name": "P780",
-        "detection": {
-          "exact_names": [
-            "P780"
-          ]
-        }
-      },
-      {
-        "name": "P780BT",
-        "detection": {
-          "exact_names": [
-            "P780BT"
-          ],
-          "prefixes": [
-            "Q217"
-          ]
-        }
-      },
-      {
-        "name": "P780BT PRO",
-        "detection": {
-          "exact_names": [
-            "P780BT PRO"
-          ],
-          "prefixes": [
-            "Q419"
-          ]
-        }
-      },
-      {
-        "name": "P24",
-        "detection": {
-          "exact_names": [
-            "P24"
-          ],
-          "prefixes": [
-            "Q373"
-          ]
-        }
-      },
-      {
-        "name": "P580",
-        "detection": {
-          "exact_names": [
-            "P580"
-          ],
-          "prefixes": [
-            "Q393"
-          ]
-        }
+        "exact_names": [
+          "P780",
+          "P780BT",
+          "P780BT PRO",
+          "P24",
+          "P580"
+        ],
+        "prefixes": [
+          "Q217",
+          "Q419",
+          "Q373",
+          "Q393"
+        ]
       }
     ]
   },
@@ -3589,23 +2489,13 @@
     ],
     "detections": [
       {
-        "name": "D680",
-        "detection": {
-          "exact_names": [
-            "D680"
-          ]
-        }
-      },
-      {
-        "name": "D680BT",
-        "detection": {
-          "exact_names": [
-            "D680BT"
-          ],
-          "prefixes": [
-            "Q216"
-          ]
-        }
+        "exact_names": [
+          "D680",
+          "D680BT"
+        ],
+        "prefixes": [
+          "Q216"
+        ]
       }
     ]
   },
@@ -3617,16 +2507,13 @@
     ],
     "detections": [
       {
-        "name": "M950",
-        "detection": {
-          "exact_names": [
-            "M950"
-          ],
-          "prefixes": [
-            "Q311",
-            "Q405"
-          ]
-        }
+        "exact_names": [
+          "M950"
+        ],
+        "prefixes": [
+          "Q311",
+          "Q405"
+        ]
       }
     ]
   },
@@ -3638,28 +2525,15 @@
     ],
     "detections": [
       {
-        "name": "LT12",
-        "detection": {
-          "exact_names": [
-            "LT12"
-          ],
-          "prefixes": [
-            "Q309",
-            "Q396",
-            "Q445"
-          ]
-        }
-      },
-      {
-        "name": "LT-110H",
-        "detection": {
-          "exact_names": [
-            "LT-110H"
-          ],
-          "prefixes": [
-            "Q445"
-          ]
-        }
+        "exact_names": [
+          "LT12",
+          "LT-110H"
+        ],
+        "prefixes": [
+          "Q309",
+          "Q396",
+          "Q445"
+        ]
       }
     ]
   },
@@ -3671,28 +2545,15 @@
     ],
     "detections": [
       {
-        "name": "LM1600",
-        "detection": {
-          "exact_names": [
-            "LM1600"
-          ],
-          "prefixes": [
-            "Q310",
-            "Q404",
-            "Q444"
-          ]
-        }
-      },
-      {
-        "name": "LM2800",
-        "detection": {
-          "exact_names": [
-            "LM2800"
-          ],
-          "prefixes": [
-            "Q444"
-          ]
-        }
+        "exact_names": [
+          "LM1600",
+          "LM2800"
+        ],
+        "prefixes": [
+          "Q310",
+          "Q404",
+          "Q444"
+        ]
       }
     ]
   },
@@ -3704,15 +2565,12 @@
     ],
     "detections": [
       {
-        "name": "PM-201",
-        "detection": {
-          "exact_names": [
-            "PM-201"
-          ],
-          "prefixes": [
-            "PM-201"
-          ]
-        }
+        "exact_names": [
+          "PM-201"
+        ],
+        "prefixes": [
+          "PM-201"
+        ]
       }
     ]
   },
@@ -3723,36 +2581,12 @@
     ],
     "detections": [
       {
-        "name": "LX-D02-TEST",
-        "detection": {
-          "exact_names": [
-            "LX-D02-TEST"
-          ]
-        }
-      },
-      {
-        "name": "ITW14302",
-        "detection": {
-          "exact_names": [
-            "ITW14302"
-          ]
-        }
-      },
-      {
-        "name": "SWS-PT1",
-        "detection": {
-          "exact_names": [
-            "SWS-PT1"
-          ]
-        }
-      },
-      {
-        "name": "AH-M2",
-        "detection": {
-          "exact_names": [
-            "AH-M2"
-          ]
-        }
+        "exact_names": [
+          "LX-D02-TEST",
+          "ITW14302",
+          "SWS-PT1",
+          "AH-M2"
+        ]
       }
     ]
   },
@@ -3763,36 +2597,12 @@
     ],
     "detections": [
       {
-        "name": "TD-11308",
-        "detection": {
-          "exact_names": [
-            "TD-11308"
-          ]
-        }
-      },
-      {
-        "name": "T02",
-        "detection": {
-          "exact_names": [
-            "T02"
-          ]
-        }
-      },
-      {
-        "name": "ZH-P06",
-        "detection": {
-          "exact_names": [
-            "ZH-P06"
-          ]
-        }
-      },
-      {
-        "name": "LX-D002",
-        "detection": {
-          "exact_names": [
-            "LX-D002"
-          ]
-        }
+        "exact_names": [
+          "TD-11308",
+          "T02",
+          "ZH-P06",
+          "LX-D002"
+        ]
       }
     ]
   },
@@ -3803,60 +2613,15 @@
     ],
     "detections": [
       {
-        "name": "LX-D003",
-        "detection": {
-          "exact_names": [
-            "LX-D003"
-          ]
-        }
-      },
-      {
-        "name": "LX-D004",
-        "detection": {
-          "exact_names": [
-            "LX-D004"
-          ]
-        }
-      },
-      {
-        "name": "LX-D005",
-        "detection": {
-          "exact_names": [
-            "LX-D005"
-          ]
-        }
-      },
-      {
-        "name": "LX-D006",
-        "detection": {
-          "exact_names": [
-            "LX-D006"
-          ]
-        }
-      },
-      {
-        "name": "LX-D007",
-        "detection": {
-          "exact_names": [
-            "LX-D007"
-          ]
-        }
-      },
-      {
-        "name": "LX-D008",
-        "detection": {
-          "exact_names": [
-            "LX-D008"
-          ]
-        }
-      },
-      {
-        "name": "LX-D009",
-        "detection": {
-          "exact_names": [
-            "LX-D009"
-          ]
-        }
+        "exact_names": [
+          "LX-D003",
+          "LX-D004",
+          "LX-D005",
+          "LX-D006",
+          "LX-D007",
+          "LX-D008",
+          "LX-D009"
+        ]
       }
     ]
   },
@@ -3867,28 +2632,13 @@
     ],
     "detections": [
       {
-        "name": "DL-P01",
-        "detection": {
-          "exact_names": [
-            "DL-P01"
-          ]
-        }
-      },
-      {
-        "name": "DL-T01",
-        "detection": {
-          "prefixes": [
-            "DL-T01"
-          ]
-        }
-      },
-      {
-        "name": "LX-D05-PRO",
-        "detection": {
-          "prefixes": [
-            "LX-D05-PRO"
-          ]
-        }
+        "exact_names": [
+          "DL-P01"
+        ],
+        "prefixes": [
+          "DL-T01",
+          "LX-D05-PRO"
+        ]
       }
     ]
   },
@@ -3899,12 +2649,9 @@
     ],
     "detections": [
       {
-        "name": "DL-T1",
-        "detection": {
-          "exact_names": [
-            "DL-T1"
-          ]
-        }
+        "exact_names": [
+          "DL-T1"
+        ]
       }
     ]
   },
@@ -3915,12 +2662,9 @@
     ],
     "detections": [
       {
-        "name": "LX-P01",
-        "detection": {
-          "exact_names": [
-            "LX-P01"
-          ]
-        }
+        "exact_names": [
+          "LX-P01"
+        ]
       }
     ]
   },
@@ -3931,20 +2675,10 @@
     ],
     "detections": [
       {
-        "name": "A80",
-        "detection": {
-          "exact_names": [
-            "A80"
-          ]
-        }
-      },
-      {
-        "name": "A80H",
-        "detection": {
-          "exact_names": [
-            "A80H"
-          ]
-        }
+        "exact_names": [
+          "A80",
+          "A80H"
+        ]
       }
     ]
   },
@@ -3958,44 +2692,13 @@
     ],
     "detections": [
       {
-        "name": "C21",
-        "detection": {
-          "exact_names": [
-            "C21"
-          ]
-        }
-      },
-      {
-        "name": "D1",
-        "detection": {
-          "exact_names": [
-            "D1"
-          ]
-        }
-      },
-      {
-        "name": "D2",
-        "detection": {
-          "exact_names": [
-            "D2"
-          ]
-        }
-      },
-      {
-        "name": "E2",
-        "detection": {
-          "exact_names": [
-            "E2"
-          ]
-        }
-      },
-      {
-        "name": "NEWSMY",
-        "detection": {
-          "exact_names": [
-            "NEWSMY"
-          ]
-        }
+        "exact_names": [
+          "C21",
+          "D1",
+          "D2",
+          "E2",
+          "NEWSMY"
+        ]
       }
     ]
   }

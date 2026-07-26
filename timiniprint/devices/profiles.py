@@ -30,6 +30,24 @@ class DetectionNormalizer:
     def is_mac_like_address(cls, value: str) -> bool:
         return bool(cls._mac_like_re.match(value.strip()))
 
+    @staticmethod
+    def public_pattern_name(value: str) -> str:
+        value = value.strip()
+        return value[:-1] if value.endswith(("-", "_")) else value
+
+    @staticmethod
+    def dedupe_public_names(values: Tuple[str, ...]) -> Tuple[str, ...]:
+        names: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            name = value.strip()
+            key = name.casefold()
+            if not name or key in seen:
+                continue
+            seen.add(key)
+            names.append(name)
+        return tuple(names)
+
 
 @dataclass(frozen=True)
 class LevelProfile:
@@ -307,16 +325,23 @@ class ModelDetection:
     exact_names: Tuple[str, ...] = ()
     substrings: Tuple[str, ...] = ()
     mac_suffixes: Tuple[str, ...] = ()
+    marketing_names: Tuple[str, ...] = ()
+    _normalized_prefixes: Tuple[str, ...] = field(init=False, repr=False)
+    _normalized_exact_names: Tuple[str, ...] = field(init=False, repr=False)
+    _normalized_substrings: Tuple[str, ...] = field(init=False, repr=False)
     _folded_prefixes: Tuple[str, ...] = field(init=False, repr=False)
     _folded_exact_names: Tuple[str, ...] = field(init=False, repr=False)
     _folded_substrings: Tuple[str, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        prefixes = tuple(DetectionNormalizer.normalize_name(prefix) for prefix in self.prefixes)
-        exact_names = tuple(DetectionNormalizer.normalize_name(name) for name in self.exact_names)
-        substrings = tuple(
-            DetectionNormalizer.normalize_name(value) for value in self.substrings
-        )
+        prefixes = tuple(value.strip() for value in self.prefixes)
+        exact_names = tuple(value.strip() for value in self.exact_names)
+        substrings = tuple(value.strip() for value in self.substrings)
+        marketing_names = tuple(value.strip() for value in self.marketing_names)
+        if any(not value for value in (*prefixes, *exact_names, *substrings)):
+            raise ValueError("Model detection triggers must not be blank")
+        if any(not value for value in marketing_names):
+            raise ValueError("Model detection marketing_names must not contain blanks")
         if not prefixes and not exact_names and not substrings:
             raise ValueError(
                 "Model detection requires at least one prefix, exact_name, or substring"
@@ -324,25 +349,57 @@ class ModelDetection:
         object.__setattr__(self, "prefixes", prefixes)
         object.__setattr__(self, "exact_names", exact_names)
         object.__setattr__(self, "substrings", substrings)
+        object.__setattr__(self, "marketing_names", marketing_names)
+        normalized_prefixes = tuple(
+            DetectionNormalizer.normalize_name(prefix) for prefix in prefixes
+        )
+        normalized_exact_names = tuple(
+            DetectionNormalizer.normalize_name(name) for name in exact_names
+        )
+        normalized_substrings = tuple(
+            DetectionNormalizer.normalize_name(value) for value in substrings
+        )
+        object.__setattr__(self, "_normalized_prefixes", normalized_prefixes)
+        object.__setattr__(self, "_normalized_exact_names", normalized_exact_names)
+        object.__setattr__(self, "_normalized_substrings", normalized_substrings)
         object.__setattr__(
             self,
             "mac_suffixes",
-            tuple(str(suffix).upper() for suffix in self.mac_suffixes),
+            tuple(str(suffix).strip().upper() for suffix in self.mac_suffixes),
         )
         object.__setattr__(
             self,
             "_folded_prefixes",
-            tuple(DetectionNormalizer.fold_name(prefix) for prefix in prefixes),
+            tuple(DetectionNormalizer.fold_name(prefix) for prefix in normalized_prefixes),
         )
         object.__setattr__(
             self,
             "_folded_exact_names",
-            tuple(DetectionNormalizer.fold_name(name) for name in exact_names),
+            tuple(DetectionNormalizer.fold_name(name) for name in normalized_exact_names),
         )
         object.__setattr__(
             self,
             "_folded_substrings",
-            tuple(DetectionNormalizer.fold_name(value) for value in substrings),
+            tuple(DetectionNormalizer.fold_name(value) for value in normalized_substrings),
+        )
+        if not self.names:
+            raise ValueError("Model detection requires at least one public name")
+
+    @property
+    def names(self) -> Tuple[str, ...]:
+        return DetectionNormalizer.dedupe_public_names(
+            (
+                *self.marketing_names,
+                *self.exact_names,
+                *(
+                    DetectionNormalizer.public_pattern_name(value)
+                    for value in self.prefixes
+                ),
+                *(
+                    DetectionNormalizer.public_pattern_name(value)
+                    for value in self.substrings
+                ),
+            )
         )
 
     def matches(
@@ -376,14 +433,14 @@ class ModelDetection:
         normalized_name = DetectionNormalizer.normalize_name(device_name)
         if case_sensitive:
             target_name = normalized_name
-            exact_names = zip(self.exact_names, self.exact_names)
-            prefixes = zip(self.prefixes, self.prefixes)
-            substrings = zip(self.substrings, self.substrings)
+            exact_names = zip(self._normalized_exact_names, self._normalized_exact_names)
+            prefixes = zip(self._normalized_prefixes, self._normalized_prefixes)
+            substrings = zip(self._normalized_substrings, self._normalized_substrings)
         else:
             target_name = DetectionNormalizer.fold_name(device_name)
-            exact_names = zip(self.exact_names, self._folded_exact_names)
-            prefixes = zip(self.prefixes, self._folded_prefixes)
-            substrings = zip(self.substrings, self._folded_substrings)
+            exact_names = zip(self._normalized_exact_names, self._folded_exact_names)
+            prefixes = zip(self._normalized_prefixes, self._folded_prefixes)
+            substrings = zip(self._normalized_substrings, self._folded_substrings)
 
         matched: list[Tuple[int, int, int, int, int]] = []
         for trigger, candidate in exact_names:
@@ -431,41 +488,23 @@ class ModelDetection:
             sum(1 for char in trigger if char.isupper()),
         )
 
-
-@dataclass(frozen=True)
-class NamedModelDetection:
-    name: str
-    detection: ModelDetection
-
-    def __post_init__(self) -> None:
-        if not self.name:
-            raise ValueError("Model detection requires name")
-
-    @staticmethod
-    def normalize_public_name(name: str) -> str:
-        return DetectionNormalizer.normalize_name(name)
-
-    @property
-    def normalized_name(self) -> str:
-        return self.normalize_public_name(self.name)
-
-
 @dataclass(frozen=True)
 class PrinterModel:
     model_key: str
-    detections: Tuple[NamedModelDetection, ...]
-    marketing_name: Optional[str] = None
+    detections: Tuple[ModelDetection, ...]
+    marketing_names: Tuple[str, ...] = ()
     origin_app_packages: Tuple[str, ...] = ()
     detection_ambiguity_group: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.model_key:
             raise ValueError("Printer model requires model_key")
-        if self.marketing_name is not None:
-            marketing_name = self.marketing_name.strip()
-            if not marketing_name:
-                raise ValueError(f"Printer model {self.model_key} has blank marketing_name")
-            object.__setattr__(self, "marketing_name", marketing_name)
+        marketing_names = tuple(value.strip() for value in self.marketing_names)
+        if any(not value for value in marketing_names):
+            raise ValueError(
+                f"Printer model {self.model_key} marketing_names must not contain blanks"
+            )
+        object.__setattr__(self, "marketing_names", marketing_names)
         if not self.detections:
             raise ValueError(f"Printer model {self.model_key} requires detections")
         if self.detection_ambiguity_group is not None:
@@ -478,7 +517,12 @@ class PrinterModel:
 
     @property
     def names(self) -> Tuple[str, ...]:
-        return tuple(detection.name for detection in self.detections)
+        return DetectionNormalizer.dedupe_public_names(
+            (
+                *self.marketing_names,
+                *(name for detection in self.detections for name in detection.names),
+            )
+        )
 
 
 @dataclass(frozen=True)
@@ -504,13 +548,13 @@ class UnsupportedPrinterModel(PrinterModel):
 class SupportedModelMatch:
     model: SupportedPrinterModel
     profile: PrinterProfile
-    detection: NamedModelDetection
+    detection: ModelDetection
 
 
 @dataclass(frozen=True)
 class UnsupportedModelMatch:
     model: UnsupportedPrinterModel
-    detection: NamedModelDetection
+    detection: ModelDetection
 
 
 ModelMatch = Union[SupportedModelMatch, UnsupportedModelMatch]
@@ -523,7 +567,6 @@ __all__ = [
     "ModelMatch",
     "ModelDetection",
     "ModeLevelProfile",
-    "NamedModelDetection",
     "PrintDefaults",
     "PrinterModel",
     "PrinterProfile",

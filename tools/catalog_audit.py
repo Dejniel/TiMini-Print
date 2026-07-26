@@ -24,18 +24,19 @@ from timiniprint.devices.profiles import (  # noqa: E402
 
 def _sample_names(model: dict[str, Any]) -> list[str]:
     samples: list[str] = []
-    for named_detection in model.get("detections", []):
-        detection = named_detection.get("detection", {})
+    for detection in model.get("detections", []):
         for name in detection.get("exact_names", []):
             samples.append(str(name))
         for prefix in detection.get("prefixes", []):
             prefix = str(prefix)
-            if prefix.endswith("-"):
+            if prefix.endswith(("-", "_")):
                 samples.append(prefix + "ABCD")
             else:
                 samples.append(prefix)
                 if "-" not in prefix:
                     samples.append(prefix + "-ABCD")
+        for substring in detection.get("substrings", []):
+            samples.append(str(substring))
     deduped: list[str] = []
     seen: set[str] = set()
     for sample in samples:
@@ -49,12 +50,40 @@ def _sample_names(model: dict[str, Any]) -> list[str]:
 def _sample_addresses(model: dict[str, Any]) -> list[str | None]:
     suffixes = [
         str(value).upper()
-        for named_detection in model.get("detections", [])
-        for value in named_detection.get("detection", {}).get("mac_suffixes", [])
+        for detection in model.get("detections", [])
+        for value in detection.get("mac_suffixes", [])
     ]
     if suffixes:
         return [f"AA:BB:CC:DD:EE:{suffix}" for suffix in suffixes]
     return [None, "AA:BB:CC:DD:EE:00"]
+
+
+def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
+    repeated: list[dict[str, Any]] = []
+    first_index_by_group: dict[tuple[tuple[str, ...], tuple[str, ...]], int] = {}
+    for index, detection in enumerate(model.get("detections", [])):
+        group = (
+            tuple(
+                sorted(
+                    str(value).strip().upper()
+                    for value in detection.get("mac_suffixes", [])
+                )
+            ),
+            tuple(
+                str(value).strip().casefold()
+                for value in detection.get("marketing_names", [])
+            ),
+        )
+        first_index = first_index_by_group.setdefault(group, index)
+        if first_index != index:
+            repeated.append(
+                {
+                    "kind": "mergeable_detection_objects",
+                    "model_key": model["model_key"],
+                    "detection_indexes": [first_index, index],
+                }
+            )
+    return repeated
 
 
 def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any]) -> dict[str, Any] | None:
@@ -190,7 +219,7 @@ def _model_merge_key(model: dict[str, Any]) -> str:
         {
             key: value
             for key, value in model.items()
-            if key not in {"model_key", "marketing_name", "detections", "origin_app_packages"}
+            if key not in {"model_key", "marketing_names", "detections", "origin_app_packages"}
         },
         sort_keys=True,
     )
@@ -238,17 +267,19 @@ def generate_report(
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
 
+    for model in [*models_raw, *unsupported_models_raw]:
+        errors.extend(_mergeable_detection_objects(model))
+
     for model in models_raw:
-        for named_detection in model.get("detections", []):
-            detection = named_detection.get("detection", {})
-            for field in ("prefixes", "exact_names"):
+        for detection in model.get("detections", []):
+            for field in ("prefixes", "exact_names", "substrings"):
                 for trigger in detection.get(field, []):
                     if trigger != trigger.strip():
                         errors.append(
                             {
                                 "kind": "trigger_whitespace",
                                 "model_key": model["model_key"],
-                                "name": named_detection.get("name"),
+                                "marketing_names": detection.get("marketing_names", []),
                                 "field": field,
                                 "trigger": trigger,
                             }
@@ -289,16 +320,15 @@ def generate_report(
                     "profile_key_prediction": profile_key_prediction,
                 }
             )
-        for named_detection in model.get("detections", []):
-            detection = named_detection.get("detection", {})
-            for field in ("prefixes", "exact_names"):
+        for detection in model.get("detections", []):
+            for field in ("prefixes", "exact_names", "substrings"):
                 for trigger in detection.get(field, []):
                     if trigger != trigger.strip():
                         errors.append(
                             {
                                 "kind": "unsupported_trigger_whitespace",
                                 "model_key": model["model_key"],
-                                "name": named_detection.get("name"),
+                                "marketing_names": detection.get("marketing_names", []),
                                 "field": field,
                                 "trigger": trigger,
                             }

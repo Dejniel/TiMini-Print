@@ -88,14 +88,14 @@ class CatalogAuditTests(unittest.TestCase):
         models = [
             {
                 "model_key": "generic",
-                "detections": [{"name": "FOO", "detection": {"prefixes": ["FOO"]}}],
+                "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
                 "origin_app_packages": ["com.example.generic"],
             },
             {
                 "model_key": "specific",
-                "detections": [{"name": "FOO", "detection": {"prefixes": ["FOO"]}}],
+                "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "specific_profile",
                 "protocol_override": {"type": "tiny"},
                 "origin_app_packages": ["com.example.generic"],
@@ -122,14 +122,14 @@ class CatalogAuditTests(unittest.TestCase):
         models = [
             {
                 "model_key": "first",
-                "detections": [{"name": "FOO", "detection": {"prefixes": ["FOO"]}}],
+                "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
                 "origin_app_packages": ["com.example.source"],
             },
             {
                 "model_key": "second",
-                "detections": [{"name": "BAR", "detection": {"prefixes": ["BAR"]}}],
+                "detections": [{"prefixes": ["BAR"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
                 "origin_app_packages": ["com.example.other_source"],
@@ -147,6 +147,48 @@ class CatalogAuditTests(unittest.TestCase):
         errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_body"]
         self.assertEqual(errors, [{"kind": "mergeable_model_body", "model_keys": ["first", "second"]}])
 
+    def test_catalog_audit_detects_mergeable_detection_objects(self) -> None:
+        profiles = [_profile_payload("base")]
+        models = [
+            {
+                "model_key": "demo",
+                "detections": [
+                    {"exact_names": ["FOO"]},
+                    {"prefixes": ["BAR"]},
+                ],
+                "profile_key": "base",
+                "protocol_override": {"type": "tiny"},
+                "origin_app_packages": ["com.example.source"],
+            },
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = Path(tmp) / "profiles.json"
+            model_path = Path(tmp) / "models.json"
+            profile_path.write_text(json.dumps(profiles), encoding="utf-8")
+            model_path.write_text(json.dumps(models), encoding="utf-8")
+
+            report = self.tool.generate_report(
+                profile_path=profile_path,
+                model_path=model_path,
+            )
+
+        errors = [
+            error
+            for error in report["errors"]
+            if error["kind"] == "mergeable_detection_objects"
+        ]
+        self.assertEqual(
+            errors,
+            [
+                {
+                    "kind": "mergeable_detection_objects",
+                    "model_key": "demo",
+                    "detection_indexes": [0, 1],
+                }
+            ],
+        )
+
     def test_catalog_audit_allows_declared_detection_ambiguity_group(self) -> None:
         profiles = [
             _profile_payload("first_profile"),
@@ -156,7 +198,7 @@ class CatalogAuditTests(unittest.TestCase):
         models = [
             {
                 "model_key": "first",
-                "detections": [{"name": "FOO", "detection": {"exact_names": ["FOO"]}}],
+                "detections": [{"exact_names": ["FOO"]}],
                 "profile_key": "first_profile",
                 "protocol_override": {"type": "tiny"},
                 "origin_app_packages": ["com.example.source"],
@@ -164,7 +206,7 @@ class CatalogAuditTests(unittest.TestCase):
             },
             {
                 "model_key": "second",
-                "detections": [{"name": "FOO", "detection": {"exact_names": ["FOO"]}}],
+                "detections": [{"exact_names": ["FOO"]}],
                 "profile_key": "second_profile",
                 "protocol_override": {"type": "tiny"},
                 "origin_app_packages": ["com.example.source"],
@@ -190,7 +232,7 @@ class CatalogAuditTests(unittest.TestCase):
         models = [
             {
                 "model_key": "supported",
-                "detections": [{"name": "FOO", "detection": {"prefixes": ["FOO"]}}],
+                "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
                 "origin_app_packages": ["com.example.supported"],
@@ -199,7 +241,7 @@ class CatalogAuditTests(unittest.TestCase):
         unsupported_models = [
             {
                 "model_key": "unsupported",
-                "detections": [{"name": "FOO", "detection": {"prefixes": ["FOO"]}}],
+                "detections": [{"prefixes": ["FOO"]}],
                 "origin_app_packages": [],
             },
         ]

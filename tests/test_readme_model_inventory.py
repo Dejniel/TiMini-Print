@@ -6,7 +6,6 @@ import unittest
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import (
     ModelDetection,
-    NamedModelDetection,
     SupportedModelMatch,
     SupportedPrinterModel,
     UnsupportedModelMatch,
@@ -45,7 +44,7 @@ def _supported_readme_name_matches_model(
         return True
     return model_key in {
         model.model_key
-        for model in catalog.get_models_by_detection_name(name)
+        for model in catalog.get_models_by_public_name(name)
     }
 
 
@@ -87,14 +86,14 @@ class ReadmeModelInventoryTests(unittest.TestCase):
 
         for model in catalog.unsupported_models:
             for detection in model.detections:
-                for prefix in detection.detection.prefixes:
+                for prefix in detection.prefixes:
                     with self.subTest(model=model.model_key, status="unsupported", prefix=prefix):
                         self.assertTrue(
                             _unsupported_detection_matches_model(
                                 catalog, model, prefix, is_prefix=True
                             )
                         )
-                for exact_name in detection.detection.exact_names:
+                for exact_name in detection.exact_names:
                     with self.subTest(model=model.model_key, status="unsupported", exact=exact_name):
                         self.assertTrue(
                             _unsupported_detection_matches_model(
@@ -150,10 +149,9 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         model = SupportedPrinterModel(
             model_key="demo",
             profile_key="demo",
-            marketing_name="Friendly Cat Printer",
+            marketing_names=("Friendly Cat Printer",),
             detections=(
-                NamedModelDetection("BT-01", ModelDetection(exact_names=("BT-01",))),
-                NamedModelDetection("BT-02", ModelDetection(exact_names=("BT-02",))),
+                ModelDetection(exact_names=("BT-01", "BT-02")),
             ),
         )
 
@@ -162,19 +160,19 @@ class ReadmeModelInventoryTests(unittest.TestCase):
             "- Friendly Cat Printer and clones: BT-01, BT-02",
         )
 
-    def test_single_detection_marketing_name_renders_with_detection_in_parentheses(self) -> None:
+    def test_single_detection_marketing_name_renders_as_clone_alias(self) -> None:
         model = SupportedPrinterModel(
             model_key="demo",
             profile_key="demo",
-            marketing_name="Friendly Cat Printer",
+            marketing_names=("Friendly Cat Printer",),
             detections=(
-                NamedModelDetection("BT-01", ModelDetection(exact_names=("BT-01",))),
+                ModelDetection(exact_names=("BT-01",)),
             ),
         )
 
         self.assertEqual(
             render_supported_models_block([model]),
-            "Friendly Cat Printer (BT-01)",
+            "- Friendly Cat Printer and clones: BT-01",
         )
 
 

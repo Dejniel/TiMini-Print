@@ -107,10 +107,7 @@ def _model_payload(
         "origin_app_packages": ["com.example.demo"],
         "detections": [
             {
-                "name": "DEMO",
-                "detection": {
-                    "prefixes": prefixes or ["DEMO"],
-                },
+                "prefixes": prefixes or ["DEMO"],
             }
         ],
         "profile_key": profile_key,
@@ -118,7 +115,7 @@ def _model_payload(
     if protocol_family is not None:
         payload["protocol_override"] = {"type": protocol_family}
     if mac_suffixes:
-        payload["detections"][0]["detection"]["mac_suffixes"] = mac_suffixes
+        payload["detections"][0]["mac_suffixes"] = mac_suffixes
     if profile_runtime_preset_key is not None:
         payload["profile_runtime_preset_key"] = profile_runtime_preset_key
     return payload
@@ -164,6 +161,31 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(profile.stream.chunk_size, 180)
         self.assertEqual(profile.stream.delay_ms, 4)
 
+    def test_v5x_aliases_share_one_detection_object(self) -> None:
+        model = self.catalog.require_model("v5x")
+
+        self.assertEqual(len(model.detections), 1)
+        self.assertEqual(
+            model.detections[0].exact_names,
+            (
+                "V5X",
+                "X1",
+                "X2",
+                "MXW01",
+                "MXW01-1",
+                "C17",
+                "MXW-W5",
+                "AC695X_PRINT",
+                "JK01",
+                "PORTABLEPRINTER",
+                "INSTANTPRINTPLUS",
+                "REKA",
+                "HDMDT-00",
+                "KERUI",
+                "BH03",
+            ),
+        )
+
     def test_unsupported_models_are_detected_without_creating_devices(self) -> None:
         self.assertIsNone(self.catalog.detect_device("P12"))
 
@@ -201,8 +223,9 @@ class DevicesModelsTests(unittest.TestCase):
                     self.assertNotIn(" ", model.profile_key_prediction)
                 for detection in model.detections:
                     self.assertTrue(
-                        detection.detection.prefixes
-                        or detection.detection.exact_names
+                        detection.prefixes
+                        or detection.exact_names
+                        or detection.substrings
                     )
 
     def test_unsupported_case_variants_can_stay_source_distinct(self) -> None:
@@ -223,7 +246,7 @@ class DevicesModelsTests(unittest.TestCase):
 
         self.assertIsInstance(match, SupportedModelMatch)
         assert isinstance(match, SupportedModelMatch)
-        self.assertEqual(match.detection.name, "X6H")
+        self.assertIn("X6H", match.detection.names)
         self.assertEqual(match.profile.profile_key, "x6h")
 
     def test_supported_model_keys_do_not_use_synthetic_model_prefix(self) -> None:
@@ -319,7 +342,7 @@ class DevicesModelsTests(unittest.TestCase):
             with self.subTest(name=name):
                 match = _single_match(self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58"))
                 self.assertEqual(match.model.model_key, model_key)
-                self.assertEqual(match.detection.name, detection_name)
+                self.assertIn(detection_name, match.detection.names)
 
     def test_tinyprint_recent_source_aliases_detect_to_source_profiles(self) -> None:
         expectations = {
@@ -434,14 +457,23 @@ class DevicesModelsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown PrinterProfile field"):
             model_from_json(PrinterProfile, payload)
 
-    def test_model_marketing_name_is_presentation_only(self) -> None:
+    def test_model_marketing_names_are_public_manual_aliases(self) -> None:
         payload = _model_payload()
-        payload["marketing_name"] = "Friendly Cat Printer"
+        payload["marketing_names"] = ["Friendly Cat Printer"]
 
         model = model_from_json(SupportedPrinterModel, payload)
 
-        self.assertEqual(model.names, ("DEMO",))
-        self.assertEqual(model.marketing_name, "Friendly Cat Printer")
+        self.assertEqual(model.names, ("Friendly Cat Printer", "DEMO"))
+        self.assertEqual(model.marketing_names, ("Friendly Cat Printer",))
+        self.assertEqual(model_to_json(model)["detections"][0]["prefixes"], ["DEMO"])
+
+        profile = model_from_json(PrinterProfile, _profile_payload())
+        catalog = PrinterCatalog([profile], [model])
+        self.assertEqual(
+            catalog.get_models_by_public_name("friendlycatprinter"),
+            (model,),
+        )
+        self.assertEqual(catalog.detect_model("Friendly Cat Printer"), ())
 
     def test_model_codec_profile_roundtrip_keeps_normalized_shape(self) -> None:
         payload = _profile_payload()
@@ -622,7 +654,7 @@ class DevicesModelsTests(unittest.TestCase):
             self.catalog.device_from_key("P1")
 
     def test_device_from_key_does_not_resolve_profile_keys(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "Unknown printer model or detection name"):
+        with self.assertRaisesRegex(RuntimeError, "Unknown printer model or catalog name"):
             self.catalog.device_from_key("v5g_small_203")
 
     def test_direct_profiles_resolve_without_alias_semantics(self) -> None:
@@ -893,14 +925,14 @@ class DevicesModelsTests(unittest.TestCase):
             if not source_apps.intersection(model.origin_app_packages):
                 continue
             for detection in model.detections:
-                with self.subTest(model=model.model_key, detection=detection.name):
+                with self.subTest(model=model.model_key, detection=detection.names):
                     self.assertFalse(
                         any(
                             exact_name.endswith(("-", "_"))
-                            for exact_name in detection.detection.exact_names
+                            for exact_name in detection.exact_names
                         )
                     )
-                    for prefix in detection.detection.prefixes:
+                    for prefix in detection.prefixes:
                         self.assertIn(prefix, source_prefixes)
 
     def test_official_phomemo_supported_detections_are_exact_aliases(self) -> None:
@@ -916,9 +948,9 @@ class DevicesModelsTests(unittest.TestCase):
             if model.model_key not in exact_alias_models:
                 continue
             for detection in model.detections:
-                with self.subTest(model=model.model_key, detection=detection.name):
-                    self.assertEqual(detection.detection.prefixes, ())
-                    self.assertTrue(detection.detection.exact_names)
+                with self.subTest(model=model.model_key, detection=detection.names):
+                    self.assertEqual(detection.prefixes, ())
+                    self.assertTrue(detection.exact_names)
 
     def test_phomemo_m02d_m02e_and_p3100_source_status(self) -> None:
         for name in ("M02D", "M02E", "MR2", "M02A", "KP-Q1"):
@@ -1046,14 +1078,14 @@ class DevicesModelsTests(unittest.TestCase):
         funny_td = next(
             detection
             for detection in funny_model.detections
-            if detection.name == "TD-11308"
+            if "TD-11308" in detection.names
         )
 
         self.assertIsInstance(match, UnsupportedModelMatch)
         assert isinstance(match, UnsupportedModelMatch)
         self.assertEqual(match.model.model_key, "unsupported_funny_lx_type1")
-        self.assertEqual(funny_td.detection.exact_names, ("TD-11308",))
-        self.assertEqual(funny_td.detection.prefixes, ())
+        self.assertIn("TD-11308", funny_td.exact_names)
+        self.assertEqual(funny_td.prefixes, ())
         self.assertIsInstance(suffix_match, SupportedModelMatch)
         assert isinstance(suffix_match, SupportedModelMatch)
         self.assertEqual(suffix_match.model.model_key, "pocket_printer")

@@ -13,7 +13,11 @@ if str(REPO_ROOT) not in sys.path:
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.model_codec import model_from_json
-from timiniprint.devices.profiles import SupportedPrinterModel, UnsupportedPrinterModel
+from timiniprint.devices.profiles import (
+    DetectionNormalizer,
+    SupportedPrinterModel,
+    UnsupportedPrinterModel,
+)
 
 README_PATH = REPO_ROOT / "README.md"
 UNSUPPORTED_MODELS_PATH = REPO_ROOT / "timiniprint/data/printer_models_unsupported.json"
@@ -26,37 +30,23 @@ def _display_name_sort_key(value: str) -> tuple[str, str]:
     return (value.casefold(), value)
 
 
-def _public_readme_name(name: str) -> str:
-    return name[:-1] if name.endswith(("-", "_")) else name
-
-
 def _dedupe_names(names: list[str]) -> list[str]:
     ordered: list[str] = []
     seen: set[str] = set()
     for name in names:
-        public_name = _public_readme_name(name.strip())
-        if not public_name or public_name in seen:
+        public_name = name.strip()
+        key = public_name.casefold()
+        if not public_name or key in seen:
             continue
-        seen.add(public_name)
+        seen.add(key)
         ordered.append(public_name)
     return ordered
-
-
-def _readme_names(model: ReadablePrinterModel) -> list[str]:
-    names = list(model.names)
-    if model.marketing_name is None:
-        return names
-    if len(names) <= 1:
-        if not names or model.marketing_name == names[0]:
-            return [model.marketing_name]
-        return [f"{model.marketing_name} ({names[0]})"]
-    return list(dict.fromkeys([model.marketing_name, *names]))
 
 
 def _render_model_names(models: list[ReadablePrinterModel]) -> str:
     groups_by_key: dict[str, list[str]] = {}
     for model in models:
-        names = _dedupe_names(_readme_names(model))
+        names = _dedupe_names(list(model.names))
         if not names:
             continue
         prediction = getattr(model, "profile_key_prediction", None)
@@ -129,7 +119,7 @@ def validate_catalog_models() -> list[str]:
     supported_origins_by_name: dict[str, set[str]] = {}
     for model in catalog.models:
         for name in model.names:
-            supported_origins_by_name.setdefault(_public_readme_name(name), set()).update(
+            supported_origins_by_name.setdefault(DetectionNormalizer.fold_name(name), set()).update(
                 model.origin_app_packages
             )
     for model in catalog.models:
@@ -139,11 +129,11 @@ def validate_catalog_models() -> list[str]:
         if not model.names:
             errors.append(f"Unsupported model {model.model_key} has no names")
         for name in model.names:
-            public_name = _public_readme_name(name)
-            supported_origins = supported_origins_by_name.get(public_name)
+            normalized_name = DetectionNormalizer.fold_name(name)
+            supported_origins = supported_origins_by_name.get(normalized_name)
             if supported_origins and set(model.origin_app_packages).issubset(supported_origins):
                 errors.append(
-                    f"Unsupported model {model.model_key} display name {public_name!r} is already supported"
+                    f"Unsupported model {model.model_key} display name {name!r} is already supported"
                 )
     return errors
 

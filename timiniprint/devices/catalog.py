@@ -23,8 +23,8 @@ from .device import (
 from .model_codec import model_from_json
 from .profiles import (
     DetectionNormalizer,
+    ModelDetection,
     ModelMatch,
-    NamedModelDetection,
     PaperPreset,
     PrinterProfile,
     RuntimePreset,
@@ -68,7 +68,7 @@ class PrinterCatalog:
         )
         self._profile_by_key = {profile.profile_key: profile for profile in self._profiles}
         self._model_by_key = {model.model_key: model for model in self._models}
-        self._models_by_detection_name = self._index_models_by_detection_name(self._models)
+        self._models_by_public_name = self._index_models_by_public_name(self._models)
         self._unsupported_model_by_key = {
             model.model_key: model for model in self._unsupported_models
         }
@@ -89,21 +89,32 @@ class PrinterCatalog:
     @staticmethod
     def _detection_specificity(model: SupportedPrinterModel | UnsupportedPrinterModel) -> tuple[int, int]:
         triggers: list[str] = []
-        for named_detection in model.detections:
-            detection = named_detection.detection
-            triggers.extend(detection.exact_names)
-            triggers.extend(detection.prefixes)
-            triggers.extend(detection.substrings)
+        for detection in model.detections:
+            triggers.extend(
+                DetectionNormalizer.normalize_name(value)
+                for value in detection.exact_names
+            )
+            triggers.extend(
+                DetectionNormalizer.normalize_name(value)
+                for value in detection.prefixes
+            )
+            triggers.extend(
+                DetectionNormalizer.normalize_name(value)
+                for value in detection.substrings
+            )
             triggers.extend(detection.mac_suffixes)
         max_trigger_length = max((len(trigger) for trigger in triggers), default=0)
         return (max_trigger_length, len(triggers))
 
     @staticmethod
-    def _named_detection_specificity(detection: NamedModelDetection) -> tuple[int, int, int, int, int, int]:
+    def _rule_specificity(detection: ModelDetection) -> tuple[int, int, int, int, int, int]:
         name_triggers = [
-            *detection.detection.exact_names,
-            *detection.detection.prefixes,
-            *detection.detection.substrings,
+            DetectionNormalizer.normalize_name(value)
+            for value in (
+                *detection.exact_names,
+                *detection.prefixes,
+                *detection.substrings,
+            )
         ]
         trigger_lengths = [
             len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
@@ -117,8 +128,8 @@ class PrinterCatalog:
         )
         return (
             max_trigger_length,
-            int(bool(detection.detection.mac_suffixes)),
-            int(bool(detection.detection.exact_names)),
+            int(bool(detection.mac_suffixes)),
+            int(bool(detection.exact_names)),
             max_raw_length,
             uppercase_score,
             len(name_triggers),
@@ -126,13 +137,13 @@ class PrinterCatalog:
 
     @staticmethod
     def _matched_detection_specificity(
-        detection: NamedModelDetection,
+        detection: ModelDetection,
         device_name: str,
         address: Optional[str],
         *,
         case_sensitive: bool,
     ) -> tuple[int, int, int, int, int] | None:
-        return detection.detection.matched_specificity(
+        return detection.matched_specificity(
             device_name,
             address,
             case_sensitive=case_sensitive,
@@ -142,7 +153,7 @@ class PrinterCatalog:
     def _sorted_detection_entries(
         cls,
         models: Iterable[SupportedPrinterModel] | Iterable[UnsupportedPrinterModel],
-    ) -> list[tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection]]:
+    ) -> list[tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection]]:
         entries = [
             (model, detection)
             for model in models
@@ -150,18 +161,18 @@ class PrinterCatalog:
         ]
         return sorted(
             entries,
-            key=lambda entry: cls._named_detection_specificity(entry[1]),
+            key=lambda entry: cls._rule_specificity(entry[1]),
             reverse=True,
         )
 
     @staticmethod
-    def _index_models_by_detection_name(
+    def _index_models_by_public_name(
         models: Iterable[SupportedPrinterModel],
     ) -> dict[str, tuple[SupportedPrinterModel, ...]]:
         indexed: dict[str, list[SupportedPrinterModel]] = {}
         for model in models:
-            for detection in model.detections:
-                name = detection.normalized_name
+            for public_name in model.names:
+                name = DetectionNormalizer.fold_name(public_name)
                 entries = indexed.setdefault(name, [])
                 if model not in entries:
                     entries.append(model)
@@ -491,7 +502,7 @@ class PrinterCatalog:
         model = match.model
         profile = match.profile
         return self._build_device(
-            display_name=display_name or match.detection.name,
+            display_name=display_name or match.detection.names[0],
             profile=profile,
             protocol_family=self._protocol_family_for_model(model, profile),
             protocol_variant=self._protocol_packets_type_for_model(model, profile),
@@ -530,7 +541,7 @@ class PrinterCatalog:
         display_name: Optional[str] = None,
         transport_target: TransportTarget | None = None,
     ) -> PrinterDevice:
-        """Create a runtime device from a model key or public detection name."""
+        """Create a runtime device from a model key or public catalog name."""
         model = self.get_model(key)
         if model is not None:
             return self.device_from_model(
@@ -538,7 +549,7 @@ class PrinterCatalog:
                 display_name=display_name,
                 transport_target=transport_target,
             )
-        matches = self.get_models_by_detection_name(key)
+        matches = self.get_models_by_public_name(key)
         if len(matches) == 1:
             return self.device_from_model(
                 matches[0].model_key,
@@ -551,14 +562,14 @@ class PrinterCatalog:
                 f"Printer name '{key}' is ambiguous; choose the original app and use one of these model keys: "
                 f"{candidates}"
             )
-        raise RuntimeError(f"Unknown printer model or detection name '{key}'")
+        raise RuntimeError(f"Unknown printer model or catalog name '{key}'")
 
     def get_model(self, model_key: str) -> SupportedPrinterModel | None:
         return self._model_by_key.get(model_key)
 
-    def get_models_by_detection_name(self, name: str) -> tuple[SupportedPrinterModel, ...]:
-        normalized = NamedModelDetection.normalize_public_name(name)
-        return self._models_by_detection_name.get(normalized, ())
+    def get_models_by_public_name(self, name: str) -> tuple[SupportedPrinterModel, ...]:
+        normalized = DetectionNormalizer.fold_name(name)
+        return self._models_by_public_name.get(normalized, ())
 
     def require_model(self, model_key: str) -> SupportedPrinterModel:
         model = self.get_model(model_key)
@@ -647,7 +658,7 @@ class PrinterCatalog:
     def _best_detection_matches(
         self,
         entries: Iterable[
-            tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection]
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection]
         ],
         device_name: str,
         address: Optional[str],
@@ -655,7 +666,7 @@ class PrinterCatalog:
         case_sensitive: bool,
     ) -> tuple[
         tuple[
-            tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection],
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection],
             ...
         ],
         tuple[int, int, int, int, int] | None,
@@ -663,7 +674,7 @@ class PrinterCatalog:
         matches: list[
             tuple[
                 SupportedPrinterModel | UnsupportedPrinterModel,
-                NamedModelDetection,
+                ModelDetection,
                 tuple[int, int, int, int, int],
             ]
         ] = []
@@ -684,7 +695,7 @@ class PrinterCatalog:
                 matches.append((model, detection, specificity))
 
         deduped: list[
-            tuple[SupportedPrinterModel | UnsupportedPrinterModel, NamedModelDetection]
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection]
         ] = []
         seen_model_keys: set[str] = set()
         for model, detection, _specificity in matches:
@@ -697,7 +708,7 @@ class PrinterCatalog:
     def _model_match(
         self,
         model: SupportedPrinterModel | UnsupportedPrinterModel,
-        detection: NamedModelDetection,
+        detection: ModelDetection,
     ) -> SupportedModelMatch | UnsupportedModelMatch:
         if isinstance(model, SupportedPrinterModel):
             profile = self._profile_by_key.get(model.profile_key)

@@ -83,6 +83,35 @@ class ModelDetectionTests(unittest.TestCase):
         )
         self.assertFalse(detection.matches("FDT4-1", None))
 
+    def test_matching_normalizes_private_copies_without_changing_public_spelling(self) -> None:
+        detection = ModelDetection(
+            exact_names=("PM 241",),
+            prefixes=("BT 01-",),
+        )
+
+        self.assertEqual(detection.exact_names, ("PM 241",))
+        self.assertEqual(detection.prefixes, ("BT 01-",))
+        self.assertTrue(detection.matches("PM241", None))
+        self.assertTrue(detection.matches("BT01-ABCD", None))
+
+    def test_public_names_include_all_sources_in_stable_order(self) -> None:
+        detection = ModelDetection(
+            marketing_names=("Retail name", "core"),
+            exact_names=("BT 01", "retail NAME"),
+            prefixes=("BT-", "PM_"),
+            substrings=("Core-", "Tag_"),
+        )
+
+        self.assertEqual(
+            detection.names,
+            ("Retail name", "core", "BT 01", "BT", "PM", "Tag"),
+        )
+
+    def test_public_name_deduplication_keeps_whitespace_variants(self) -> None:
+        detection = ModelDetection(exact_names=("PM241", "PM 241"))
+
+        self.assertEqual(detection.names, ("PM241", "PM 241"))
+
 
 if __name__ == "__main__":
     unittest.main()
