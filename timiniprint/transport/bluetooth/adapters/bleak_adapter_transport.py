@@ -388,13 +388,21 @@ class _BleakTransportSession:
     async def _wait_for_flow(self, timeout: float) -> None:
         if self.flow_can_write:
             return
+        # A paused device is working, not broken, and a printer can stay busy far
+        # longer than the send timeout. Profiles whose hardware pauses mid-job set
+        # their own resume budget; the default keeps the send timeout.
+        budget = self._transport_profile.flow_resume_timeout_s or timeout
+        waited_from = time.monotonic()
         try:
             await asyncio.wait_for(
                 self._flow_resume_event_for_current_loop().wait(),
-                timeout=max(0.0, timeout),
+                timeout=max(0.0, budget),
             )
         except asyncio.TimeoutError:
             raise TimeoutError("Timed out waiting for BLE flow-control resume") from None
+        self.report_debug(
+            f"BLE flow-control resumed after {time.monotonic() - waited_from:.1f}s"
+        )
 
     def handle_notification(self, payload: bytes) -> None:
         self._notification_count += 1

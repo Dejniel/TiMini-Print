@@ -22,6 +22,10 @@ class BleTransportProfile:
     notify_char_uuid: str = ""
     prefer_generic_notify: bool = False
     flow_controlled_standard_write: bool = False
+    # Seconds to wait for a resume frame before giving up. None keeps the send
+    # timeout, which is right for a link that should answer promptly; printers
+    # that pause to drain a print buffer need far longer than that.
+    flow_resume_timeout_s: float | None = None
     bulk_write: BleBulkWriteProfile | None = None
     # Some BLE writers need a smaller application chunk than the reported ATT
     # payload for write-without-response transfers.
@@ -91,9 +95,38 @@ _PROFILES = {
 
 DEFAULT_BLE_TRANSPORT_PROFILE = _PROFILES[ProtocolFamily.TINY]
 
+# Transport behaviour selected by runtime control algorithm rather than family.
+# Standard writes are write-without-response, so the transport has no
+# back-pressure of its own: it pushes a whole job out in seconds while the
+# printer needs minutes, and whatever does not fit is dropped silently. A device
+# that reports when it cannot take more can gate the write loop instead.
+#
+# Opt-in per device, not per family: one tested unit says nothing about the rest
+# of a family, and subscribing to notifications changes behaviour for every
+# device that would resolve to it.
+_CONTROL_ALGORITHM_PROFILES = {
+    # Verified on an X5 (advertised name "X5", profile x5_2, BLE). It sends the
+    # tiny pause/resume frames on a generic notify characteristic. Measured with
+    # a 54800-byte job: it paused twice and sent the resume frame after 35.8s
+    # and 30.2s, so the resume budget must be far larger than the send timeout
+    # of 30s -- which missed both by a hair and made the resume frame look like
+    # it did not exist at all.
+    "x5_poll": BleTransportProfile(
+        standard_chunk_cap=512,
+        prefer_generic_notify=True,
+        flow_controlled_standard_write=True,
+        flow_resume_timeout_s=600.0,
+    ),
+}
+
 
 def get_ble_transport_profile(
     protocol_family: ProtocolFamily | str | None,
+    control_algorithm: str | None = None,
 ) -> BleTransportProfile:
+    if control_algorithm:
+        override = _CONTROL_ALGORITHM_PROFILES.get(control_algorithm)
+        if override is not None:
+            return override
     family = ProtocolFamily.from_value(protocol_family)
     return _PROFILES.get(family, _FALLBACK_PROFILE)

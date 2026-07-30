@@ -7,6 +7,7 @@ from .base import RuntimeController
 from .funny_lx import FunnyLxRuntimeController
 from .luck_normal import LuckNormalRuntimeController
 from .niimbot import NiimbotRuntimeController
+from .tiny import TINY_FLOW_CONTROL_ALGORITHMS, TinyRuntimeController
 from .v5c import V5CRuntimeController
 from .v5g import V5GRuntimeController
 from .v5x import V5XRuntimeController
@@ -26,6 +27,12 @@ def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | 
         return V5CRuntimeController()
     if device.protocol_family is ProtocolFamily.NIIMBOT:
         return NiimbotRuntimeController()
+    if (
+        device.protocol_family is ProtocolFamily.TINY
+        and device.runtime_settings is not None
+        and device.runtime_settings.control_algorithm in TINY_FLOW_CONTROL_ALGORITHMS
+    ):
+        return TinyRuntimeController()
     if device.protocol_family is ProtocolFamily.FUNNY_LX:
         return FunnyLxRuntimeController(bluetooth_address=device.address)
     if (

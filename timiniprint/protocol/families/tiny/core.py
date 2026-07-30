@@ -16,6 +16,14 @@ from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
 
 
+# Flow-control notifications. Both packets already appear in the V5X tables in
+# families/v5x.py (_FLOW_PAUSE_HEX / _FLOW_RESUME_HEX), which collect the same
+# two frames across several packet prefixes -- 5178 is the tiny prefix, so no
+# tiny-family printer ever matched them. Confirmed on hardware (advertised name
+# "X5", profile x5_2): the pause frame arrives part-way through a long transfer.
+TINY_FLOW_PAUSE_PACKET = bytes.fromhex("5178AE0101001070FF")
+TINY_FLOW_RESUME_PACKET = bytes.fromhex("5178AE0101000000FF")
+
 VARIANT_LINE_EIGHT = "line_eight"
 VARIANT_ESC_STAR = "esc_star"
 VARIANT_ESC_STAR_EIGHT = "esc_star_eight"
