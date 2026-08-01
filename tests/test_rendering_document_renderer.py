@@ -70,6 +70,73 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(image_renderer.preview_calls, 1)
         self.assertEqual(image_renderer.raster_calls, 1)
 
+    def test_source_preview_preserves_color_without_print_renderer(self) -> None:
+        image_renderer = _RecordingImageRenderer()
+        renderer = DocumentRenderer(
+            image_loader=lambda _path: Image.new("RGB", (40, 20), "red"),
+            image_renderer=image_renderer,
+        )
+
+        preview = renderer.preview_source_page(
+            RenderDocument("label.png"),
+            target_width=20,
+            target_height=20,
+        )
+
+        with Image.open(io.BytesIO(preview.png)) as image:
+            self.assertEqual(image.mode, "RGB")
+            self.assertEqual(image.getpixel((0, 0)), (255, 0, 0))
+            self.assertEqual(image.size, (20, 10))
+        self.assertEqual((preview.page_number, preview.page_count), (1, 1))
+        self.assertEqual(image_renderer.preview_calls, 0)
+        self.assertEqual(image_renderer.raster_calls, 0)
+
+    def test_source_preview_renders_requested_original_pdf_page(self) -> None:
+        pdf_renderer = _FakePdfRenderer(page_count=4)
+        renderer = DocumentRenderer(pdf_renderer=pdf_renderer)
+
+        preview = renderer.preview_source_page(
+            RenderDocument("document.pdf"),
+            page_index=2,
+            target_width=80,
+            target_height=80,
+        )
+
+        self.assertEqual(pdf_renderer.last_document.rendered_pages, [2])
+        self.assertEqual((preview.page_number, preview.page_count), (3, 4))
+        self.assertEqual((preview.width, preview.height), (80, 10))
+
+    def test_source_preview_rejects_invalid_pdf_page_with_index_error(self) -> None:
+        pdf_renderer = _FakePdfRenderer(page_count=4)
+        renderer = DocumentRenderer(pdf_renderer=pdf_renderer)
+
+        for page_index in (-1, 4):
+            with self.subTest(page_index=page_index):
+                with self.assertRaises(IndexError):
+                    renderer.preview_source_page(
+                        RenderDocument("document.pdf"),
+                        page_index=page_index,
+                        target_width=80,
+                        target_height=80,
+                    )
+
+    def test_source_preview_uses_existing_text_loader(self) -> None:
+        calls = []
+        renderer = DocumentRenderer(
+            text_loader=lambda source: calls.append(source) or "hello world",
+        )
+
+        preview = renderer.preview_source_page(
+            RenderDocument("content://note", "text/plain", "note.txt"),
+            target_width=120,
+            target_height=80,
+        )
+
+        self.assertEqual(calls, ["content://note"])
+        self.assertEqual(preview.width, 120)
+        self.assertLessEqual(preview.height, 80)
+        self.assertGreaterEqual(preview.page_count, 1)
+
     def test_paper_preset_render_width_is_used_for_preview_and_print(self) -> None:
         image_renderer = _RecordingImageRenderer()
         renderer = DocumentRenderer(

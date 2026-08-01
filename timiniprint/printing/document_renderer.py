@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from typing import Callable, Optional
 
 from PIL import Image, ImageOps
@@ -171,6 +172,62 @@ class DocumentRenderer:
             raster_height=preview.height,
             page_count=plan.page_count,
             page_number=page.index + 1,
+        )
+
+    def preview_source_page(
+        self,
+        document: RenderDocument,
+        page_index: int = 0,
+        *,
+        target_width: int,
+        target_height: int | None = None,
+    ) -> PreviewPage:
+        """Render a document page for viewing, without printer transforms."""
+        if page_index < 0:
+            raise IndexError(f"Document page out of range: {page_index + 1}")
+        width = max(1, int(target_width))
+        height = None if target_height is None else max(1, int(target_height))
+        kind = self._document_kind(document)
+        if kind == "image":
+            if page_index != 0:
+                raise IndexError(f"Document page out of range: {page_index + 1}")
+            source = ImageConverter(
+                image_loader=self.image_loader,
+                trim_side_margins=False,
+                trim_top_bottom_margins=False,
+            ).open(document.source, width)
+        elif kind == "pdf":
+            source = PdfConverter(
+                trim_side_margins=False,
+                trim_top_bottom_margins=False,
+                render_dpi=144,
+                pdf_renderer=self.pdf_renderer,
+            ).open(document.source, width)
+        elif kind == "text":
+            source = TextConverter(
+                font_path=self.text_font_resolver(None),
+                page_height_to_width=(
+                    None if height is None else height / width
+                ),
+            ).open_text(self._text_content(document), width)
+        else:
+            raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
+
+        with source:
+            if page_index >= source.page_count:
+                raise IndexError(f"Document page out of range: {page_index + 1}")
+            image = source.page(page_index).image.copy()
+            page_count = source.source_page_count
+        if height is not None and image.height > height:
+            image.thumbnail((width, height), Image.Resampling.LANCZOS)
+        return PreviewPage(
+            png=_color_png(image),
+            width=image.width,
+            height=image.height,
+            raster_width=image.width,
+            raster_height=image.height,
+            page_count=page_count,
+            page_number=page_index + 1,
         )
 
     def print_page(
@@ -351,3 +408,9 @@ def _white_for_mode(mode: str) -> str | int | tuple[int, ...]:
     if mode == "RGBA":
         return (255, 255, 255, 255)
     return "white"
+
+
+def _color_png(image: Image.Image) -> bytes:
+    output = BytesIO()
+    image.save(output, format="PNG")
+    return output.getvalue()
