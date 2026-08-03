@@ -49,6 +49,31 @@ class ProtocolCommandsTests(unittest.TestCase):
             self.packet.split_prefixed_packets(first + b"\x00", ProtocolFamily.V5X)
         )
 
+    def test_prefixed_packet_stream_decoder_handles_fragmented_and_coalesced_frames(self) -> None:
+        pause = bytes.fromhex("5178AE0101001070FF")
+        resume = bytes.fromhex("5178AE0101000000FF")
+        decoder = self.packet.PrefixedPacketStreamDecoder(ProtocolFamily.TINY)
+
+        self.assertEqual(decoder.feed(b"\x00\x51"), ())
+        packets = decoder.feed(pause[1:] + resume)
+
+        self.assertEqual([packet.raw for packet in packets], [pause, resume])
+        self.assertEqual(
+            [(packet.opcode, packet.flags, packet.payload) for packet in packets],
+            [(0xAE, 1, b"\x10"), (0xAE, 1, b"\x00")],
+        )
+        self.assertEqual(decoder.pending, b"")
+
+    def test_prefixed_packet_stream_decoder_resynchronizes_after_invalid_crc(self) -> None:
+        pause = bytes.fromhex("5178AE0101001070FF")
+        resume = bytes.fromhex("5178AE0101000000FF")
+        invalid = pause[:-2] + b"\x00\xFF"
+        decoder = self.packet.PrefixedPacketStreamDecoder(ProtocolFamily.TINY)
+
+        packets = decoder.feed(invalid + resume)
+
+        self.assertEqual([packet.raw for packet in packets], [resume])
+
     def test_protocol_specs_expose_command_set(self) -> None:
         self.assertEqual(ProtocolFamily.TINY.command_set, ProtocolCommandSet.TINY)
         self.assertEqual(ProtocolFamily.TINY_PREFIXED.command_set, ProtocolCommandSet.TINY)

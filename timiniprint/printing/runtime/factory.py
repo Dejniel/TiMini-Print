@@ -7,6 +7,7 @@ from .base import RuntimeController
 from .funny_lx import FunnyLxRuntimeController
 from .luck_normal import LuckNormalRuntimeController
 from .niimbot import NiimbotRuntimeController
+from .tiny import TinyRuntimeController
 from .v5c import V5CRuntimeController
 from .v5g import V5GRuntimeController
 from .v5x import V5XRuntimeController
@@ -16,6 +17,8 @@ if TYPE_CHECKING:
 
 
 def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | None:
+    if device.protocol_family in {ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED}:
+        return TinyRuntimeController()
     if device.protocol_family is ProtocolFamily.V5G:
         return V5GRuntimeController(
             runtime_settings=device.runtime_settings,

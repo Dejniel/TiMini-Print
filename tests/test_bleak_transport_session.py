@@ -20,6 +20,7 @@ from timiniprint.devices.bluetooth_profiles import (
     get_ble_transport_profile,
 )
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
+from timiniprint.printing.runtime.tiny import TinyRuntimeController
 from timiniprint.printing.runtime.v5g import V5GRuntimeController
 from timiniprint.printing.runtime.v5g_density import DensityLevels
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
@@ -45,6 +46,7 @@ from timiniprint.protocol.families.v5x import (
     V5X_STATUS_POLL_PACKET,
 )
 from timiniprint.protocol.families.v5c import V5C_CONNECT_INIT_PACKET
+from timiniprint.protocol.families.tiny import TINY_NOTIFY_RESUME
 from timiniprint.protocol.packet import crc8_value, make_packet, prefixed_packet_opcode
 from timiniprint.protocol.steps import ProtocolStep
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver import (
@@ -159,6 +161,8 @@ def _enable_notification_waits(session: _BleakTransportSession) -> None:
 
 
 def _runtime_controller_for_test(family: ProtocolFamily):
+    if family in {ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED}:
+        return TinyRuntimeController()
     if family is ProtocolFamily.V5G:
         return V5GRuntimeController()
     if family is ProtocolFamily.V5X:
@@ -1675,6 +1679,37 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertEqual(client.calls, [])
         self.assertFalse(session.flow_can_write)
+
+    def test_tiny_flow_resume_uses_profile_timeout_instead_of_send_timeout(self) -> None:
+        session, client = self._make_session(ProtocolFamily.TINY)
+        write_char = _Char(
+            "0000ae01-0000-1000-8000-00805f9b34fb",
+            ["write-without-response"],
+        )
+        session.bindings.write_char = write_char
+        session.bindings.write_selection_strategy = "preferred_uuid"
+        session.bindings.write_response_preference = False
+        session.bindings.write_char_uuid = write_char.uuid
+        session.flow_can_write = False
+
+        async def run() -> None:
+            async def resume() -> None:
+                await asyncio.sleep(0.02)
+                session.handle_notification(TINY_NOTIFY_RESUME)
+
+            task = asyncio.create_task(resume())
+            await session.send(
+                client,
+                b"ABC",
+                mtu_size=180,
+                timeout=0.01,
+            )
+            await task
+
+        asyncio.run(run())
+
+        self.assertEqual(client.calls, [(write_char.uuid, b"ABC", False)])
+        self.assertTrue(session.flow_can_write)
 
     def test_v5c_notifications_update_session_state(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5C)
