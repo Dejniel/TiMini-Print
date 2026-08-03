@@ -15,13 +15,23 @@ from ... import reporting
 _MACOS_FALLBACK_COOLDOWN_SEC = 0.35
 _MACOS_BLE_REFRESH_TIMEOUT_SEC = 3.0
 _CONNECT_TIMEOUT_SEC = 12.0
+_CLASSIC_FLOW_RESUME_TIMEOUT_SEC = 600.0
 
 
 class _ClassicRuntimeSession:
     """Notification-side runtime adapter without protocol knowledge."""
 
-    def __init__(self, reporter: reporting.Reporter) -> None:
+    def __init__(
+        self,
+        reporter: reporting.Reporter,
+        *,
+        flow_resume_timeout_s: float = _CLASSIC_FLOW_RESUME_TIMEOUT_SEC,
+    ) -> None:
         self._reporter = reporter
+        self._flow_resume_timeout_s = max(0.0, float(flow_resume_timeout_s))
+        self._flow_condition = threading.Condition()
+        self._flow_paused = False
+        self._flow_closed = False
 
     def report_debug(self, message: str) -> None:
         self._reporter.debug(short="Runtime", detail=message)
@@ -30,11 +40,53 @@ class _ClassicRuntimeSession:
         self._reporter.warning(short=short, detail=detail)
 
     def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
-        _ = paused, payload
+        with self._flow_condition:
+            if self._flow_closed:
+                return
+            changed = self._flow_paused != paused
+            self._flow_paused = paused
+            if not paused:
+                self._flow_condition.notify_all()
+        if changed:
+            label = "Classic flow pause" if paused else "Classic flow resume"
+            detail = "" if not payload else f": {payload.hex()}"
+            self.report_debug(label + detail)
+
+    def reopen_flow(self) -> None:
+        with self._flow_condition:
+            self._flow_paused = False
+            self._flow_closed = False
+            self._flow_condition.notify_all()
+
+    def close_flow(self) -> None:
+        with self._flow_condition:
+            self._flow_paused = False
+            self._flow_closed = True
+            self._flow_condition.notify_all()
+
+    def wait_for_flow(self) -> None:
+        deadline = time.monotonic() + self._flow_resume_timeout_s
+        with self._flow_condition:
+            while self._flow_paused and not self._flow_closed:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError(
+                        "Timed out waiting for Classic Bluetooth flow-control resume"
+                    )
+                self._flow_condition.wait(timeout=remaining)
+            if self._flow_closed:
+                raise RuntimeError(
+                    "Classic Bluetooth disconnected while waiting for flow-control resume"
+                )
 
 
 class SppBackend:
-    def __init__(self, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
+    def __init__(
+        self,
+        reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+        *,
+        classic_flow_resume_timeout_s: float = _CLASSIC_FLOW_RESUME_TIMEOUT_SEC,
+    ) -> None:
         self._sock: Optional[SocketLike] = None
         self._lock = threading.Lock()
         self._classic_query_lock = threading.Lock()
@@ -44,7 +96,10 @@ class SppBackend:
         self._reporter = reporter
         self._classic_receive_hub: ClassicReceiveHub | None = None
         self._classic_runtime_controller = None
-        self._classic_runtime_session = _ClassicRuntimeSession(reporter)
+        self._classic_runtime_session = _ClassicRuntimeSession(
+            reporter,
+            flow_resume_timeout_s=classic_flow_resume_timeout_s,
+        )
 
     @staticmethod
     async def scan(timeout: float = 5.0) -> List[DeviceInfo]:
@@ -374,6 +429,7 @@ class SppBackend:
                 self._connected = True
                 self._channel = channel
                 self._transport = device.transport
+                self._classic_runtime_session.reopen_flow()
                 self._reporter.debug(
                     short="Bluetooth",
                     detail=(
@@ -407,6 +463,7 @@ class SppBackend:
         raise RuntimeError("Bluetooth connection failed (" + detail + ")")
 
     def _disconnect_blocking(self) -> None:
+        self._classic_runtime_session.close_flow()
         self._stop_classic_receive_hub()
         if not self._sock:
             self._connected = False
@@ -635,7 +692,10 @@ class SppBackend:
         chunk_index = 0
         while offset < len(data):
             chunk = data[offset : offset + chunk_size]
+            self._classic_runtime_session.wait_for_flow()
             with self._lock:
+                if not self._sock or not self._connected:
+                    raise RuntimeError("Not connected to a Bluetooth device")
                 _send_all(self._sock, chunk)
             offset += len(chunk)
             chunk_index += 1
