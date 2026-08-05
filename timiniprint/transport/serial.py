@@ -95,14 +95,22 @@ class SerialConnection:
         delay = max(0.0, delay_ms / 1000.0)
         try:
             with serial.Serial(self._target.path, self._target.baud_rate, timeout=1, write_timeout=5) as ser:
+                # A freshly opened Bluetooth-SPP port needs a moment to settle;
+                # writing immediately drops the first frames (which carry the
+                # printer's setup/registration), so wait before the first write.
+                time.sleep(0.5)
                 offset = 0
                 while offset < len(data):
                     chunk = data[offset : offset + chunk_size]
                     ser.write(chunk)
+                    ser.flush()  # push each chunk out before the next (SPP buffers)
                     offset += len(chunk)
                     if delay:
                         time.sleep(delay)
                 ser.flush()
+                # Let the Bluetooth-SPP stack drain before the port closes,
+                # otherwise the tail of the job can be dropped on close.
+                time.sleep(0.5)
         except Exception as exc:
             raise RuntimeError(f"Serial connection failed: {exc}") from exc
 
