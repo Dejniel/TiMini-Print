@@ -6653,5 +6653,57 @@
     "paper_presets": [
       "plain_384r"
     ]
+  },
+  {
+    "profile_key": "s001",
+    "size": 1,
+    "one_length": 320,
+    "dev_dpi": 203,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 40,
+    "protocol_default": {
+      "type": "yk_s001"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "yk_s001_raster"
+    },
+    "stream": {
+      "chunk_size": 128,
+      "delay_ms": 20
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 9,
+        "text": 9
+      },
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      }
+    },
+    "a4xii": false,
+    "paper_presets": [
+      "tag_84r_90p",
+      "blacktag_84r_90p",
+      "plain_84r_90p",
+      "tag_90r_90p",
+      "blacktag_90r_90p",
+      "plain_90r_90p"
+    ]
   }
 ]
