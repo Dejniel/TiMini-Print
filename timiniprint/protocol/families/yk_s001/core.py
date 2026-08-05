@@ -213,4 +213,5 @@ BEHAVIOR = ProtocolBehavior(
         ImageEncoding.YK_S001_RASTER: (PixelFormat.BW1,),
     },
     job_builder=_build_s001_job,
+    rotate_90=True,  # head is the short axis; print content along the label length
 )

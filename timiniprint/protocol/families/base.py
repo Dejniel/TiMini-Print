@@ -42,6 +42,9 @@ class ProtocolBehavior:
     advance_paper_builder: ManualMotionBuilder | None = None
     retract_paper_builder: ManualMotionBuilder | None = None
     job_builder: FamilyJobBuilder | None = None
+    # Content must be rotated 90 deg for printers whose head is the short axis
+    # (e.g. S001 labels), so text/images run along the label length.
+    rotate_90: bool = False
 
     def image_encoding_support_for(
         self,
