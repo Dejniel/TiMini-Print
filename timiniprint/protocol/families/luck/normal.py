@@ -9,6 +9,7 @@ from .core import (
     LUCK_NORMAL_MODE2_DIALECT,
     LuckNormalFamilyRecipe,
     LuckNormalModeRecipe,
+    LuckNormalPageMarkerFlow,
     LuckNormalPaperMode,
     LuckNormalVariantRecipe,
 )
@@ -20,12 +21,12 @@ TAG_POSITION_RECIPE = LuckNormalModeRecipe(
 
 LUJIANG_NORMAL_MODE_RECIPES = {
     PaperMode.PLAIN: LuckNormalModeRecipe(
-        mark_last_scope="last_page",
+        page_marker_flow=LuckNormalPageMarkerFlow.LAST_ONLY,
     ),
     PaperMode.TAG: LuckNormalModeRecipe(
         paper_mode=LuckNormalPaperMode.TAG,
         finish_action="position",
-        mark_last_scope="last_page",
+        page_marker_flow=LuckNormalPageMarkerFlow.LAST_ONLY,
     ),
 }
 

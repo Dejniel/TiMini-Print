@@ -100,7 +100,7 @@ class LuckNormalRuntimeController(RuntimeController):
         session.report_warning(
             short="Luck capability probe unavailable",
             detail=(
-                "PPA2L/PPA2LH is running in degraded mono-only mode because the live Luck model probe "
+                "This Luck printer is running in degraded mono-only mode because the live model probe "
                 f"failed ({reason}). Gray printing will not work in this session. This is likely a "
                 "program limitation, please report it."
             ),

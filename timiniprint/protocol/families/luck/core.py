@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import IntEnum
+from enum import Enum, IntEnum
 from typing import Mapping
 
 from ....raster import PixelFormat, RasterBuffer
@@ -27,13 +27,22 @@ class LuckNormalPaperMode(IntEnum):
     BLACK_TAG = 80
 
 
+class LuckNormalPageMarkerFlow(str, Enum):
+    """Page-boundary marker sequences used by Luck normal-family recipes."""
+
+    NONE = "none"
+    LAST_ONLY = "last_only"
+    FIRST_MIDDLE_LAST = "first_middle_last"
+
+
 @dataclass(frozen=True)
 class LuckNormalModeRecipe:
     """One media-specific print recipe for the Luck normal-family stack.
 
     `paper_type_stage` controls when `setPaperType(...)` is emitted relative to
-    enable and wakeup. `adjust_*_scope` limits marker commands to `never`,
-    `always`, `first_page`, or `last_page`.
+    enable and wakeup. `adjust_*_scope` limits position-adjust commands to
+    `never`, `always`, `first_page`, or `last_page`. `page_marker_flow`
+    controls the distinct first/intermediate/last page marker lifecycle.
     """
 
     paper_mode: LuckNormalPaperMode | None = None
@@ -43,7 +52,7 @@ class LuckNormalModeRecipe:
     adjust_before_scope: str = "never"
     adjust_after: int | None = None
     adjust_after_scope: str = "never"
-    mark_last_scope: str = "never"
+    page_marker_flow: LuckNormalPageMarkerFlow = LuckNormalPageMarkerFlow.NONE
 
 
 @dataclass(frozen=True)
@@ -70,8 +79,14 @@ class LuckNormalCommandDialect:
     def adjust_position_auto(self, marker: int) -> bytes:
         return bytes([0x1F, 0x11, marker & 0xFF])
 
+    def mark_first(self) -> bytes:
+        return bytes([0x1B, 0xBB, 0xCC])
+
     def mark_last(self) -> bytes:
         return bytes([0x1B, 0xBB, 0xBB])
+
+    def mark_not_last(self) -> bytes:
+        return bytes([0x1B, 0xBB, 0xAA])
 
 
 LUCK_NORMAL_DIALECT = LuckNormalCommandDialect(
@@ -89,14 +104,19 @@ LUCK_NORMAL_MODE2_DIALECT = LuckNormalCommandDialect(
 class LuckNormalBitmapEncoder:
     """Encode raster data into the Luck normal-family bitmap payloads."""
 
-    def encode(self, request: PrintJobRequest) -> bytes:
+    def encode(
+        self,
+        request: PrintJobRequest,
+        *,
+        gray_level_override: int | None = None,
+    ) -> bytes:
         encoding = request.image_pipeline.encoding
         if encoding == ImageEncoding.LUCK_NORMAL_RAW:
             return self._encode_raw(request.require_raster(PixelFormat.BW1))
         if encoding == ImageEncoding.LUCK_NORMAL_GRAY:
             return self._encode_gray(
                 request.default_raster,
-                self._gray_level_for_request(request),
+                self._gray_level_for_request(request, gray_level_override),
             )
         if encoding == ImageEncoding.LUCK_NORMAL_COMPRESSED:
             return self._encode_compressed(request.require_raster(PixelFormat.BW1))
@@ -176,11 +196,16 @@ class LuckNormalBitmapEncoder:
         raise ValueError("Luck normal gray jobs require GRAY4 or GRAY8 raster data")
 
     @staticmethod
-    def _gray_level_for_request(request: PrintJobRequest) -> int:
+    def _gray_level_for_request(
+        request: PrintJobRequest,
+        variant_override: int | None,
+    ) -> int:
         runtime_capabilities = request.runtime_capabilities
-        if runtime_capabilities is None or runtime_capabilities.gray_level_override is None:
-            return 16
-        return runtime_capabilities.gray_level_override
+        if runtime_capabilities is not None and runtime_capabilities.gray_level_override is not None:
+            return runtime_capabilities.gray_level_override
+        if variant_override is not None:
+            return variant_override
+        return 16
 
 
 @dataclass(frozen=True)
@@ -256,7 +281,22 @@ class LuckNormalFamilyRecipe:
             )
         if self._should_run_scope(recipe.adjust_before_scope, request) and recipe.adjust_before is not None:
             steps.append(ProtocolStep.send("adjust before", dialect.adjust_position_auto(recipe.adjust_before)))
-        steps.append(ProtocolStep.send("bitmap", self.bitmap_encoder.encode(request)))
+        if (
+            recipe.page_marker_flow is LuckNormalPageMarkerFlow.FIRST_MIDDLE_LAST
+            and request.is_first_page
+        ):
+            steps.append(ProtocolStep.send("mark first", dialect.mark_first()))
+        steps.append(
+            ProtocolStep.send(
+                "bitmap",
+                self.bitmap_encoder.encode(
+                    request,
+                    gray_level_override=self.gray_level_override_for_variant(
+                        request.protocol_variant
+                    ),
+                ),
+            )
+        )
         if request.ends_media_page:
             if recipe.finish_action == "position":
                 steps.append(ProtocolStep.send("position", dialect.position_command))
@@ -267,12 +307,23 @@ class LuckNormalFamilyRecipe:
                         dialect.line_feed(self.end_line_dots_for_request(request)),
                     )
                 )
+            elif recipe.finish_action == "none":
+                pass
             else:
                 raise ValueError(f"Unsupported Luck normal finish action: {recipe.finish_action}")
         if self._should_run_scope(recipe.adjust_after_scope, request) and recipe.adjust_after is not None:
             steps.append(ProtocolStep.send("adjust after", dialect.adjust_position_auto(recipe.adjust_after)))
-        if self._should_run_scope(recipe.mark_last_scope, request):
+        if (
+            recipe.page_marker_flow
+            in {
+                LuckNormalPageMarkerFlow.LAST_ONLY,
+                LuckNormalPageMarkerFlow.FIRST_MIDDLE_LAST,
+            }
+            and request.is_last_page
+        ):
             steps.append(ProtocolStep.send("mark last", dialect.mark_last()))
+        elif recipe.page_marker_flow is LuckNormalPageMarkerFlow.FIRST_MIDDLE_LAST:
+            steps.append(ProtocolStep.send("mark not last", dialect.mark_not_last()))
         steps.append(
             self._step(
                 "finalize",
@@ -358,6 +409,12 @@ class LuckNormalFamilyRecipe:
             return variant.default_paper_mode
         return self.default_paper_mode
 
+    def gray_level_override_for_variant(self, protocol_variant: str | None) -> int | None:
+        variant = self._variant(protocol_variant)
+        if variant is None:
+            return None
+        return variant.gray_level_override
+
     def _uses_query_interleaving(self, protocol_variant: str | None) -> bool:
         variant = self._variant(protocol_variant)
         return bool(variant is not None and variant.query_interleaved)
@@ -415,6 +472,7 @@ class LuckNormalVariantRecipe:
     default_paper_mode: PaperMode | None = None
     end_line_dots_200dpi: int | None = None
     end_line_dots_300dpi: int | None = None
+    gray_level_override: int | None = None
     query_interleaved: bool = False
 
 
