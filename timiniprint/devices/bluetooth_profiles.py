@@ -22,6 +22,7 @@ class BleTransportProfile:
     notify_char_uuid: str = ""
     prefer_generic_notify: bool = False
     flow_controlled_standard_write: bool = False
+    flow_resume_timeout_s: float | None = None
     bulk_write: BleBulkWriteProfile | None = None
     # Some BLE writers need a smaller application chunk than the reported ATT
     # payload for write-without-response transfers.
@@ -30,9 +31,16 @@ class BleTransportProfile:
 
 _FALLBACK_PROFILE = BleTransportProfile()
 
+_TINY_TRANSPORT_PROFILE = BleTransportProfile(
+    standard_chunk_cap=512,
+    prefer_generic_notify=True,
+    flow_controlled_standard_write=True,
+    flow_resume_timeout_s=600.0,
+)
+
 _PROFILES = {
-    ProtocolFamily.TINY: BleTransportProfile(standard_chunk_cap=512),
-    ProtocolFamily.TINY_PREFIXED: BleTransportProfile(standard_chunk_cap=512),
+    ProtocolFamily.TINY: _TINY_TRANSPORT_PROFILE,
+    ProtocolFamily.TINY_PREFIXED: _TINY_TRANSPORT_PROFILE,
     ProtocolFamily.V5G: BleTransportProfile(
         prefer_generic_notify=True,
         standard_chunk_cap=56 * 8,

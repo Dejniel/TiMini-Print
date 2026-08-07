@@ -79,6 +79,14 @@ class BleTransportProfileTests(unittest.TestCase):
         v5c = get_ble_transport_profile(ProtocolFamily.V5C)
         self.assertTrue(v5c.flow_controlled_standard_write)
 
+    def test_tiny_profiles_enable_passive_buffer_flow_control(self) -> None:
+        for family in (ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED):
+            with self.subTest(family=family.value):
+                profile = get_ble_transport_profile(family)
+                self.assertTrue(profile.prefer_generic_notify)
+                self.assertTrue(profile.flow_controlled_standard_write)
+                self.assertEqual(profile.flow_resume_timeout_s, 600.0)
+
     def test_unspecialized_families_keep_generic_transport_defaults(self) -> None:
         for family in (
             ProtocolFamily.LUCK_NORMAL,

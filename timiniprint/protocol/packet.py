@@ -1,10 +1,84 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Optional
 
 import crc8
 
 from .family import ProtocolFamily
+
+
+@dataclass(frozen=True)
+class PrefixedPacket:
+    raw: bytes
+    opcode: int
+    flags: int
+    payload: bytes
+
+
+class PrefixedPacketStreamDecoder:
+    """Decode fragmented or coalesced packets from a prefixed byte stream."""
+
+    def __init__(self, protocol_family: ProtocolFamily | str) -> None:
+        family = ProtocolFamily.from_value(protocol_family)
+        self._prefix = family.require_packet_prefix()
+        self._buffer = bytearray()
+
+    def feed(self, data: bytes) -> tuple[PrefixedPacket, ...]:
+        self._buffer.extend(data)
+        packets: list[PrefixedPacket] = []
+        prefix_length = len(self._prefix)
+        header_length = prefix_length + 4
+
+        while self._buffer:
+            marker = self._buffer.find(self._prefix)
+            if marker < 0:
+                keep = self._partial_prefix_length()
+                if keep:
+                    del self._buffer[:-keep]
+                else:
+                    self._buffer.clear()
+                break
+            if marker:
+                del self._buffer[:marker]
+            if len(self._buffer) < header_length:
+                break
+
+            payload_length_offset = prefix_length + 2
+            payload_length = int.from_bytes(
+                self._buffer[payload_length_offset : payload_length_offset + 2],
+                "little",
+            )
+            packet_length = header_length + payload_length + 2
+            if len(self._buffer) < packet_length:
+                break
+
+            raw = bytes(self._buffer[:packet_length])
+            payload = raw[header_length : header_length + payload_length]
+            if raw[-1] != 0xFF or crc8_value(payload) != raw[-2]:
+                del self._buffer[0]
+                continue
+            packets.append(
+                PrefixedPacket(
+                    raw=raw,
+                    opcode=raw[prefix_length],
+                    flags=raw[prefix_length + 1],
+                    payload=payload,
+                )
+            )
+            del self._buffer[:packet_length]
+        return tuple(packets)
+
+    @property
+    def pending(self) -> bytes:
+        return bytes(self._buffer)
+
+    def _partial_prefix_length(self) -> int:
+        limit = min(len(self._buffer), len(self._prefix) - 1)
+        for length in range(limit, 0, -1):
+            if self._buffer[-length:] == self._prefix[:length]:
+                return length
+        return 0
 
 
 def crc8_value(data: bytes) -> int:

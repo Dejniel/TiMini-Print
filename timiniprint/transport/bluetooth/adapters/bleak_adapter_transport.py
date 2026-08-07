@@ -388,10 +388,13 @@ class _BleakTransportSession:
     async def _wait_for_flow(self, timeout: float) -> None:
         if self.flow_can_write:
             return
+        resume_timeout = self._transport_profile.flow_resume_timeout_s
+        if resume_timeout is None:
+            resume_timeout = timeout
         try:
             await asyncio.wait_for(
                 self._flow_resume_event_for_current_loop().wait(),
-                timeout=max(0.0, timeout),
+                timeout=max(0.0, resume_timeout),
             )
         except asyncio.TimeoutError:
             raise TimeoutError("Timed out waiting for BLE flow-control resume") from None

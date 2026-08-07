@@ -167,6 +167,17 @@ class _RuntimeControllerSpy:
         self.received.set()
 
 
+class _FlowRuntimeController:
+    def adopt_previous(self, _previous):
+        return None
+
+    def handle_notification(self, session, payload):
+        if payload == b"pause":
+            session.set_flow_paused(True, payload=payload)
+        elif payload == b"resume":
+            session.set_flow_paused(False, payload=payload)
+
+
 class _Adapter:
     def __init__(self, channels, fail=False, pair_error=None):
         self._channels = channels
@@ -377,6 +388,148 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         self.assertEqual(sock.sent, [b"ab", b"cd", b"ef"])
         self.assertGreaterEqual(sleep_mock.call_count, 1)
+
+    def test_write_blocking_classic_waits_for_runtime_flow_resume(self) -> None:
+        reporter = _Reporter()
+        backend = SppBackend(
+            reporter=reporter,
+            classic_flow_resume_timeout_s=0.5,
+        )
+        sock = _Socket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        backend._classic_runtime_controller = _FlowRuntimeController()
+        backend._handle_classic_payload(b"pause")
+        errors = []
+
+        def write() -> None:
+            try:
+                backend._write_blocking(b"abcdef", chunk_size=2, delay_ms=0)
+            except Exception as exc:
+                errors.append(exc)
+
+        thread = threading.Thread(target=write)
+        thread.start()
+        thread.join(timeout=0.05)
+
+        self.assertTrue(thread.is_alive())
+        self.assertEqual(sock.sent, [])
+
+        backend._handle_classic_payload(b"resume")
+        thread.join(timeout=0.5)
+
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(sock.sent, [b"ab", b"cd", b"ef"])
+        details = [detail for _short, detail in reporter.debugs]
+        self.assertIn("Classic flow pause: 7061757365", details)
+        self.assertIn("Classic flow resume: 726573756d65", details)
+
+    def test_write_blocking_classic_stops_between_chunks(self) -> None:
+        backend = SppBackend(
+            reporter=reporting.DUMMY_REPORTER,
+            classic_flow_resume_timeout_s=0.5,
+        )
+        first_chunk_sent = threading.Event()
+
+        class _PauseAfterFirstChunkSocket(_Socket):
+            def sendall(self, data):
+                super().sendall(data)
+                if len(self.sent) == 1:
+                    backend._classic_runtime_session.set_flow_paused(True)
+                    first_chunk_sent.set()
+
+        sock = _PauseAfterFirstChunkSocket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        errors = []
+
+        def write() -> None:
+            try:
+                backend._write_blocking(b"abcdef", chunk_size=2, delay_ms=0)
+            except Exception as exc:
+                errors.append(exc)
+
+        thread = threading.Thread(target=write)
+        thread.start()
+        self.assertTrue(first_chunk_sent.wait(timeout=0.2))
+        thread.join(timeout=0.05)
+
+        self.assertTrue(thread.is_alive())
+        self.assertEqual(sock.sent, [b"ab"])
+
+        backend._classic_runtime_session.set_flow_paused(False)
+        thread.join(timeout=0.5)
+
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(sock.sent, [b"ab", b"cd", b"ef"])
+
+    def test_write_blocking_ble_does_not_use_classic_flow_gate(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        sock = _Socket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.BLE
+        backend._classic_runtime_session.set_flow_paused(True)
+
+        backend._write_blocking(b"abcdef", chunk_size=2, delay_ms=0)
+
+        self.assertEqual(sock.sent, [b"abcdef"])
+
+    def test_write_blocking_classic_flow_wait_times_out(self) -> None:
+        backend = SppBackend(
+            reporter=reporting.DUMMY_REPORTER,
+            classic_flow_resume_timeout_s=0.01,
+        )
+        sock = _Socket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        backend._classic_runtime_controller = _FlowRuntimeController()
+        backend._handle_classic_payload(b"pause")
+
+        with self.assertRaisesRegex(
+            TimeoutError,
+            "Classic Bluetooth flow-control resume",
+        ):
+            backend._write_blocking(b"ab", chunk_size=2, delay_ms=0)
+
+        self.assertEqual(sock.sent, [])
+
+    def test_disconnect_releases_classic_flow_waiter(self) -> None:
+        backend = SppBackend(
+            reporter=reporting.DUMMY_REPORTER,
+            classic_flow_resume_timeout_s=1.0,
+        )
+        sock = _Socket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        backend._classic_runtime_controller = _FlowRuntimeController()
+        backend._handle_classic_payload(b"pause")
+        errors = []
+
+        def write() -> None:
+            try:
+                backend._write_blocking(b"ab", chunk_size=2, delay_ms=0)
+            except Exception as exc:
+                errors.append(exc)
+
+        thread = threading.Thread(target=write)
+        thread.start()
+        backend._disconnect_blocking()
+        thread.join(timeout=0.5)
+
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(len(errors), 1)
+        self.assertRegex(
+            str(errors[0]),
+            "disconnected while waiting for flow-control resume",
+        )
+        self.assertEqual(sock.sent, [])
 
     def test_write_blocking_classic_reports_chunk_progress_for_large_payload(self) -> None:
         reporter = _Reporter()

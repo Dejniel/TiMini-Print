@@ -21,6 +21,8 @@ VARIANT_ESC_STAR = "esc_star"
 VARIANT_ESC_STAR_EIGHT = "esc_star_eight"
 VARIANT_PROFESSIONAL = "professional"
 EIGHT_PAPER_MODES = (PaperMode.PLAIN, PaperMode.A4_SHEET)
+TINY_NOTIFY_PAUSE = bytes.fromhex("5178AE0101001070FF")
+TINY_NOTIFY_RESUME = bytes.fromhex("5178AE0101000000FF")
 
 
 def _speed(request: PrintJobRequest) -> int:
