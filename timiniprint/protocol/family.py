@@ -17,6 +17,7 @@ class ProtocolCommandSet(str, Enum):
     ELEPH_TSPL = "eleph_tspl"
     PHOMEMO_ESC = "phomemo_esc"
     FUNNY_LX = "funny_lx"
+    YK_ASTRA_P1 = "yk_astra_p1"
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,7 @@ class ProtocolFamily(str, Enum):
     ELEPH_TSPL = "eleph_tspl"
     PHOMEMO_ESC = "phomemo_esc"
     FUNNY_LX = "funny_lx"
+    YK_ASTRA_P1 = "yk_astra_p1"
 
     @classmethod
     def from_value(cls, value: "ProtocolFamily | str | None") -> "ProtocolFamily":

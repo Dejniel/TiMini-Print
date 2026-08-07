@@ -2491,5 +2491,22 @@
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ]
+  },
+  {
+    "model_key": "orgstra_s001",
+    "marketing_names": [
+      "Orgstra S001"
+    ],
+    "profile_key": "yk_astra_p1_s001",
+    "detections": [
+      {
+        "exact_names": [
+          "S001"
+        ]
+      }
+    ],
+    "origin_app_packages": [
+      "com.xinye.snaptag"
+    ]
   }
 ]
