@@ -377,6 +377,36 @@ class RenderingDocumentRendererTests(unittest.TestCase):
             [0] * 8 + [0, 0, 0, 0, 0, 0, 0, 1] + [0] * 8,
         )
 
+    def test_paper_preset_applies_required_source_rotation(self) -> None:
+        source = Image.new("RGB", (2, 1), "white")
+        source.putpixel((0, 0), (0, 0, 0))
+        renderer = DocumentRenderer(image_loader=lambda _path: source)
+        profile = replace(
+            self.device.profile,
+            paper_presets=(
+                replace(
+                    self.device.profile.default_paper_preset,
+                    paper_width_px=4,
+                    render_width_px=4,
+                    rotate_90_clockwise=True,
+                ),
+            ),
+        )
+        device = replace(self.device, profile=profile)
+        settings = PrintSettings(
+            dither_mode=DitherMode.NONE,
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+        )
+        plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
+
+        preview = renderer.preview_page(plan, plan.pages[0], device, settings)
+        preview_image = Image.open(io.BytesIO(preview.png))
+
+        self.assertEqual(preview_image.size, (4, 8))
+        self.assertEqual(preview_image.getpixel((0, 0)), 0)
+        self.assertEqual(preview_image.getpixel((0, 7)), 255)
+
     def test_print_render_uses_runtime_capabilities(self) -> None:
         image_renderer = _RecordingImageRenderer()
         renderer = DocumentRenderer(

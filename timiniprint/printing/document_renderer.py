@@ -322,6 +322,9 @@ class DocumentRenderer:
     ) -> PageSource:
         paper = resolve_paper(device, settings)
         width = paper.render_width_px
+        rotate_90_clockwise = (
+            paper.rotate_90_clockwise or settings.rotate_90_clockwise
+        )
         if kind == "text":
             page_height_to_width = (
                 paper.render_height_px / paper.render_width_px
@@ -333,14 +336,14 @@ class DocumentRenderer:
                 columns=settings.text_columns,
                 wrap_lines=settings.text_wrap,
                 page_height_to_width=page_height_to_width,
-                rotate_90_clockwise=settings.rotate_90_clockwise,
+                rotate_90_clockwise=rotate_90_clockwise,
             ).open_text(self._text_content(document), width)
         if kind == "image":
             return ImageConverter(
                 image_loader=self.image_loader,
                 trim_side_margins=settings.trim_side_margins,
                 trim_top_bottom_margins=settings.trim_top_bottom_margins,
-                rotate_90_clockwise=settings.rotate_90_clockwise,
+                rotate_90_clockwise=rotate_90_clockwise,
             ).open(document.source, width)
         if kind == "pdf":
             return PdfConverter(
@@ -349,7 +352,7 @@ class DocumentRenderer:
                 trim_side_margins=settings.trim_side_margins,
                 trim_top_bottom_margins=settings.trim_top_bottom_margins,
                 pdf_renderer=self.pdf_renderer,
-                rotate_90_clockwise=settings.rotate_90_clockwise,
+                rotate_90_clockwise=rotate_90_clockwise,
             ).open(document.source, width)
         raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
 
