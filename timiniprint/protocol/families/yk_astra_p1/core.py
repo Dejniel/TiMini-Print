@@ -6,6 +6,7 @@ from typing import Mapping
 
 from ....raster import PixelFormat, RasterBuffer
 from ...plan import ProtocolPlan
+from ...steps import ProtocolStep
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
 from ..yk_common import SEQUENCE_MODULUS, pack_yk_frame
@@ -80,6 +81,7 @@ class AstraP1VariantRecipe:
     default_paper_mode: PaperMode
     raster_left_padding: int = 0
     reverse_row_order: bool = False
+    stepwise: bool = False
 
     def __post_init__(self) -> None:
         if self.head_width <= 0:
@@ -121,6 +123,13 @@ class AstraP1FamilyRecipe:
         media = self._media_recipe(variant, request.paper_mode)
         raster = request.require_raster(PixelFormat.BW1)
         packets = self._build_packets(request, raster, variant, media)
+        if variant.stepwise:
+            return ProtocolPlan.sequence(
+                tuple(
+                    ProtocolStep.send("YK Astra P1 frame", packet)
+                    for packet in packets
+                )
+            )
         return ProtocolPlan.stream(b"".join(packets))
 
     def _build_packets(

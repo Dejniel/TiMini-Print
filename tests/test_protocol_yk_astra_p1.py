@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol import ImageEncoding, ImagePipelineConfig, PaperMode, PrinterProtocol
 from timiniprint.protocol.families.base import PrintJobRequest
 from timiniprint.protocol.families.yk_common import iter_yk_frames
-from timiniprint.protocol.families.yk_astra_p1.core import PUBLIC_RECIPE
+from timiniprint.protocol.families.yk_astra_p1.core import PUBLIC_RECIPE, S001_VARIANT
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
@@ -112,6 +113,20 @@ class AstraP1S001Tests(unittest.TestCase):
             PUBLIC_RECIPE.build_job(
                 _request(pixels=[0] * 91, width=91)
             )
+
+    def test_stepwise_variant_preserves_frame_boundaries(self) -> None:
+        recipe = replace(
+            PUBLIC_RECIPE,
+            variants={"s001": replace(S001_VARIANT, stepwise=True)},
+        )
+
+        job = recipe.build_job(_request())
+
+        self.assertTrue(job.steps)
+        self.assertEqual(job.payload, b"".join(step.data for step in job.steps))
+        self.assertTrue(
+            all(len(tuple(iter_yk_frames(step.data))) == 1 for step in job.steps)
+        )
 
     def test_catalog_exposes_exact_s001_profile_and_density(self) -> None:
         catalog = PrinterCatalog.load()
