@@ -219,6 +219,60 @@
     "paper_width_px": 576,
     "render_width_px": 576
   },
+  "yk_s001_blacktag_84r_90p": {
+    "label": "Black tag",
+    "paper_mode": "black_tag",
+    "paper_width_px": 90,
+    "render_width_px": 84,
+    "render_height_px": 280,
+    "mirror_horizontal": true,
+    "rotate_90_clockwise": true
+  },
+  "yk_s001_blacktag_90r_90p": {
+    "label": "Black tag (full width)",
+    "paper_mode": "black_tag",
+    "paper_width_px": 90,
+    "render_width_px": 90,
+    "render_height_px": 280,
+    "mirror_horizontal": true,
+    "rotate_90_clockwise": true
+  },
+  "yk_s001_plain_84r_90p": {
+    "label": "Plain roll",
+    "paper_mode": "plain",
+    "paper_width_px": 90,
+    "render_width_px": 84,
+    "render_height_px": 280,
+    "mirror_horizontal": true,
+    "rotate_90_clockwise": true
+  },
+  "yk_s001_plain_90r_90p": {
+    "label": "Plain roll (full width)",
+    "paper_mode": "plain",
+    "paper_width_px": 90,
+    "render_width_px": 90,
+    "render_height_px": 280,
+    "mirror_horizontal": true,
+    "rotate_90_clockwise": true
+  },
+  "yk_s001_tag_84r_90p": {
+    "label": "Tag",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 84,
+    "render_height_px": 280,
+    "mirror_horizontal": true,
+    "rotate_90_clockwise": true
+  },
+  "yk_s001_tag_90r_90p": {
+    "label": "Tag (full width)",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 90,
+    "render_height_px": 280,
+    "mirror_horizontal": true,
+    "rotate_90_clockwise": true
+  },
   "tattoo_1728r": {
     "label": "Tattoo",
     "paper_mode": "tattoo",

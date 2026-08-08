@@ -6653,5 +6653,70 @@
     "paper_presets": [
       "plain_384r"
     ]
+  },
+  {
+    "profile_key": "yk_astra_p1_s001",
+    "size": 1,
+    "one_length": 320,
+    "dev_dpi": 203,
+    "has_id": true,
+    "use_spp": true,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 40,
+    "protocol_default": {
+      "type": "yk_astra_p1",
+      "packets_type": "s001"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "yk_astra_p1_raw"
+    },
+    "stream": {
+      "chunk_size": 128,
+      "delay_ms": 20
+    },
+    "post_print_feed_count": 2,
+    "print_defaults": {
+      "speed": {
+        "image": 25,
+        "text": 25
+      },
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 5,
+          "middle": 9,
+          "high": 13
+        },
+        "text": {
+          "low": 5,
+          "middle": 9,
+          "high": 13
+        }
+      }
+    },
+    "a4xii": false,
+    "paper_presets": [
+      "yk_s001_tag_84r_90p",
+      "yk_s001_blacktag_84r_90p",
+      "yk_s001_plain_84r_90p",
+      "yk_s001_tag_90r_90p",
+      "yk_s001_blacktag_90r_90p",
+      "yk_s001_plain_90r_90p"
+    ]
   }
 ]
