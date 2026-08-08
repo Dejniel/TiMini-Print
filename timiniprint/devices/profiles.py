@@ -162,6 +162,7 @@ class PaperPreset:
     max_height_px: Optional[int] = None
     raster_height_px: Optional[int] = None
     mirror_horizontal: bool = False
+    rotate_90_clockwise: bool = False
     dither_mode: Optional[DitherMode] = None
     render_height_scale: float = 1.0
 
