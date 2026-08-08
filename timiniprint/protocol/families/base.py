@@ -18,7 +18,7 @@ FamilyJobBuilder = Callable[["PrintJobRequest"], Optional[ProtocolPlan]]
 PaperModeResolver = Callable[[Optional[str]], Tuple[PaperMode, ...]]
 ImageEncodingSupportResolver = Callable[
     [Optional[str]],
-    Mapping[ImageEncoding, tuple[PixelFormat, ...]],
+    Mapping[ImageEncoding, Tuple[PixelFormat, ...]],
 ]
 
 
