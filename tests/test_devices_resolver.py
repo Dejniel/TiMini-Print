@@ -283,6 +283,55 @@ class BluetoothEndpointResolverTests(unittest.TestCase):
         self.assertIs(device.transport_target.classic_endpoint, classic)
         self.assertIs(device.transport_target.ble_endpoint, ble)
 
+    def test_raw_targets_merge_whitespace_variants_for_remove_models(self) -> None:
+        classic = BluetoothEndpoint(
+            name="MX02",
+            address="AA:BB:CC:DD:EE:01",
+            transport=BluetoothEndpointTransport.CLASSIC,
+        )
+        ble = BluetoothEndpoint(
+            name="MX 02",
+            address="UUID-1",
+            transport=BluetoothEndpointTransport.BLE,
+        )
+
+        targets = self.resolver.transport_targets_from_endpoints([classic, ble])
+
+        self.assertEqual(len(targets), 1)
+        self.assertEqual(targets[0].transport_target.transport_badge, "[classic+ble]")
+
+    def test_raw_targets_preserve_whitespace_for_preserve_models(self) -> None:
+        classic = BluetoothEndpoint(
+            name="S001",
+            address="AA:BB:CC:DD:EE:01",
+            transport=BluetoothEndpointTransport.CLASSIC,
+        )
+        ble = BluetoothEndpoint(
+            name="S 001",
+            address="UUID-1",
+            transport=BluetoothEndpointTransport.BLE,
+        )
+
+        targets = self.resolver.transport_targets_from_endpoints([classic, ble])
+
+        self.assertEqual(len(targets), 2)
+
+    def test_raw_targets_preserve_whitespace_for_unknown_models(self) -> None:
+        classic = BluetoothEndpoint(
+            name="Unknown Printer",
+            address="AA:BB:CC:DD:EE:01",
+            transport=BluetoothEndpointTransport.CLASSIC,
+        )
+        ble = BluetoothEndpoint(
+            name="UnknownPrinter",
+            address="UUID-1",
+            transport=BluetoothEndpointTransport.BLE,
+        )
+
+        targets = self.resolver.transport_targets_from_endpoints([classic, ble])
+
+        self.assertEqual(len(targets), 2)
+
 
 def _run(coro):
     return asyncio.run(coro)

@@ -11,7 +11,7 @@ from .device import (
     BluetoothTarget,
     PrinterDevice,
 )
-from .profiles import DetectionNormalizer
+from .profiles import DetectionNormalizer, WhitespaceMode
 
 _ADDRESS_RE = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 _UUID_RE = re.compile(r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$")
@@ -116,7 +116,7 @@ class BluetoothEndpointResolver:
         """Resolve raw scan endpoints into logical Bluetooth transport targets."""
         grouped: Dict[str, Dict[BluetoothEndpointTransport, List[BluetoothEndpoint]]] = {}
         for endpoint in endpoints:
-            normalized_name = DetectionNormalizer.fold_name(endpoint.name or "")
+            normalized_name = self._raw_endpoint_group_name(endpoint)
             key = normalized_name or endpoint.address.lower()
             bucket = grouped.setdefault(
                 key,
@@ -214,14 +214,29 @@ class BluetoothEndpointResolver:
             device = self._catalog.detect_device(endpoint.name or "", endpoint.address)
             if device is None:
                 continue
+            model = self._catalog.require_model(device.model_key)
             candidates.append(
                 _ResolvedEndpoint(
                     endpoint=endpoint,
                     device=device,
-                    normalized_name=DetectionNormalizer.fold_name(endpoint.name or ""),
+                    normalized_name=DetectionNormalizer.fold_name(
+                        endpoint.name or "",
+                        model.whitespace_mode,
+                    ),
                 )
             )
         return candidates
+
+    def _raw_endpoint_group_name(self, endpoint: BluetoothEndpoint) -> str:
+        name = endpoint.name or ""
+        matches = self._catalog.detect_model(name, endpoint.address)
+        matched_modes = {match.model.whitespace_mode for match in matches}
+        whitespace_mode = (
+            matched_modes.pop()
+            if len(matched_modes) == 1
+            else WhitespaceMode.PRESERVE
+        )
+        return DetectionNormalizer.fold_name(name, whitespace_mode)
 
     @staticmethod
     def _group_candidates(

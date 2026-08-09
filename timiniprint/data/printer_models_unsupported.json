@@ -1,6 +1,7 @@
 [
   {
     "model_key": "unsupported_toprint_p3",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.fyhd.toprint"
     ],
@@ -14,6 +15,7 @@
   },
   {
     "model_key": "unsupported_toprint_gt08",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.fyhd.toprint"
     ],
@@ -27,6 +29,7 @@
   },
   {
     "model_key": "unsupported_toprint_gw08",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.fyhd.toprint"
     ],
@@ -41,6 +44,7 @@
   {
     "model_key": "unsupported_instaprint_ctp100lg_corelargeprint",
     "profile_key_prediction": "instaprint_ctp100lg",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.bes.print.insta"
     ],
@@ -60,6 +64,7 @@
   {
     "model_key": "unsupported_instaprint_ctp800bd_label",
     "profile_key_prediction": "instaprint_ctp800bd",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.bes.print.insta"
     ],
@@ -1006,6 +1011,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b1",
     "profile_key_prediction": "b1",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1020,6 +1026,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b1_pro",
     "profile_key_prediction": "b1",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1034,6 +1041,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b18",
     "profile_key_prediction": "b18",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1048,6 +1056,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b18s",
     "profile_key_prediction": "b18",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1062,6 +1071,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b21",
     "profile_key_prediction": "b21",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1076,6 +1086,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b21_c2b",
     "profile_key_prediction": "b21",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1090,6 +1101,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b21_l2b",
     "profile_key_prediction": "b21",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1104,6 +1116,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b21s",
     "profile_key_prediction": "b21",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1118,6 +1131,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b21s_c2b",
     "profile_key_prediction": "b21",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1132,6 +1146,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b21_pro",
     "profile_key_prediction": "b21",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1146,6 +1161,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b24",
     "profile_key_prediction": "b3s",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1160,6 +1176,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b3s",
     "profile_key_prediction": "b3s",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1174,6 +1191,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_b3s_p",
     "profile_key_prediction": "b3s",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1188,6 +1206,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_d101",
     "profile_key_prediction": "d101",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1202,6 +1221,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_d11_h",
     "profile_key_prediction": "d11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1215,6 +1235,7 @@
   },
   {
     "model_key": "unsupported_todo_niimbot_candidates_d110_m",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1228,6 +1249,7 @@
   },
   {
     "model_key": "unsupported_todo_niimbot_candidates_hi_d110",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1242,6 +1264,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_hi_nb_d11",
     "profile_key_prediction": "d11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1256,6 +1279,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_jcb3s",
     "profile_key_prediction": "b3s",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1270,6 +1294,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_m2_h",
     "profile_key_prediction": "b1",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1284,6 +1309,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_n1",
     "profile_key_prediction": "b1",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1298,6 +1324,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_s6",
     "profile_key_prediction": "b3s",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1312,6 +1339,7 @@
   {
     "model_key": "unsupported_todo_luck_mpl11",
     "profile_key_prediction": "mpl11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1329,6 +1357,7 @@
   {
     "model_key": "unsupported_todo_luck_hanyin_al200",
     "profile_key_prediction": "al200",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1343,6 +1372,7 @@
   {
     "model_key": "unsupported_todo_luck_hanyin_al2",
     "profile_key_prediction": "al200",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1357,6 +1387,7 @@
   {
     "model_key": "unsupported_todo_luck_hanyin_rpp02n",
     "profile_key_prediction": "al200",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1371,6 +1402,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_normal_d12",
     "profile_key_prediction": "d12",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1385,6 +1417,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_normal_c2",
     "profile_key_prediction": "d12",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1402,6 +1435,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_normal_c3",
     "profile_key_prediction": "d12",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1420,6 +1454,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_normal_c16",
     "profile_key_prediction": "d12",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1438,6 +1473,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_a4_d82",
     "profile_key_prediction": "d82",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1452,6 +1488,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_a4_d82s",
     "profile_key_prediction": "d82",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1466,6 +1503,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_a4_d83",
     "profile_key_prediction": "d82",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1480,6 +1518,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_a4_a10",
     "profile_key_prediction": "d82",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1494,6 +1533,7 @@
   {
     "model_key": "unsupported_todo_luck_aiyin_a4_fichero_6181",
     "profile_key_prediction": "d82",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1508,6 +1548,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_d400",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1522,6 +1563,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_y810bt",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1536,6 +1578,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_qr380a",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1551,6 +1594,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_tb41",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1565,6 +1609,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_qr_386a",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1580,6 +1625,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_itpp941",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1594,6 +1640,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_p80s",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1608,6 +1655,7 @@
   {
     "model_key": "unsupported_todo_luck_sheetlabel_itpp130b",
     "profile_key_prediction": "d400",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1622,6 +1670,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_itp05n",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1639,6 +1688,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_itp06n",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1656,6 +1706,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_pcps_d80",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1670,6 +1721,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_dp_a80",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1684,6 +1736,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_dp_a80s",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1698,6 +1751,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_dp_a80w",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1712,6 +1766,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_pd_a4",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1726,6 +1781,7 @@
   {
     "model_key": "unsupported_todo_luck_unfinished_branches_gd_88",
     "profile_key_prediction": "itp05n",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.dingdang.newprint"
     ],
@@ -1740,6 +1796,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_d61",
     "profile_key_prediction": "d11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1754,6 +1811,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_d41",
     "profile_key_prediction": "d11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1768,6 +1826,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_dxx",
     "profile_key_prediction": "d11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1782,6 +1841,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_fust",
     "profile_key_prediction": "d11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1796,6 +1856,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_d11_pro",
     "profile_key_prediction": "d11",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1810,6 +1871,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_betty",
     "profile_key_prediction": "d101",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -1824,6 +1886,7 @@
   {
     "model_key": "unsupported_todo_niimbot_candidates_s6_p",
     "profile_key_prediction": "b3s",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.gengcon.android.jccloudprinter"
     ],
@@ -2609,6 +2672,7 @@
   },
   {
     "model_key": "unsupported_funny_lx_default",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ],
@@ -2625,6 +2689,7 @@
   },
   {
     "model_key": "unsupported_funny_lx_type1",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ],
@@ -2641,6 +2706,7 @@
   },
   {
     "model_key": "unsupported_funny_lx_zero_padded",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ],
@@ -2660,6 +2726,7 @@
   },
   {
     "model_key": "unsupported_funny_lx_tb_multiprint",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ],
@@ -2677,6 +2744,7 @@
   },
   {
     "model_key": "unsupported_funny_lx_dl_t1",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ],
@@ -2690,6 +2758,7 @@
   },
   {
     "model_key": "unsupported_funny_lx_p01",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ],
@@ -2703,6 +2772,7 @@
   },
   {
     "model_key": "unsupported_funny_m2_a80_spp",
+    "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"
     ],

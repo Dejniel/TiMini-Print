@@ -166,6 +166,42 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(profile.stream.chunk_size, 180)
         self.assertEqual(profile.stream.delay_ms, 4)
 
+    def test_catalog_whitespace_policies_follow_source_apps(self) -> None:
+        expected_modes = {
+            "com.fun.mxw": WhitespaceMode.REMOVE,
+            "com.bleem.liugm": WhitespaceMode.REMOVE,
+            "com.project.aimotech.printmaster": WhitespaceMode.REMOVE,
+            "com.quyin.phomemo": WhitespaceMode.TRIM,
+            "com.frogtosea.tinyPrint": WhitespaceMode.PRESERVE,
+            "com.bes.print.insta": WhitespaceMode.PRESERVE,
+            "com.dingdang.newprint": WhitespaceMode.PRESERVE,
+            "com.fyhd.toprint": WhitespaceMode.PRESERVE,
+            "com.gengcon.android.jccloudprinter": WhitespaceMode.PRESERVE,
+            "com.lailaixiong.funnyprint": WhitespaceMode.PRESERVE,
+            "com.sandu.JxPrinter": WhitespaceMode.PRESERVE,
+            "com.xinye.snaptag": WhitespaceMode.PRESERVE,
+        }
+
+        for model in (*self.catalog.models, *self.catalog.unsupported_models):
+            for package in model.origin_app_packages:
+                with self.subTest(model=model.model_key, package=package):
+                    self.assertEqual(model.whitespace_mode, expected_modes[package])
+
+    def test_preserve_models_do_not_infer_missing_internal_spaces(self) -> None:
+        self.assertEqual(
+            _single_match(self.catalog.detect_model("B1 Pro")).model.model_key,
+            "unsupported_todo_niimbot_candidates_b1_pro",
+        )
+        self.assertNotIn(
+            "unsupported_todo_niimbot_candidates_b1_pro",
+            _model_keys(self.catalog.detect_model("B1Pro")),
+        )
+        self.assertEqual(
+            _single_match(self.catalog.detect_model("S001")).model.model_key,
+            "orgstra_s001",
+        )
+        self.assertEqual(self.catalog.detect_model("S 001"), ())
+
     def test_v5x_aliases_share_one_detection_object(self) -> None:
         model = self.catalog.require_model("v5x")
 
