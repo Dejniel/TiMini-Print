@@ -5,13 +5,12 @@ from enum import Enum, IntEnum
 from typing import Mapping
 
 from ....raster import PixelFormat, RasterBuffer
-from ...compression import compress_zlib_wbits_10
 from ...family import ProtocolFamily
 from ...plan import ProtocolPlan
 from ...steps import ProtocolReplyExpectation, ProtocolStep
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest
-from ..bitmap import pack_bw1_rows, packed_row_width_bytes
+from ..bitmap import build_1f10_zlib_raster, pack_bw1_rows, packed_row_width_bytes
 
 LUCK_PRINT_QUERY_TIMEOUT_SEC = 3.0
 
@@ -139,20 +138,7 @@ class LuckNormalBitmapEncoder:
         return header + pack_bw1_rows(raster)
 
     def _encode_compressed(self, raster: RasterBuffer) -> bytes:
-        width_bytes = packed_row_width_bytes(raster.width)
-        raw_bitmap = pack_bw1_rows(raster)
-        compressed_bitmap = compress_zlib_wbits_10(raw_bitmap)
-        header = bytes(
-            [
-                0x1F,
-                0x10,
-                (width_bytes >> 8) & 0xFF,
-                width_bytes & 0xFF,
-                (raster.height >> 8) & 0xFF,
-                raster.height & 0xFF,
-            ]
-        ) + len(compressed_bitmap).to_bytes(4, "big")
-        return header + compressed_bitmap
+        return build_1f10_zlib_raster(raster)
 
     def _encode_gray(self, raster: RasterBuffer, gray_level: int) -> bytes:
         width_bytes = packed_row_width_bytes(raster.width)

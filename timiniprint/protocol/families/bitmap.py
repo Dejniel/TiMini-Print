@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ...raster import PixelFormat, RasterBuffer
+from ..compression import compress_zlib
 from ..encoding import pack_line
 
 
@@ -20,6 +21,31 @@ def packed_row_width_bytes(width: int) -> int:
     if width <= 0:
         raise ValueError("Raster width must be greater than zero")
     return (width + 7) // 8
+
+
+def build_1f10_zlib_raster(
+    raster: RasterBuffer,
+    *,
+    window_bits: int = 10,
+) -> bytes:
+    """Build a ``1f 10`` zlib-compressed one-bit raster frame."""
+
+    width_bytes = packed_row_width_bytes(raster.width)
+    height = raster.height
+    if width_bytes > 0xFFFF or height > 0xFFFF:
+        raise ValueError("1f 10 raster dimensions must fit in two bytes")
+
+    compressed = compress_zlib(
+        pack_bw1_rows(raster),
+        window_bits=window_bits,
+    )
+    return (
+        b"\x1f\x10"
+        + width_bytes.to_bytes(2, "big")
+        + height.to_bytes(2, "big")
+        + len(compressed).to_bytes(4, "big")
+        + compressed
+    )
 
 
 def build_gs_v0_blocks(
