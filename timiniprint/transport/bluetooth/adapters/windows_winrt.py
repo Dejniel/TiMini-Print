@@ -145,7 +145,7 @@ async def _scan_winrt_async(timeout: float) -> ScanResult:
         if not service:
             continue
         device = service.device
-        name = (device.name or info.name or "").strip()
+        name = device.name or info.name or ""
         address = _format_bt_address(getattr(device, "bluetooth_address", 0))
         if not address:
             address = _extract_address_from_id(info.id) or info.id

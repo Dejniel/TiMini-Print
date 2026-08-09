@@ -107,7 +107,9 @@ class PrinterCatalog:
         return (max_trigger_length, len(triggers))
 
     @staticmethod
-    def _rule_specificity(detection: ModelDetection) -> tuple[int, int, int, int, int, int]:
+    def _rule_specificity(
+        detection: ModelDetection,
+    ) -> tuple[int, int, int, int, int, int]:
         name_triggers = [
             DetectionNormalizer.normalize_name(value)
             for value in (
@@ -137,6 +139,7 @@ class PrinterCatalog:
 
     @staticmethod
     def _matched_detection_specificity(
+        model: SupportedPrinterModel | UnsupportedPrinterModel,
         detection: ModelDetection,
         device_name: str,
         address: Optional[str],
@@ -147,6 +150,7 @@ class PrinterCatalog:
             device_name,
             address,
             case_sensitive=case_sensitive,
+            whitespace_mode=model.whitespace_mode,
         )
 
     @classmethod
@@ -487,7 +491,7 @@ class PrinterCatalog:
             return None
         return self.device_from_match(
             supported[0],
-            display_name=device_name,
+            display_name=device_name.strip() or device_name,
             transport_target=transport_target,
         )
 
@@ -648,7 +652,7 @@ class PrinterCatalog:
         return tuple(
             self.device_from_match(
                 match,
-                display_name=display_name or device_name,
+                display_name=(display_name or device_name).strip() or device_name,
                 transport_target=transport_target,
             )
             for match in self.detect_model(device_name, address)
@@ -681,6 +685,7 @@ class PrinterCatalog:
         best_specificity: tuple[int, int, int, int, int] | None = None
         for model, detection in entries:
             specificity = self._matched_detection_specificity(
+                model,
                 detection,
                 device_name,
                 address,

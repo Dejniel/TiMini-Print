@@ -12,7 +12,12 @@ from timiniprint.devices import (
     UnsupportedModelMatch,
 )
 from timiniprint.devices.model_codec import model_from_json, model_to_json
-from timiniprint.devices.profiles import PrinterModel, PrinterProfile, SupportedPrinterModel
+from timiniprint.devices.profiles import (
+    PrinterModel,
+    PrinterProfile,
+    SupportedPrinterModel,
+    WhitespaceMode,
+)
 from timiniprint.protocol import PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding, PaperMode
@@ -474,6 +479,19 @@ class DevicesModelsTests(unittest.TestCase):
             (model,),
         )
         self.assertEqual(catalog.detect_model("Friendly Cat Printer"), ())
+
+    def test_model_whitespace_mode_controls_catalog_detection(self) -> None:
+        payload = _model_payload()
+        payload["whitespace_mode"] = "preserve"
+        payload["detections"] = [{"exact_names": ["M50 "]}]
+        model = model_from_json(SupportedPrinterModel, payload)
+        profile = model_from_json(PrinterProfile, _profile_payload())
+        catalog = PrinterCatalog([profile], [model])
+
+        self.assertEqual(model.whitespace_mode, WhitespaceMode.PRESERVE)
+        self.assertEqual(len(catalog.detect_model("M50 ")), 1)
+        self.assertEqual(catalog.detect_model("M50"), ())
+        self.assertEqual(catalog.detect_device("M50 ").display_name, "M50")
 
     def test_model_codec_profile_roundtrip_keeps_normalized_shape(self) -> None:
         payload = _profile_payload()
@@ -1384,9 +1402,8 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertEqual(resolved.profile_key, profile_key)
                 self.assertEqual(resolved.protocol_family, ProtocolFamily.TINY)
 
-    def test_tiny_spacing_and_alias_corner_cases_still_resolve(self) -> None:
+    def test_tiny_alias_corner_cases_still_resolve(self) -> None:
         expected = {
-            " X101H-ABCD": ("x101h", ProtocolFamily.TINY),
             "X101H-ABCD": ("x101h", ProtocolFamily.TINY),
             "K06": ("v5g_small_203", ProtocolFamily.V5G),
             "X2": ("v5x", ProtocolFamily.V5X),
@@ -1398,6 +1415,13 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertIsNotNone(resolved)
                 self.assertEqual(resolved.profile_key, profile_key)
                 self.assertEqual(resolved.protocol_family, family)
+
+        self.assertIsNone(
+            self.catalog.detect_device(
+                " X101H-ABCD",
+                "AA:BB:CC:DD:EE:58",
+            )
+        )
 
     def test_case_insensitive_fallback_still_detects_lowercase_names(self) -> None:
         resolved = self.catalog.detect_device("sc03h-abcd")

@@ -2,11 +2,18 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Optional, Tuple, Union
 
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..raster import DitherMode, PixelFormat
+
+
+class WhitespaceMode(str, Enum):
+    REMOVE = "remove"
+    TRIM = "trim"
+    PRESERVE = "preserve"
 
 
 class DetectionNormalizer:
@@ -15,12 +22,25 @@ class DetectionNormalizer:
     _mac_like_re = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 
     @classmethod
-    def normalize_name(cls, value: str) -> str:
+    def normalize_name(
+        cls,
+        value: str,
+        whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
+    ) -> str:
+        mode = WhitespaceMode(whitespace_mode)
+        if mode is WhitespaceMode.PRESERVE:
+            return value
+        if mode is WhitespaceMode.TRIM:
+            return value.strip()
         return cls._whitespace_re.sub("", value)
 
     @classmethod
-    def fold_name(cls, value: str) -> str:
-        return cls.normalize_name(value).upper()
+    def fold_name(
+        cls,
+        value: str,
+        whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
+    ) -> str:
+        return cls.normalize_name(value, whitespace_mode).upper()
 
     @classmethod
     def normalize_mac_candidate(cls, value: str) -> str:
@@ -327,19 +347,13 @@ class ModelDetection:
     substrings: Tuple[str, ...] = ()
     mac_suffixes: Tuple[str, ...] = ()
     marketing_names: Tuple[str, ...] = ()
-    _normalized_prefixes: Tuple[str, ...] = field(init=False, repr=False)
-    _normalized_exact_names: Tuple[str, ...] = field(init=False, repr=False)
-    _normalized_substrings: Tuple[str, ...] = field(init=False, repr=False)
-    _folded_prefixes: Tuple[str, ...] = field(init=False, repr=False)
-    _folded_exact_names: Tuple[str, ...] = field(init=False, repr=False)
-    _folded_substrings: Tuple[str, ...] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        prefixes = tuple(value.strip() for value in self.prefixes)
-        exact_names = tuple(value.strip() for value in self.exact_names)
-        substrings = tuple(value.strip() for value in self.substrings)
+        prefixes = tuple(self.prefixes)
+        exact_names = tuple(self.exact_names)
+        substrings = tuple(self.substrings)
         marketing_names = tuple(value.strip() for value in self.marketing_names)
-        if any(not value for value in (*prefixes, *exact_names, *substrings)):
+        if any(not value.strip() for value in (*prefixes, *exact_names, *substrings)):
             raise ValueError("Model detection triggers must not be blank")
         if any(not value for value in marketing_names):
             raise ValueError("Model detection marketing_names must not contain blanks")
@@ -351,37 +365,10 @@ class ModelDetection:
         object.__setattr__(self, "exact_names", exact_names)
         object.__setattr__(self, "substrings", substrings)
         object.__setattr__(self, "marketing_names", marketing_names)
-        normalized_prefixes = tuple(
-            DetectionNormalizer.normalize_name(prefix) for prefix in prefixes
-        )
-        normalized_exact_names = tuple(
-            DetectionNormalizer.normalize_name(name) for name in exact_names
-        )
-        normalized_substrings = tuple(
-            DetectionNormalizer.normalize_name(value) for value in substrings
-        )
-        object.__setattr__(self, "_normalized_prefixes", normalized_prefixes)
-        object.__setattr__(self, "_normalized_exact_names", normalized_exact_names)
-        object.__setattr__(self, "_normalized_substrings", normalized_substrings)
         object.__setattr__(
             self,
             "mac_suffixes",
             tuple(str(suffix).strip().upper() for suffix in self.mac_suffixes),
-        )
-        object.__setattr__(
-            self,
-            "_folded_prefixes",
-            tuple(DetectionNormalizer.fold_name(prefix) for prefix in normalized_prefixes),
-        )
-        object.__setattr__(
-            self,
-            "_folded_exact_names",
-            tuple(DetectionNormalizer.fold_name(name) for name in normalized_exact_names),
-        )
-        object.__setattr__(
-            self,
-            "_folded_substrings",
-            tuple(DetectionNormalizer.fold_name(value) for value in normalized_substrings),
         )
         if not self.names:
             raise ValueError("Model detection requires at least one public name")
@@ -409,11 +396,13 @@ class ModelDetection:
         address: Optional[str],
         *,
         case_sensitive: bool = True,
+        whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
     ) -> bool:
         return self.matched_specificity(
             device_name,
             address,
             case_sensitive=case_sensitive,
+            whitespace_mode=whitespace_mode,
         ) is not None
 
     def matched_specificity(
@@ -422,6 +411,7 @@ class ModelDetection:
         address: Optional[str],
         *,
         case_sensitive: bool = True,
+        whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
     ) -> Tuple[int, int, int, int, int] | None:
         has_mac_suffix = bool(self.mac_suffixes)
         if has_mac_suffix:
@@ -431,17 +421,41 @@ class ModelDetection:
             if not any(normalized_address.endswith(suffix) for suffix in self.mac_suffixes):
                 return None
 
-        normalized_name = DetectionNormalizer.normalize_name(device_name)
+        normalized_name = DetectionNormalizer.normalize_name(
+            device_name,
+            whitespace_mode,
+        )
+        normalized_exact_names = tuple(
+            DetectionNormalizer.normalize_name(value, whitespace_mode)
+            for value in self.exact_names
+        )
+        normalized_prefixes = tuple(
+            DetectionNormalizer.normalize_name(value, whitespace_mode)
+            for value in self.prefixes
+        )
+        normalized_substrings = tuple(
+            DetectionNormalizer.normalize_name(value, whitespace_mode)
+            for value in self.substrings
+        )
         if case_sensitive:
             target_name = normalized_name
-            exact_names = zip(self._normalized_exact_names, self._normalized_exact_names)
-            prefixes = zip(self._normalized_prefixes, self._normalized_prefixes)
-            substrings = zip(self._normalized_substrings, self._normalized_substrings)
+            exact_names = zip(normalized_exact_names, normalized_exact_names)
+            prefixes = zip(normalized_prefixes, normalized_prefixes)
+            substrings = zip(normalized_substrings, normalized_substrings)
         else:
-            target_name = DetectionNormalizer.fold_name(device_name)
-            exact_names = zip(self._normalized_exact_names, self._folded_exact_names)
-            prefixes = zip(self._normalized_prefixes, self._folded_prefixes)
-            substrings = zip(self._normalized_substrings, self._folded_substrings)
+            target_name = normalized_name.upper()
+            exact_names = zip(
+                normalized_exact_names,
+                (value.upper() for value in normalized_exact_names),
+            )
+            prefixes = zip(
+                normalized_prefixes,
+                (value.upper() for value in normalized_prefixes),
+            )
+            substrings = zip(
+                normalized_substrings,
+                (value.upper() for value in normalized_substrings),
+            )
 
         matched: list[Tuple[int, int, int, int, int]] = []
         for trigger, candidate in exact_names:
@@ -480,19 +494,25 @@ class ModelDetection:
         match_rank: int,
         has_mac_suffix: bool,
     ) -> Tuple[int, int, int, int, int]:
-        trigger_length = len(trigger[:-1]) if trigger.endswith(("-", "_")) else len(trigger)
+        normalized_trigger = DetectionNormalizer.normalize_name(trigger)
+        trigger_length = (
+            len(normalized_trigger[:-1])
+            if normalized_trigger.endswith(("-", "_"))
+            else len(normalized_trigger)
+        )
         return (
             trigger_length,
             int(has_mac_suffix),
             match_rank,
-            len(trigger),
-            sum(1 for char in trigger if char.isupper()),
+            len(normalized_trigger),
+            sum(1 for char in normalized_trigger if char.isupper()),
         )
 
 @dataclass(frozen=True)
 class PrinterModel:
     model_key: str
     detections: Tuple[ModelDetection, ...]
+    whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE
     marketing_names: Tuple[str, ...] = ()
     origin_app_packages: Tuple[str, ...] = ()
     detection_ambiguity_group: Optional[str] = None
@@ -500,6 +520,11 @@ class PrinterModel:
     def __post_init__(self) -> None:
         if not self.model_key:
             raise ValueError("Printer model requires model_key")
+        object.__setattr__(
+            self,
+            "whitespace_mode",
+            WhitespaceMode(self.whitespace_mode),
+        )
         marketing_names = tuple(value.strip() for value in self.marketing_names)
         if any(not value for value in marketing_names):
             raise ValueError(
@@ -563,6 +588,7 @@ ModelMatch = Union[SupportedModelMatch, UnsupportedModelMatch]
 
 __all__ = [
     "DetectionNormalizer",
+    "WhitespaceMode",
     "LevelProfile",
     "PaperPreset",
     "ModelMatch",

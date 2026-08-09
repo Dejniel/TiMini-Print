@@ -69,9 +69,15 @@ Detection supports:
 - `substrings`: normalized advertised name must contain the value
 - `mac_suffixes`: optional address suffix filter
 
+Each model may set `whitespace_mode` to control how its detections compare the
+advertised name. `remove` is the default and removes all whitespace, `trim`
+removes only leading and trailing whitespace, and `preserve` compares the raw
+name. Discovery keeps the raw name for matching; presentation may trim its own
+copy after a model has been selected.
+
 Matching is sorted by specificity. Longer and more constrained rules win over broader rules. Supported matches win over unsupported matches at equal specificity. If multiple supported models tie, automatic `detect_device(...)` returns `None` so the caller can ask the user to choose a model/source explicitly.
 
-Raw trigger spelling is preserved for the public catalog. Private matching copies remove whitespace. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
+Raw trigger spelling is preserved for the public catalog. Private matching copies apply the model's `whitespace_mode`. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
 
 Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and `substrings`. One trailing `-` or `_` is removed from prefix/substring display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC suffixes are not public model names.
 

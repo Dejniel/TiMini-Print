@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from timiniprint.devices.profiles import ModelDetection
+from timiniprint.devices.profiles import ModelDetection, WhitespaceMode
 
 
 class ModelDetectionTests(unittest.TestCase):
@@ -93,6 +93,31 @@ class ModelDetectionTests(unittest.TestCase):
         self.assertEqual(detection.prefixes, ("BT 01-",))
         self.assertTrue(detection.matches("PM241", None))
         self.assertTrue(detection.matches("BT01-ABCD", None))
+
+    def test_whitespace_modes_are_explicit_matching_policies(self) -> None:
+        detection = ModelDetection(exact_names=("M50 ",))
+
+        self.assertTrue(
+            detection.matches(
+                " M50 ",
+                None,
+                whitespace_mode=WhitespaceMode.TRIM,
+            )
+        )
+        self.assertTrue(
+            detection.matches(
+                "M50 ",
+                None,
+                whitespace_mode=WhitespaceMode.PRESERVE,
+            )
+        )
+        self.assertFalse(
+            detection.matches(
+                "M50",
+                None,
+                whitespace_mode=WhitespaceMode.PRESERVE,
+            )
+        )
 
     def test_public_names_include_all_sources_in_stable_order(self) -> None:
         detection = ModelDetection(

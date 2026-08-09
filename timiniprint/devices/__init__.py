@@ -25,6 +25,7 @@ from .profiles import (
     SupportedPrinterModel,
     UnsupportedModelMatch,
     UnsupportedPrinterModel,
+    WhitespaceMode,
 )
 
 __all__ = [
@@ -53,6 +54,7 @@ __all__ = [
     "TransportTarget",
     "UnsupportedModelMatch",
     "UnsupportedPrinterModel",
+    "WhitespaceMode",
     "bluetooth_connection_plan",
     "get_ble_transport_profile",
 ]

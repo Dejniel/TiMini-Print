@@ -79,7 +79,7 @@ def _device_name(device) -> str:
         name = ""
     if name is None:
         return ""
-    return str(name).strip()
+    return str(name)
 
 
 def _device_address(device) -> str:

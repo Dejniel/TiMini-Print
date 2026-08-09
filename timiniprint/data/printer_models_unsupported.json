@@ -77,6 +77,7 @@
   {
     "model_key": "unsupported_phomemo_p12_family_p12",
     "profile_key_prediction": "p12",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -94,6 +95,7 @@
   {
     "model_key": "unsupported_phomemo_p12_family_p12_pro",
     "profile_key_prediction": "p12",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -112,6 +114,7 @@
   {
     "model_key": "unsupported_phomemo_p12_family_a30",
     "profile_key_prediction": "p12",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -129,6 +132,7 @@
   {
     "model_key": "unsupported_phomemo_m03_family_m03",
     "profile_key_prediction": "m03",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -143,6 +147,7 @@
   {
     "model_key": "unsupported_phomemo_m03_family_m200",
     "profile_key_prediction": "m03",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -160,6 +165,7 @@
   {
     "model_key": "unsupported_phomemo_m03_family_m250",
     "profile_key_prediction": "m03",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -177,6 +183,7 @@
   {
     "model_key": "unsupported_phomemo_m03_family_m221",
     "profile_key_prediction": "m03",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -194,6 +201,7 @@
   {
     "model_key": "unsupported_phomemo_m03_family_m260",
     "profile_key_prediction": "m03",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -211,6 +219,7 @@
   {
     "model_key": "unsupported_phomemo_m04_family_m04s",
     "profile_key_prediction": "m04s",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -225,6 +234,7 @@
   {
     "model_key": "unsupported_phomemo_m04_family_m04as",
     "profile_key_prediction": "m04s",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -239,6 +249,7 @@
   {
     "model_key": "unsupported_phomemo_d_family_d30",
     "profile_key_prediction": "d30",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -256,6 +267,7 @@
   {
     "model_key": "unsupported_phomemo_d_family_d35",
     "profile_key_prediction": "d30",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -273,6 +285,7 @@
   {
     "model_key": "unsupported_phomemo_d_family_d50",
     "profile_key_prediction": "d30",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -290,6 +303,7 @@
   {
     "model_key": "unsupported_phomemo_d_family_q30",
     "profile_key_prediction": "d30",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -307,6 +321,7 @@
   {
     "model_key": "unsupported_phomemo_d_family_q30s",
     "profile_key_prediction": "d30",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -324,6 +339,7 @@
   {
     "model_key": "unsupported_phomemo_p3100_family",
     "profile_key_prediction": "p3100",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -341,6 +357,7 @@
   {
     "model_key": "unsupported_phomemo_m02h_family",
     "profile_key_prediction": "m02h",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -357,6 +374,7 @@
   {
     "model_key": "unsupported_phomemo_m02l_family",
     "profile_key_prediction": "m02l",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -372,6 +390,7 @@
   {
     "model_key": "unsupported_phomemo_q02_family",
     "profile_key_prediction": "q02",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -386,6 +405,7 @@
   {
     "model_key": "unsupported_phomemo_y02_family",
     "profile_key_prediction": "y02",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -401,6 +421,7 @@
   {
     "model_key": "unsupported_phomemo_pm241_family_pm_241_bt",
     "profile_key_prediction": "pm_241_bt",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -415,6 +436,7 @@
   {
     "model_key": "unsupported_phomemo_pm241_family_pm241",
     "profile_key_prediction": "pm_241_bt",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -695,6 +717,7 @@
   {
     "model_key": "unsupported_m08f_family_m08f",
     "profile_key_prediction": "m08f",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -709,6 +732,7 @@
   {
     "model_key": "unsupported_m08f_family_tp81",
     "profile_key_prediction": "m08f",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -723,6 +747,7 @@
   {
     "model_key": "unsupported_m08f_family_tp84",
     "profile_key_prediction": "m08f",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -737,6 +762,7 @@
   {
     "model_key": "unsupported_m08f_family_tp85",
     "profile_key_prediction": "m08f",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -751,6 +777,7 @@
   {
     "model_key": "unsupported_m08f_family_tp86",
     "profile_key_prediction": "m08f",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -765,6 +792,7 @@
   {
     "model_key": "unsupported_m08f_family_tp87",
     "profile_key_prediction": "m08f",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -779,6 +807,7 @@
   {
     "model_key": "unsupported_m08f_family_tp88",
     "profile_key_prediction": "m08f",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -793,6 +822,7 @@
   {
     "model_key": "unsupported_m832_family_m832",
     "profile_key_prediction": "m832",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -807,6 +837,7 @@
   {
     "model_key": "unsupported_m832_family_m836",
     "profile_key_prediction": "m832",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -821,6 +852,7 @@
   {
     "model_key": "unsupported_q302_family_q302",
     "profile_key_prediction": "q302",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],
@@ -835,6 +867,7 @@
   {
     "model_key": "unsupported_q302_family_q580",
     "profile_key_prediction": "q302",
+    "whitespace_mode": "trim",
     "origin_app_packages": [
       "com.quyin.phomemo"
     ],

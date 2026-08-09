@@ -17,7 +17,7 @@ class LinuxCmdTests(unittest.TestCase):
             if cmd == ("--timeout", "5", "scan", "on"):
                 return ""
             if cmd == ("devices",):
-                return "Device AA:BB:CC:DD:EE:01 X6H\nDevice AA:BB:CC:DD:EE:02 OTHER\n"
+                return "Device AA:BB:CC:DD:EE:01 X6H\nDevice AA:BB:CC:DD:EE:02 M50 \n"
             if cmd == ("devices", "Paired"):
                 return "Device AA:BB:CC:DD:EE:01 X6H\n"
             return ""
@@ -29,6 +29,7 @@ class LinuxCmdTests(unittest.TestCase):
         self.assertEqual(len(devices), 2)
         self.assertIn("AA:BB:CC:DD:EE:01", paired)
         self.assertTrue(devices[0].paired or devices[1].paired)
+        self.assertIn("M50 ", {device.name for device in devices})
 
     def test_resolve_rfcomm_channels_parsing(self) -> None:
         output = """

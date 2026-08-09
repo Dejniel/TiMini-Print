@@ -24,7 +24,7 @@ class LinuxCommandTools:
         derived_paired = set() if not paired_addresses else None
         devices = []
         for line in devices_output.splitlines():
-            line = line.strip()
+            line = line.lstrip()
             if not line.startswith("Device "):
                 continue
             parts = line.split(" ", 2)
