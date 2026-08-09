@@ -493,6 +493,31 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(catalog.detect_model("M50"), ())
         self.assertEqual(catalog.detect_device("M50 ").display_name, "M50")
 
+    def test_all_of_detection_beats_its_broader_prefix(self) -> None:
+        ordinary_payload = _model_payload(model_key="ordinary")
+        ordinary_payload["detections"] = [{"prefixes": ["S2"]}]
+        pro_payload = _model_payload(model_key="pro")
+        pro_payload["detections"] = [
+            {
+                "prefixes": ["S2"],
+                "substrings": ["pro"],
+                "all_of": True,
+            }
+        ]
+        ordinary = model_from_json(SupportedPrinterModel, ordinary_payload)
+        pro = model_from_json(SupportedPrinterModel, pro_payload)
+        profile = model_from_json(PrinterProfile, _profile_payload())
+        catalog = PrinterCatalog([profile], [ordinary, pro])
+
+        self.assertEqual(
+            _single_match(catalog.detect_model("S2-label")).model.model_key,
+            "ordinary",
+        )
+        self.assertEqual(
+            _single_match(catalog.detect_model("S2-label-pro")).model.model_key,
+            "pro",
+        )
+
     def test_model_codec_profile_roundtrip_keeps_normalized_shape(self) -> None:
         payload = _profile_payload()
         profile = model_from_json(PrinterProfile, payload)

@@ -347,6 +347,7 @@ class ModelDetection:
     substrings: Tuple[str, ...] = ()
     mac_suffixes: Tuple[str, ...] = ()
     marketing_names: Tuple[str, ...] = ()
+    all_of: bool = False
 
     def __post_init__(self) -> None:
         prefixes = tuple(self.prefixes)
@@ -360,6 +361,14 @@ class ModelDetection:
         if not prefixes and not exact_names and not substrings:
             raise ValueError(
                 "Model detection requires at least one prefix, exact_name, or substring"
+            )
+        populated_name_groups = sum(
+            bool(values)
+            for values in (prefixes, exact_names, substrings)
+        )
+        if self.all_of and populated_name_groups < 2:
+            raise ValueError(
+                "Model detection all_of requires at least two name trigger groups"
             )
         object.__setattr__(self, "prefixes", prefixes)
         object.__setattr__(self, "exact_names", exact_names)
@@ -375,6 +384,7 @@ class ModelDetection:
 
     @property
     def names(self) -> Tuple[str, ...]:
+        public_substrings = () if self.all_of else self.substrings
         return DetectionNormalizer.dedupe_public_names(
             (
                 *self.marketing_names,
@@ -385,7 +395,7 @@ class ModelDetection:
                 ),
                 *(
                     DetectionNormalizer.public_pattern_name(value)
-                    for value in self.substrings
+                    for value in public_substrings
                 ),
             )
         )
@@ -457,35 +467,61 @@ class ModelDetection:
                 (value.upper() for value in normalized_substrings),
             )
 
-        matched: list[Tuple[int, int, int, int, int]] = []
+        matched_exact_names: list[Tuple[int, int, int, int, int]] = []
         for trigger, candidate in exact_names:
             if target_name == candidate:
-                matched.append(
+                matched_exact_names.append(
                     self._trigger_specificity(
                         trigger,
                         match_rank=2,
                         has_mac_suffix=has_mac_suffix,
                     )
                 )
+        matched_prefixes: list[Tuple[int, int, int, int, int]] = []
         for trigger, candidate in prefixes:
             if target_name.startswith(candidate):
-                matched.append(
+                matched_prefixes.append(
                     self._trigger_specificity(
                         trigger,
                         match_rank=1,
                         has_mac_suffix=has_mac_suffix,
                     )
                 )
+        matched_substrings: list[Tuple[int, int, int, int, int]] = []
         for trigger, candidate in substrings:
             if candidate in target_name:
-                matched.append(
+                matched_substrings.append(
                     self._trigger_specificity(
                         trigger,
                         match_rank=0,
                         has_mac_suffix=has_mac_suffix,
                     )
                 )
-        return max(matched, default=None)
+        matched_groups = (
+            (self.exact_names, matched_exact_names),
+            (self.prefixes, matched_prefixes),
+            (self.substrings, matched_substrings),
+        )
+        if self.all_of:
+            if any(configured and not matched for configured, matched in matched_groups):
+                return None
+            best_by_group = [
+                max(matched)
+                for configured, matched in matched_groups
+                if configured
+            ]
+            return (
+                sum(value[0] for value in best_by_group),
+                int(has_mac_suffix),
+                sum(value[2] for value in best_by_group),
+                sum(value[3] for value in best_by_group),
+                sum(value[4] for value in best_by_group),
+            )
+
+        return max(
+            (*matched_exact_names, *matched_prefixes, *matched_substrings),
+            default=None,
+        )
 
     @staticmethod
     def _trigger_specificity(

@@ -83,6 +83,23 @@ class ModelDetectionTests(unittest.TestCase):
         )
         self.assertFalse(detection.matches("FDT4-1", None))
 
+    def test_all_of_requires_every_populated_name_trigger_group(self) -> None:
+        detection = ModelDetection(
+            prefixes=("S2",),
+            substrings=("pro",),
+            all_of=True,
+        )
+
+        self.assertTrue(detection.matches("S2-label-pro", None))
+        self.assertFalse(detection.matches("S2-label", None))
+        self.assertFalse(detection.matches("other-pro", None))
+        self.assertFalse(detection.matches("S2-label-Pro", None))
+        self.assertEqual(detection.names, ("S2",))
+
+    def test_all_of_requires_at_least_two_trigger_groups(self) -> None:
+        with self.assertRaisesRegex(ValueError, "at least two"):
+            ModelDetection(prefixes=("S2",), all_of=True)
+
     def test_matching_normalizes_private_copies_without_changing_public_spelling(self) -> None:
         detection = ModelDetection(
             exact_names=("PM 241",),

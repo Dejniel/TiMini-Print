@@ -68,6 +68,12 @@ Detection supports:
 - `prefixes`: normalized advertised name must start with the prefix
 - `substrings`: normalized advertised name must contain the value
 - `mac_suffixes`: optional address suffix filter
+- `all_of`: require every populated name-trigger group in this detection
+
+By default, `exact_names`, `prefixes`, and `substrings` are alternative trigger
+groups. With `all_of: true`, every populated group must match, while values
+inside each array remain alternatives. MAC suffixes remain an additional
+constraint in both modes.
 
 Each model may set `whitespace_mode` to control how its detections compare the
 advertised name. `remove` is the default and removes all whitespace, `trim`
@@ -79,7 +85,7 @@ Matching is sorted by specificity. Longer and more constrained rules win over br
 
 Raw trigger spelling is preserved for the public catalog. Private matching copies apply the model's `whitespace_mode`. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
 
-Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and `substrings`. One trailing `-` or `_` is removed from prefix/substring display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC suffixes are not public model names.
+Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and standalone `substrings`. Substrings used as `all_of` constraints are not published as model names. One trailing `-` or `_` is removed from prefix/substring display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC suffixes are not public model names.
 
 ## Profiles
 
