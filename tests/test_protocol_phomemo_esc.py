@@ -315,7 +315,13 @@ class PhomemoEscProtocolTests(unittest.TestCase):
     def test_t02_detection_does_not_steal_other_02_models(self) -> None:
         catalog = PrinterCatalog.load()
 
-        for name in ("T02", "T02E", "Q02E", "C02E"):
+        self.assertIsNone(catalog.detect_device("T02"))
+        self.assertEqual(
+            {match.model.model_key for match in catalog.detect_model("T02")},
+            {"phomemo_t02", "unsupported_funny_lx_type1"},
+        )
+
+        for name in ("T02E", "Q02E", "C02E"):
             with self.subTest(name=name):
                 device = catalog.detect_device(name)
                 self.assertIsNotNone(device)

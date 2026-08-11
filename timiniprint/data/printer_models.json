@@ -510,6 +510,7 @@
   },
   {
     "model_key": "label_printer",
+    "detection_ambiguity_group": "label_printer_protocol",
     "profile_key": "label_printer",
     "detections": [
       {
@@ -954,6 +955,7 @@
   },
   {
     "model_key": "gt08",
+    "detection_ambiguity_group": "gt08_protocol",
     "profile_key": "gt08",
     "detections": [
       {
@@ -1127,6 +1129,7 @@
   },
   {
     "model_key": "lp100",
+    "detection_ambiguity_group": "lp100_protocol",
     "profile_key": "lp100",
     "detections": [
       {
@@ -2091,6 +2094,7 @@
   },
   {
     "model_key": "luck_d80",
+    "detection_ambiguity_group": "d80_protocol",
     "profile_key": "luck_d80",
     "detections": [
       {
@@ -2379,6 +2383,7 @@
   },
   {
     "model_key": "phomemo_t02",
+    "detection_ambiguity_group": "t02_protocol",
     "profile_key": "phomemo_t02",
     "protocol_override": {
       "packets_type": "t02"
@@ -2442,6 +2447,7 @@
   },
   {
     "model_key": "phomemo_m220",
+    "detection_ambiguity_group": "m220_protocol",
     "profile_key": "phomemo_m220",
     "protocol_override": {
       "packets_type": "m220"

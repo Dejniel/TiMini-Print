@@ -398,8 +398,6 @@ class DevicesModelsTests(unittest.TestCase):
             "WQ02-1234": ("wq02", "wq02"),
             "L1-1234": ("l1_u2", "l1_u2"),
             "U2-1234": ("l1_u2", "l1_u2"),
-            "LP100": ("lp100", "lp100"),
-            "LP100-1234": ("lp100", "lp100"),
             "AI01-1234": ("p5ai", "m01"),
             "GV-MA211-1234": ("cmt_0510", "gb03"),
             "Audio Print-1234": ("x16", "x16"),
@@ -418,6 +416,16 @@ class DevicesModelsTests(unittest.TestCase):
                 assert device is not None
                 self.assertEqual(device.model_key, model_key)
                 self.assertEqual(device.profile_key, profile_key)
+
+        self.assertIsNone(self.catalog.detect_device("LP100"))
+        self.assertEqual(
+            _model_keys(self.catalog.detect_model("LP100")),
+            {"lp100", "unsupported_lp100_family_lp100"},
+        )
+        self.assertEqual(
+            self.catalog.detect_device("LP100-1234").model_key,
+            "lp100",
+        )
 
     def test_model_codec_rejects_non_positive_stream_chunk_size(self) -> None:
         payload = _profile_payload()
@@ -805,8 +813,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertFalse(x16.profile.can_print_label)
         self.assertEqual(x16.profile.energy.image.middle, 5000)
 
-        lp100 = self.catalog.detect_device("LP100")
-        self.assertIsNotNone(lp100)
+        lp100 = self.catalog.device_from_model("lp100")
         self.assertEqual(lp100.profile_key, "lp100")
         self.assertEqual(lp100.protocol_family, ProtocolFamily.TINY_PREFIXED)
         self.assertEqual(lp100.profile.energy.image.low, 100)
@@ -843,8 +850,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(jxm800.profile.default_paper_preset.left_padding_px, 64)
         self.assertEqual(jxm800.profile.default_paper_preset.paper_width_px, 1664)
 
-        gt08 = self.catalog.detect_device("GT08-1234")
-        self.assertIsNotNone(gt08)
+        gt08 = self.catalog.device_from_model("gt08")
         self.assertEqual(gt08.profile_key, "gt08")
         self.assertEqual(gt08.profile.default_paper_preset.left_padding_px, 0)
         self.assertEqual(gt08.profile.default_paper_preset.render_width_px, 1600)
@@ -955,17 +961,16 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsInstance(p3, UnsupportedModelMatch)
         self.assertEqual(p3.model.model_key, "unsupported_toprint_p3")
 
-        self.assertEqual(_model_keys(gt08), {"gt08"})
-        self.assertEqual(_model_keys(gw08), {"gt08"})
-
-        gt08_device = self.catalog.detect_device("GT08")
-        gw08_device = self.catalog.detect_device("GW08")
-        self.assertIsNotNone(gt08_device)
-        self.assertIsNotNone(gw08_device)
-        assert gt08_device is not None
-        assert gw08_device is not None
-        self.assertEqual(gt08_device.model_key, "gt08")
-        self.assertEqual(gw08_device.model_key, "gt08")
+        self.assertEqual(
+            _model_keys(gt08),
+            {"gt08", "unsupported_toprint_gt08"},
+        )
+        self.assertEqual(
+            _model_keys(gw08),
+            {"gt08", "unsupported_toprint_gw08"},
+        )
+        self.assertIsNone(self.catalog.detect_device("GT08"))
+        self.assertIsNone(self.catalog.detect_device("GW08"))
 
     def test_old_small_bucket_uses_v5g_and_mac59_switches_family_only(self) -> None:
         normal = self.catalog.detect_device("MX05", "AA:BB:CC:DD:EE:58")
@@ -1089,8 +1094,9 @@ class DevicesModelsTests(unittest.TestCase):
         )
         self.assertEqual(
             _model_keys(self.catalog.detect_model("M220")),
-            {"phomemo_m220"},
+            {"phomemo_m220", "unsupported_printmaster_m200_series"},
         )
+        self.assertIsNone(self.catalog.detect_device("M220"))
         m220_prefix = _single_match(self.catalog.detect_model("M220-ABCD"))
         self.assertIsInstance(m220_prefix, SupportedModelMatch)
         self.assertEqual(m220_prefix.model.model_key, "phomemo_m220")
@@ -1210,7 +1216,6 @@ class DevicesModelsTests(unittest.TestCase):
         expectations = {
             "CoreLargePrint": "unsupported_instaprint_ctp100lg_corelargeprint",
             "Pro Printer": "unsupported_instaprint_ctp100lg_corelargeprint",
-            "Label Printer": "unsupported_instaprint_ctp800bd_label",
         }
         for name, model_key in expectations.items():
             with self.subTest(name=name):
@@ -1219,6 +1224,13 @@ class DevicesModelsTests(unittest.TestCase):
                 assert isinstance(match, UnsupportedModelMatch)
                 self.assertEqual(match.model.model_key, model_key)
                 self.assertEqual(match.model.origin_app_packages, ("com.bes.print.insta",))
+
+        label_matches = self.catalog.detect_model("Label Printer")
+        self.assertEqual(
+            _model_keys(label_matches),
+            {"label_printer", "unsupported_instaprint_ctp800bd_label"},
+        )
+        self.assertIsNone(self.catalog.detect_device("Label Printer"))
 
     def test_yhk_is_explicit_toprint_instaprint_conflict(self) -> None:
         matches = self.catalog.detect_model("YHK")
@@ -1525,8 +1537,6 @@ class DevicesModelsTests(unittest.TestCase):
             "APL86_1234": ("luck_apl86", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 1728),
             "APL86H_1234": ("luck_apl86h", ProtocolFamily.LUCK_NORMAL_A4, "apl86", 2496),
             "U8_1234": ("luck_u8", ProtocolFamily.LUCK_NORMAL_A4, "u8", 1728),
-            "D80-1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
-            "D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
             "DP_D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
             "DP-D80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
             "E80_1234": ("luck_d80", ProtocolFamily.LUCK_NORMAL_A4, "d80", 1728),
@@ -1564,6 +1574,14 @@ class DevicesModelsTests(unittest.TestCase):
                     self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_COMPRESSED)
                 else:
                     self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_RAW)
+
+        for name in ("D80-1234", "D80_1234"):
+            with self.subTest(name=name):
+                self.assertIsNone(self.catalog.detect_device(name))
+                self.assertEqual(
+                    _model_keys(self.catalog.detect_model(name)),
+                    {"luck_d80", "unsupported_printmaster_m8_series"},
+                )
 
     def test_luck_types_are_not_advertised_name_matchers(self) -> None:
         for name in (

@@ -51,11 +51,9 @@ class TinyFlowControlTests(unittest.TestCase):
 
     def test_runtime_is_enabled_for_both_tiny_prefix_variants(self) -> None:
         catalog = PrinterCatalog.load()
-        for advertised_name in ("X5", "LP100"):
-            with self.subTest(advertised_name=advertised_name):
-                device = catalog.detect_device(advertised_name)
-                self.assertIsNotNone(device)
-                assert device is not None
+        for model_key in ("x5", "lp100"):
+            with self.subTest(model_key=model_key):
+                device = catalog.device_from_model(model_key)
                 self.assertIsInstance(
                     runtime_controller_for_device(device),
                     TinyRuntimeController,

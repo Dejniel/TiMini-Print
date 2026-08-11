@@ -477,20 +477,16 @@ class PrinterCatalog:
 
         This is catalog-level detection only; it does not scan hardware.
         More specific unsupported metadata can prevent a broad supported prefix
-        from stealing an unrelated model. When supported and unsupported matches
-        have the same specificity, supported wins. If multiple supported candidates
-        tie, this returns ``None`` so callers
-        can ask the user to choose the source app/model explicitly.
+        from stealing an unrelated model. At equal specificity, supported normally
+        wins; an explicit shared ambiguity group keeps both candidates. Any
+        ambiguous result returns ``None`` so callers can ask the user to choose the
+        source app/model explicitly.
         """
-        supported = [
-            match
-            for match in self.detect_model(device_name, address)
-            if isinstance(match, SupportedModelMatch)
-        ]
-        if len(supported) != 1:
+        matches = self.detect_model(device_name, address)
+        if len(matches) != 1 or not isinstance(matches[0], SupportedModelMatch):
             return None
         return self.device_from_match(
-            supported[0],
+            matches[0],
             display_name=device_name.strip() or device_name,
             transport_target=transport_target,
         )
@@ -619,6 +615,13 @@ class PrinterCatalog:
             )
             if supported_matches and unsupported_specificity is not None:
                 assert supported_specificity is not None
+                if self._has_shared_ambiguity_group(
+                    (*supported_matches, *unsupported_matches)
+                ):
+                    return tuple(
+                        self._model_match(model, detection)
+                        for model, detection in (*supported_matches, *unsupported_matches)
+                    )
                 if unsupported_specificity > supported_specificity:
                     return tuple(
                         self._model_match(model, detection)
@@ -635,6 +638,16 @@ class PrinterCatalog:
                     for model, detection in unsupported_matches
                 )
         return ()
+
+    @staticmethod
+    def _has_shared_ambiguity_group(
+        matches: tuple[
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection],
+            ...,
+        ],
+    ) -> bool:
+        groups = {model.detection_ambiguity_group for model, _detection in matches}
+        return len(groups) == 1 and None not in groups
 
     def detection_devices(
         self,

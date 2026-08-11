@@ -15,6 +15,7 @@
   },
   {
     "model_key": "unsupported_toprint_gt08",
+    "detection_ambiguity_group": "gt08_protocol",
     "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.fyhd.toprint"
@@ -29,6 +30,7 @@
   },
   {
     "model_key": "unsupported_toprint_gw08",
+    "detection_ambiguity_group": "gt08_protocol",
     "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.fyhd.toprint"
@@ -63,6 +65,7 @@
   },
   {
     "model_key": "unsupported_instaprint_ctp800bd_label",
+    "detection_ambiguity_group": "label_printer_protocol",
     "profile_key_prediction": "instaprint_ctp800bd",
     "whitespace_mode": "preserve",
     "origin_app_packages": [
@@ -456,6 +459,7 @@
   },
   {
     "model_key": "unsupported_lp100_family_lp100",
+    "detection_ambiguity_group": "lp100_protocol",
     "profile_key_prediction": "lp100_legacy",
     "origin_app_packages": [
       "com.bleem.liugm"
@@ -1919,6 +1923,7 @@
   },
   {
     "model_key": "unsupported_printmaster_m8_series",
+    "detection_ambiguity_group": "d80_protocol",
     "profile_key_prediction": "m8",
     "origin_app_packages": [
       "com.project.aimotech.printmaster"
@@ -2008,6 +2013,7 @@
   },
   {
     "model_key": "unsupported_printmaster_m200_series",
+    "detection_ambiguity_group": "m220_protocol",
     "profile_key_prediction": "m200",
     "origin_app_packages": [
       "com.project.aimotech.printmaster"
@@ -2689,6 +2695,7 @@
   },
   {
     "model_key": "unsupported_funny_lx_type1",
+    "detection_ambiguity_group": "t02_protocol",
     "whitespace_mode": "preserve",
     "origin_app_packages": [
       "com.lailaixiong.funnyprint"

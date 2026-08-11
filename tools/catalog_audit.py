@@ -160,40 +160,40 @@ def _find_unsupported_model_reachability_error(
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
-    model_origins = set(model.get("origin_app_packages", []))
     for sample in samples:
         for address in addresses:
             matches = catalog.detect_model(sample, address=address)
             if len(matches) > 1:
                 if model["model_key"] in {candidate.model.model_key for candidate in matches}:
+                    ambiguity_group = model.get("detection_ambiguity_group")
+                    if ambiguity_group and all(
+                        candidate.model.detection_ambiguity_group == ambiguity_group
+                        for candidate in matches
+                    ):
+                        return None
                     for candidate in matches:
                         if not isinstance(candidate, SupportedModelMatch):
                             continue
-                        candidate_origins = set(candidate.model.origin_app_packages)
-                        if not model_origins or model_origins.intersection(candidate_origins):
-                            return {
-                                "kind": "unsupported_model_matches_supported_model",
-                                "model_key": model["model_key"],
-                                "sample_name": sample,
-                                "sample_address": address,
-                                "supported_model_key": candidate.model.model_key,
-                                "supported_profile_key": candidate.profile.profile_key,
-                            }
+                        return {
+                            "kind": "unsupported_model_matches_supported_model",
+                            "model_key": model["model_key"],
+                            "sample_name": sample,
+                            "sample_address": address,
+                            "supported_model_key": candidate.model.model_key,
+                            "supported_profile_key": candidate.profile.profile_key,
+                        }
                     return None
                 continue
             match = matches[0] if matches else None
             if isinstance(match, SupportedModelMatch):
-                supported_origins = set(match.model.origin_app_packages)
-                if not model_origins or model_origins.intersection(supported_origins):
-                    return {
-                        "kind": "unsupported_model_matches_supported_model",
-                        "model_key": model["model_key"],
-                        "sample_name": sample,
-                        "sample_address": address,
-                        "supported_model_key": match.model.model_key,
-                        "supported_profile_key": match.profile.profile_key,
-                    }
-                return None
+                return {
+                    "kind": "unsupported_model_matches_supported_model",
+                    "model_key": model["model_key"],
+                    "sample_name": sample,
+                    "sample_address": address,
+                    "supported_model_key": match.model.model_key,
+                    "supported_profile_key": match.profile.profile_key,
+                }
             if not isinstance(match, UnsupportedModelMatch):
                 continue
             if match.model.model_key == model["model_key"]:

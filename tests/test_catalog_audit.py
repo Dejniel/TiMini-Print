@@ -242,7 +242,7 @@ class CatalogAuditTests(unittest.TestCase):
             {
                 "model_key": "unsupported",
                 "detections": [{"prefixes": ["FOO"]}],
-                "origin_app_packages": [],
+                "origin_app_packages": ["com.example.unsupported"],
             },
         ]
 
