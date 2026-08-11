@@ -76,7 +76,7 @@ class BluetoothEndpointResolver:
                 display_name=item.display_name,
                 transport_target=item.transport_target,
             )
-            if len(candidates) <= 1:
+            if not candidates:
                 continue
             for candidate in candidates:
                 key = (candidate.model_key, candidate.address, candidate.transport_badge)

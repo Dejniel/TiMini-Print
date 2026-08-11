@@ -259,7 +259,30 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
 class BluetoothEndpointResolverTests(unittest.TestCase):
     def setUp(self) -> None:
         reset_registry_cache()
-        self.resolver = BluetoothEndpointResolver(PrinterCatalog.load())
+        self.catalog = PrinterCatalog.load()
+        self.resolver = BluetoothEndpointResolver(self.catalog)
+
+    def test_display_keeps_single_manual_candidate_not_resolved_automatically(self) -> None:
+        endpoint = BluetoothEndpoint(
+            name="Ambiguous Printer",
+            address="AA:BB:CC:DD:EE:01",
+            transport=BluetoothEndpointTransport.BLE,
+        )
+        target = self.resolver.transport_target_from_endpoint(endpoint)
+        candidate = self.catalog.device_from_model(
+            "x6",
+            display_name=endpoint.name,
+            transport_target=target,
+        )
+
+        with patch.object(
+            self.catalog,
+            "detection_devices",
+            return_value=(candidate,),
+        ):
+            devices = self.resolver.devices_for_display([], [endpoint])
+
+        self.assertEqual(devices, [candidate])
 
     def test_resolves_raw_endpoints_without_transport_backend(self) -> None:
         classic = BluetoothEndpoint(
