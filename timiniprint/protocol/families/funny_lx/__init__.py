@@ -33,7 +33,7 @@ BEHAVIOR = ProtocolBehavior(
     image_encoding_support={
         ImageEncoding.FUNNY_LX_RASTER: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("lx_d_direct", "lx_d_reversed"),
+    supported_protocol_variants=("lx_d_direct",),
     supported_paper_modes=(PaperMode.PLAIN,),
     advance_paper_builder=advance_paper_cmd,
     retract_paper_builder=retract_paper_cmd,

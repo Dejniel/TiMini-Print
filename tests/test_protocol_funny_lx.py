@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import unittest
-from dataclasses import replace
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.runtime.funny_lx import FunnyLxRuntimeController
@@ -165,27 +164,6 @@ class FunnyLxProtocolTests(unittest.TestCase):
         self.assertEqual(job.steps[4].data, bytes.fromhex("5a 04 00 01 01"))
         self.assertTrue(job.steps[4].reply_matcher.matches(bytes.fromhex("5a 04 00 01 01")))
         self.assertEqual(job.steps[4].timeout_sec, 10.0)
-
-    def test_builds_reversed_lx_image_job_for_legacy_variant(self) -> None:
-        device = replace(PrinterCatalog.load().device_from_model("funny_lx_d"), protocol_variant="lx_d_reversed")
-        first_row = [1, 0, 0, 0, 0, 0, 0, 0] + [0] * 376
-        second_row = [0, 1, 0, 0, 0, 0, 0, 0] + [0] * 376
-        raster = RasterBuffer(
-            pixels=first_row + second_row,
-            width=384,
-            pixel_format=PixelFormat.BW1,
-        )
-
-        job = PrinterProtocol(device).build_job(
-            RasterSet.from_single(raster),
-            is_text=False,
-            blackening=4,
-        )
-
-        self.assertEqual(job.steps[2].data[:3], bytes.fromhex("55 00 00"))
-        self.assertEqual(job.steps[2].data[3:51], bytes([0x40]) + bytes(47))
-        self.assertEqual(job.steps[2].data[51:99], bytes([0x80]) + bytes(47))
-        self.assertEqual(job.steps[2].data[-1], 0)
 
     def test_rejects_non_lx_width(self) -> None:
         device = PrinterCatalog.load().device_from_model("funny_lx_d")

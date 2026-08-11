@@ -16,8 +16,7 @@ _DEFAULT_DARKNESS_LEVEL = 4
 _IMAGE_ACCEPT_TIMEOUT_SEC = 10.0
 _PRINT_FOOTER_TIMEOUT_SEC = 10.0
 _DIRECT_VARIANT = "lx_d_direct"
-_REVERSED_VARIANT = "lx_d_reversed"
-_SUPPORTED_VARIANTS = frozenset({_DIRECT_VARIANT, _REVERSED_VARIANT})
+_SUPPORTED_VARIANTS = frozenset({_DIRECT_VARIANT})
 
 
 @dataclass(frozen=True)
@@ -101,14 +100,11 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
 
 
 def _image_packets(content: bytes, *, variant: str) -> tuple[bytes, ...]:
-    command_code = bytes(reversed(content)) if variant == _REVERSED_VARIANT else content
     packets: list[bytes] = []
-    for index, offset in enumerate(range(0, len(command_code), _PACKET_DATA_BYTES)):
-        block = command_code[offset : offset + _PACKET_DATA_BYTES]
+    for index, offset in enumerate(range(0, len(content), _PACKET_DATA_BYTES)):
+        block = content[offset : offset + _PACKET_DATA_BYTES]
         if len(block) < _PACKET_DATA_BYTES:
             block += b"\x00" * (_PACKET_DATA_BYTES - len(block))
-        if variant == _REVERSED_VARIANT:
-            block = block[:_PACKET_HALF_BYTES][::-1] + block[_PACKET_HALF_BYTES:][::-1]
         packets.append(b"\x55" + _u16be(index) + block + b"\x00")
     return tuple(packets)
 
