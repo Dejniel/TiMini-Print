@@ -14,6 +14,7 @@ from ...packet import make_packet
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
+from ..bitmap import build_esc_star_24dot_raster
 
 
 VARIANT_LINE_EIGHT = "line_eight"
@@ -166,25 +167,10 @@ def _esc_star_energy_byte(energy: int) -> int:
 
 
 def _esc_star_24dot_payload(request: PrintJobRequest) -> bytes:
-    raster = request.require_raster(PixelFormat.BW1)
-    width = raster.width
-    height = raster.height
-    band_count = (height + 23) // 24
-    pixels = list(raster.pixels)
-    out = bytearray()
-
-    for band in range(band_count):
-        out += bytes([0x1B, 0x2A, 0x21, width & 0xFF, (width >> 8) & 0xFF])
-        for x in range(width):
-            for stripe in range(3):
-                value = 0
-                for bit in range(8):
-                    y = (band * 24) + (stripe * 8) + bit
-                    if y < height and pixels[(y * width) + x]:
-                        value |= 1 << (7 - bit)
-                out.append(value)
-        out += bytes([0x1B, 0x4A, 0x00, 0x0A])
-    return bytes(out)
+    return build_esc_star_24dot_raster(
+        request.require_raster(PixelFormat.BW1),
+        band_trailer=b"\x1b\x4a\x00\x0a",
+    )
 
 
 def _build_esc_star_job(request: PrintJobRequest, *, eight: bool) -> bytes:
