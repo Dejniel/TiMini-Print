@@ -123,7 +123,7 @@ class RenderingPdfConverterTests(unittest.TestCase):
         c = PdfConverter(
             page_selection="1",
             pdf_renderer=_CustomPdfRenderer(size=(800, 200)),
-            rotate_90_clockwise=True,
+            rotation_degrees=90,
         )
 
         pages = c.load("mobile.pdf", width=384)

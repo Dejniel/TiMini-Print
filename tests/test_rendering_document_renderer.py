@@ -388,7 +388,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
                     self.device.profile.default_paper_preset,
                     paper_width_px=4,
                     render_width_px=4,
-                    rotate_90_clockwise=True,
+                    rotation_degrees=90,
                 ),
             ),
         )

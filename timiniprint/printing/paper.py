@@ -22,7 +22,7 @@ class ResolvedPaper:
     max_height_px: int | None = None
     raster_height_px: int | None = None
     mirror_horizontal: bool = False
-    rotate_90_clockwise: bool = False
+    rotation_degrees: int = 0
     dither_mode: DitherMode | None = None
     render_height_scale: float = 1.0
 
@@ -63,7 +63,7 @@ def resolve_paper(device: PrinterDevice, settings: PrintSettings) -> ResolvedPap
         max_height_px=preset.max_height_px,
         raster_height_px=preset.raster_height_px,
         mirror_horizontal=preset.mirror_horizontal,
-        rotate_90_clockwise=preset.rotate_90_clockwise,
+        rotation_degrees=preset.rotation_degrees,
         dither_mode=preset.dither_mode,
         render_height_scale=preset.render_height_scale,
     )

@@ -6712,12 +6712,20 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "yk_s001_tag_84r_90p",
-      "yk_s001_blacktag_84r_90p",
-      "yk_s001_plain_84r_90p",
-      "yk_s001_tag_90r_90p",
-      "yk_s001_blacktag_90r_90p",
-      "yk_s001_plain_90r_90p"
+      "yk_snap_catalog_tag_14x40",
+      "yk_snap_catalog_plain_15",
+      "yk_snap_catalog_tag_14x22",
+      "yk_snap_catalog_tag_14x30",
+      "yk_snap_catalog_tag_12x40",
+      "yk_snap_catalog_tag_14x40_blue",
+      "yk_snap_catalog_tag_14x40_bubbles",
+      "yk_snap_catalog_tag_14x40_planet",
+      "yk_snap_catalog_tag_14x50",
+      "yk_snap_catalog_tag_12_5x74",
+      "yk_snap_catalog_s001_transparent_14x40",
+      "yk_s001_custom_plain_90r",
+      "yk_s001_custom_tag_90r",
+      "yk_s001_custom_blacktag_90r"
     ]
   }
 ]

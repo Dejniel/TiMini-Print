@@ -4,7 +4,13 @@ from typing import Optional, Sequence
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .base import Page, PageConverter, PageSource
+from .base import (
+    Page,
+    PageConverter,
+    PageSource,
+    normalized_rotation_degrees,
+    rotate_image,
+)
 from ..fonts import find_monospace_bold_font, load_font
 
 COLUMNS_PER_WIDTH = 35 / 384
@@ -113,12 +119,13 @@ class TextConverter(PageConverter):
         columns: Optional[int] = None,
         wrap_lines: bool = True,
         page_height_to_width: float | None = None,
-        rotate_90_clockwise: bool = False,
+        rotation_degrees: int = 0,
     ) -> None:
         self._font_path = font_path
         self._columns_override = columns
         self._word_wrap = wrap_lines
-        self._rotate_90_clockwise = rotate_90_clockwise
+        self._rotation_degrees = normalized_rotation_degrees(rotation_degrees)
+        self._quarter_turn = self._rotation_degrees in (90, 270)
         self._page_height_to_width = max(
             0.1,
             float(
@@ -137,7 +144,7 @@ class TextConverter(PageConverter):
 
     def _open_text_source(self, text: str, width: int) -> PageSource:
         render_width = self._render_width(width)
-        margin = min(12, width // 64) if self._rotate_90_clockwise else 0
+        margin = min(12, width // 64) if self._quarter_turn else 0
         usable_width = max(1, render_width - 2 * margin)
         font = self._fit_truetype_font(
             self._font_path or find_monospace_bold_font(),
@@ -157,7 +164,7 @@ class TextConverter(PageConverter):
             output_width=width,
             metrics=metrics,
             margin=margin,
-            rotate_90_clockwise=self._rotate_90_clockwise,
+            rotation_degrees=self._rotation_degrees,
         )
 
     @staticmethod
@@ -179,12 +186,12 @@ class TextConverter(PageConverter):
         return img
 
     def _lines_per_page(self, width: int, line_height: int, margin: int = 0) -> int:
-        if self._rotate_90_clockwise:
+        if self._quarter_turn:
             return max(1, (width - 2 * margin) // max(1, line_height))
         return max(1, int((width * self._page_height_to_width) // max(1, line_height)))
 
     def _render_width(self, width: int) -> int:
-        if self._rotate_90_clockwise:
+        if self._quarter_turn:
             return max(1, int(round(width * self._page_height_to_width)))
         return width
 
@@ -233,7 +240,7 @@ class _TextPageSource(PageSource):
         output_width: int,
         metrics: _CharWidthFontMetrics,
         margin: int = 0,
-        rotate_90_clockwise: bool = False,
+        rotation_degrees: int = 0,
     ) -> None:
         self._lines = list(lines)
         self._lines_per_page = max(1, lines_per_page)
@@ -241,7 +248,8 @@ class _TextPageSource(PageSource):
         self._output_width = max(1, output_width)
         self._metrics = metrics
         self._margin = max(0, margin)
-        self._rotate_90_clockwise = rotate_90_clockwise
+        self._rotation_degrees = normalized_rotation_degrees(rotation_degrees)
+        self._quarter_turn = self._rotation_degrees in (90, 270)
 
     @property
     def page_count(self) -> int:
@@ -262,15 +270,14 @@ class _TextPageSource(PageSource):
             lines,
             self._metrics.font,
             self._metrics.line_height,
-            min_height=self._output_width if self._rotate_90_clockwise else 1,
+            min_height=self._output_width if self._quarter_turn else 1,
             margin=self._margin,
         )
-        if self._rotate_90_clockwise:
-            img = img.transpose(Image.Transpose.ROTATE_270)
+        img = rotate_image(img, self._rotation_degrees)
         return Page(img, dither=False, is_text=True)
 
     def _page_image_width(self, lines: Sequence[str]) -> int:
-        if not self._rotate_90_clockwise:
+        if not self._quarter_turn:
             return self._width
         content_width = max((self._metrics.rendered_text_right_edge(line) for line in lines), default=0)
         return min(self._width, max(1, content_width + 2 * self._margin))

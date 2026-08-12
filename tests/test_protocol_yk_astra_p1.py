@@ -64,7 +64,7 @@ class AstraP1S001Tests(unittest.TestCase):
         self.assertEqual(frames[2].payload, b"\x01\x01")
         self.assertEqual(frames[3].payload, bytes.fromhex("02 20 03"))
         self.assertEqual(frames[4].payload, bytes.fromhex("02 00"))
-        self.assertEqual(frames[5].payload, b"\x00" * 36 + b"\x02" + b"\x00" * 11)
+        self.assertEqual(frames[5].payload, b"\x02" + b"\x00" * 47)
         self.assertEqual(frames[6].payload, bytes.fromhex("01 20 03"))
 
     def test_middle_and_last_labels_change_only_terminal_feed_mode(self) -> None:
@@ -138,7 +138,8 @@ class AstraP1S001Tests(unittest.TestCase):
         self.assertEqual(device.protocol_family.value, "yk_astra_p1")
         self.assertEqual(device.protocol_variant, "s001")
         self.assertTrue(device.profile.use_spp)
-        self.assertTrue(device.profile.default_paper_preset.rotate_90_clockwise)
+        self.assertEqual(device.profile.default_paper_preset.rotation_degrees, 270)
+        self.assertFalse(device.profile.default_paper_preset.mirror_horizontal)
         self.assertIsNone(catalog.detect_device("S001-extra"))
 
         raster = RasterBuffer(

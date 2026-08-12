@@ -219,59 +219,110 @@
     "paper_width_px": 576,
     "render_width_px": 576
   },
-  "yk_s001_blacktag_84r_90p": {
-    "label": "Black tag",
-    "paper_mode": "black_tag",
-    "paper_width_px": 90,
-    "render_width_px": 84,
-    "render_height_px": 280,
-    "mirror_horizontal": true,
-    "rotate_90_clockwise": true
-  },
-  "yk_s001_blacktag_90r_90p": {
-    "label": "Black tag (full width)",
-    "paper_mode": "black_tag",
-    "paper_width_px": 90,
-    "render_width_px": 90,
-    "render_height_px": 280,
-    "mirror_horizontal": true,
-    "rotate_90_clockwise": true
-  },
-  "yk_s001_plain_84r_90p": {
-    "label": "Plain roll",
+  "yk_snap_catalog_plain_15": {
+    "label": "Snap catalog 15 mm continuous",
     "paper_mode": "plain",
     "paper_width_px": 90,
-    "render_width_px": 84,
-    "render_height_px": 280,
-    "mirror_horizontal": true,
-    "rotate_90_clockwise": true
+    "render_width_px": 88,
+    "rotation_degrees": 270
   },
-  "yk_s001_plain_90r_90p": {
-    "label": "Plain roll (full width)",
-    "paper_mode": "plain",
+  "yk_snap_catalog_tag_14x22": {
+    "label": "Snap catalog 14 x 22 mm",
+    "paper_mode": "tag",
     "paper_width_px": 90,
-    "render_width_px": 90,
-    "render_height_px": 280,
-    "mirror_horizontal": true,
-    "rotate_90_clockwise": true
+    "render_width_px": 88,
+    "render_height_px": 144,
+    "rotation_degrees": 270
   },
-  "yk_s001_tag_84r_90p": {
-    "label": "Tag",
+  "yk_snap_catalog_tag_14x30": {
+    "label": "Snap catalog 14 x 30 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 88,
+    "render_height_px": 208,
+    "rotation_degrees": 270
+  },
+  "yk_snap_catalog_tag_12x40": {
+    "label": "Snap catalog 12 x 40 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 80,
+    "render_height_px": 280,
+    "rotation_degrees": 270
+  },
+  "yk_snap_catalog_tag_14x40_blue": {
+    "label": "Snap catalog 14 x 40 mm Blue",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 88,
+    "render_height_px": 288,
+    "rotation_degrees": 270
+  },
+  "yk_snap_catalog_tag_14x40": {
+    "label": "Snap catalog 14 x 40 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 88,
+    "render_height_px": 280,
+    "rotation_degrees": 270
+  },
+  "yk_snap_catalog_tag_14x40_bubbles": {
+    "label": "Snap catalog 14 x 40 mm Blue Bubbles",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 88,
+    "render_height_px": 256,
+    "rotation_degrees": 270
+  },
+  "yk_snap_catalog_tag_14x40_planet": {
+    "label": "Snap catalog 14 x 40 mm Planet Odyssey",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 88,
+    "render_height_px": 196,
+    "rotation_degrees": 270
+  },
+  "yk_snap_catalog_tag_14x50": {
+    "label": "Snap catalog 14 x 50 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 90,
+    "render_width_px": 88,
+    "render_height_px": 360,
+    "rotation_degrees": 270
+  },
+  "yk_snap_catalog_tag_12_5x74": {
+    "label": "Snap catalog 12.5 x 74 mm",
     "paper_mode": "tag",
     "paper_width_px": 90,
     "render_width_px": 84,
-    "render_height_px": 280,
-    "mirror_horizontal": true,
-    "rotate_90_clockwise": true
+    "render_height_px": 544,
+    "rotation_degrees": 270
   },
-  "yk_s001_tag_90r_90p": {
-    "label": "Tag (full width)",
+  "yk_snap_catalog_s001_transparent_14x40": {
+    "label": "Snap catalog 14 x 40 mm transparent",
+    "paper_mode": "black_tag",
+    "paper_width_px": 90,
+    "render_width_px": 88,
+    "render_height_px": 280,
+    "rotation_degrees": 270
+  },
+  "yk_s001_custom_plain_90r": {
+    "label": "Custom continuous paper",
+    "paper_mode": "plain",
+    "paper_width_px": 90,
+    "render_width_px": 90
+  },
+  "yk_s001_custom_tag_90r": {
+    "label": "Custom tag",
     "paper_mode": "tag",
     "paper_width_px": 90,
-    "render_width_px": 90,
-    "render_height_px": 280,
-    "mirror_horizontal": true,
-    "rotate_90_clockwise": true
+    "render_width_px": 90
+  },
+  "yk_s001_custom_blacktag_90r": {
+    "label": "Custom black tag",
+    "paper_mode": "black_tag",
+    "paper_width_px": 90,
+    "render_width_px": 90
   },
   "tattoo_1728r": {
     "label": "Tattoo",

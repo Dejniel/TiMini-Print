@@ -8,6 +8,22 @@ from PIL import Image, ImageOps
 ImageLoader = Callable[[str], Image.Image]
 
 
+def normalized_rotation_degrees(rotation_degrees: int = 0) -> int:
+    rotation = int(rotation_degrees) % 360
+    if rotation not in (0, 90, 180, 270):
+        raise ValueError("rotation_degrees must be a multiple of 90")
+    return rotation
+
+
+def rotate_image(img: Image.Image, rotation_degrees: int) -> Image.Image:
+    transpose = {
+        90: Image.Transpose.ROTATE_270,
+        180: Image.Transpose.ROTATE_180,
+        270: Image.Transpose.ROTATE_90,
+    }.get(normalized_rotation_degrees(rotation_degrees))
+    return img if transpose is None else img.transpose(transpose)
+
+
 @dataclass(frozen=True)
 class Page:
     image: Image.Image
@@ -72,11 +88,11 @@ class RasterConverter(PageConverter):
         self,
         trim_side_margins: bool = True,
         trim_top_bottom_margins: bool = True,
-        rotate_90_clockwise: bool = False,
+        rotation_degrees: int = 0,
     ) -> None:
         self._trim_side_margins = trim_side_margins
         self._trim_top_bottom_margins = trim_top_bottom_margins
-        self._rotate_90_clockwise = rotate_90_clockwise
+        self._rotation_degrees = normalized_rotation_degrees(rotation_degrees)
 
     @staticmethod
     def load_image(path: str) -> Image.Image:
@@ -103,9 +119,7 @@ class RasterConverter(PageConverter):
         return img.resize((width, height), Image.LANCZOS)
 
     def _rotate_image(self, img: Image.Image) -> Image.Image:
-        if not self._rotate_90_clockwise:
-            return img
-        return img.transpose(Image.Transpose.ROTATE_270)
+        return rotate_image(img, self._rotation_degrees)
 
     def _maybe_trim_margins(self, img: Image.Image) -> Image.Image:
         if not (self._trim_side_margins or self._trim_top_bottom_margins):

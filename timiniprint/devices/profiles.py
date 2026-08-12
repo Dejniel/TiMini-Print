@@ -182,7 +182,7 @@ class PaperPreset:
     max_height_px: Optional[int] = None
     raster_height_px: Optional[int] = None
     mirror_horizontal: bool = False
-    rotate_90_clockwise: bool = False
+    rotation_degrees: int = 0
     dither_mode: Optional[DitherMode] = None
     render_height_scale: float = 1.0
 
@@ -191,6 +191,10 @@ class PaperPreset:
             raise ValueError("paper preset requires key")
         if not self.label:
             raise ValueError(f"paper preset {self.key} requires label")
+        if self.rotation_degrees not in (0, 90, 180, 270):
+            raise ValueError(
+                f"paper preset {self.key} rotation_degrees must be 0, 90, 180, or 270"
+            )
         for field_name in (
             "paper_width_px",
             "render_width_px",

@@ -31,12 +31,30 @@ class RenderingImageConverterTests(unittest.TestCase):
         source = Image.new("RGB", (800, 200), "black")
         converter = ImageConverter(
             image_loader=Mock(return_value=source),
-            rotate_90_clockwise=True,
+            rotation_degrees=90,
         )
 
         pages = converter.load("landscape.png", 384)
 
         self.assertEqual(pages[0].image.size, (384, 1536))
+
+    def test_supports_counter_clockwise_quarter_turn_as_270_clockwise(self) -> None:
+        source = Image.new("1", (2, 1), 1)
+        source.putpixel((0, 0), 0)
+        converter = ImageConverter(
+            image_loader=Mock(return_value=source),
+            trim_side_margins=False,
+            trim_top_bottom_margins=False,
+            rotation_degrees=270,
+        )
+
+        page = converter.load("landscape.png", 1)[0]
+
+        self.assertEqual(page.image.size, (1, 2))
+        self.assertEqual(
+            list(page.image.getdata()),
+            [(255, 255, 255), (0, 0, 0)],
+        )
 
 
 if __name__ == "__main__":

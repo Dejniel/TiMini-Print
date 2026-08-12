@@ -80,7 +80,6 @@ class AstraP1VariantRecipe:
     mode_recipes: Mapping[PaperMode, AstraP1MediaRecipe]
     default_paper_mode: PaperMode
     raster_left_padding: int = 0
-    reverse_row_order: bool = False
     stepwise: bool = False
 
     def __post_init__(self) -> None:
@@ -219,9 +218,8 @@ def _pack_raster(
         )
     row_bytes = (recipe.head_width + 7) // 8
     pixels = list(raster.pixels)
-    rows = range(raster.height - 1, -1, -1) if recipe.reverse_row_order else range(raster.height)
     packed = bytearray()
-    for row in rows:
+    for row in range(raster.height):
         output = bytearray(row_bytes)
         source = row * raster.width
         for column in range(raster.width):
@@ -276,7 +274,6 @@ S001_VARIANT = AstraP1VariantRecipe(
     speed=25,
     default_paper_mode=PaperMode.TAG,
     raster_left_padding=6,
-    reverse_row_order=True,
     mode_recipes={
         PaperMode.PLAIN: _S001_PLAIN,
         PaperMode.TAG: _S001_TAG,

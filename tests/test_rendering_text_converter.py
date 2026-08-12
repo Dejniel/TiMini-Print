@@ -114,7 +114,7 @@ class RenderingTextConverterTests(unittest.TestCase):
         conv = TextConverter(
             font_path=None,
             page_height_to_width=1.5,
-            rotate_90_clockwise=True,
+            rotation_degrees=90,
         )
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "rotated.txt"
@@ -135,7 +135,7 @@ class RenderingTextConverterTests(unittest.TestCase):
         conv = TextConverter(
             font_path=None,
             columns=35,
-            rotate_90_clockwise=True,
+            rotation_degrees=90,
         )
 
         with patch.object(TextConverter, "_fit_truetype_font", return_value=ImageFont.load_default()):

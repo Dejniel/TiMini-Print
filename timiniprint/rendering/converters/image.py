@@ -10,12 +10,12 @@ class ImageConverter(RasterConverter):
         image_loader: ImageLoader | None = None,
         trim_side_margins: bool = True,
         trim_top_bottom_margins: bool = True,
-        rotate_90_clockwise: bool = False,
+        rotation_degrees: int = 0,
     ) -> None:
         super().__init__(
             trim_side_margins=trim_side_margins,
             trim_top_bottom_margins=trim_top_bottom_margins,
-            rotate_90_clockwise=rotate_90_clockwise,
+            rotation_degrees=rotation_degrees,
         )
         self._image_loader = image_loader or self.load_image
 
