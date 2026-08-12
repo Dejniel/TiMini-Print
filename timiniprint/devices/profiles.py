@@ -349,7 +349,9 @@ class ModelDetection:
     prefixes: Tuple[str, ...] = ()
     exact_names: Tuple[str, ...] = ()
     substrings: Tuple[str, ...] = ()
+    mac_prefixes: Tuple[str, ...] = ()
     mac_suffixes: Tuple[str, ...] = ()
+    excluded_mac_suffixes: Tuple[str, ...] = ()
     marketing_names: Tuple[str, ...] = ()
     all_of: bool = False
 
@@ -380,9 +382,37 @@ class ModelDetection:
         object.__setattr__(self, "marketing_names", marketing_names)
         object.__setattr__(
             self,
-            "mac_suffixes",
-            tuple(str(suffix).strip().upper() for suffix in self.mac_suffixes),
+            "mac_prefixes",
+            tuple(
+                DetectionNormalizer.normalize_mac_candidate(str(prefix))
+                for prefix in self.mac_prefixes
+            ),
         )
+        object.__setattr__(
+            self,
+            "mac_suffixes",
+            tuple(
+                DetectionNormalizer.normalize_mac_candidate(str(suffix))
+                for suffix in self.mac_suffixes
+            ),
+        )
+        object.__setattr__(
+            self,
+            "excluded_mac_suffixes",
+            tuple(
+                DetectionNormalizer.normalize_mac_candidate(str(suffix))
+                for suffix in self.excluded_mac_suffixes
+            ),
+        )
+        if any(
+            not value
+            for value in (
+                *self.mac_prefixes,
+                *self.mac_suffixes,
+                *self.excluded_mac_suffixes,
+            )
+        ):
+            raise ValueError("Model detection MAC triggers must not be blank")
         if not self.names:
             raise ValueError("Model detection requires at least one public name")
 
@@ -427,12 +457,25 @@ class ModelDetection:
         case_sensitive: bool = True,
         whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
     ) -> Tuple[int, int, int, int, int] | None:
-        has_mac_suffix = bool(self.mac_suffixes)
-        if has_mac_suffix:
+        has_mac_constraint = bool(
+            self.mac_prefixes or self.mac_suffixes or self.excluded_mac_suffixes
+        )
+        if has_mac_constraint:
             if not address or not DetectionNormalizer.is_mac_like_address(address):
                 return None
             normalized_address = DetectionNormalizer.normalize_mac_candidate(address)
-            if not any(normalized_address.endswith(suffix) for suffix in self.mac_suffixes):
+            if any(
+                normalized_address.endswith(suffix)
+                for suffix in self.excluded_mac_suffixes
+            ):
+                return None
+            if self.mac_prefixes and not any(
+                normalized_address.startswith(prefix) for prefix in self.mac_prefixes
+            ):
+                return None
+            if self.mac_suffixes and not any(
+                normalized_address.endswith(suffix) for suffix in self.mac_suffixes
+            ):
                 return None
 
         normalized_name = DetectionNormalizer.normalize_name(
@@ -478,7 +521,7 @@ class ModelDetection:
                     self._trigger_specificity(
                         trigger,
                         match_rank=2,
-                        has_mac_suffix=has_mac_suffix,
+                        has_mac_suffix=has_mac_constraint,
                     )
                 )
         matched_prefixes: list[Tuple[int, int, int, int, int]] = []
@@ -488,7 +531,7 @@ class ModelDetection:
                     self._trigger_specificity(
                         trigger,
                         match_rank=1,
-                        has_mac_suffix=has_mac_suffix,
+                        has_mac_suffix=has_mac_constraint,
                     )
                 )
         matched_substrings: list[Tuple[int, int, int, int, int]] = []
@@ -498,7 +541,7 @@ class ModelDetection:
                     self._trigger_specificity(
                         trigger,
                         match_rank=0,
-                        has_mac_suffix=has_mac_suffix,
+                        has_mac_suffix=has_mac_constraint,
                     )
                 )
         matched_groups = (
@@ -516,7 +559,7 @@ class ModelDetection:
             ]
             return (
                 sum(value[0] for value in best_by_group),
-                int(has_mac_suffix),
+                int(has_mac_constraint),
                 sum(value[2] for value in best_by_group),
                 sum(value[3] for value in best_by_group),
                 sum(value[4] for value in best_by_group),

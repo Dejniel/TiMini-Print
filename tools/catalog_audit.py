@@ -48,25 +48,47 @@ def _sample_names(model: dict[str, Any]) -> list[str]:
 
 
 def _sample_addresses(model: dict[str, Any]) -> list[str | None]:
+    prefixes = [
+        str(value).upper().replace(":", "").replace("-", "")
+        for detection in model.get("detections", [])
+        for value in detection.get("mac_prefixes", [])
+    ]
     suffixes = [
         str(value).upper()
         for detection in model.get("detections", [])
         for value in detection.get("mac_suffixes", [])
     ]
-    if suffixes:
-        return [f"AA:BB:CC:DD:EE:{suffix}" for suffix in suffixes]
+    if prefixes or suffixes:
+        prefix = prefixes[0] if prefixes else "AABB"
+        suffix = suffixes[0] if suffixes else "00"
+        address = (prefix + "000000000000")[:12 - len(suffix)] + suffix
+        return [":".join(address[index:index + 2] for index in range(0, 12, 2))]
     return [None, "AA:BB:CC:DD:EE:00"]
 
 
 def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
     repeated: list[dict[str, Any]] = []
-    first_index_by_group: dict[tuple[tuple[str, ...], tuple[str, ...]], int] = {}
+    first_index_by_group: dict[
+        tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]], int
+    ] = {}
     for index, detection in enumerate(model.get("detections", [])):
         group = (
             tuple(
                 sorted(
                     str(value).strip().upper()
+                    for value in detection.get("mac_prefixes", [])
+                )
+            ),
+            tuple(
+                sorted(
+                    str(value).strip().upper()
                     for value in detection.get("mac_suffixes", [])
+                )
+            ),
+            tuple(
+                sorted(
+                    str(value).strip().upper()
+                    for value in detection.get("excluded_mac_suffixes", [])
                 )
             ),
             tuple(

@@ -103,6 +103,8 @@ class PrinterCatalog:
                 for value in detection.substrings
             )
             triggers.extend(detection.mac_suffixes)
+            triggers.extend(detection.mac_prefixes)
+            triggers.extend(detection.excluded_mac_suffixes)
         max_trigger_length = max((len(trigger) for trigger in triggers), default=0)
         return (max_trigger_length, len(triggers))
 
@@ -130,7 +132,11 @@ class PrinterCatalog:
         )
         return (
             max_trigger_length,
-            int(bool(detection.mac_suffixes)),
+            int(bool(
+                detection.mac_prefixes
+                or detection.mac_suffixes
+                or detection.excluded_mac_suffixes
+            )),
             int(bool(detection.exact_names)),
             max_raw_length,
             uppercase_score,

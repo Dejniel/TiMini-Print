@@ -6,6 +6,17 @@ from timiniprint.devices.profiles import ModelDetection, WhitespaceMode
 
 
 class ModelDetectionTests(unittest.TestCase):
+    def test_mac_prefix_and_excluded_suffix_are_both_applied(self) -> None:
+        detection = ModelDetection(
+            exact_names=("BQ95",),
+            mac_prefixes=("13:03",),
+            excluded_mac_suffixes=("59",),
+        )
+
+        self.assertTrue(detection.matches("BQ95", "13:03:11:22:33:58"))
+        self.assertFalse(detection.matches("BQ95", "12:03:11:22:33:58"))
+        self.assertFalse(detection.matches("BQ95", "13:03:11:22:33:59"))
+
     def test_mac_suffix_rule_does_not_match_uuid_address(self) -> None:
         detection = ModelDetection(
             prefixes=("MX05",),
