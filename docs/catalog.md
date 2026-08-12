@@ -53,7 +53,9 @@ Each model has one or more flat detection objects. A detection may also carry `m
       "exact_names": ["BT-01"],
       "prefixes": ["BT01-"],
       "substrings": ["Core"],
+      "mac_prefixes": ["13:03"],
       "mac_suffixes": ["59"],
+      "excluded_mac_suffixes": ["00"],
       "marketing_names": ["Retail model"]
     }
   ]
@@ -67,13 +69,17 @@ Detection supports:
 - `exact_names`: normalized advertised name must match exactly
 - `prefixes`: normalized advertised name must start with the prefix
 - `substrings`: normalized advertised name must contain the value
+- `mac_prefixes`: optional required address-prefix alternatives
 - `mac_suffixes`: optional address suffix filter
+- `excluded_mac_suffixes`: optional address suffixes which reject the rule
 - `all_of`: require every populated name-trigger group in this detection
 
 By default, `exact_names`, `prefixes`, and `substrings` are alternative trigger
 groups. With `all_of: true`, every populated group must match, while values
-inside each array remain alternatives. MAC suffixes remain an additional
-constraint in both modes.
+inside each array remain alternatives. MAC constraints are additional in both
+modes: a configured prefix and suffix must both match, while any excluded
+suffix rejects the rule. Rules with MAC constraints require a real Bluetooth
+MAC address and do not match UUID-style platform identifiers.
 
 Each model may set `whitespace_mode` to control how its detections compare the
 advertised name. `remove` is the default and removes all whitespace, `trim`
@@ -85,7 +91,7 @@ Matching is sorted by specificity. Longer and more constrained rules win over br
 
 Raw trigger spelling is preserved for the public catalog. Private matching copies apply the model's `whitespace_mode`. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
 
-Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and standalone `substrings`. Substrings used as `all_of` constraints are not published as model names. One trailing `-` or `_` is removed from prefix/substring display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC suffixes are not public model names.
+Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and standalone `substrings`. Substrings used as `all_of` constraints are not published as model names. One trailing `-` or `_` is removed from prefix/substring display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC constraints are not public model names.
 
 ## Profiles
 
@@ -127,6 +133,7 @@ A `PaperPreset` contains:
 - optional `left_padding_px`: protocol-side left padding
 - optional `top_padding_px`: leading blank raster rows reserved before rendered content
 - optional `mirror_horizontal`: mirror the complete paper raster before protocol encoding
+- optional `rotation_degrees`: clockwise source rotation; one of `0`, `90`, `180`, or `270`
 - optional `dither_mode`: paper-specific raster dithering recipe
 - optional `render_height_scale`: vertical content scale applied before fixed-height fitting
 - optional `paper_mode`: low-level protocol recipe selector
@@ -138,7 +145,7 @@ If `paper_width_px` is wider than `render_width_px` and `left_padding_px` is zer
 
 `render_height_px` and `raster_height_px` model different stages. The first constrains file/text rendering. The second describes the final raster sent to the protocol builder. When both are present, `render_height_px + top_padding_px` must not exceed `raster_height_px`. Remaining rows are padded at the trailing edge. A raw raster that does not fit together with its leading padding is rejected instead of being cropped.
 
-Paper mirroring is a rendering/layout operation, not an image-codec flag. File previews and file printing receive the same transform. Callers that build jobs from an already prepared `RasterSet` receive the equivalent raster transform from the printing layer.
+Paper mirroring and rotation are rendering/layout operations, not image-codec flags. The paper rotation is combined with the user's optional 90-degree rotation before rasterization. File previews and file printing receive the same transform. Callers that build jobs from an already prepared `RasterSet` receive paper mirroring from the printing layer, but the raster is otherwise assumed to have its intended orientation already.
 
 ## Printer Configs
 
