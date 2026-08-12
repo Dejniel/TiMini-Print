@@ -25,7 +25,7 @@ BEHAVIOR = ProtocolBehavior(
         ImageEncoding.ELEPH_TSPL_BITMAP: (PixelFormat.BW1,),
     },
     supported_protocol_variants=("p1",),
-    supported_paper_modes=(PaperMode.TAG, PaperMode.PLAIN),
+    supported_paper_modes=(PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG),
     advance_paper_builder=advance_paper_cmd,
     retract_paper_builder=retract_paper_cmd,
     job_builder=build_job,

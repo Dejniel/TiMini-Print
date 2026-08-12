@@ -18,6 +18,7 @@ _LINE_END = b"\r\n"
 _P1_ESC_PAPER_TYPE_COMMAND = bytes([0x10, 0xFF, 0x10, 0x03])
 _P1_ESC_PAPER_TYPE_CONTINUOUS_REEL = 0x01
 _P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE = 0x02
+_P1_ESC_PAPER_TYPE_HOLE = 0x03
 
 
 @dataclass(frozen=True)
@@ -32,6 +33,7 @@ class ElephTsplMediaSetup:
 class ElephTsplPaperRecipe:
     media_paper_type: int
     gap_mm: float
+    sensor_command: str = "GAP"
     height_extra_mm: float = 0.0
     include_speed: bool = True
 
@@ -70,7 +72,10 @@ class ElephTsplRecipe:
             ),
         )
         job += _command("DIRECTION", _direction_value(self.default_direction, self.default_mirror))
-        job += _command("GAP", f"{_format_mm(paper_recipe.gap_mm)} mm,0 mm")
+        job += _command(
+            paper_recipe.sensor_command,
+            f"{_format_mm(paper_recipe.gap_mm)} mm,0 mm",
+        )
         if self.include_ribbon_off:
             job += _command("SET RIBBON", "OFF")
         job += _command("DENSITY", str(density))
@@ -104,6 +109,12 @@ def build_p1_job(request: PrintJobRequest) -> bytes:
                 media_paper_type=_P1_ESC_PAPER_TYPE_CONTINUOUS_REEL,
                 gap_mm=0.0,
                 height_extra_mm=5.0,
+                include_speed=False,
+            ),
+            PaperMode.BLACK_TAG: ElephTsplPaperRecipe(
+                media_paper_type=_P1_ESC_PAPER_TYPE_HOLE,
+                gap_mm=3.0,
+                sensor_command="BLINE",
                 include_speed=False,
             ),
         },

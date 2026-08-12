@@ -5932,7 +5932,8 @@
     "a4xii": false,
     "paper_presets": [
       "tag_384r",
-      "plain_384r"
+      "plain_384r",
+      "blacktag_384r"
     ]
   },
   {

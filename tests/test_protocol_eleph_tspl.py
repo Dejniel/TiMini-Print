@@ -95,6 +95,20 @@ class TsplProtocolTests(unittest.TestCase):
         self.assertIn(b"GAP 0 mm,0 mm\r\n", job.payload)
         self.assertNotIn(b"SPEED ", job.payload)
 
+    def test_p1_black_mark_mode_uses_hole_sensor_and_bline(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("toprint_tspl_p1")
+        raster = RasterBuffer(pixels=[0] * 64, width=8, pixel_format=PixelFormat.BW1)
+
+        job = PrinterProtocol(device).build_job(
+            RasterSet.from_single(raster),
+            is_text=False,
+            paper_mode=PaperMode.BLACK_TAG,
+        )
+
+        self.assertTrue(job.payload.startswith(b"\x10\xff\x10\x03\x03"))
+        self.assertIn(b"BLINE 3 mm,0 mm\r\n", job.payload)
+        self.assertNotIn(b"GAP ", job.payload)
+
     def test_p1_continuous_chunk_omits_intermediate_height_padding(self) -> None:
         device = PrinterCatalog.load().device_from_profile("eleph_tspl_p1")
         raster = RasterBuffer(pixels=[0] * 64, width=8, pixel_format=PixelFormat.BW1)
