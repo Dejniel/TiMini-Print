@@ -2,8 +2,27 @@ from __future__ import annotations
 
 import random
 import unittest
+import zlib
 
-from timiniprint.protocol.compression import compress_lzo1x_1
+from timiniprint.protocol.compression import compress_lzo1x_1, compress_zlib
+
+
+class ZlibCompressionTests(unittest.TestCase):
+    def test_accepts_explicit_compression_and_memory_levels(self) -> None:
+        source = b"ABCD" * 1024
+        compressor = zlib.compressobj(
+            level=-1,
+            method=zlib.DEFLATED,
+            wbits=10,
+            memLevel=9,
+            strategy=zlib.Z_DEFAULT_STRATEGY,
+        )
+        expected = compressor.compress(source) + compressor.flush()
+
+        self.assertEqual(
+            compress_zlib(source, window_bits=10, level=-1, memory_level=9),
+            expected,
+        )
 
 
 class Lzo1xCompressionTests(unittest.TestCase):

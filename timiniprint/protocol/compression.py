@@ -5,19 +5,25 @@ import zlib
 from ._lzo import compress_lzo1x_1
 
 
-def compress_zlib(data: bytes, *, window_bits: int = 10) -> bytes:
+def compress_zlib(
+    data: bytes,
+    *,
+    window_bits: int = 10,
+    level: int = 6,
+    memory_level: int = 8,
+) -> bytes:
     """Encode a zlib-framed deflate stream with the selected window size.
 
-    Raster protocols using this codec use ``memLevel=8``,
-    ``strategy=Z_DEFAULT_STRATEGY``, and compression level ``6``.
+    Existing protocols use the defaults. Documented variants may select a
+    different compression or memory level without duplicating this codec.
     """
 
     try:
         compressor = zlib.compressobj(
-            level=6,
+            level=level,
             method=zlib.DEFLATED,
             wbits=window_bits,
-            memLevel=8,
+            memLevel=memory_level,
             strategy=zlib.Z_DEFAULT_STRATEGY,
         )
         return compressor.compress(data) + compressor.flush()
