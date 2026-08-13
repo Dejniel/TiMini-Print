@@ -1,10 +1,10 @@
 # TiMini Print Community
-Alternative open-source [desktop software](https://github.com/Dejniel/TiMini-Print/releases) and an expanded commercial [TiMini Print mobile app](https://timiniprint.com/) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Funny Print”, “Dolewa”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “InstaPrint”, “ToPrint”, “Eleph-label”, or “NIIMBOT”, with additional “WalkPrint” and “Paperang” support in the mobile app.
+Alternative open-source [desktop software](https://github.com/Dejniel/TiMini-Print/releases) and an expanded commercial [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/) for Chinese Bluetooth thermal printers that use proprietary protocols (not ESC/POS), as a replacement for apps like “Tiny Print”, “Fun Print”, “Funny Print”, “Dolewa”, “iBleem”, “Luck Jingle”, “Phomemo”, “Print Master”, “InstaPrint”, “ToPrint”, “Eleph-label”, or “NIIMBOT”, with additional “Marklife”, “Guguji”, “Memobird”, “Youdao”, “Snap & Tag”, “WalkPrint” and “Paperang” support in the [commercial app](https://timiniprint.com/).
 It supports almost all mini printers! Check the huge list of [supported Bluetooth printer models](#supported-printer-models), or report missing ones.
 TiMini Print lets you print images, PDFs, or plain text from your computer. It supports both a GUI and a “fire-and-forget” CLI mode, plus [custom integrations](#library-integration)
 
 These printers are often sold on AliExpress and under generic names such as “thermal printer”, “mini printer”, or “cat printer”.
-TiMini Print Community works on Windows, Linux, and macOS as a standalone tool without a system printer driver (it does not emulate a driver or print spooler). The [TiMini Print mobile app](https://timiniprint.com/) is available for Android.
+TiMini Print Community works on Windows, Linux, and macOS as a standalone tool without a system printer driver (it does not emulate a driver or print spooler). The [TiMini Print mobile app](https://timiniprint.com/) is available for Android (and soon iOS).
 Unlike similar projects, TiMini Print models printer behavior to match the original apps as closely as possible, down to the packet level
 
 ## Motivation
@@ -114,7 +114,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 - Text: .txt (monospace bold, word-wrapped by default)
 
 # Supported printer models
-The list below covers TiMini Print Community. The [TiMini Print mobile app](https://timiniprint.com/) supports every Community model plus additional “WalkPrint”, “Paperang”, and other printers.
+The list below covers TiMini Print Community. The [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/) supports every Community model plus additional “WalkPrint”, “Paperang”, and other printers.
 
 <!-- BEGIN supported-models -->
 A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, M220, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
