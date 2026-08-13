@@ -53,11 +53,24 @@ class UpdateChecker:
         check_interval: timedelta = DEFAULT_CHECK_INTERVAL,
         timeout_sec: float = DEFAULT_TIMEOUT_SEC,
     ) -> UpdateCheckResult | None:
+        if os.environ.get("TIMINIPRINT_NO_UPDATE_CHECK"):
+            return None
         now = _utc(now or datetime.now(timezone.utc))
         try:
             settings = self.settings.load()
         except Exception:
             return None
+        if not os.environ.get("TIMINIPRINT_UPDATE_CHECK"):
+            try:
+                enabled = settings.getboolean(
+                    UPDATE_SECTION,
+                    "enabled",
+                    fallback=True,
+                )
+            except ValueError:
+                return None
+            if not enabled:
+                return None
 
         latest_version = settings.get(UPDATE_SECTION, "latest_version", fallback="").strip()
         cached = (

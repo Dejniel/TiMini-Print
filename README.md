@@ -100,7 +100,7 @@ python3 timiniprint_gui.py
 - For `--serial`, you must pass `--printer-model MODEL_KEY` or `--printer-config printer.json`
 - `--printer-model KEY` uses a known model key directly; `--printer-config PATH` loads an editable printer config JSON
 - `--export-printer-config KEY PATH` writes a full editable printer config JSON from a known model key or public model name
-- The GUI and standalone CLI release builds check GitHub releases at startup at most once per day; set `TIMINIPRINT_NO_UPDATE_CHECK=1` to disable this
+- The GUI and standalone CLI release builds check GitHub releases at startup at most once per day. To disable this, set `enabled = false` in the `[update]` section of the per-user `settings.ini`, or set `TIMINIPRINT_NO_UPDATE_CHECK=1` in the environment
 
 # Notes
 - On first Classic connection on Windows/macOS, the system may request pairing confirmation

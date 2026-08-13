@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import configparser
+import os
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 from timiniprint.update_check import (
     ReleaseInfo,
@@ -17,6 +19,70 @@ from timiniprint.app_settings import AppSettings
 
 
 class UpdateCheckTests(unittest.TestCase):
+    def test_settings_can_disable_update_check(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            settings_path = Path(tmpdir) / "settings.ini"
+            settings_path.write_text("[update]\nenabled = false\n", encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "TIMINIPRINT_NO_UPDATE_CHECK": "",
+                    "TIMINIPRINT_UPDATE_CHECK": "",
+                },
+            ):
+                result = check_for_updates(
+                    settings_path=settings_path,
+                    fetch_latest_release=lambda _timeout: self.fail(
+                        "network fetch should not run"
+                    ),
+                )
+
+            self.assertIsNone(result)
+
+    def test_force_environment_variable_overrides_disabled_setting(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            settings_path = Path(tmpdir) / "settings.ini"
+            settings_path.write_text("[update]\nenabled = false\n", encoding="utf-8")
+            calls = []
+
+            with patch.dict(
+                os.environ,
+                {
+                    "TIMINIPRINT_NO_UPDATE_CHECK": "",
+                    "TIMINIPRINT_UPDATE_CHECK": "1",
+                },
+            ):
+                check_for_updates(
+                    settings_path=settings_path,
+                    fetch_latest_release=lambda timeout: (
+                        calls.append(timeout) or ReleaseInfo("v0.5")
+                    ),
+                )
+
+            self.assertEqual(calls, [2.0])
+
+    def test_disable_environment_variable_has_highest_priority(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            settings_path = Path(tmpdir) / "settings.ini"
+            settings_path.write_text("[update]\nenabled = true\n", encoding="utf-8")
+
+            with patch.dict(
+                os.environ,
+                {
+                    "TIMINIPRINT_NO_UPDATE_CHECK": "1",
+                    "TIMINIPRINT_UPDATE_CHECK": "1",
+                },
+            ):
+                result = check_for_updates(
+                    settings_path=settings_path,
+                    fetch_latest_release=lambda _timeout: self.fail(
+                        "network fetch should not run"
+                    ),
+                )
+
+            self.assertIsNone(result)
+
     def test_version_compare_handles_v_prefix(self) -> None:
         self.assertTrue(is_newer_version("v0.6", "0.5"))
         self.assertTrue(is_newer_version("0.5.1", "v0.5"))
