@@ -1,29 +1,22 @@
 from __future__ import annotations
 
 import argparse
-import json
 import re
 import sys
 from pathlib import Path
-from typing import Union
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.devices.model_codec import model_from_json
 from timiniprint.devices.profiles import (
     DetectionNormalizer,
     SupportedPrinterModel,
-    UnsupportedPrinterModel,
 )
 
 README_PATH = REPO_ROOT / "README.md"
-UNSUPPORTED_MODELS_PATH = REPO_ROOT / "timiniprint/data/printer_models_unsupported.json"
 SUPPORTED_MARKER = "supported-models"
-TODO_MARKER = "todo-models"
-ReadablePrinterModel = Union[SupportedPrinterModel, UnsupportedPrinterModel]
 
 
 def _display_name_sort_key(value: str) -> tuple[str, str]:
@@ -43,7 +36,7 @@ def _dedupe_names(names: list[str]) -> list[str]:
     return ordered
 
 
-def _render_model_names(models: list[ReadablePrinterModel]) -> str:
+def _render_model_names(models: list[SupportedPrinterModel]) -> str:
     groups_by_key: dict[str, list[str]] = {}
     for model in models:
         names = _dedupe_names(list(model.names))
@@ -77,21 +70,9 @@ def _render_model_names(models: list[ReadablePrinterModel]) -> str:
     return "\n\n".join(chunks)
 
 
-def _load_unsupported_models_in_file_order() -> list[UnsupportedPrinterModel]:
-    raw_models = json.loads(UNSUPPORTED_MODELS_PATH.read_text(encoding="utf-8"))
-    return [
-        model_from_json(UnsupportedPrinterModel, raw_model, path=f"$[{index}]")
-        for index, raw_model in enumerate(raw_models)
-    ]
-
-
 def render_supported_models_block(models: list[SupportedPrinterModel] | None = None) -> str:
     catalog = PrinterCatalog.load()
     return _render_model_names(catalog.models if models is None else models)
-
-
-def render_todo_models_block(models: list[UnsupportedPrinterModel] | None = None) -> str:
-    return _render_model_names(_load_unsupported_models_in_file_order() if models is None else models)
 
 
 def _replace_marked_section(text: str, marker: str, replacement: str) -> str:
@@ -109,7 +90,6 @@ def _replace_marked_section(text: str, marker: str, replacement: str) -> str:
 def render_readme(readme_text: str | None = None) -> str:
     text = README_PATH.read_text(encoding="utf-8") if readme_text is None else readme_text
     text = _replace_marked_section(text, SUPPORTED_MARKER, render_supported_models_block())
-    text = _replace_marked_section(text, TODO_MARKER, render_todo_models_block())
     return text
 
 

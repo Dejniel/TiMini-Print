@@ -12,7 +12,6 @@ from timiniprint.devices.profiles import (
 )
 from tools.render_readme_models import (
     render_supported_models_block,
-    render_todo_models_block,
     validate_catalog_models,
 )
 
@@ -101,9 +100,8 @@ class ReadmeModelInventoryTests(unittest.TestCase):
                             )
                         )
 
-    def test_supported_and_todo_blocks_render_non_empty_content(self) -> None:
+    def test_supported_block_renders_non_empty_content(self) -> None:
         supported = render_supported_models_block()
-        todo = render_todo_models_block()
 
         self.assertRegex(supported, r"(?<![A-Z0-9_-])APA46Y(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])PPA2L(?![A-Z0-9_-])")
@@ -123,25 +121,6 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertRegex(supported, r"(?<![A-Z0-9_-])D11(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])D11S(?![A-Z0-9_-])")
 
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])JXPRINTER(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])PRINTER(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])BAYPAGE(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])YINTIBAO-V8S(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])P100(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])MP100(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])MP300(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])P3S(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])MXW-A4(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])JX400R06P(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])D11_H(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])D61(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])Betty(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])S6_P(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])D110_M(?![A-Z0-9_-])")
-        self.assertRegex(todo, r"(?<![A-Z0-9_-])B21(?![A-Z0-9_-])")
-
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])DL_X7Pro(?![A-Z0-9_-])", todo))
-        self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P4(?![A-Z0-9_-])", todo))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100(?![A-Z0-9_-])", supported))
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100S(?![A-Z0-9_-])", supported))
 

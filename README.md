@@ -13,11 +13,12 @@ I bought a Chinese mini printer and could not find any decent desktop software t
 ![TiMini Print LOGO EMX-040256 Printer Psi Patrol](EMX_040256.jpg)
 
 # We need you!
-- This project is open source! Your small monthly support on [Buy Me a Coffee](https://buymeacoffee.com/dejniel) can make a real difference and help keep it going—even a one-time donation helps. Building and maintaining a project like this takes a lot of time; if you find it useful, please consider supporting it so I can keep improving it: [support the project](https://buymeacoffee.com/dejniel)
-- If you're a developer, contributions and bug reports are always welcome—please jump in. Especially if you use or build on non-Linux systems, please consider contributing fixes or improvements
+- This project is open source! Even a small monthly contribution on [Buy Me a Coffee](https://buymeacoffee.com/dejniel) helps keep TiMini Print Community going.
+- If you're a developer, [contributions](#contributing) and bug reports are always welcome. Especially if you use or build on non-Linux systems, please consider contributing fixes or improvements.
 
 ## Looking for broader support or implementation?
-- If you need security/reverse engineering, broader commercial support, or a custom implementation, feel free to [reach out](https://inajiffy.eu/). I work on broken systems, neglected integrations, and projects that are already end-of-life, unsupported — or simply unsupportable. I also handle custom implementation work that sits outside the usual support model
+- If you need security/reverse engineering, broader commercial support, or a custom implementation, feel free to [reach out at inajiffy.eu](https://inajiffy.eu/). I work on broken systems, neglected integrations, and projects that are already end-of-life, unsupported — or simply unsupportable. I also handle custom implementation work that sits outside the usual support model.
+- Also check out the expanded commercial [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/).
 
 # Download
 - **TiMini Print Community:** Download the free and open-source desktop GUI or CLI for Windows, Linux, and macOS from the [releases page](https://github.com/Dejniel/TiMini-Print/releases), or build it yourself using the instructions below
@@ -179,87 +180,22 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - ZP801 and clones: XW006, PR89, X8-L, X8-W
 <!-- END supported-models -->
 
-## Potential future support
-These models or protocol families are not in the supported list yet, but they look implementable with [more support](#we-need-you).
-<!-- BEGIN todo-models -->
-D110_M, DL-T1, GT08, GW08, Hi-D110, JX400R, JX400R06P, Label Printer, LX-P01, MP300, MXW-A4, P3, PM-201, Q02
+# Unsupported or missing printer?
 
-- A30 and clones: Q294, Q295, Q574
-- A80 and clones: A80H
-- AL200 and clones: AL2, RPP02N
-- B1 and clones: B1 Pro, M2_H, N1
-- B18 and clones: B18S
-- B21 and clones: B21-C2B, B21-L2B, B21S, B21S-C2B, B21_Pro
-- B24 and clones: B3S, B3S_P, JCB3S, S6, S6_P
-- B246D and clones: Q027, Q081, Q100, Q101, Q102, Q103
-- BAYPAGE and clones: YINTIBAO-V8S
-- BMW-M3 and clones: YCN-M3
-- C21 and clones: D1, D2, E2, NEWSMY
-- CoreLargePrint and clones: Pro Printer
-- D101 and clones: Betty
-- D11_H and clones: Hi-NB-D11, D61, D41, Dxx, Fust, D11_Pro
-- D12 and clones: C2, PPC2, C3, LPC3, DP_ITP07, C16, MPC16, 15P3Pro
-- D1600 and clones: D1600D, Q175, Q176
-- D30 and clones: D35, D50, Q30, Q30S, D30S, D30S New, D30S Pro, D30N, D30Pro, D20, D10, D30AT, CNL-D35, MIHP, Q018, Q040, Q046, Q050, Q069, Q092, Q093, Q107, Q109, Q110, Q138, Q159, Q162, Q172, Q189, Q223, Q455, Q036, Q048, Q097, Q111, Q125, Q149, Q150, Q183, Q543, Q601, Q628, Q586, Q049, Q099, Q135, Q168, Q152, Q126, Q139, Q587, Q222
-- D400 and clones: Y810BT, QR380A, TB41, QR_386A, QR-386A, ITPP941, P80S, ITPP130B
-- D480 and clones: D480BT, D480BT PRO, Q215, Q486, Q360, Q407
-- D50 and clones: P50, Q083, Q136, Q518, Q264
-- D680 and clones: D680BT, Q216
-- D82 and clones: D82S, D83, A10, FICHERO_6181
-- DL-P01 and clones: DL-T01, LX-D05-PRO
-- E50 and clones: E50Pro, Q575, Q458
-- E600S and clones: E6000, E8000, QT-800, Q019, Q023, Q447, Q497, Q296, Q314, Q625
-- E9000 and clones: E93, E9000Pro, Q402, Q477
-- F12 and clones: Q408, Q643, Q644
-- ITP05N and clones: DP_ITP05N, ITP06N, DP_ITP06N, PCPS_D80, DP_A80, DP_A80S, DP_A80W, PD_A4, GD-88
-- JXPRINTER and clones: PRINTER
-- LM1600 and clones: LM2800, Q310, Q404, Q444
-- LP100 and clones: LP220, LY100_BLE
-- LP100S and clones: LP220S
-- LT12 and clones: LT-110H, Q309, Q396, Q445
-- LX-D003 and clones: LX-D004, LX-D005, LX-D006, LX-D007, LX-D008, LX-D009
-- LX-D02-TEST and clones: ITW14302, SWS-PT1, AH-M2
-- M02PRE and clones: M02S-H, M02H
-- M02X/L and clones: M02L
-- M03 and clones: M200, M250, M221, M260
-- M04S and clones: M04AS
-- M08F and clones: TP81, TP84, TP85, TP86, TP87, TP88
-- M110C and clones: M110SA, 111, A42, Q199, Q450, Q467, Q522
-- M120C and clones: M126, M8-BK, Q158, Q193, Q038, Q274
-- M150 and clones: M100, M160, Q377, Q424, Q448, Q378, Q449
-- M200 and clones: M206, M208, M209, M220, M220S, M220C, M219, M200C, M221, M250, M260, M220A, M320, M321, A43, A431, Q006, Q086, Q104, Q121, Q156, Q452, Q017, Q053, Q305, Q054, Q155, Q058, Q198, Q453, Q584, Q057, Q157, Q197, Q218, Q420, Q421, Q454, Q523, Q525, Q526, Q554, Q555, Q632, Q633
-- M210 and clones: YCN-M210
-- M330 and clones: M332, Q464, Q465
-- M420 and clones: M421, Q380, Q379
-- M8 and clones: D68, D80
-- M832 and clones: M836
-- M950 and clones: Q311, Q405
-- M960 and clones: M960D, Q186, Q187
-- MPL11 and clones: D11s, FICHERO_5836, MULLER_6473
-- P100 and clones: MP100, MP200, MP220, YINTIBAO-V5, AEQ918N4
-- P1000 and clones: Q004, Q030, Q031, Q035, Q079
-- P100S and clones: MP100S, MP200S, MP220S, YINTIBAO-V5PRO
-- P12 and clones: P12 Pro, P12PRO, A30, Q037, Q090, Q091, Q094, Q112, Q129, Q245, Q113, Q534
-- P15 and clones: Q295
-- P3100 and clones: P3100D, P3100J, P3100DJ, Q032, Q051, Q133
-- P3200 and clones: P3200D, Q173, Q174
-- P3S and clones: MP300S
-- P5100 and clones: Q007
-- P780 and clones: P780BT, P780BT PRO, P24, P580, Q217, Q419, Q373, Q393
-- PM-241-BT and clones: PM241, PM 241
-- Q30 and clones: Q31, Q32, Q30S, D31, D32, A10, CNL-D32, Q082, Q130, Q190, Q224, Q591, Q179, Q205, Q226, Q191, Q227, Q163, Q169, Q225, Q269, Q268, Q582, Q588
-- Q302 and clones: Q580
-- TD-11308 and clones: T02, ZH-P06, LX-D002
-- Y02C and clones: Y02S
-- YINTIBAO and clones: PAPERGO
-<!-- END todo-models -->
+The commercial [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/#supported-printers) supports a much larger printer catalogue, including “Marklife”, “Guguji”, “Memobird”, “Youdao”, “Snap & Tag”, “WalkPrint”, “Paperang”, and many others.
 
-## Contributing
+If your printer is still missing, you can order a custom driver implementation directly in the [mobile app at timiniprint.com](https://timiniprint.com/) or, for broader work, [contact me](#looking-for-broader-support-or-implementation).
+
+You can also request Community support by [opening an issue](https://github.com/Dejniel/TiMini-Print/issues) and support development on [Buy Me a Coffee](https://buymeacoffee.com/dejniel). Many known printers look implementable, but adding them requires more research, hardware reports, testing, or funding.
+
+Can you implement the driver yourself? [Contributions](#contributing) are very welcome.
+
+# Contributing
 
 Found a bug, added a printer, or improved a protocol? Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before sending a pull request.
 
 Please report security issues privately as described in [SECURITY.md](SECURITY.md).
 
-## License
+# License
 
 TiMini-Print is licensed under the [Apache License 2.0](LICENSE). Copyright and attribution information is available in [NOTICE](NOTICE). Run a release binary with `--licenses`, or use the small `Licenses` link in the GUI, to see all bundled third-party notices.
