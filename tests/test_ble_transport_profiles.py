@@ -37,13 +37,14 @@ class BleTransportProfileTests(unittest.TestCase):
                 "e7810a71-73ae-499d-8c15-faa9aef0c3f2",
                 "",
             ),
-            ProtocolFamily.ELEPH_HPRT_ESC: (180, 10, "", ""),
+            ProtocolFamily.TOPRINT_HPRT_ESC: (180, 10, "", ""),
             ProtocolFamily.ELEPH_TSPL: (
-                180,
-                10,
+                20,
+                30,
                 "000018f0-0000-1000-8000-00805f9b34fb",
                 "00002af1-0000-1000-8000-00805f9b34fb",
             ),
+            ProtocolFamily.TOPRINT_TSPL: (180, 10, "", ""),
             ProtocolFamily.INSTAPRINT_CORE: (180, 10, "", ""),
             ProtocolFamily.FUNNY_LX: (
                 100,

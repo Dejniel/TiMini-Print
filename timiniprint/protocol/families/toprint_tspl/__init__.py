@@ -1,4 +1,4 @@
-"""Eleph/ToPrint HPRT ESC command dialect."""
+"""ToPrint ``zl=0`` TSPL-like command dialect."""
 
 from __future__ import annotations
 
@@ -6,25 +6,22 @@ from ....raster import PixelFormat
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
-from .core import (
-    advance_paper_cmd,
-    build_zl1_job,
-    retract_paper_cmd,
-)
+from .core import advance_paper_cmd, build_p1_job, retract_paper_cmd
+
 
 def build_job(request: PrintJobRequest) -> ProtocolPlan:
-    return ProtocolPlan.sequence(build_zl1_job(request))
+    return ProtocolPlan.stream(build_p1_job(request))
 
 
 BEHAVIOR = ProtocolBehavior(
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
-        encoding=ImageEncoding.ELEPH_HPRT_ESC_RASTER,
+        encoding=ImageEncoding.TOPRINT_TSPL_BITMAP,
     ),
     image_encoding_support={
-        ImageEncoding.ELEPH_HPRT_ESC_RASTER: (PixelFormat.BW1,),
+        ImageEncoding.TOPRINT_TSPL_BITMAP: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("zl1",),
+    supported_protocol_variants=("p1",),
     supported_paper_modes=(PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG),
     advance_paper_builder=advance_paper_cmd,
     retract_paper_builder=retract_paper_cmd,

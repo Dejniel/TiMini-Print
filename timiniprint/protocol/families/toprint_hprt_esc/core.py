@@ -1,4 +1,4 @@
-"""Eleph/ToPrint HPRT ESC commands.
+"""ToPrint ``zl=1`` HPRT/ESC commands.
 
 This is a source-app dialect built from ESC-shaped printer commands, not a
 generic ESC/POS implementation.
@@ -34,20 +34,20 @@ _MEDIA_HOLE_PAPER = 0x03
 
 
 @dataclass(frozen=True)
-class ElephHprtEscPaperRecipe:
+class ToPrintHprtEscPaperRecipe:
     media_paper_type: int
 
 
 @dataclass(frozen=True)
-class ElephHprtEscRecipe:
+class ToPrintHprtEscRecipe:
     protocol_variant: str
-    paper_recipes: dict[PaperMode, ElephHprtEscPaperRecipe]
+    paper_recipes: dict[PaperMode, ToPrintHprtEscPaperRecipe]
     default_paper_mode: PaperMode = PaperMode.TAG
     default_thickness: int = 1
 
     def build_job(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
         if request.protocol_variant not in (None, self.protocol_variant):
-            raise ValueError(f"Unsupported Eleph HPRT ESC protocol variant: {request.protocol_variant}")
+            raise ValueError(f"Unsupported ToPrint HPRT/ESC protocol variant: {request.protocol_variant}")
         raster = request.require_raster(PixelFormat.BW1)
         recipe = self._paper_recipe(request.paper_mode)
         thickness = _thickness(request.density, default=self.default_thickness)
@@ -67,18 +67,18 @@ class ElephHprtEscRecipe:
             ),
         )
 
-    def _paper_recipe(self, paper_mode: PaperMode | None) -> ElephHprtEscPaperRecipe:
+    def _paper_recipe(self, paper_mode: PaperMode | None) -> ToPrintHprtEscPaperRecipe:
         resolved_mode = self.default_paper_mode if paper_mode is None else paper_mode
         return self.paper_recipes[resolved_mode]
 
 
 def build_zl1_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
-    return ElephHprtEscRecipe(
+    return ToPrintHprtEscRecipe(
         protocol_variant="zl1",
         paper_recipes={
-            PaperMode.TAG: ElephHprtEscPaperRecipe(_MEDIA_NO_DRY_ADHESIVE),
-            PaperMode.PLAIN: ElephHprtEscPaperRecipe(_MEDIA_CONTINUOUS_REEL),
-            PaperMode.BLACK_TAG: ElephHprtEscPaperRecipe(_MEDIA_HOLE_PAPER),
+            PaperMode.TAG: ToPrintHprtEscPaperRecipe(_MEDIA_NO_DRY_ADHESIVE),
+            PaperMode.PLAIN: ToPrintHprtEscPaperRecipe(_MEDIA_CONTINUOUS_REEL),
+            PaperMode.BLACK_TAG: ToPrintHprtEscPaperRecipe(_MEDIA_HOLE_PAPER),
         },
     ).build_job(request)
 

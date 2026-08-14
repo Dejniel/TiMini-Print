@@ -74,13 +74,17 @@ _PROFILES = {
         standard_chunk_cap=20,
         standard_write_delay_ms=10,
     ),
-    ProtocolFamily.ELEPH_HPRT_ESC: BleTransportProfile(
+    ProtocolFamily.TOPRINT_HPRT_ESC: BleTransportProfile(
         standard_chunk_cap=180,
         standard_write_delay_ms=10,
     ),
     ProtocolFamily.ELEPH_TSPL: BleTransportProfile(
         preferred_service_uuid="000018f0-0000-1000-8000-00805f9b34fb",
         preferred_write_char_uuid="00002af1-0000-1000-8000-00805f9b34fb",
+        standard_chunk_cap=20,
+        standard_write_delay_ms=30,
+    ),
+    ProtocolFamily.TOPRINT_TSPL: BleTransportProfile(
         standard_chunk_cap=180,
         standard_write_delay_ms=10,
     ),

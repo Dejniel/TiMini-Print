@@ -9,7 +9,7 @@ from .base import (
     split_prefixed_bulk_stream,
 )
 from .dck import BEHAVIOR as DCK_BEHAVIOR
-from .eleph_hprt_esc import BEHAVIOR as ELEPH_HPRT_ESC_BEHAVIOR
+from .toprint_hprt_esc import BEHAVIOR as TOPRINT_HPRT_ESC_BEHAVIOR
 from .funny_lx import BEHAVIOR as FUNNY_LX_BEHAVIOR
 from .instaprint_core import BEHAVIOR as INSTAPRINT_CORE_BEHAVIOR
 from .tiny import BEHAVIOR as TINY_BEHAVIOR
@@ -19,6 +19,7 @@ from .luck.normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
 from .niimbot import BEHAVIOR as NIIMBOT_BEHAVIOR
 from .phomemo_esc import BEHAVIOR as PHOMEMO_ESC_BEHAVIOR
 from .eleph_tspl import BEHAVIOR as ELEPH_TSPL_BEHAVIOR
+from .toprint_tspl import BEHAVIOR as TOPRINT_TSPL_BEHAVIOR
 from .v5g import BEHAVIOR as V5G_BEHAVIOR
 from .v5c import BEHAVIOR as V5C_BEHAVIOR
 from .v5x import BEHAVIOR as V5X_BEHAVIOR
@@ -80,12 +81,12 @@ _DEFINITIONS = {
         ),
         behavior=DCK_BEHAVIOR,
     ),
-    ProtocolFamily.ELEPH_HPRT_ESC: ProtocolDefinition(
+    ProtocolFamily.TOPRINT_HPRT_ESC: ProtocolDefinition(
         spec=ProtocolSpec(
             packet_prefix=None,
-            command_set=ProtocolCommandSet.ELEPH_HPRT_ESC,
+            command_set=ProtocolCommandSet.TOPRINT_HPRT_ESC,
         ),
-        behavior=ELEPH_HPRT_ESC_BEHAVIOR,
+        behavior=TOPRINT_HPRT_ESC_BEHAVIOR,
     ),
     ProtocolFamily.INSTAPRINT_CORE: ProtocolDefinition(
         spec=ProtocolSpec(
@@ -107,6 +108,13 @@ _DEFINITIONS = {
             command_set=ProtocolCommandSet.ELEPH_TSPL,
         ),
         behavior=ELEPH_TSPL_BEHAVIOR,
+    ),
+    ProtocolFamily.TOPRINT_TSPL: ProtocolDefinition(
+        spec=ProtocolSpec(
+            packet_prefix=None,
+            command_set=ProtocolCommandSet.TOPRINT_TSPL,
+        ),
+        behavior=TOPRINT_TSPL_BEHAVIOR,
     ),
     ProtocolFamily.PHOMEMO_ESC: ProtocolDefinition(
         spec=ProtocolSpec(

@@ -1,176 +1,41 @@
-"""Eleph/ToPrint P1 commands.
-
-This is TSPL-shaped command text plus app-specific setup commands, not a
-generic TSPL implementation.
-"""
+"""Eleph-label P1 TSPL commands."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-from ....raster import PixelFormat, RasterBuffer
-from ...types import PaperMode
+from ....raster import PixelFormat
+from .._tspl import bitmap_command, command
 from ..base import PrintJobRequest
-from ..bitmap import pack_bw1_rows, packed_row_width_bytes
 
 
 _LINE_END = b"\r\n"
-_P1_ESC_PAPER_TYPE_COMMAND = bytes([0x10, 0xFF, 0x10, 0x03])
-_P1_ESC_PAPER_TYPE_CONTINUOUS_REEL = 0x01
-_P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE = 0x02
-_P1_ESC_PAPER_TYPE_HOLE = 0x03
-
-
-@dataclass(frozen=True)
-class ElephTsplMediaSetup:
-    command: bytes
-
-    def build(self, paper_type: int) -> bytes:
-        return self.command + bytes([paper_type])
-
-
-@dataclass(frozen=True)
-class ElephTsplPaperRecipe:
-    media_paper_type: int
-    gap_mm: float
-    sensor_command: str = "GAP"
-    height_extra_mm: float = 0.0
-    include_speed: bool = True
-
-
-@dataclass(frozen=True)
-class ElephTsplRecipe:
-    protocol_variant: str
-    paper_recipes: dict[PaperMode, ElephTsplPaperRecipe]
-    default_paper_mode: PaperMode = PaperMode.TAG
-    default_density: int = 8
-    default_direction: int = 0
-    default_mirror: int | None = None
-    media_setup: ElephTsplMediaSetup | None = None
-    include_ribbon_off: bool = False
-    include_reference_origin: bool = False
-
-    def build_job(self, request: PrintJobRequest) -> bytes:
-        if request.protocol_variant not in (None, self.protocol_variant):
-            raise ValueError(f"Unsupported Eleph TSPL-style protocol variant: {request.protocol_variant}")
-        raster = request.require_raster(PixelFormat.BW1)
-        raster.validate()
-        width_bytes = _width_bytes(raster)
-        density = _density(request.density, default=self.default_density)
-        paper_recipe = self._paper_recipe(request.paper_mode)
-        height_extra_mm = paper_recipe.height_extra_mm if request.ends_media_page else 0.0
-        bitmap = _bitmap_payload(raster)
-
-        job = bytearray()
-        if self.media_setup is not None:
-            job += self.media_setup.build(paper_recipe.media_paper_type)
-        job += _command(
-            "SIZE",
-            (
-                f"{_px_to_mm(raster.width, request.dev_dpi)} mm,"
-                f"{_px_to_mm(raster.height, request.dev_dpi, extra_mm=height_extra_mm)} mm"
-            ),
-        )
-        job += _command("DIRECTION", _direction_value(self.default_direction, self.default_mirror))
-        job += _command(
-            paper_recipe.sensor_command,
-            f"{_format_mm(paper_recipe.gap_mm)} mm,0 mm",
-        )
-        if self.include_ribbon_off:
-            job += _command("SET RIBBON", "OFF")
-        job += _command("DENSITY", str(density))
-        if self.include_reference_origin:
-            job += _command("REFERENCE", "0,0")
-        if paper_recipe.include_speed and request.speed is not None:
-            job += _command("SPEED", str(request.speed))
-        job += _command("CLS")
-        job += (
-            _command_head("BITMAP", f"0,0,{width_bytes},{raster.height},0,")
-            + bitmap
-            + _LINE_END
-        )
-        job += _command("PRINT", "1,1")
-        return bytes(job)
-
-    def _paper_recipe(self, paper_mode: PaperMode | None) -> ElephTsplPaperRecipe:
-        resolved_mode = self.default_paper_mode if paper_mode is None else paper_mode
-        return self.paper_recipes[resolved_mode]
 
 
 def build_p1_job(request: PrintJobRequest) -> bytes:
-    return ElephTsplRecipe(
-        protocol_variant="p1",
-        paper_recipes={
-            PaperMode.TAG: ElephTsplPaperRecipe(
-                media_paper_type=_P1_ESC_PAPER_TYPE_NO_DRY_ADHESIVE,
-                gap_mm=3.0,
-            ),
-            PaperMode.PLAIN: ElephTsplPaperRecipe(
-                media_paper_type=_P1_ESC_PAPER_TYPE_CONTINUOUS_REEL,
-                gap_mm=0.0,
-                height_extra_mm=5.0,
-                include_speed=False,
-            ),
-            PaperMode.BLACK_TAG: ElephTsplPaperRecipe(
-                media_paper_type=_P1_ESC_PAPER_TYPE_HOLE,
-                gap_mm=3.0,
-                sensor_command="BLINE",
-                include_speed=False,
-            ),
-        },
-        default_density=9,
-        default_mirror=0,
-        media_setup=ElephTsplMediaSetup(command=_P1_ESC_PAPER_TYPE_COMMAND),
-        include_ribbon_off=True,
-        include_reference_origin=True,
-    ).build_job(request)
+    if request.protocol_variant not in (None, "p1"):
+        raise ValueError(
+            f"Unsupported Eleph-label TSPL protocol variant: {request.protocol_variant}"
+        )
+    raster = request.require_raster(PixelFormat.BW1)
+    raster.validate()
+
+    job = bytearray()
+    job += command(
+        "SIZE",
+        f"{_px_to_whole_mm(raster.width, request.dev_dpi)} mm,"
+        f"{_px_to_whole_mm(raster.height, request.dev_dpi)} mm",
+        line_end=_LINE_END,
+    )
+    job += command("GAP", "2 mm,0 mm", line_end=_LINE_END)
+    job += command("DIRECTION", "1", line_end=_LINE_END)
+    job += command("CLS", line_end=_LINE_END)
+    job += bitmap_command(
+        raster,
+        line_end=_LINE_END,
+        invert_bits=True,
+    )
+    job += command("PRINT", "1,1", line_end=_LINE_END)
+    return bytes(job)
 
 
-def advance_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None = None) -> bytes:
-    return _command("FORMFEED")
-
-
-def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None = None) -> bytes:
-    return _command("BACKFEED", "40")
-
-
-def _bitmap_payload(raster: RasterBuffer) -> bytes:
-    if raster.width % 8 != 0:
-        raise ValueError("Eleph TSPL-style bitmap jobs require width divisible by 8")
-    return pack_bw1_rows(raster, lsb_first=False)
-
-
-def _width_bytes(raster: RasterBuffer) -> int:
-    if raster.width % 8 != 0:
-        raise ValueError("Eleph TSPL-style bitmap jobs require width divisible by 8")
-    return packed_row_width_bytes(raster.width)
-
-
-def _density(value: int | None, *, default: int) -> int:
-    if value is None:
-        value = default
-    return max(0, min(15, int(value)))
-
-
-def _direction_value(direction: int, mirror: int | None) -> str:
-    if mirror is None:
-        return str(direction)
-    return f"{direction},{mirror}"
-
-
-def _px_to_mm(value: int, dpi: int, *, extra_mm: float = 0.0) -> str:
-    return _format_mm(float(value) * 25.4 / float(dpi) + extra_mm)
-
-
-def _format_mm(value: float) -> str:
-    return f"{value:.2f}".rstrip("0").rstrip(".") or "0"
-
-
-def _command(name: str, value: str | None = None) -> bytes:
-    return _command_head(name, value) + _LINE_END
-
-
-def _command_head(name: str, value: str | None = None) -> bytes:
-    if value is None:
-        return name.encode("ascii")
-    return f"{name} {value}".encode("ascii")
+def _px_to_whole_mm(value: int, dpi: int) -> int:
+    return int(float(value) * 25.4 / float(dpi))

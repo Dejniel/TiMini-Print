@@ -82,8 +82,9 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertEqual(ProtocolFamily.V5X.command_set, ProtocolCommandSet.V5X)
         self.assertEqual(ProtocolFamily.V5C.command_set, ProtocolCommandSet.V5C)
         self.assertEqual(ProtocolFamily.DCK.command_set, ProtocolCommandSet.DCK)
-        self.assertEqual(ProtocolFamily.ELEPH_HPRT_ESC.command_set, ProtocolCommandSet.ELEPH_HPRT_ESC)
+        self.assertEqual(ProtocolFamily.TOPRINT_HPRT_ESC.command_set, ProtocolCommandSet.TOPRINT_HPRT_ESC)
         self.assertEqual(ProtocolFamily.ELEPH_TSPL.command_set, ProtocolCommandSet.ELEPH_TSPL)
+        self.assertEqual(ProtocolFamily.TOPRINT_TSPL.command_set, ProtocolCommandSet.TOPRINT_TSPL)
         self.assertEqual(ProtocolFamily.PHOMEMO_ESC.command_set, ProtocolCommandSet.PHOMEMO_ESC)
 
     def test_protocol_family_accepts_current_serialized_values(self) -> None:
@@ -95,8 +96,9 @@ class ProtocolCommandsTests(unittest.TestCase):
         self.assertEqual(ProtocolFamily.from_value("v5x"), ProtocolFamily.V5X)
         self.assertEqual(ProtocolFamily.from_value("v5c"), ProtocolFamily.V5C)
         self.assertEqual(ProtocolFamily.from_value("dck"), ProtocolFamily.DCK)
-        self.assertEqual(ProtocolFamily.from_value("eleph_hprt_esc"), ProtocolFamily.ELEPH_HPRT_ESC)
+        self.assertEqual(ProtocolFamily.from_value("toprint_hprt_esc"), ProtocolFamily.TOPRINT_HPRT_ESC)
         self.assertEqual(ProtocolFamily.from_value("eleph_tspl"), ProtocolFamily.ELEPH_TSPL)
+        self.assertEqual(ProtocolFamily.from_value("toprint_tspl"), ProtocolFamily.TOPRINT_TSPL)
         self.assertEqual(ProtocolFamily.from_value("phomemo_esc"), ProtocolFamily.PHOMEMO_ESC)
 
     def test_luck_normal_families_do_not_expose_prefixed_packet_layout(self) -> None:

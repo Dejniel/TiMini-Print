@@ -10,7 +10,7 @@ from timiniprint.protocol.types import ImageEncoding
 from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
-class HprtEscProtocolTests(unittest.TestCase):
+class ToPrintHprtEscProtocolTests(unittest.TestCase):
     def test_zl1_profile_builds_source_ordered_esc_job(self) -> None:
         device = PrinterCatalog.load().device_from_profile("toprint_hprt_esc_zl1")
         raster = RasterBuffer(
@@ -104,9 +104,9 @@ class HprtEscProtocolTests(unittest.TestCase):
                 self.assertIsNotNone(detected)
                 assert detected is not None
                 self.assertEqual(detected.profile_key, "toprint_hprt_esc_zl1")
-                self.assertEqual(detected.protocol_family, ProtocolFamily.ELEPH_HPRT_ESC)
+                self.assertEqual(detected.protocol_family, ProtocolFamily.TOPRINT_HPRT_ESC)
                 self.assertEqual(detected.protocol_variant, "zl1")
-                self.assertEqual(detected.image_pipeline.encoding, ImageEncoding.ELEPH_HPRT_ESC_RASTER)
+                self.assertEqual(detected.image_pipeline.encoding, ImageEncoding.TOPRINT_HPRT_ESC_RASTER)
 
         for name in ("YHK", "YHK_F30E", "YHK2"):
             with self.subTest(name=name):
@@ -131,7 +131,7 @@ class HprtEscProtocolTests(unittest.TestCase):
         assert isinstance(p3, UnsupportedModelMatch)
         self.assertEqual(p3.model.model_key, "unsupported_toprint_p3")
 
-    def test_zl1_paper_motion_uses_eleph_hprt_esc_motion_commands(self) -> None:
+    def test_zl1_paper_motion_uses_toprint_hprt_esc_motion_commands(self) -> None:
         device = PrinterCatalog.load().device_from_profile("toprint_hprt_esc_zl1")
         protocol = PrinterProtocol(device)
 

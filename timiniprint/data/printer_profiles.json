@@ -5834,15 +5834,11 @@
       "encoding": "eleph_tspl_bitmap"
     },
     "stream": {
-      "chunk_size": 180,
-      "delay_ms": 10
+      "chunk_size": 20,
+      "delay_ms": 30
     },
     "post_print_feed_count": 0,
     "print_defaults": {
-      "speed": {
-        "image": 6,
-        "text": 6
-      },
       "energy": {
         "image": {
           "low": 0,
@@ -5854,24 +5850,11 @@
           "middle": 0,
           "high": 0
         }
-      },
-      "density": {
-        "image": {
-          "low": 6,
-          "middle": 9,
-          "high": 13
-        },
-        "text": {
-          "low": 6,
-          "middle": 9,
-          "high": 13
-        }
       }
     },
     "a4xii": false,
     "paper_presets": [
-      "tag_384r",
-      "plain_384r"
+      "tag_384r"
     ]
   },
   {
@@ -5885,14 +5868,14 @@
     "label_value": "1",
     "back_paper_num": 0,
     "protocol_default": {
-      "type": "eleph_tspl",
+      "type": "toprint_tspl",
       "packets_type": "p1"
     },
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "eleph_tspl_bitmap"
+      "encoding": "toprint_tspl_bitmap"
     },
     "stream": {
       "chunk_size": 180,
@@ -5947,14 +5930,14 @@
     "label_value": "1",
     "back_paper_num": 0,
     "protocol_default": {
-      "type": "eleph_hprt_esc",
+      "type": "toprint_hprt_esc",
       "packets_type": "zl1"
     },
     "default_image_pipeline": {
       "formats": [
         "bw1"
       ],
-      "encoding": "eleph_hprt_esc_raster"
+      "encoding": "toprint_hprt_esc_raster"
     },
     "stream": {
       "chunk_size": 180,
