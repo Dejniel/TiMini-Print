@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, field
 import threading
+import select
 import time
 from typing import Any
 
@@ -38,7 +39,8 @@ class ClassicReceiveHub:
         self._waiters: list[_ReplyWaiter] = []
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
-        self._previous_timeout = None
+        self._previous_timeout: float | None = None
+        self._select_available: bool = True
 
     def set_listener(self, listener: Callable[[bytes], None] | None) -> None:
         with self._condition:
@@ -48,14 +50,23 @@ class ClassicReceiveHub:
         with self._condition:
             if self._thread is not None:
                 return
+            # Use select() to poll for readability without changing the socket
+            # timeout. A global socket timeout would also shorten sendall() in
+            # the writer thread and cause spurious timeouts when the printer's
+            # buffer is full. If the socket is not selectable (e.g. test mocks
+            # without fileno()), fall back to the old settimeout() approach.
             gettimeout = getattr(self._sock, "gettimeout", None)
             if callable(gettimeout):
                 try:
                     self._previous_timeout = gettimeout()
                 except Exception:
-                    self._previous_timeout = None
+                    pass
+            try:
+                select.select([self._sock], [], [], 0.0)
+            except (TypeError, ValueError):
+                self._select_available = False
             settimeout = getattr(self._sock, "settimeout", None)
-            if callable(settimeout):
+            if not self._select_available and callable(settimeout):
                 settimeout(self._poll_timeout)
             self._thread = threading.Thread(
                 target=self._read_loop,
@@ -74,7 +85,7 @@ class ClassicReceiveHub:
         if thread is not None and thread is not threading.current_thread():
             thread.join(timeout=max(0.2, self._poll_timeout * 2))
         settimeout = getattr(self._sock, "settimeout", None)
-        if callable(settimeout):
+        if not self._select_available and callable(settimeout):
             try:
                 settimeout(self._previous_timeout)
             except Exception:
@@ -136,6 +147,17 @@ class ClassicReceiveHub:
             return
         while not self._stop_event.is_set():
             try:
+                if self._select_available:
+                    # Poll for readability without changing the socket timeout.
+                    # select() is preferred to settimeout() because a global
+                    # socket timeout would also shorten sendall() in the writer
+                    # thread and cause spurious timeouts on a full buffer.
+                    readable, _, _ = select.select(
+                        [self._sock], [], [], self._poll_timeout
+                    )
+                    if not readable:
+                        self._stop_event.wait(0.005)
+                        continue
                 payload = recv(4096)
             except Exception as exc:
                 if _is_timeout_error(exc):
