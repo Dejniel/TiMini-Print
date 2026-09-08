@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+import hashlib
+import hmac
+
 from ..encoding import pack_line
-from ..packet import crc8_value, make_packet
+from ..packet import make_packet, prefixed_packet_length, prefixed_packet_opcode
 from ..family import ProtocolFamily
 from ..plan import ProtocolPlan
 from ..steps import ProtocolStep
 from ...raster import PixelFormat
-from ..types import ImageEncoding, ImagePipelineConfig
+from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 from .base import PrintJobRequest, ProtocolBehavior
 
 def _hex_bytes(value: str) -> bytes:
@@ -25,9 +29,9 @@ V5X_NOTIFY_TRIGGER_STATUS_POLL = _hex_bytes("2221B20000")
 V5X_NOTIFY_IDLE_GET_SERIAL = _hex_bytes("2221A60000")
 
 _MANUAL_MOTION_PAYLOAD = bytes([0x05, 0x00])
-V5X_LABEL_MODE_SUFFIX = _hex_bytes("30010000")
-V5X_GRAY_MODE_SUFFIX = _hex_bytes("30020000")
-V5X_STANDARD_MODE_SUFFIX = _hex_bytes("30000000")
+_DOT_MODE = 0x00
+_LABEL_MODE = 0x01
+V5X_GRAY_MODE = 0x02
 # Firmware blackening 1-5 maps to different density bytes for dot and gray
 # jobs; the values are not linear.
 _DOT_DENSITY_BY_LEVEL = (0x58, 0x5A, 0x5D, 0x5F, 0x62)
@@ -54,6 +58,52 @@ V5X_NOTIFY_PAUSE_PACKETS = frozenset(
 V5X_NOTIFY_RESUME_PACKETS = frozenset(
     _hex_bytes(value) for value in _FLOW_RESUME_HEX
 )
+
+
+@dataclass(frozen=True)
+class V5XWritePlan:
+    commands: tuple[bytes, ...]
+    bulk_payload: bytes
+    trailing_commands: tuple[bytes, ...]
+
+
+def split_print_stream(data: bytes) -> V5XWritePlan:
+    commands = []
+    offset = 0
+    while offset < len(data):
+        length = prefixed_packet_length(data, offset, ProtocolFamily.V5X)
+        if length is None:
+            raise ValueError("Incomplete V5X command before raster")
+        packet = data[offset : offset + length]
+        commands.append(packet)
+        offset += length
+        if prefixed_packet_opcode(packet, ProtocolFamily.V5X) == 0xA9:
+            # Everything after A9 is opaque raster, including bytes which
+            # happen to look like another command or the finalizer.
+            if not data[offset:].endswith(V5X_FINALIZE_PACKET):
+                raise ValueError("V5X raster is missing its finalizer")
+            return V5XWritePlan(
+                tuple(commands),
+                data[offset : -len(V5X_FINALIZE_PACKET)],
+                (V5X_FINALIZE_PACKET,),
+            )
+    return V5XWritePlan(tuple(commands), b"", ())
+
+
+def build_sign_response(challenge: bytes, *, timestamp_ms: int) -> bytes:
+    if len(challenge) != 10:
+        raise ValueError("V5X signing challenge must contain ten bytes")
+    clock_tail = timestamp_ms % 10000
+    t0, t1 = divmod(clock_tail, 100)
+    mask = bytes([0xA9, t1, 0xD3, 0x03, 0x78, 0xB6, 0x15, t0, 0xEA, 0x82])
+    message = bytes(value ^ salt for value, salt in zip(challenge, mask)).hex().upper().encode("ascii")
+    key = f"93{t0:02x}e8ae5e93d79683dcaf9e{t1:02x}3ede35".encode("ascii")
+    digest = hmac.new(key, message, hashlib.sha256).digest()
+    return (
+        bytes.fromhex("2221B3002200")
+        + digest[:1] + bytes([t1]) + digest[1:29] + bytes([t0]) + digest[29:]
+        + bytes.fromhex("00FF")
+    )
 
 
 def _raw_lsb_payload(pixels: list[int] | tuple[int, ...], width: int) -> bytes:
@@ -103,23 +153,12 @@ def _density_payload(request: PrintJobRequest) -> bytes:
     return bytes([table[level - 1]])
 
 
-def _start_print_mode_suffix(request: PrintJobRequest) -> bytes:
+def _start_print_mode(request: PrintJobRequest) -> int:
     if request.image_pipeline.encoding == ImageEncoding.V5X_GRAY:
-        return V5X_GRAY_MODE_SUFFIX
-    if request.can_print_label:
-        return V5X_LABEL_MODE_SUFFIX
-    return V5X_STANDARD_MODE_SUFFIX
-
-
-def _start_print_payload(height: int, request: PrintJobRequest) -> bytes:
-    return height.to_bytes(2, "little") + _start_print_mode_suffix(request)
-
-
-def _gray_start_packet(height: int, protocol_family: ProtocolFamily) -> bytes:
-    family = ProtocolFamily.from_value(protocol_family)
-    height_bytes = height.to_bytes(2, "little")
-    header = family.require_packet_prefix() + bytes([0xA9, 0x00, 0x02, 0x00])
-    return header + height_bytes + bytes([crc8_value(height_bytes), 0xFF])
+        return V5X_GRAY_MODE
+    if request.paper_mode is PaperMode.TAG:
+        return _LABEL_MODE
+    return _DOT_MODE
 
 
 def _build_payload(request: PrintJobRequest) -> bytes:
@@ -131,13 +170,13 @@ def _build_payload(request: PrintJobRequest) -> bytes:
     )
     height = raster.height
     job = bytearray()
-    job += V5X_GET_SERIAL_PACKET
     job += make_packet(0xA2, _density_payload(request), request.protocol_family)
+    # A9 declares four payload bytes and uses a literal zero footer, not CRC/FF.
+    job += bytes.fromhex("2221A9000400")
+    job += height.to_bytes(2, "little") + bytes([0x30, _start_print_mode(request), 0, 0])
     if is_gray:
-        job += _gray_start_packet(height, request.protocol_family)
         job += _gray_payload(raster)
     else:
-        job += make_packet(0xA9, _start_print_payload(height, request), request.protocol_family)
         job += _raw_lsb_payload(list(raster.pixels), raster.width)
     job += V5X_FINALIZE_PACKET
     return bytes(job)
@@ -150,6 +189,7 @@ def build_job(request: PrintJobRequest) -> ProtocolPlan:
 
 
 BEHAVIOR = ProtocolBehavior(
+    supported_paper_modes=(PaperMode.PLAIN, PaperMode.TAG),
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),
         encoding=ImageEncoding.V5X_DOT,

@@ -69,6 +69,30 @@ def _fast_controller() -> V5XRuntimeController:
 
 
 class V5XWaitForCompletionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_completion_clears_next_page_readiness_on_every_exit_path(self) -> None:
+        for result in ("idle", "quiet", "cap", "unavailable"):
+            with self.subTest(result=result):
+                controller = _fast_controller()
+                controller.debug_update(await_start_ready=True)
+                session = _FakeSession(
+                    [_a1_frame(0)] if result == "idle" else [None],
+                    can_wait=result != "unavailable",
+                )
+                controller.handle_notification(
+                    session, make_packet(0xAA, b"\x00", ProtocolFamily.V5X)
+                )
+                if result == "cap":
+                    controller._COMPLETION_MAX_S = 0.0
+
+                await controller.wait_for_completion(session, timeout=0.01)
+
+                self.assertFalse(controller.debug_snapshot()["await_start_ready"])
+                self.assertFalse(controller.debug_snapshot()["start_ready_seen"])
+                controller.handle_notification(
+                    session, make_packet(0xAA, b"\x00", ProtocolFamily.V5X)
+                )
+                self.assertFalse(controller.debug_snapshot()["start_ready_seen"])
+
     async def test_returns_on_idle_status_frame(self) -> None:
         controller = _fast_controller()
         session = _FakeSession([_a1_frame(1), _a1_frame(0)])  # printing -> idle
@@ -122,6 +146,21 @@ class _StandardPayloadConnection(_SendOnlyConnection):
 
 
 class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_payload_job_completion_clears_v5x_readiness(self) -> None:
+        controller = _fast_controller()
+        controller.debug_update(await_start_ready=True, start_ready_seen=True)
+        connection = _SendOnlyConnection()
+        job = ProtocolJob(payload=b"data", wait_for_completion=True)
+
+        await send_prepared_job(
+            object(), connection, job,
+            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
+        )
+
+        self.assertEqual(connection.sent, [job])
+        self.assertFalse(controller.debug_snapshot()["await_start_ready"])
+        self.assertFalse(controller.debug_snapshot()["start_ready_seen"])
+
     async def test_send_prepared_job_invokes_wait_for_completion(self) -> None:
         spy = _SpyController()
         job = ProtocolJob(payload=b"data", wait_for_completion=True)

@@ -25,9 +25,6 @@ from timiniprint.printing.runtime.v5g import V5GRuntimeController
 from timiniprint.printing.runtime.v5g_density import DensityLevels
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.printing.runtime.v5x_density import adjust_density_payload, start_delay_ms
-from timiniprint.protocol.families import (
-    split_prefixed_bulk_stream,
-)
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families.v5g import (
     V5G_CONNECT_QUERY_PACKET,
@@ -44,10 +41,11 @@ from timiniprint.protocol.families.v5x import (
     V5X_NOTIFY_START_READY,
     V5X_NOTIFY_TRIGGER_STATUS_POLL,
     V5X_STATUS_POLL_PACKET,
+    split_print_stream,
 )
 from timiniprint.protocol.families.v5c import V5C_CONNECT_INIT_PACKET
 from timiniprint.protocol.families.tiny import TINY_NOTIFY_RESUME
-from timiniprint.protocol.packet import crc8_value, make_packet, prefixed_packet_opcode
+from timiniprint.protocol.packet import make_packet, prefixed_packet_opcode
 from timiniprint.protocol.steps import ProtocolStep
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver import (
     _BleWriteEndpointResolver,
@@ -85,10 +83,6 @@ class _Client:
     async def stop_notify(self, char_uuid):
         self.stop_notify_calls.append(char_uuid)
         self.notify_callbacks.pop(char_uuid, None)
-
-
-def _v5x_tail_packets() -> tuple[bytes, ...]:
-    return (V5X_FINALIZE_PACKET,)
 
 
 def _to_namespace(value):
@@ -1165,20 +1159,15 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.bulk_write_char_uuid = bulk.uuid
 
         data = (
-            V5X_GET_SERIAL_PACKET
-            + bytes.fromhex("2221A20001005D94FF")
-            + bytes.fromhex("2221A9000600010030010000EBFF")
+            bytes.fromhex("2221A20001005D94FF")
+            + bytes.fromhex("2221A9000400010030010000")
             + (b"\xAA\x55" * 16)
             + V5X_FINALIZE_PACKET
         )
 
         async def run() -> None:
             async def notify() -> None:
-                while len(client.calls) < 1:
-                    await asyncio.sleep(0.001)
-                session.handle_notification(V5X_NOTIFY_GET_SERIAL_ACK)
-                session.handle_notification(V5X_NOTIFY_START_READY)
-                while len(client.calls) < 3:
+                while len(client.calls) < 2:
                     await asyncio.sleep(0.001)
                 session.handle_notification(V5X_NOTIFY_START_PRINT_OK)
 
@@ -1190,9 +1179,8 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertEqual(client.calls[0][0], cmd.uuid)
         self.assertEqual(client.calls[1][0], cmd.uuid)
-        self.assertEqual(client.calls[2][0], cmd.uuid)
-        self.assertEqual(client.calls[3][0], bulk.uuid)
-        self.assertEqual(client.calls[4][0], cmd.uuid)
+        self.assertEqual(client.calls[2][0], bulk.uuid)
+        self.assertEqual(client.calls[3][0], cmd.uuid)
 
     def test_bulk_send_uses_chunk_cap_from_transport_profile(self) -> None:
         reporter, _ = build_capture_reporter()
@@ -1298,19 +1286,15 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.bulk_write_char_uuid = bulk.uuid
 
         data = (
-            V5X_GET_SERIAL_PACKET
-            + bytes.fromhex("2221A20001005D94FF")
-            + bytes.fromhex("2221A9000600010030010000EBFF")
+            bytes.fromhex("2221A20001005D94FF")
+            + bytes.fromhex("2221A9000400010030010000")
             + (b"\xAA\x55" * 8)
             + V5X_FINALIZE_PACKET
         )
 
         async def run_once() -> None:
+            session.handle_notification(V5X_NOTIFY_START_READY)
             async def notify() -> None:
-                while len(client.calls) < 1:
-                    await asyncio.sleep(0.001)
-                session.handle_notification(V5X_NOTIFY_GET_SERIAL_ACK)
-                session.handle_notification(V5X_NOTIFY_START_READY)
                 while True:
                     if client.calls and client.calls[-1][1].startswith(bytes.fromhex("2221A900")):
                         break
@@ -1327,18 +1311,16 @@ class BleakTransportSessionTests(unittest.TestCase):
         asyncio.run(run_once())
 
         self.assertEqual(
-            [call[1] for call in first_job_calls[:3]],
+            [call[1] for call in first_job_calls[:2]],
             [
-                V5X_GET_SERIAL_PACKET,
                 bytes.fromhex("2221A20001005D94FF"),
-                bytes.fromhex("2221A9000600010030010000EBFF"),
+                bytes.fromhex("2221A9000400010030010000"),
             ],
         )
         self.assertEqual(
-            [call[1] for call in client.calls[:2]],
+            [call[1] for call in client.calls[:1]],
             [
-                V5X_GET_SERIAL_PACKET,
-                bytes.fromhex("2221A9000600010030010000EBFF"),
+                bytes.fromhex("2221A9000400010030010000"),
             ],
         )
 
@@ -1429,7 +1411,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertIn("error_group=0x02", warnings[0].detail)
         self.assertIn("error_code=0x09", warnings[0].detail)
 
-    def test_v5x_b3_warns_without_blocking_session(self) -> None:
+    def test_v5x_truncated_b3_is_reported_without_sending_a_reply(self) -> None:
         session, _, sink = self._make_session_with_sink(ProtocolFamily.V5X)
 
         session.handle_notification(make_packet(0xB3, bytes([0x01]), ProtocolFamily.V5X))
@@ -1437,8 +1419,9 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertTrue(_v5x_state(session).mxw_sign_requested)
         warnings = [msg for msg in sink.messages if msg.level == "warning"]
-        self.assertEqual(len(warnings), 1)
-        self.assertEqual(warnings[0].short, "V5X printer requested an additional signing step")
+        self.assertEqual(len(warnings), 2)
+        self.assertEqual(warnings[0].short, "Invalid V5X signing challenge")
+        self.assertEqual(_v5x_state(session).mxw_sign_responses_sent, 0)
 
     def test_v5x_density_is_adjusted_using_session_state_and_coverage(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)
@@ -1451,13 +1434,11 @@ class BleakTransportSessionTests(unittest.TestCase):
             )
         )
 
-        split = split_prefixed_bulk_stream(
+        split = split_print_stream(
             bytes.fromhex("2221A20001005D94FF")
-            + bytes.fromhex("2221A9000600010030010000EBFF")
+            + bytes.fromhex("2221A9000400010030010000")
             + (b"\xAA\x55" * 16)
             + V5X_FINALIZE_PACKET,
-            ProtocolFamily.V5X,
-            _v5x_tail_packets(),
         )
         context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
@@ -1475,12 +1456,10 @@ class BleakTransportSessionTests(unittest.TestCase):
     def test_v5x_start_delay_prefers_gaoya_high_coverage_rule(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)
         _controller(session).debug_update(print_head_type="gaoya")
-        split = split_prefixed_bulk_stream(
-            bytes.fromhex("2221A9000600010030010000EBFF")
+        split = split_print_stream(
+            bytes.fromhex("2221A9000400010030010000")
             + (b"\xAA\x55" * 16)
             + V5X_FINALIZE_PACKET,
-            ProtocolFamily.V5X,
-            _v5x_tail_packets(),
         )
         context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
@@ -1496,12 +1475,10 @@ class BleakTransportSessionTests(unittest.TestCase):
     def test_v5x_start_delay_uses_short_density_settle_for_lower_coverage(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)
         _controller(session).debug_update(print_head_type="diya")
-        split = split_prefixed_bulk_stream(
-            bytes.fromhex("2221A9000600010030010000EBFF")
+        split = split_print_stream(
+            bytes.fromhex("2221A9000400010030010000")
             + (b"\x80" * 8)
             + V5X_FINALIZE_PACKET,
-            ProtocolFamily.V5X,
-            _v5x_tail_packets(),
         )
         context = session._runtime_controller._build_job_context(session, split)
         self.assertIsNotNone(context)
@@ -1514,15 +1491,12 @@ class BleakTransportSessionTests(unittest.TestCase):
 
         self.assertEqual(delay_ms, 60)
 
-    def test_v5x_gray_job_context_recognizes_len2_start_packet(self) -> None:
+    def test_v5x_gray_job_context_recognizes_gray_mode(self) -> None:
         session, _ = self._make_session(ProtocolFamily.V5X)
-        height_bytes = bytes([0x01, 0x00])
-        split = split_prefixed_bulk_stream(
-            (bytes.fromhex("2221A9000200") + height_bytes + bytes([crc8_value(height_bytes), 0xFF]))
+        split = split_print_stream(
+            bytes.fromhex("2221A9000400010030020000")
             + bytes.fromhex("FEDCBA98")
             + V5X_FINALIZE_PACKET,
-            ProtocolFamily.V5X,
-            _v5x_tail_packets(),
         )
 
         context = session._runtime_controller._build_job_context(session, split)
@@ -1577,7 +1551,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_char_uuid = cmd.uuid
         session.bindings.bulk_write_char_uuid = bulk.uuid
 
-        data = V5X_GET_SERIAL_PACKET + (b"\xAA\x55" * 8) + V5X_FINALIZE_PACKET
+        data = bytes.fromhex("2221A9000400010030000000") + (b"\xAA\x55" * 8) + V5X_FINALIZE_PACKET
 
         async def run() -> None:
             with self.assertRaises(TimeoutError):
@@ -1606,8 +1580,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.bulk_write_char_uuid = bulk.uuid
 
         data = (
-            V5X_GET_SERIAL_PACKET
-            + bytes.fromhex("2221A9000600010030010000EBFF")
+            bytes.fromhex("2221A9000400010030010000")
             + (b"\xAA\x55" * 8)
             + V5X_FINALIZE_PACKET
         )
@@ -1615,10 +1588,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         async def run() -> None:
             async def notify() -> None:
                 while len(client.calls) < 1:
-                    await asyncio.sleep(0.001)
-                session.handle_notification(V5X_NOTIFY_GET_SERIAL_ACK)
-                session.handle_notification(V5X_NOTIFY_START_READY)
-                while len(client.calls) < 2:
                     await asyncio.sleep(0.001)
                 session.handle_notification(make_packet(0xA9, bytes([0x03]), ProtocolFamily.V5X))
 

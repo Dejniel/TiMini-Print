@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from ..devices import PrinterDevice
+from ..protocol.family import ProtocolFamily
+from ..protocol.families.v5x import V5X_FINALIZE_PACKET
 from ..protocol.packet import prefixed_packet_length
 
 
@@ -29,17 +31,7 @@ def build_protocol_packet_entries(device: PrinterDevice, payload: bytes) -> list
     """Return packet-level diagnostic entries for verbose/debug tools."""
     prefix = device.protocol_family.packet_prefix
     if prefix is None:
-        return [
-            {
-                "index": 0,
-                "offset": 0,
-                "bytes": len(payload),
-                "op": None,
-                "payload_bytes": len(payload),
-                "packet_head": payload[:24].hex(),
-                "packet_tail": payload[-24:].hex(),
-            }
-        ]
+        return [_raw_entry(payload, index=0, offset=0)]
 
     entries: list[dict[str, object]] = []
     offset = 0
@@ -47,19 +39,9 @@ def build_protocol_packet_entries(device: PrinterDevice, payload: bytes) -> list
     while offset < len(payload):
         packet_len = prefixed_packet_length(payload, offset, device.protocol_family)
         if packet_len is None:
-            rest = payload[offset:]
-            entries.append(
-                {
-                    "index": index,
-                    "offset": offset,
-                    "bytes": len(rest),
-                    "op": None,
-                    "payload_bytes": len(rest),
-                    "packet_head": rest[:24].hex(),
-                    "packet_tail": rest[-24:].hex(),
-                    "parse_error": "not a complete prefixed packet",
-                }
-            )
+            entry = _raw_entry(payload[offset:], index=index, offset=offset)
+            entry["parse_error"] = "not a complete prefixed packet"
+            entries.append(entry)
             break
         packet = payload[offset : offset + packet_len]
         packet_payload = packet[len(prefix) + 4 : -2]
@@ -78,7 +60,29 @@ def build_protocol_packet_entries(device: PrinterDevice, payload: bytes) -> list
         )
         offset += packet_len
         index += 1
+        if device.protocol_family is ProtocolFamily.V5X and packet[len(prefix)] == 0xA9:
+            # A9 switches from framed commands to an opaque raster stream.
+            # Raster bytes may themselves look like valid command headers.
+            bulk_end = len(payload)
+            if payload.endswith(V5X_FINALIZE_PACKET):
+                bulk_end -= len(V5X_FINALIZE_PACKET)
+            if bulk_end > offset:
+                entries.append(_raw_entry(payload[offset:bulk_end], index=index, offset=offset))
+                offset = bulk_end
+                index += 1
     return entries
+
+
+def _raw_entry(payload: bytes, *, index: int, offset: int) -> dict[str, object]:
+    return {
+        "index": index,
+        "offset": offset,
+        "bytes": len(payload),
+        "op": None,
+        "payload_bytes": len(payload),
+        "packet_head": payload[:24].hex(),
+        "packet_tail": payload[-24:].hex(),
+    }
 
 
 __all__ = [

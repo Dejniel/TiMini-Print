@@ -1215,17 +1215,13 @@ class ProtocolJobTests(unittest.TestCase):
             can_print_label=True,
             image_pipeline=self.v5x_dot,
         )
-        self.assertTrue(data.startswith(V5X_GET_SERIAL_PACKET))
+        self.assertFalse(data.startswith(V5X_GET_SERIAL_PACKET))
         self.assertIn(
             self.commands.make_packet(0xA2, bytes([0x5D]), ProtocolFamily.V5X),
             data,
         )
         self.assertIn(
-            self.commands.make_packet(
-                0xA9,
-                bytes.fromhex("010030010000"),
-                ProtocolFamily.V5X,
-            ),
+            bytes.fromhex("2221A9000400010030000000"),
             data,
         )
         self.assertIn(bytes([0x55]), data)
@@ -1259,11 +1255,7 @@ class ProtocolJobTests(unittest.TestCase):
             image_pipeline=self.v5x_dot,
         )
         self.assertIn(
-            self.commands.make_packet(
-                0xA9,
-                bytes.fromhex("010030000000"),
-                ProtocolFamily.V5X,
-            ),
+            bytes.fromhex("2221A9000400010030000000"),
             data,
         )
 
@@ -1291,14 +1283,8 @@ class ProtocolJobTests(unittest.TestCase):
             image_pipeline=self.v5x_gray,
         )
 
-        height_bytes = bytes([0x01, 0x00])
-        expected_start = (
-            ProtocolFamily.V5X.packet_prefix
-            + bytes([0xA9, 0x00, 0x02, 0x00])
-            + height_bytes
-            + bytes([self.commands.crc8_value(height_bytes), 0xFF])
-        )
-        self.assertTrue(data.startswith(V5X_GET_SERIAL_PACKET))
+        expected_start = bytes.fromhex("2221A9000400010030020000")
+        self.assertFalse(data.startswith(V5X_GET_SERIAL_PACKET))
         self.assertIn(
             self.commands.make_packet(0xA2, bytes([0x55]), ProtocolFamily.V5X),
             data,

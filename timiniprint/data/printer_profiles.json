@@ -1753,7 +1753,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384r"
+      "plain_384r"
     ]
   },
   {
@@ -5053,7 +5053,8 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "default_384r"
+      "plain_384r",
+      "tag_384r"
     ]
   },
   {

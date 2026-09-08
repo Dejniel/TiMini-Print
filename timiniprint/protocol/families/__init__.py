@@ -5,8 +5,6 @@ from .base import (
     PrintJobRequest,
     ProtocolBehavior,
     ProtocolDefinition,
-    SplitWritePlan,
-    split_prefixed_bulk_stream,
 )
 from .dck import BEHAVIOR as DCK_BEHAVIOR
 from .toprint_hprt_esc import BEHAVIOR as TOPRINT_HPRT_ESC_BEHAVIOR
@@ -160,9 +158,7 @@ __all__ = [
     "PrintJobRequest",
     "ProtocolBehavior",
     "ProtocolDefinition",
-    "SplitWritePlan",
     "get_protocol_behavior",
     "get_protocol_definition",
     "protocol_requires_speed",
-    "split_prefixed_bulk_stream",
 ]

@@ -6,7 +6,6 @@ from typing import Callable, Mapping, Optional, Tuple
 
 from ...raster import PixelFormat, RasterSet
 from ..family import ProtocolFamily
-from ..packet import prefixed_packet_length
 from ..plan import ProtocolPlan
 from ..types import ImageEncoding, ImagePipelineConfig, PageFlow, PaperMode
 
@@ -127,45 +126,6 @@ class PrintJobRequest:
 
 
 @dataclass(frozen=True)
-class SplitWritePlan:
-    commands: tuple[bytes, ...]
-    bulk_payload: bytes
-    trailing_commands: tuple[bytes, ...]
-
-
-@dataclass(frozen=True)
 class ProtocolDefinition:
     spec: "ProtocolSpec"
     behavior: ProtocolBehavior
-
-
-def split_prefixed_bulk_stream(
-    data: bytes,
-    protocol_family: ProtocolFamily | str,
-    trailing_packets: tuple[bytes, ...] = (),
-) -> SplitWritePlan:
-    family = ProtocolFamily.from_value(protocol_family)
-    commands = []
-    trailing_commands = []
-    offset = 0
-
-    while True:
-        packet_len = prefixed_packet_length(data, offset, family)
-        if packet_len is None:
-            break
-        commands.append(data[offset : offset + packet_len])
-        offset += packet_len
-
-    if offset == len(data):
-        return SplitWritePlan(tuple(commands), b"", tuple(trailing_commands))
-
-    tail = len(data)
-    for packet in trailing_packets:
-        if data.endswith(packet) and tail - len(packet) >= offset:
-            trailing_commands.insert(0, packet)
-            tail -= len(packet)
-
-    bulk_payload = data[offset:tail]
-    if not commands and not trailing_commands:
-        return SplitWritePlan((data,), b"", ())
-    return SplitWritePlan(tuple(commands), bulk_payload, tuple(trailing_commands))
