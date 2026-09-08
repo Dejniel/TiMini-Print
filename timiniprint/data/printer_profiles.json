@@ -5819,7 +5819,7 @@
     "one_length": 8,
     "dev_dpi": 203,
     "has_id": false,
-    "use_spp": false,
+    "use_spp": true,
     "can_print_label": true,
     "label_value": "1",
     "back_paper_num": 0,
@@ -5834,8 +5834,8 @@
       "encoding": "eleph_tspl_bitmap"
     },
     "stream": {
-      "chunk_size": 20,
-      "delay_ms": 30
+      "chunk_size": 1024,
+      "delay_ms": 0
     },
     "post_print_feed_count": 0,
     "print_defaults": {

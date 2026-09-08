@@ -26,7 +26,7 @@ def build_p1_job(request: PrintJobRequest) -> bytes:
         line_end=_LINE_END,
     )
     job += command("GAP", "2 mm,0 mm", line_end=_LINE_END)
-    job += command("DIRECTION", "1", line_end=_LINE_END)
+    job += command("DIRECTION", "0", line_end=_LINE_END)
     job += command("CLS", line_end=_LINE_END)
     job += bitmap_command(
         raster,
