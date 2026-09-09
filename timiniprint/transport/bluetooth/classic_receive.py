@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+import selectors
 import threading
-import select
-import time
 from typing import Any
 
 
@@ -39,8 +38,6 @@ class ClassicReceiveHub:
         self._waiters: list[_ReplyWaiter] = []
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
-        self._previous_timeout: float | None = None
-        self._select_available: bool = True
 
     def set_listener(self, listener: Callable[[bytes], None] | None) -> None:
         with self._condition:
@@ -48,32 +45,24 @@ class ClassicReceiveHub:
 
     def start(self) -> None:
         with self._condition:
-            if self._thread is not None:
+            if self._thread is not None or not callable(getattr(self._sock, "recv", None)):
                 return
-            # Use select() to poll for readability without changing the socket
-            # timeout. A global socket timeout would also shorten sendall() in
-            # the writer thread and cause spurious timeouts when the printer's
-            # buffer is full. If the socket is not selectable (e.g. test mocks
-            # without fileno()), fall back to the old settimeout() approach.
-            gettimeout = getattr(self._sock, "gettimeout", None)
-            if callable(gettimeout):
-                try:
-                    self._previous_timeout = gettimeout()
-                except Exception:
-                    pass
+            # Poll only the reader: changing the shared socket timeout would
+            # also shorten sendall() when the printer's buffer is full.
+            selector = selectors.DefaultSelector()
             try:
-                select.select([self._sock], [], [], 0.0)
-            except (TypeError, ValueError):
-                self._select_available = False
-            settimeout = getattr(self._sock, "settimeout", None)
-            if not self._select_available and callable(settimeout):
-                settimeout(self._poll_timeout)
-            self._thread = threading.Thread(
-                target=self._read_loop,
-                name="timiniprint-classic-receive",
-                daemon=True,
-            )
-            self._thread.start()
+                selector.register(self._sock, selectors.EVENT_READ)
+                self._thread = threading.Thread(
+                    target=self._read_loop,
+                    args=(selector,),
+                    name="timiniprint-classic-receive",
+                    daemon=True,
+                )
+                self._thread.start()
+            except Exception:
+                selector.close()
+                self._thread = None
+                raise
 
     def stop(self) -> None:
         self._stop_event.set()
@@ -84,12 +73,6 @@ class ClassicReceiveHub:
             thread = self._thread
         if thread is not None and thread is not threading.current_thread():
             thread.join(timeout=max(0.2, self._poll_timeout * 2))
-        settimeout = getattr(self._sock, "settimeout", None)
-        if not self._select_available and callable(settimeout):
-            try:
-                settimeout(self._previous_timeout)
-            except Exception:
-                pass
 
     def mark(self) -> int:
         with self._condition:
@@ -141,45 +124,36 @@ class ClassicReceiveHub:
                 )
             return result
 
-    def _read_loop(self) -> None:
-        recv = getattr(self._sock, "recv", None)
-        if not callable(recv):
-            return
-        while not self._stop_event.is_set():
-            try:
-                if self._select_available:
-                    # Poll for readability without changing the socket timeout.
-                    # select() is preferred to settimeout() because a global
-                    # socket timeout would also shorten sendall() in the writer
-                    # thread and cause spurious timeouts on a full buffer.
-                    readable, _, _ = select.select(
-                        [self._sock], [], [], self._poll_timeout
-                    )
-                    if not readable:
+    def _read_loop(self, selector: selectors.BaseSelector) -> None:
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    if not selector.select(timeout=self._poll_timeout):
+                        continue
+                    payload = self._sock.recv(4096)
+                except Exception as exc:
+                    if _is_timeout_error(exc):
                         self._stop_event.wait(0.005)
                         continue
-                payload = recv(4096)
-            except Exception as exc:
-                if _is_timeout_error(exc):
-                    self._stop_event.wait(0.005)
-                    continue
-                break
-            if not payload:
-                break
-            data = bytes(payload)
+                    break
+                if not payload:
+                    break
+                data = bytes(payload)
+                with self._condition:
+                    self._history.extend(data)
+                    self._trim_history()
+                    for waiter in tuple(self._waiters):
+                        self._match_waiter(waiter)
+                    listener = self._listener
+                    self._condition.notify_all()
+                if listener is not None:
+                    listener(data)
+        finally:
+            selector.close()
             with self._condition:
-                self._history.extend(data)
-                self._trim_history()
-                for waiter in tuple(self._waiters):
-                    self._match_waiter(waiter)
-                listener = self._listener
+                for waiter in self._waiters:
+                    waiter.event.set()
                 self._condition.notify_all()
-            if listener is not None:
-                listener(data)
-        with self._condition:
-            for waiter in self._waiters:
-                waiter.event.set()
-            self._condition.notify_all()
 
     def _match_waiter(self, waiter: _ReplyWaiter) -> None:
         if waiter.result is not None or waiter.match is None:

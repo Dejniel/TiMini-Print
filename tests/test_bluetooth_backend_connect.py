@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import selectors
 import threading
 import unittest
 from types import SimpleNamespace
@@ -209,6 +210,19 @@ class _BleScanAdapter:
 
 
 class BluetoothBackendConnectTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # These tests control recv() chunks with fake sockets. OS readiness is
+        # covered separately by ClassicReceiveHub's real-socket tests.
+        selector_patch = patch(
+            "timiniprint.transport.bluetooth.classic_receive.selectors"
+        )
+        selector_module = selector_patch.start()
+        self.addCleanup(selector_patch.stop)
+        selector_module.EVENT_READ = selectors.EVENT_READ
+        selector_module.DefaultSelector.return_value.select.return_value = [
+            (None, selectors.EVENT_READ)
+        ]
+
     def test_connection_rejects_job_with_execution_steps(self) -> None:
         endpoint = BluetoothEndpoint(
             name="MXW01",
