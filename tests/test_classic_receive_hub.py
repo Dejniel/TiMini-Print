@@ -36,7 +36,10 @@ class ClassicReceiveHubTests(unittest.TestCase):
 
     def test_send_can_outlast_receive_poll_when_peer_buffer_is_full(self) -> None:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
-        self.sock.settimeout(2.0)
+        # Windows socketpair() uses TCP: the peer's receive buffer can otherwise
+        # absorb the entire payload before the test starts draining it.
+        self.peer.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+        self.sock.settimeout(5.0)
         self.peer.settimeout(2.0)
         hub = ClassicReceiveHub(self.sock, poll_timeout=0.01)
         self.addCleanup(hub.stop)
@@ -70,7 +73,7 @@ class ClassicReceiveHubTests(unittest.TestCase):
             self.assertTrue(finished.wait(1.0))
             self.assertEqual(errors, [])
             self.assertEqual(received, payload)
-            self.assertEqual(self.sock.gettimeout(), 2.0)
+            self.assertEqual(self.sock.gettimeout(), 5.0)
         finally:
             self.peer.close()
             writer.join(timeout=3.0)
