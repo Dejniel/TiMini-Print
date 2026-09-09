@@ -4,6 +4,7 @@ import selectors
 import socket
 import sys
 import threading
+import time
 import unittest
 from unittest.mock import Mock, patch
 
@@ -36,9 +37,19 @@ class ClassicReceiveHubTests(unittest.TestCase):
 
     def test_send_can_outlast_receive_poll_when_peer_buffer_is_full(self) -> None:
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4096)
-        # Windows socketpair() uses TCP: the peer's receive buffer can otherwise
-        # absorb the entire payload before the test starts draining it.
-        self.peer.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 65536)
+        # Fill both ends' OS buffers before starting the hub. TCP socket pairs
+        # may absorb more than SO_SNDBUF suggests, especially on Windows.
+        self.sock.setblocking(False)
+        queued = 0
+        fill_deadline = time.monotonic() + 5.0
+        with selectors.DefaultSelector() as writable:
+            writable.register(self.sock, selectors.EVENT_WRITE)
+            while writable.select(timeout=0.2):
+                self.assertLess(time.monotonic(), fill_deadline, "could not fill socket buffers")
+                try:
+                    queued += self.sock.send(b"x" * 65536)
+                except BlockingIOError:
+                    pass
         self.sock.settimeout(5.0)
         self.peer.settimeout(2.0)
         hub = ClassicReceiveHub(self.sock, poll_timeout=0.01)
@@ -66,13 +77,13 @@ class ClassicReceiveHubTests(unittest.TestCase):
             # a full peer buffer must not make the writer fail after 10 ms.
             self.assertFalse(finished.wait(0.2), repr(errors))
             received = bytearray()
-            while len(received) < len(payload):
+            while len(received) < queued + len(payload):
                 chunk = self.peer.recv(65536)
                 self.assertTrue(chunk, "writer closed before sending the full payload")
                 received.extend(chunk)
             self.assertTrue(finished.wait(1.0))
             self.assertEqual(errors, [])
-            self.assertEqual(received, payload)
+            self.assertEqual(received, b"x" * (queued + len(payload)))
             self.assertEqual(self.sock.gettimeout(), 5.0)
         finally:
             self.peer.close()
