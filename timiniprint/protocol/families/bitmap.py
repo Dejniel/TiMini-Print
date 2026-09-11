@@ -57,12 +57,13 @@ def build_esc_star_raster(
     if mode not in (0, 1, 32, 33):
         raise ValueError("ESC * mode must be 0, 1, 32 or 33")
     width = raster.width
+    height = raster.height
     if width > 0xFFFF:
         raise ValueError("ESC * width must fit in two bytes")
     stripes = 1 if mode < 32 else 3
     band_height = stripes * 8
     payload = bytearray()
-    for band_start in range(0, raster.height, band_height):
+    for band_start in range(0, height, band_height):
         payload += b"\x1b\x2a" + bytes([mode])
         payload += width.to_bytes(2, "little")
         for x in range(width):
@@ -70,7 +71,7 @@ def build_esc_star_raster(
                 value = 0
                 for bit in range(8):
                     y = band_start + (stripe * 8) + bit
-                    if y < raster.height and raster.pixels[(y * width) + x]:
+                    if y < height and raster.pixels[(y * width) + x]:
                         value |= 1 << (7 - bit)
                 payload.append(value)
         payload += band_trailer

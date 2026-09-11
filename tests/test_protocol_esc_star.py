@@ -42,3 +42,18 @@ def test_rejects_unrepresentable_width():
     with pytest.raises(ValueError, match="width"):
         build_esc_star_raster(RasterBuffer([0] * 65536, 65536, PixelFormat.BW1),
                               band_trailer=b"")
+
+
+def test_validation_is_not_repeated_for_every_pixel(monkeypatch):
+    validations = []
+    original = RasterBuffer.validate
+
+    def validate(raster):
+        validations.append(raster)
+        original(raster)
+
+    monkeypatch.setattr(RasterBuffer, "validate", validate)
+    raster = RasterBuffer([1] * 32 * 25, 32, PixelFormat.BW1)
+    result = build_esc_star_raster(raster, band_trailer=b"\n")
+    assert result.count(b"\x1b\x2a\x21\x20\x00") == 2
+    assert len(validations) <= 2
