@@ -32,10 +32,11 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             b"".join(
                 (
                     b"\x1b\x40",
-                    b"\x1b\x61\x01",
-                    b"\x1f\x11\x02\x04",
-                    b"\x1d\x76\x30\x00\x01\x00\x02\x00\x80\x40",
-                    b"\x1b\x64\x02",
+                    b"\x1f\x11\x02\x02",
+                    b"\x1f\x11\x37\x64",
+                    b"\x1f\x11\x0b\x1f\x11\x35\x00",
+                    b"\x1d\x76\x30\x00\x02\x00\x02\x00\x08\x00\x04\x00",
+                    b"\x1b\x64\x02" * 2,
                 )
             ),
         )
@@ -54,7 +55,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
 
         self.assertNotIn(b"\x1b\x64", job.payload)
 
-    def test_m02_raster_blocks_split_after_255_lines(self) -> None:
+    def test_m02_uses_16_bit_raster_height(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m02")
         raster = RasterBuffer(pixels=[0] * (8 * 256), width=8, pixel_format=PixelFormat.BW1)
 
@@ -63,10 +64,10 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             is_text=False,
         )
 
-        self.assertEqual(job.payload.count(b"\x1d\x76\x30\x00\x01\x00\xff\x00"), 1)
-        self.assertEqual(job.payload.count(b"\x1d\x76\x30\x00\x01\x00\x01\x00"), 1)
+        self.assertEqual(job.payload.count(b"\x1d\x76\x30\x00"), 1)
+        self.assertIn(b"\x1d\x76\x30\x00\x02\x00\x00\x01", job.payload)
 
-    def test_t02_profile_builds_same_family_with_t02_feed(self) -> None:
+    def test_t02_uses_shared_compact_finish(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_t02")
         raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
 
@@ -77,23 +78,23 @@ class PhomemoEscProtocolTests(unittest.TestCase):
 
         self.assertEqual(device.protocol_family, ProtocolFamily.PHOMEMO_ESC)
         self.assertEqual(device.protocol_variant, "t02")
-        self.assertIn(b"\x1d\x76\x30\x00\x01\x00\x01\x00\x00", job.payload)
-        self.assertTrue(job.payload.endswith(b"\x1b\x64\x04"))
+        self.assertIn(b"\x1d\x76\x30\x00\x02\x00\x01\x00\x00\x00", job.payload)
+        self.assertTrue(job.payload.endswith(b"\x1b\x64\x02" * 2))
 
     def test_m02_pro_profile_builds_300dpi_raster_job(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m02_pro")
-        raster = RasterBuffer(pixels=[0] * 624, width=624, pixel_format=PixelFormat.BW1)
+        raster = RasterBuffer(pixels=[0] * 576, width=576, pixel_format=PixelFormat.BW1)
 
         job = PrinterProtocol(device).build_job(
             RasterSet.from_single(raster),
             is_text=False,
         )
 
-        self.assertEqual(device.profile.default_paper_preset.paper_width_px, 624)
+        self.assertEqual(device.profile.default_paper_preset.paper_width_px, 576)
         self.assertEqual(device.profile.dev_dpi, 300)
         self.assertEqual(device.protocol_variant, "m02_pro")
-        self.assertIn(b"\x1d\x76\x30\x00\x4e\x00\x01\x00", job.payload)
-        self.assertTrue(job.payload.endswith(b"\x1b\x64\x02"))
+        self.assertIn(b"\x1d\x76\x30\x00\x49\x00\x01\x00", job.payload)
+        self.assertTrue(job.payload.endswith(b"\x1b\x64\x02" * 2))
 
     def test_m02x_profile_builds_m02_family_raster_job(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m02x")
@@ -131,11 +132,11 @@ class PhomemoEscProtocolTests(unittest.TestCase):
             job.payload,
             b"".join(
                 (
-                    b"\x1b\x4e\x0d\x05",
-                    b"\x1b\x4e\x04\x0a",
-                    b"\x1f\x11\x0a",
+                    b"\x1b\x40",
+                    b"\x1f\x11\x02\x02\x1f\x11\x37\x64",
+                    b"\x1f\x11\x0b\x1f\x11\x35\x00",
                     b"\x1d\x76\x30\x00\x01\x00\x02\x00\x80\x40",
-                    b"\x1f\xf0\x05\x00\x1f\xf0\x03\x00",
+                    b"\x1b\x64\x02" * 2,
                 )
             ),
         )
@@ -221,7 +222,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
         raster = RasterBuffer(pixels=[0] * 8, width=8, pixel_format=PixelFormat.BW1)
 
         expected = {
-            PaperMode.TAG: b"\x1f\x11\x0a",
+            PaperMode.TAG: b"\x1f\x11\x0b",
             PaperMode.PLAIN: b"\x1f\x11\x0b",
             PaperMode.BLACK_TAG: b"\x1f\x11\x26",
         }
@@ -232,7 +233,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
                     is_text=False,
                     paper_mode=paper_mode,
                 )
-                self.assertEqual(job.payload[8:11], media_command)
+                self.assertEqual(job.payload[10:13], media_command)
 
     def test_m220_profile_uses_wide_m110_style_raster_job(self) -> None:
         device = PrinterCatalog.load().device_from_profile("phomemo_m220")
@@ -247,7 +248,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
         self.assertEqual(device.profile.dev_dpi, 203)
         self.assertEqual(device.protocol_variant, "m220")
         self.assertIn(b"\x1d\x76\x30\x00\x48\x00\x01\x00", job.payload)
-        self.assertTrue(job.payload.endswith(b"\x1f\xf0\x05\x00\x1f\xf0\x03\x00"))
+        self.assertTrue(job.payload.endswith(b"\x1b\x64\x02" * 2))
 
     def test_m02_detection_does_not_steal_m02s(self) -> None:
         catalog = PrinterCatalog.load()
@@ -375,7 +376,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
         device = PrinterCatalog.load().device_from_profile("phomemo_m02")
         protocol = PrinterProtocol(device)
 
-        self.assertEqual(protocol.supported_paper_modes(), (PaperMode.PLAIN,))
+        self.assertEqual(protocol.supported_paper_modes(), (PaperMode.PLAIN, PaperMode.TAG))
         self.assertEqual(protocol.build_paper_motion("feed").payload, b"\x1b\x4a\x50")
         self.assertEqual(protocol.build_paper_motion("retract").payload, b"")
 

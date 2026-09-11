@@ -12,29 +12,20 @@ from ....raster import PixelFormat, RasterBuffer
 from ...types import PaperMode
 from ..base import PrintJobRequest
 from ..bitmap import build_gs_v0_blocks
+from .compact import COMPACT_RECIPES, PhomemoCompactRecipe
 
 _INIT = b"\x1b\x40"
 _JUSTIFY = b"\x1b\x61"
 _DENSITY_PREFIX = b"\x1f\x11\x02"
-_M110_SPEED_PREFIX = b"\x1b\x4e\x0d"
-_M110_DENSITY_PREFIX = b"\x1b\x4e\x04"
-_M110_MEDIA_PREFIX = b"\x1f\x11"
-_M110_FOOTER = b"\x1f\xf0\x05\x00\x1f\xf0\x03\x00"
 _PRINTMASTER_PRINT_MULTI_PREFIX = b"\x1f\x11\x21"
 _PRINT_AND_FEED_LINES = b"\x1b\x64"
 _FEED_DOTS = b"\x1b\x4a"
 _MAX_RASTER_LINES_PER_BLOCK = 0xFF
 _M110_MAX_RASTER_LINES_PER_BLOCK = 0xFFFF
 _MANUAL_FEED_DOTS = 80
-_M02_VARIANTS = frozenset({"m02", "m02s", "m02x", "m02_pro", "t02"})
-_M110_VARIANTS = frozenset({"m110", "m220"})
+_M02_VARIANTS = frozenset({"m02x"})
 _PRINTMASTER_M110_VARIANTS = frozenset({"printmaster_m110", "printmaster_m120"})
 _PRINTMASTER_M110_ROW_WIDTH = 384
-_M110_PAPER_MEDIA = {
-    PaperMode.TAG: 0x0A,
-    PaperMode.PLAIN: 0x0B,
-    PaperMode.BLACK_TAG: 0x26,
-}
 
 
 @dataclass(frozen=True)
@@ -65,39 +56,6 @@ class PhomemoEscRecipe:
         )
         if request.ends_media_page and request.post_print_feed_count > 0:
             payload += _print_and_feed_lines(request.post_print_feed_count)
-        return bytes(payload)
-
-
-@dataclass(frozen=True)
-class PhomemoM110Recipe:
-    protocol_variant: str
-    default_speed: int = 5
-    default_density: int = 10
-    default_paper_mode: PaperMode = PaperMode.TAG
-
-    def build_job(self, request: PrintJobRequest) -> bytes:
-        if request.protocol_variant not in (None, self.protocol_variant):
-            raise ValueError(
-                f"Unsupported Phomemo ESC protocol variant: {request.protocol_variant}"
-            )
-        raster = request.require_raster(PixelFormat.BW1)
-        raster.validate()
-
-        payload = bytearray()
-        payload += _m110_speed_command(
-            _byte(request.speed, default=self.default_speed, minimum=1, maximum=5)
-        )
-        payload += _m110_density_command(
-            _byte(request.density, default=self.default_density, minimum=1, maximum=15)
-        )
-        payload += _m110_media_command(request.paper_mode or self.default_paper_mode)
-        payload += build_gs_v0_blocks(
-            raster,
-            max_lines_per_block=_M110_MAX_RASTER_LINES_PER_BLOCK,
-            lsb_first=False,
-            mode=0,
-        )
-        payload += _M110_FOOTER
         return bytes(payload)
 
 
@@ -134,8 +92,9 @@ def build_phomemo_esc_job(request: PrintJobRequest) -> bytes:
 
 def supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]:
     variant = protocol_variant or "m02"
-    if variant in _M110_VARIANTS:
-        return tuple(_M110_PAPER_MEDIA)
+    compact_recipe = COMPACT_RECIPES.get(variant)
+    if compact_recipe is not None:
+        return compact_recipe.paper_modes
     if variant in _PRINTMASTER_M110_VARIANTS:
         # TODO: Print Master has paper/material commands, but the current
         # M110/M120 recipe does not set medium type inline.
@@ -153,12 +112,13 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
 
 def _recipe_for_variant(
     protocol_variant: str | None,
-) -> PhomemoEscRecipe | PhomemoM110Recipe | PrintMasterM110Recipe:
+) -> PhomemoEscRecipe | PhomemoCompactRecipe | PrintMasterM110Recipe:
     variant = protocol_variant or "m02"
+    compact_recipe = COMPACT_RECIPES.get(variant)
+    if compact_recipe is not None:
+        return compact_recipe
     if variant in _M02_VARIANTS:
         return PhomemoEscRecipe(protocol_variant=variant)
-    if variant in _M110_VARIANTS:
-        return PhomemoM110Recipe(protocol_variant=variant)
     if variant == "printmaster_m110":
         return PrintMasterM110Recipe(protocol_variant=variant)
     if variant == "printmaster_m120":
@@ -178,21 +138,6 @@ def _byte(value: int | None, *, default: int, minimum: int, maximum: int) -> int
 
 def _density_command(density: int) -> bytes:
     return _DENSITY_PREFIX + bytes([density])
-
-
-def _m110_speed_command(speed: int) -> bytes:
-    return _M110_SPEED_PREFIX + bytes([speed])
-
-
-def _m110_density_command(density: int) -> bytes:
-    return _M110_DENSITY_PREFIX + bytes([density])
-
-
-def _m110_media_command(paper_mode: PaperMode) -> bytes:
-    media_type = _M110_PAPER_MEDIA.get(paper_mode)
-    if media_type is None:
-        raise ValueError(f"Unsupported Phomemo M110 paper mode: {paper_mode.value}")
-    return _M110_MEDIA_PREFIX + bytes([media_type])
 
 
 def _printmaster_print_multi_command(quantity: int) -> bytes:

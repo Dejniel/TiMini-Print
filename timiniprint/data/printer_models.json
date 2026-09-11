@@ -2348,6 +2348,7 @@
       {
         "exact_names": [
           "M02",
+          "M02C",
           "Mr.in",
           "Mr.in_M02"
         ]
@@ -2413,7 +2414,8 @@
       {
         "exact_names": [
           "M02 Pro",
-          "M02PRO"
+          "M02PRO",
+          "sandymaro"
         ]
       }
     ],

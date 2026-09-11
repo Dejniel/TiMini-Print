@@ -6153,7 +6153,7 @@
     "dev_dpi": 203,
     "has_id": false,
     "use_spp": true,
-    "can_print_label": false,
+    "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 0,
     "protocol_default": {
@@ -6186,30 +6186,31 @@
       },
       "density": {
         "image": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         },
         "text": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         }
       }
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r"
+      "plain_384r",
+      "tag_384r"
     ]
   },
   {
     "profile_key": "phomemo_m02s",
     "size": 2,
     "one_length": 8,
-    "dev_dpi": 203,
+    "dev_dpi": 300,
     "has_id": false,
     "use_spp": true,
-    "can_print_label": false,
+    "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 0,
     "protocol_default": {
@@ -6242,20 +6243,21 @@
       },
       "density": {
         "image": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         },
         "text": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         }
       }
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r"
+      "plain_576r",
+      "tag_576r"
     ]
   },
   {
@@ -6321,7 +6323,7 @@
     "dev_dpi": 203,
     "has_id": false,
     "use_spp": true,
-    "can_print_label": false,
+    "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 0,
     "protocol_default": {
@@ -6338,7 +6340,7 @@
       "chunk_size": 128,
       "delay_ms": 20
     },
-    "post_print_feed_count": 4,
+    "post_print_feed_count": 2,
     "print_defaults": {
       "energy": {
         "image": {
@@ -6354,20 +6356,21 @@
       },
       "density": {
         "image": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         },
         "text": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         }
       }
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r"
+      "plain_384r",
+      "tag_384r"
     ]
   },
   {
@@ -6377,7 +6380,7 @@
     "dev_dpi": 300,
     "has_id": false,
     "use_spp": true,
-    "can_print_label": false,
+    "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 0,
     "protocol_default": {
@@ -6410,20 +6413,21 @@
       },
       "density": {
         "image": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         },
         "text": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         }
       }
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_624r"
+      "plain_576r",
+      "tag_576r"
     ]
   },
   {
@@ -6433,7 +6437,7 @@
     "dev_dpi": 203,
     "has_id": false,
     "use_spp": true,
-    "can_print_label": false,
+    "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 0,
     "protocol_default": {
@@ -6450,7 +6454,7 @@
       "chunk_size": 128,
       "delay_ms": 20
     },
-    "post_print_feed_count": 0,
+    "post_print_feed_count": 2,
     "print_defaults": {
       "energy": {
         "image": {
@@ -6466,19 +6470,15 @@
       },
       "density": {
         "image": {
-          "low": 6,
-          "middle": 10,
-          "high": 15
+          "low": 1,
+          "middle": 2,
+          "high": 4
         },
         "text": {
-          "low": 6,
-          "middle": 10,
-          "high": 15
+          "low": 1,
+          "middle": 2,
+          "high": 4
         }
-      },
-      "speed": {
-        "image": 5,
-        "text": 5
       }
     },
     "a4xii": false,
@@ -6495,7 +6495,7 @@
     "dev_dpi": 203,
     "has_id": false,
     "use_spp": true,
-    "can_print_label": false,
+    "can_print_label": true,
     "label_value": "0",
     "back_paper_num": 0,
     "protocol_default": {
@@ -6512,7 +6512,7 @@
       "chunk_size": 128,
       "delay_ms": 20
     },
-    "post_print_feed_count": 0,
+    "post_print_feed_count": 2,
     "print_defaults": {
       "energy": {
         "image": {
@@ -6528,19 +6528,15 @@
       },
       "density": {
         "image": {
-          "low": 6,
-          "middle": 10,
-          "high": 15
+          "low": 1,
+          "middle": 2,
+          "high": 4
         },
         "text": {
-          "low": 6,
-          "middle": 10,
-          "high": 15
+          "low": 1,
+          "middle": 2,
+          "high": 4
         }
-      },
-      "speed": {
-        "image": 5,
-        "text": 5
       }
     },
     "a4xii": false,

@@ -189,12 +189,6 @@
     "paper_width_px": 576,
     "render_width_px": 576
   },
-  "plain_624r": {
-    "label": "Plain roll",
-    "paper_mode": "plain",
-    "paper_width_px": 624,
-    "render_width_px": 624
-  },
   "tag_1728r": {
     "label": "Tag",
     "paper_mode": "tag",

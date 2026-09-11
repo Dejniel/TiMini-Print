@@ -151,8 +151,8 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - L1 and clones: U2
 - L86 and clones: L86_Printer, APL86
 - LGM01 and clones: X7HP
-- M02 and clones: Mr.in, Mr.in_M02
-- M02 Pro and clones: M02PRO
+- M02 and clones: M02C, Mr.in, Mr.in_M02
+- M02 Pro and clones: M02PRO, sandymaro
 - M02S and clones: Mr.in_M02S
 - M02X and clones: M02D, M02E, MR2, M02A, KP-Q1
 - M102 and clones: M120, Q306, Q481, Q485, Q009, Q244, Q451, Q592

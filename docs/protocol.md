@@ -167,6 +167,20 @@ job = PrinterProtocol(device).build_job(
 
 When an integration splits one continuous raster document into several calls, pass `page_index`, `page_count`, and `page_flow=PageFlow.CONTINUOUS` for every chunk. The default is `PageFlow.PAGED`, so existing one-page raster calls remain self-contained.
 
+### Phomemo Compact Raster Input
+
+Phomemo M02/T02 accept up to 384 content dots; M02S/M02 Pro accept up to
+576 at 300 dpi. Pass the content raster without the four blank left dots:
+the encoder adds them, plus the M02S/M02 Pro label-roll right extension.
+M110/M120 accept up to 384 dots and M220 up to 576, with no implicit margin.
+Partial bytes are zero-filled without resizing or reversing the image.
+
+These profiles use compact density levels 1..4, mapped to wire density and
+its coefficient. Their low/middle/high defaults select levels 1/2/4. Setup
+occurs on the first page and two separate feed packets finish the document.
+Do not append the alternative `1F F0` footer or initialize each continuous
+render chunk independently.
+
 ## Custom Connector
 
 A custom connector lets you reuse TiMini protocol logic without using the built-in Bluetooth stack. It must connect using a `PrinterDevice` and return a connection with `send(job)` and `disconnect()`. The basic `send(job)` operation is the stream-only fallback used when a job has no execution steps.
