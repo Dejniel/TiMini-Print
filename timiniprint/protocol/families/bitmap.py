@@ -5,6 +5,26 @@ from ..compression import compress_zlib
 from ..encoding import pack_line
 
 
+def pad_raster(
+    raster: RasterBuffer, *, left: int = 0, right: int = 0,
+    bottom: int = 0, fill: int = 0,
+) -> RasterBuffer:
+    """Add constant-value margins required by a wire raster layout."""
+    if min(left, right, bottom) < 0:
+        raise ValueError("Raster padding must be non-negative")
+    if not (left or right or bottom):
+        return raster
+    width = left + raster.width + right
+    pixels: list[int] = []
+    for row in range(raster.height):
+        start = row * raster.width
+        pixels.extend([fill] * left)
+        pixels.extend(raster.pixels[start:start + raster.width])
+        pixels.extend([fill] * right)
+    pixels.extend([fill] * (width * bottom))
+    return RasterBuffer(pixels, width, raster.pixel_format)
+
+
 def pack_bw1_rows(raster: RasterBuffer, *, lsb_first: bool = False) -> bytes:
     raster.validate()
     if raster.pixel_format != PixelFormat.BW1:

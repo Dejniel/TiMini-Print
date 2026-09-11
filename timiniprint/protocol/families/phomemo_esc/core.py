@@ -7,12 +7,13 @@ modeled as a Phomemo family rather than a generic ESC/POS implementation.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 from ....raster import PixelFormat, RasterBuffer
 from ...types import PaperMode
 from ..base import PrintJobRequest
 from ..bitmap import build_gs_v0_blocks
-from .compact import COMPACT_RECIPES, PhomemoCompactRecipe
+from .compact import PhomemoCompactRecipe
 
 _INIT = b"\x1b\x40"
 _JUSTIFY = b"\x1b\x61"
@@ -23,13 +24,13 @@ _FEED_DOTS = b"\x1b\x4a"
 _MAX_RASTER_LINES_PER_BLOCK = 0xFF
 _M110_MAX_RASTER_LINES_PER_BLOCK = 0xFFFF
 _MANUAL_FEED_DOTS = 80
-_M02_VARIANTS = frozenset({"m02x"})
-_PRINTMASTER_M110_VARIANTS = frozenset({"printmaster_m110", "printmaster_m120"})
+_PHOMEMO_LABEL_MODES = (PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG)
 _PRINTMASTER_M110_ROW_WIDTH = 384
 
 
 @dataclass(frozen=True)
 class PhomemoEscRecipe:
+    paper_modes: ClassVar[tuple[PaperMode, ...]] = (PaperMode.PLAIN,)
     protocol_variant: str
     default_density: int = 4
     justification: int = 1
@@ -61,6 +62,8 @@ class PhomemoEscRecipe:
 
 @dataclass(frozen=True)
 class PrintMasterM110Recipe:
+    # TODO: The M110/M120 recipe does not set medium type inline.
+    paper_modes: ClassVar[tuple[PaperMode, ...]] = (PaperMode.TAG,)
     protocol_variant: str
     include_print_multi: bool = False
 
@@ -86,20 +89,25 @@ class PrintMasterM110Recipe:
         return bytes(payload)
 
 
+RECIPES = {
+    "m02": PhomemoCompactRecipe(384, left_padding=4),
+    "m02s": PhomemoCompactRecipe(576, left_padding=4, label_right_padding=12),
+    "m02x": PhomemoEscRecipe(protocol_variant="m02x"),
+    "m02_pro": PhomemoCompactRecipe(576, left_padding=4, label_right_padding=7),
+    "t02": PhomemoCompactRecipe(384, left_padding=4),
+    "m110": PhomemoCompactRecipe(384, paper_modes=_PHOMEMO_LABEL_MODES),
+    "m220": PhomemoCompactRecipe(576, paper_modes=_PHOMEMO_LABEL_MODES),
+    "printmaster_m110": PrintMasterM110Recipe(protocol_variant="printmaster_m110"),
+    "printmaster_m120": PrintMasterM110Recipe(protocol_variant="printmaster_m120", include_print_multi=True),
+}
+
+
 def build_phomemo_esc_job(request: PrintJobRequest) -> bytes:
     return _recipe_for_variant(request.protocol_variant).build_job(request)
 
 
 def supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]:
-    variant = protocol_variant or "m02"
-    compact_recipe = COMPACT_RECIPES.get(variant)
-    if compact_recipe is not None:
-        return compact_recipe.paper_modes
-    if variant in _PRINTMASTER_M110_VARIANTS:
-        # TODO: Print Master has paper/material commands, but the current
-        # M110/M120 recipe does not set medium type inline.
-        return (PaperMode.TAG,)
-    return (PaperMode.PLAIN,)
+    return _recipe_for_variant(protocol_variant).paper_modes
 
 
 def advance_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None = None) -> bytes:
@@ -113,17 +121,10 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
 def _recipe_for_variant(
     protocol_variant: str | None,
 ) -> PhomemoEscRecipe | PhomemoCompactRecipe | PrintMasterM110Recipe:
-    variant = protocol_variant or "m02"
-    compact_recipe = COMPACT_RECIPES.get(variant)
-    if compact_recipe is not None:
-        return compact_recipe
-    if variant in _M02_VARIANTS:
-        return PhomemoEscRecipe(protocol_variant=variant)
-    if variant == "printmaster_m110":
-        return PrintMasterM110Recipe(protocol_variant=variant)
-    if variant == "printmaster_m120":
-        return PrintMasterM110Recipe(protocol_variant=variant, include_print_multi=True)
-    raise ValueError(f"Unsupported Phomemo ESC protocol variant: {protocol_variant}")
+    try:
+        return RECIPES[protocol_variant or "m02"]
+    except KeyError:
+        raise ValueError(f"Unsupported Phomemo ESC protocol variant: {protocol_variant}") from None
 
 
 def _density(value: int | None, *, default: int) -> int:

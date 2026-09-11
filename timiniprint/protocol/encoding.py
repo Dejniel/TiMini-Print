@@ -72,10 +72,10 @@ def build_line_packets(
     line_feed_every: int,
 ) -> bytes:
     """Build data packets for all lines of a raster image."""
-    if width % 8 != 0:
-        raise ValueError("Width must be divisible by 8")
+    if width <= 0:
+        raise ValueError("Width must be greater than zero")
     height = len(pixels) // width
-    width_bytes = width // 8
+    width_bytes = (width + 7) // 8
     out = bytearray()
     for row in range(height):
         line = pixels[row * width : (row + 1) * width]

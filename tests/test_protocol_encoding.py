@@ -29,16 +29,33 @@ class ProtocolEncodingTests(unittest.TestCase):
         self.assertEqual(self.encoding.pack_line(line, lsb_first=False), b"\x80")
 
     def test_build_line_packets_width_validation(self) -> None:
-        with self.assertRaisesRegex(ValueError, "Width must be divisible by 8"):
-            self.encoding.build_line_packets(
-                [0, 1, 0],
-                3,
-                5,
-                self.types.ImageEncoding.TINY_RAW,
-                True,
-                False,
-                0,
-            )
+        for width in (0, -1):
+            with self.assertRaisesRegex(ValueError, "Width must be greater than zero"):
+                self.encoding.build_line_packets(
+                    [], width, 5, self.types.ImageEncoding.TINY_RAW, True, "tiny", 0,
+                )
+
+    def test_unaligned_rows_keep_bit_order_rle_choice_and_feed_interval(self) -> None:
+        from timiniprint.protocol.family import ProtocolFamily
+        from timiniprint.protocol.packet import PrefixedPacketStreamDecoder
+
+        for family in (ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED):
+            for width in (1, 7, 9, 17, 383):
+                for lsb in (False, True):
+                    for encoding in (self.types.ImageEncoding.TINY_RAW, self.types.ImageEncoding.TINY_RLE):
+                        with self.subTest(family=family, width=width, lsb=lsb, encoding=encoding):
+                            line = [int(i % 2 == 0) for i in range(width)]
+                            data = self.encoding.build_line_packets(line * 201, width, 40, encoding, lsb, family, 200)
+                            packets = PrefixedPacketStreamDecoder(family).feed(data)
+                            rle = self.encoding.rle_encode_line(line)
+                            use_rle = encoding is self.types.ImageEncoding.TINY_RLE and len(rle) <= (width + 7) // 8
+                            expected = bytes(rle) if use_rle else self.encoding.pack_line(line, lsb)
+                            self.assertEqual(len(packets), 202)
+                            self.assertEqual(packets[200].opcode, 0xBD)
+                            self.assertEqual(packets[200].payload, b"\x28")
+                            for packet in packets[:200] + packets[201:]:
+                                self.assertEqual(packet.opcode, 0xBF if use_rle else 0xA2)
+                                self.assertEqual(packet.payload, expected)
 
     def test_build_line_packets_rle_vs_raw_and_line_feed(self) -> None:
         rle_bytes = self.encoding.build_line_packets(

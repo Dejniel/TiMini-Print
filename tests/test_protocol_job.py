@@ -204,6 +204,25 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x90, 0x00, 0x11]), data)
         self.assertNotIn(bytes([0xA1, 0x00, 0x02, 0x00, 0x30, 0x00]), data)
 
+    def test_line_variants_preserve_unaligned_left_padding_and_periodic_speed(self) -> None:
+        from timiniprint.protocol.packet import PrefixedPacketStreamDecoder
+
+        for variant in ("line_eight", "professional"):
+            for family in (ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED):
+                for pipeline in (self.tiny_raw, self.tiny_rle):
+                    with self.subTest(variant=variant, family=family, encoding=pipeline.encoding):
+                        data = self.builders._build_job(
+                            pixels=[1, 0, 1, 0, 1, 0, 1, 0] * 201, width=8,
+                            is_text=False, speed=10, energy=5000, density=None,
+                            blackening=3, lsb_first=True, protocol_family=family,
+                            protocol_variant=variant, feed_padding=0, dev_dpi=203,
+                            left_padding_pixels=3, image_pipeline=pipeline,
+                        )
+                        packets = PrefixedPacketStreamDecoder(family).feed(data)
+                        rows = [p.payload for p in packets if p.opcode == 0xA2]
+                        self.assertEqual(rows, [b"\xa8\x02"] * 201)
+                        self.assertEqual(sum(p.opcode == 0xBD for p in packets), 2 if variant == "line_eight" else 1)
+
     def test_continuous_tiny_variants_omit_intermediate_tail_feed(self) -> None:
         for variant in ("line_eight", "professional", "esc_star", "esc_star_eight"):
             with self.subTest(variant=variant):

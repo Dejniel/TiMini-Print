@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from ....raster import PixelFormat, RasterBuffer
 from ...types import PaperMode
 from ..base import PrintJobRequest
-from ..bitmap import build_gs_v0_blocks
+from ..bitmap import build_gs_v0_blocks, pad_raster
 
 _INIT = b"\x1b\x40"
 _DENSITY = b"\x1f\x11\x02"
@@ -17,7 +17,6 @@ _UNCOMPRESSED = b"\x1f\x11\x35\x00"
 _FEED = b"\x1b\x64\x02"
 _DENSITY_LEVELS = ((1, 100), (2, 100), (4, 100), (4, 150))
 _PAPER_MEDIA = {PaperMode.PLAIN: 0x0B, PaperMode.TAG: 0x0B, PaperMode.BLACK_TAG: 0x26}
-_LABEL_MODES = (PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG)
 
 
 @dataclass(frozen=True)
@@ -57,26 +56,4 @@ class PhomemoCompactRecipe:
         right_padding = 0
         if paper_mode is PaperMode.TAG and self.label_right_padding:
             right_padding = self.content_width + self.label_right_padding - raster.width
-        if not self.left_padding and not right_padding:
-            return raster
-        pixels: list[int] = []
-        for row in range(raster.height):
-            start = row * raster.width
-            pixels.extend([0] * self.left_padding)
-            pixels.extend(raster.pixels[start : start + raster.width])
-            pixels.extend([0] * right_padding)
-        return RasterBuffer(
-            pixels=pixels,
-            width=self.left_padding + raster.width + right_padding,
-            pixel_format=PixelFormat.BW1,
-        )
-
-
-COMPACT_RECIPES = {
-    "m02": PhomemoCompactRecipe(384, left_padding=4),
-    "m02s": PhomemoCompactRecipe(576, left_padding=4, label_right_padding=12),
-    "m02_pro": PhomemoCompactRecipe(576, left_padding=4, label_right_padding=7),
-    "t02": PhomemoCompactRecipe(384, left_padding=4),
-    "m110": PhomemoCompactRecipe(384, paper_modes=_LABEL_MODES),
-    "m220": PhomemoCompactRecipe(576, paper_modes=_LABEL_MODES),
-}
+        return pad_raster(raster, left=self.left_padding, right=right_padding)

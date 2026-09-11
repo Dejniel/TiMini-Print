@@ -8,13 +8,13 @@ from ..._prefixed_commands import (
     feed_paper_cmd,
     print_mode_cmd,
 )
-from ...encoding import pack_line, rle_encode_line
+from ...encoding import build_line_packets
 from ...family import ProtocolFamily
 from ...packet import make_packet
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
-from ..bitmap import build_esc_star_24dot_raster
+from ..bitmap import build_esc_star_24dot_raster, pad_raster
 
 
 VARIANT_LINE_EIGHT = "line_eight"
@@ -49,47 +49,10 @@ def _supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...
 
 
 def _left_padded_pixels(request: PrintJobRequest) -> tuple[list[int], int]:
-    raster = request.require_raster(PixelFormat.BW1)
-    pixels = list(raster.pixels)
-    padding = max(0, request.left_padding_pixels)
-    if padding == 0:
-        return pixels, raster.width
-
-    out: list[int] = []
-    for row in range(raster.height):
-        start = row * raster.width
-        out.extend([0] * padding)
-        out.extend(pixels[start : start + raster.width])
-    return out, raster.width + padding
-
-
-def _line_packets(
-    pixels: list[int],
-    width: int,
-    speed: int,
-    encoding: ImageEncoding,
-    lsb_first: bool,
-    family: ProtocolFamily | str,
-    periodic_speed: bool = True,
-) -> bytes:
-    height = len(pixels) // width
-    width_bytes = (width + 7) // 8
-    out = bytearray()
-    for row in range(height):
-        line = pixels[row * width : (row + 1) * width]
-        if encoding == ImageEncoding.TINY_RLE:
-            rle = rle_encode_line(line)
-            if len(rle) <= width_bytes:
-                out += make_packet(0xBF, bytes(rle), family)
-            else:
-                out += make_packet(0xA2, pack_line(line, lsb_first), family)
-        elif encoding == ImageEncoding.TINY_RAW:
-            out += make_packet(0xA2, pack_line(line, lsb_first), family)
-        else:
-            raise ValueError(f"Unsupported tiny image encoding: {encoding.value}")
-        if periodic_speed and (row + 1) % 200 == 0:
-            out += feed_paper_cmd(speed, family)
-    return bytes(out)
+    raster = pad_raster(
+        request.require_raster(PixelFormat.BW1), left=max(0, request.left_padding_pixels),
+    )
+    return list(raster.pixels), raster.width
 
 
 def _line_eight_tail_feed(request: PrintJobRequest) -> int:
@@ -114,13 +77,14 @@ def _build_line_eight_job(request: PrintJobRequest) -> bytes:
     payload += energy_cmd(request.energy, request.protocol_family)
     payload += print_mode_cmd(request.is_text, request.protocol_family)
     payload += feed_paper_cmd(speed, request.protocol_family)
-    payload += _line_packets(
+    payload += build_line_packets(
         pixels=pixels,
         width=width,
         speed=speed,
-        encoding=request.image_pipeline.encoding,
+        image_encoding=request.image_pipeline.encoding,
         lsb_first=request.lsb_first,
-        family=request.protocol_family,
+        protocol_family=request.protocol_family,
+        line_feed_every=200,
     )
     if request.ends_media_page:
         payload += _paper_feed_check_black_cmd(
@@ -142,14 +106,14 @@ def _build_professional_raw_fallback_job(request: PrintJobRequest) -> bytes:
     payload += energy_cmd(request.energy, request.protocol_family)
     payload += print_mode_cmd(request.is_text, request.protocol_family)
     payload += feed_paper_cmd(speed, request.protocol_family)
-    payload += _line_packets(
+    payload += build_line_packets(
         pixels=pixels,
         width=width,
         speed=speed,
-        encoding=request.image_pipeline.encoding,
+        image_encoding=request.image_pipeline.encoding,
         lsb_first=request.lsb_first,
-        family=request.protocol_family,
-        periodic_speed=False,
+        protocol_family=request.protocol_family,
+        line_feed_every=0,
     )
     if request.ends_media_page:
         payload += _paper_feed_check_black_cmd(
