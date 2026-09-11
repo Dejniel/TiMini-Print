@@ -14,7 +14,7 @@ from ...packet import make_packet
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
-from ..bitmap import build_esc_star_24dot_raster, pad_raster
+from ..bitmap import build_esc_star_raster, pad_raster
 
 
 VARIANT_LINE_EIGHT = "line_eight"
@@ -131,7 +131,7 @@ def _esc_star_energy_byte(energy: int) -> int:
 
 
 def _esc_star_24dot_payload(request: PrintJobRequest) -> bytes:
-    return build_esc_star_24dot_raster(
+    return build_esc_star_raster(
         request.require_raster(PixelFormat.BW1),
         band_trailer=b"\x1b\x4a\x00\x0a",
     )

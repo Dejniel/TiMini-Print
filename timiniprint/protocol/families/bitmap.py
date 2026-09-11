@@ -43,23 +43,30 @@ def packed_row_width_bytes(width: int) -> int:
     return (width + 7) // 8
 
 
-def build_esc_star_24dot_raster(
+def build_esc_star_raster(
     raster: RasterBuffer,
     *,
     band_trailer: bytes,
+    mode: int = 33,
 ) -> bytes:
-    """Pack a BW1 raster into ESC ``*`` 24-dot column bands."""
+    """Pack BW1 columns using ESC ``*`` modes 0/1 (8 dots) or 32/33 (24)."""
 
     raster.validate()
     if raster.pixel_format != PixelFormat.BW1:
-        raise ValueError("ESC 24-dot raster packing requires a bw1 raster")
+        raise ValueError("ESC * raster packing requires a bw1 raster")
+    if mode not in (0, 1, 32, 33):
+        raise ValueError("ESC * mode must be 0, 1, 32 or 33")
     width = raster.width
+    if width > 0xFFFF:
+        raise ValueError("ESC * width must fit in two bytes")
+    stripes = 1 if mode < 32 else 3
+    band_height = stripes * 8
     payload = bytearray()
-    for band_start in range(0, raster.height, 24):
-        payload += b"\x1b\x2a\x21"
+    for band_start in range(0, raster.height, band_height):
+        payload += b"\x1b\x2a" + bytes([mode])
         payload += width.to_bytes(2, "little")
         for x in range(width):
-            for stripe in range(3):
+            for stripe in range(stripes):
                 value = 0
                 for bit in range(8):
                     y = band_start + (stripe * 8) + bit
