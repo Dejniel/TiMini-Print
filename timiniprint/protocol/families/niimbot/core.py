@@ -245,6 +245,7 @@ class _NiimbotPrintTask(ABC):
                 frame(NiimbotRequest.PRINT_END),
                 NiimbotResponse.PRINT_END,
                 matcher=print_end_success_matcher(),
+                reply_required=True,
             ),
         )
 
@@ -256,6 +257,7 @@ class _NiimbotPrintTask(ABC):
         *,
         timeout_sec: float | None = None,
         matcher: ProtocolReplyMatcher | None = None,
+        reply_required: bool = False,
     ) -> ProtocolStep:
         return ProtocolStep.query(
             label,
@@ -263,6 +265,7 @@ class _NiimbotPrintTask(ABC):
             expect=ProtocolReplyExpectation.NONE,
             timeout_sec=self.packet_timeout_sec if timeout_sec is None else timeout_sec,
             reply_matcher=matcher or response_matcher(expected),
+            reply_required=reply_required,
         )
 
 
@@ -282,6 +285,7 @@ class _D11V1PrintTask(_NiimbotPrintTask):
                 "page index",
                 reply_matcher=page_index_done_matcher(request.page_count),
                 timeout_sec=self.status_timeout_sec,
+                reply_required=True,
             ),
         )
 
@@ -298,6 +302,7 @@ class _D110PrintTask(_NiimbotPrintTask):
                 expect=ProtocolReplyExpectation.NONE,
                 timeout_sec=self.packet_timeout_sec,
                 reply_matcher=print_status_done_matcher(request.page_index),
+                reply_required=True,
                 repeat_interval_sec=self.status_poll_interval_sec,
                 repeat_timeout_sec=self.status_timeout_sec,
                 include_in_payload=False,

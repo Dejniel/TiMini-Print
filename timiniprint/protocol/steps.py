@@ -37,6 +37,7 @@ class ProtocolStep:
     reply_matcher: ProtocolReplyMatcher | None = None
     repeat_interval_sec: float | None = None
     repeat_timeout_sec: float | None = None
+    reply_required: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "data", bytes(self.data))
@@ -48,6 +49,11 @@ class ProtocolStep:
             raise ValueError("Protocol step repeat interval must be positive")
         if self.repeat_timeout_sec is not None and self.repeat_timeout_sec < 0:
             raise ValueError("Protocol step repeat timeout must be non-negative")
+        if self.reply_required and (
+            self.operation is ProtocolStepOperation.SEND
+            or (self.reply_matcher is None and self.expect is ProtocolReplyExpectation.NONE)
+        ):
+            raise ValueError("A required protocol reply needs a query/wait and an expectation")
 
     @classmethod
     def send(cls, label: str, data: bytes) -> "ProtocolStep":
@@ -65,6 +71,7 @@ class ProtocolStep:
         reply_matcher: ProtocolReplyMatcher | None = None,
         repeat_interval_sec: float | None = None,
         repeat_timeout_sec: float | None = None,
+        reply_required: bool = False,
     ) -> "ProtocolStep":
         return cls(
             label=label,
@@ -76,6 +83,7 @@ class ProtocolStep:
             reply_matcher=reply_matcher,
             repeat_interval_sec=repeat_interval_sec,
             repeat_timeout_sec=repeat_timeout_sec,
+            reply_required=reply_required,
         )
 
     @classmethod
@@ -85,6 +93,7 @@ class ProtocolStep:
         *,
         reply_matcher: ProtocolReplyMatcher,
         timeout_sec: float | None = None,
+        reply_required: bool = False,
     ) -> "ProtocolStep":
         return cls(
             label=label,
@@ -94,6 +103,7 @@ class ProtocolStep:
             timeout_sec=timeout_sec,
             include_in_payload=False,
             reply_matcher=reply_matcher,
+            reply_required=reply_required,
         )
 
 

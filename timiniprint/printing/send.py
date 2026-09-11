@@ -48,6 +48,10 @@ async def send_prepared_job(
             )
 
     if not sent_via_steps:
+        if any(step.reply_required for step in job.steps):
+            raise RuntimeError(
+                "This job requires protocol replies; stream-only sending cannot confirm them"
+            )
         await connection.send(job)
 
     # The transport returns as soon as the bytes are written, but some printers

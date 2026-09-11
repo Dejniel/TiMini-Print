@@ -20,20 +20,27 @@ async def execute_protocol_step(
         await session.send_standard_payload(step.data)
         return None
     if step.operation is ProtocolStepOperation.WAIT:
-        return await _execute_wait_step(
+        reply = await _execute_wait_step(
             session,
             step,
             timeout=timeout,
             log_prefix=log_prefix,
         )
-    if step.operation is ProtocolStepOperation.QUERY:
-        return await _execute_query_step(
+    elif step.operation is ProtocolStepOperation.QUERY:
+        reply = await _execute_query_step(
             session,
             step,
             timeout=timeout,
             log_prefix=log_prefix,
         )
-    raise ValueError(f"Unsupported protocol step operation: {step.operation.value}")
+    else:
+        raise ValueError(f"Unsupported protocol step operation: {step.operation.value}")
+    if step.reply_required and not reply_matches_for(step, reply):
+        raise RuntimeError(
+            f"Required protocol reply for {step.label!r} was not confirmed: "
+            f"got {bytes_preview(reply)}"
+        )
+    return reply
 
 
 async def _execute_wait_step(

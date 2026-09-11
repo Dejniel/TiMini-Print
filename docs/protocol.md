@@ -230,6 +230,13 @@ For full support of runtime-sensitive families, the connection may also implemen
 
 `wait_for_reply(...)` is the transport-neutral passive receive operation used by protocol steps and completion controllers. A Classic SPP connection reads from its socket; a BLE connection can satisfy the same operation through notifications. `wait_for_notification(...)` remains available for controllers whose behavior is specifically tied to BLE notification state.
 
+`ProtocolStep.query(...)` and `ProtocolStep.wait(...)` can set
+`reply_required=True`. A missing or rejected reply then fails the job before
+the next step; repeated queries first use their configured polling budget.
+Such jobs cannot fall back to unchecked stream-only sending. NIIMBOT uses
+this for print completion and print-end acknowledgements. Other steps retain
+their existing optional-reply behavior unless explicitly marked required.
+
 ## Editable Printer Configs
 
 Use printer configs when you want an explicit, editable runtime device instead of auto-detection every time.
