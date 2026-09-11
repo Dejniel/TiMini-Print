@@ -140,14 +140,16 @@ class ClassicReceiveHub:
                     break
                 data = bytes(payload)
                 with self._condition:
+                    listener = self._listener
+                # Update session state before predicates can observe this reply.
+                if listener is not None:
+                    listener(data)
+                with self._condition:
                     self._history.extend(data)
                     self._trim_history()
                     for waiter in tuple(self._waiters):
                         self._match_waiter(waiter)
-                    listener = self._listener
                     self._condition.notify_all()
-                if listener is not None:
-                    listener(data)
         finally:
             selector.close()
             with self._condition:

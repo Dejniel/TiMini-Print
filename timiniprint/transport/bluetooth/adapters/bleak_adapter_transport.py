@@ -36,6 +36,7 @@ class _BleakBindings:
     write_char_uuid: str = ""
     bulk_write_char_uuid: str = ""
     notify_char_uuid: str = ""
+    additional_notify_char_uuids: tuple[str, ...] = ()
 
 
 @dataclass
@@ -59,6 +60,7 @@ class _BleakTransportSession:
         self._reporter = reporter
         self.bindings = _BleakBindings()
         self.notify_started = False
+        self._subscribed_notify_uuids: list[str] = []
         self._flow_can_write = True
         self._flow_resume_event: asyncio.Event | None = None
         self._flow_resume_event_loop: asyncio.AbstractEventLoop | None = None
@@ -107,6 +109,7 @@ class _BleakTransportSession:
         )
 
     def configure_endpoints(self, services: Iterable[object]) -> None:
+        services = tuple(services)
         transport = self._transport_profile
 
         self.bindings.bulk_write_char = None
@@ -130,7 +133,12 @@ class _BleakTransportSession:
 
         self.bindings.notify_char = None
         self.bindings.notify_char_uuid = ""
-        if transport.notify_char_uuid:
+        self.bindings.additional_notify_char_uuids = ()
+        service_notify = self._service_notify_characteristics(services, transport.notify_service_uuids)
+        if transport.notify_service_uuids:
+            self.bindings.notify_char = service_notify[0] if service_notify else None
+            self.bindings.additional_notify_char_uuids = tuple(str(char.uuid).lower() for char in service_notify[1:])
+        elif transport.notify_char_uuid:
             self.bindings.notify_char = self._find_characteristic_by_uuid(
                 services,
                 transport.notify_char_uuid,
@@ -173,31 +181,50 @@ class _BleakTransportSession:
             else:
                 self._runtime_controller = runtime_controller
 
+    @staticmethod
+    def _service_notify_characteristics(services, service_uuids) -> tuple[Any, ...]:
+        allowed = {uuid.lower() for uuid in service_uuids}
+        found = {}
+        for service in services:
+            if str(getattr(service, "uuid", "")).lower() not in allowed:
+                continue
+            for char in getattr(service, "characteristics", ()):
+                props = {str(value).lower() for value in getattr(char, "properties", ())}
+                if props.intersection({"notify", "indicate"}):
+                    found[str(char.uuid).lower()] = char
+        return tuple(found[uuid] for uuid in sorted(found))
+
     async def start_notify_if_available(self, client: Any, callback) -> None:
-        if not self.bindings.notify_char or not self.bindings.notify_char_uuid:
-            return
         start_notify = getattr(client, "start_notify", None)
         if not callable(start_notify):
             return
-        await start_notify(self.bindings.notify_char_uuid, callback)
-        self.notify_started = True
-        self.report_debug(
-            f"subscribed to notify characteristic {self.bindings.notify_char_uuid}"
-        )
+        uuids = (self.bindings.notify_char_uuid, *self.bindings.additional_notify_char_uuids)
+        try:
+            for uuid in filter(None, uuids):
+                await start_notify(uuid, callback)
+                self._subscribed_notify_uuids.append(uuid)
+                self.notify_started = True
+        except Exception:
+            await self.stop_notify_if_started(client)
+            raise
+        if self.notify_started:
+            self.report_debug(f"subscribed to notify characteristics {self._subscribed_notify_uuids}")
 
     async def stop_notify_if_started(self, client: Any) -> None:
         if self._runtime_controller is not None:
             await self._runtime_controller.stop(self)
         self._cancel_notification_waiters()
-        if not self.notify_started or not self.bindings.notify_char_uuid:
+        if not self.notify_started:
             return
         stop_notify = getattr(client, "stop_notify", None)
         if not callable(stop_notify):
             return
-        try:
-            await stop_notify(self.bindings.notify_char_uuid)
-        except Exception:
-            pass
+        for uuid in self._subscribed_notify_uuids:
+            try:
+                await stop_notify(uuid)
+            except Exception:
+                pass
+        self._subscribed_notify_uuids.clear()
         self.notify_started = False
 
     async def initialize_connection(
@@ -404,9 +431,11 @@ class _BleakTransportSession:
         now = time.monotonic()
         self._last_notification_monotonic = now
         self._remember_notification(now, payload)
-        self._match_notification_waiters(payload)
-        if self._runtime_controller is not None:
-            self._runtime_controller.handle_notification(self, payload)
+        try:
+            if self._runtime_controller is not None:
+                self._runtime_controller.handle_notification(self, payload)
+        finally:
+            self._match_notification_waiters(payload)
         self.report_debug(f"BLE notify: {payload.hex()}")
 
     def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:

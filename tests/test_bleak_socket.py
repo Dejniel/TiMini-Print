@@ -250,13 +250,15 @@ class BleakSocketTests(unittest.TestCase):
         client = _Client([])
         s._client = client
         s._connected = True
-        s._notify_started = True
         s._transport.bindings.notify_char_uuid = "0000ae02-0000-1000-8000-00805f9b34fb"
+        loop.run_until_complete(s._transport.start_notify_if_available(client, s._handle_notification))
+        self.assertTrue(client.notify_callbacks)
         s.close()
         self.assertFalse(s._connected)
         self.assertIsNone(s._client)
         self.assertIsNone(s._loop)
         self.assertEqual(client.stop_notify_calls, ["0000ae02-0000-1000-8000-00805f9b34fb"])
+        self.assertFalse(client.notify_callbacks)
 
 
 if __name__ == "__main__":

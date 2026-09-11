@@ -20,6 +20,8 @@ class BleTransportProfile:
     preferred_service_uuid: str = ""
     preferred_write_char_uuid: str = ""
     notify_char_uuid: str = ""
+    # Subscribe every notify/indicate characteristic in these services.
+    notify_service_uuids: tuple[str, ...] = ()
     prefer_generic_notify: bool = False
     flow_controlled_standard_write: bool = False
     flow_resume_timeout_s: float | None = None
