@@ -8,6 +8,9 @@ from ..protocol.steps import reply_matches_expectation
 from .runtime.base import RuntimeSessionApi
 
 
+_MAX_QUERY_REPLY_BYTES = 65536
+
+
 async def execute_protocol_step(
     session: RuntimeSessionApi,
     step: ProtocolStep,
@@ -127,13 +130,25 @@ async def _query_once(
         await session.send_standard_payload(step.data)
         reply = None
     else:
+        # Atomic notification queries expose individual fragments, whereas
+        # protocol matchers consume the accumulated reply, just like query_control_packet.
+        buffer = bytearray()
+
+        def complete(fragment: bytes) -> bool:
+            if len(buffer) + len(fragment) > _MAX_QUERY_REPLY_BYTES:
+                raise RuntimeError("Protocol query reply exceeded the reassembly limit")
+            buffer.extend(fragment)
+            return reply_complete(bytes(buffer))
+
         reply = await session.send_control_packet_wait_notification(
             step.data,
             label=step.label,
-            match=reply_complete,
+            match=complete,
             timeout=query_timeout,
             required=False,
         )
+        if buffer:
+            reply = bytes(buffer)
     session.report_debug(
         f"{log_prefix} query {step.label}: "
         f"tx={bytes_preview(step.data)} rx={bytes_preview(reply)}"
