@@ -87,6 +87,8 @@ class PrintJobRequest:
     one_length: int = 0
     a4xii: bool = False
     a4_sheet_max_height: int | None = None
+    image_energy: int | None = None
+    back_paper_num: int | None = None
     paper_mode: PaperMode | None = None
     page_index: int = 1
     page_count: int = 1

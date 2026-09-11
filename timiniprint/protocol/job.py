@@ -115,6 +115,8 @@ class PrinterProtocol:
             )
         )
         payload, steps = _build_job_model_from_raster_set(
+            image_energy=self.device.profile.select_energy(is_text=False, blackening=blackening),
+            back_paper_num=self.device.profile.back_paper_num,
             raster_set=raster_set,
             is_text=is_text,
             speed=self.device.profile.select_speed(is_text=is_text),

@@ -94,9 +94,13 @@ def _build_request(
     page_count: int = 1,
     page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
+    image_energy: int | None = None,
+    back_paper_num: int | None = None,
 ) -> PrintJobRequest:
     family = ProtocolFamily.from_value(protocol_family)
     request = PrintJobRequest(
+        image_energy=image_energy,
+        back_paper_num=back_paper_num,
         raster_set=raster_set,
         image_pipeline=_resolve_image_pipeline(family, image_pipeline),
         is_text=is_text,
@@ -430,8 +434,12 @@ def _build_job_model_from_raster_set(
     page_count: int = 1,
     page_flow: PageFlow = PageFlow.PAGED,
     runtime_capabilities: RuntimePrintCapabilities | None = None,
+    image_energy: int | None = None,
+    back_paper_num: int | None = None,
 ) -> tuple[bytes, tuple[ProtocolStep, ...]]:
     request = _build_request(
+        image_energy=image_energy,
+        back_paper_num=back_paper_num,
         raster_set=raster_set,
         is_text=is_text,
         speed=speed,
