@@ -92,6 +92,31 @@ class BleNotifyServicesTests(unittest.IsolatedAsyncioTestCase):
             await session.stop_notify_if_started(client)
 
 
+class PhomemoNotifyProfileTests(unittest.IsolatedAsyncioTestCase):
+    async def test_notify_selection_uses_properties_in_preferred_service(self):
+        from timiniprint.devices import get_ble_transport_profile
+        from timiniprint.protocol.family import ProtocolFamily
+
+        profile = get_ble_transport_profile(ProtocolFamily.PHOMEMO_ESC)
+        for property_name in ("notify", "indicate"):
+            with self.subTest(property=property_name):
+                session = _BleakTransportSession(
+                    profile, _BleWriteEndpointResolver(), reporting.DUMMY_REPORTER,
+                )
+                reply = characteristic("reply-channel", property_name)
+                session.configure_endpoints([
+                    SimpleNamespace(uuid="unrelated", characteristics=[characteristic("other", "notify")]),
+                    SimpleNamespace(uuid=profile.preferred_service_uuid, characteristics=[
+                        characteristic(profile.preferred_write_char_uuid, "write-without-response"), reply,
+                    ]),
+                ])
+                client = Client()
+                await session.start_notify_if_available(client, lambda *_args: None)
+                self.assertEqual(set(client.callbacks), {reply.uuid})
+                await session.stop_notify_if_started(client)
+                self.assertEqual(client.stopped, [reply.uuid])
+
+
 class ClassicReplyObservationTests(unittest.TestCase):
     def test_listener_updates_state_before_passive_reply_predicate(self):
         reader, writer = socket.socketpair()

@@ -67,6 +67,7 @@ _PROFILES = {
     ProtocolFamily.PHOMEMO_ESC: BleTransportProfile(
         preferred_service_uuid="0000ff00-0000-1000-8000-00805f9b34fb",
         preferred_write_char_uuid="0000ff02-0000-1000-8000-00805f9b34fb",
+        prefer_generic_notify=True,
         standard_chunk_cap=128,
         standard_write_delay_ms=20,
     ),
