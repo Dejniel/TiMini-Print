@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING, Mapping
 
 from ...protocol.families.niimbot.core import (
+    NiimbotConnectResult,
     NiimbotResponse,
     connect_packet,
+    connect_result_from_reply,
     model_id_from_reply,
     model_id_query_packet,
     protocol_version_from_status_data,
@@ -13,9 +16,13 @@ from ...protocol.families.niimbot.core import (
 )
 from .base import RuntimeController, RuntimeSessionApi
 
+if TYPE_CHECKING:
+    from ...devices import PrinterDevice
+
 
 @dataclass
 class _NiimbotProbeState:
+    connect_result: NiimbotConnectResult | None = None
     model_id: int | None = None
     protocol_version: int | None = None
     warning_emitted: bool = False
@@ -30,6 +37,7 @@ class NiimbotRuntimeController(RuntimeController):
             self._state = previous._state
 
     async def probe_capabilities(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+        self._state = _NiimbotProbeState()
         connect_reply = await self._query(
             session,
             "connect",
@@ -37,18 +45,29 @@ class NiimbotRuntimeController(RuntimeController):
             NiimbotResponse.CONNECT,
             timeout=timeout,
         )
-        if connect_reply is None:
-            self._warn_probe_unavailable(session, reason="connect reply missing")
+        result = connect_result_from_reply(connect_reply)
+        self._state.connect_result = result
+        if result not in {
+            NiimbotConnectResult.CONNECTED,
+            NiimbotConnectResult.CONNECTED_NEW,
+            NiimbotConnectResult.CONNECTED_V3,
+        }:
+            self._warn_probe_unavailable(session, reason="missing or unsuccessful connect result")
             return
 
-        status_reply = await self._query(
-            session,
-            "status data",
-            status_data_query_packet(),
-            NiimbotResponse.PRINTER_STATUS_DATA,
-            timeout=timeout,
-        )
-        self._state.protocol_version = protocol_version_from_status_data(status_reply)
+        if result is NiimbotConnectResult.CONNECTED_V3:
+            status_reply = await self._query(
+                session,
+                "status data",
+                status_data_query_packet(),
+                NiimbotResponse.PRINTER_STATUS_DATA,
+                timeout=timeout,
+            )
+            self._state.protocol_version = protocol_version_from_status_data(status_reply)
+        else:
+            self._state.protocol_version = (
+                1 if result is NiimbotConnectResult.CONNECTED_NEW else 0
+            )
 
         model_reply = await self._query(
             session,
@@ -60,12 +79,17 @@ class NiimbotRuntimeController(RuntimeController):
         self._state.model_id = model_id_from_reply(model_reply)
         session.report_debug(
             "NIIMBOT probe: "
+            f"connect_result={result.name} "
             f"model_id={self._state.model_id if self._state.model_id is not None else '<unknown>'} "
             f"protocol_version={self._state.protocol_version if self._state.protocol_version is not None else '<unknown>'}"
         )
 
     def debug_snapshot(self) -> dict[str, object]:
         return {
+            "connect_result": (
+                int(self._state.connect_result)
+                if self._state.connect_result is not None else None
+            ),
             "model_id": self._state.model_id,
             "protocol_version": self._state.protocol_version,
             "warning_emitted": self._state.warning_emitted,
@@ -114,6 +138,28 @@ class NiimbotRuntimeController(RuntimeController):
                 "auto task selection is limited in this session."
             ),
         )
+
+
+class VersionedNiimbotRuntimeController(NiimbotRuntimeController):
+    def __init__(self, *, variants: Mapping[int, str], fallback_variant: str) -> None:
+        super().__init__()
+        self._variants = dict(variants)
+        self._fallback_variant = fallback_variant
+
+    def resolve_device(self, device: PrinterDevice) -> PrinterDevice:
+        variant = self._variants.get(self._state.protocol_version, self._fallback_variant)
+        profile = replace(
+            device.profile,
+            protocol_default=replace(device.profile.protocol_default, packets_type=variant),
+        )
+        return replace(device, profile=profile, protocol_variant=variant)
+
+    def debug_snapshot(self) -> dict[str, object]:
+        snapshot = super().debug_snapshot()
+        snapshot["resolved_variant"] = self._variants.get(
+            self._state.protocol_version, self._fallback_variant
+        )
+        return snapshot
 
 
 def _hex_preview(data: bytes | None) -> str:

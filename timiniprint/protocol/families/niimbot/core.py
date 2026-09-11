@@ -53,6 +53,14 @@ class NiimbotResponse(IntEnum):
     SET_LABEL_TYPE = 0x33
 
 
+class NiimbotConnectResult(IntEnum):
+    DISCONNECTED = 0
+    CONNECTED = 1
+    CONNECTED_NEW = 2
+    CONNECTED_V3 = 3
+    FIRMWARE_ERRORS = 90
+
+
 class NiimbotLabelType(IntEnum):
     WITH_GAPS = 1
     TRANSPARENT = 5
@@ -397,6 +405,10 @@ def print_end_success_matcher() -> ProtocolReplyMatcher:
 
 
 def build_niimbot_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
+    if request.protocol_variant == "d11_auto":
+        raise ValueError(
+            "NIIMBOT D11 requires a live protocol-version probe before building a job"
+        )
     print_task = PRINT_TASK_BY_VARIANT.get(request.protocol_variant or "d110")
     if print_task is None:
         raise ValueError(f"Unsupported NIIMBOT protocol variant: {request.protocol_variant!r}")
@@ -413,6 +425,18 @@ def model_id_query_packet() -> bytes:
 
 def status_data_query_packet() -> bytes:
     return frame(NiimbotRequest.PRINTER_STATUS_DATA)
+
+
+def connect_result_from_reply(raw: bytes | None) -> NiimbotConnectResult | None:
+    if raw is None:
+        return None
+    for packet in _safe_parse_packets(raw):
+        if packet.command == NiimbotResponse.CONNECT and packet.data:
+            try:
+                return NiimbotConnectResult(packet.data[0])
+            except ValueError:
+                return None
+    return None
 
 
 def model_id_from_reply(raw: bytes | None) -> int | None:

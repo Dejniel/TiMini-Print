@@ -6,7 +6,7 @@ from ...protocol.family import ProtocolFamily
 from .base import RuntimeController
 from .funny_lx import FunnyLxRuntimeController
 from .luck_normal import LuckNormalRuntimeController
-from .niimbot import NiimbotRuntimeController
+from .niimbot import NiimbotRuntimeController, VersionedNiimbotRuntimeController
 from .phomemo_esc import PhomemoEscRuntimeController
 from .tiny import TinyRuntimeController
 from .v5c import V5CRuntimeController
@@ -30,6 +30,10 @@ def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | 
     if device.protocol_family is ProtocolFamily.V5C:
         return V5CRuntimeController()
     if device.protocol_family is ProtocolFamily.NIIMBOT:
+        if device.protocol_variant == "d11_auto":
+            return VersionedNiimbotRuntimeController(
+                variants={1: "d110", 2: "d110"}, fallback_variant="d11_v1"
+            )
         return NiimbotRuntimeController()
     if device.protocol_family is ProtocolFamily.FUNNY_LX:
         return FunnyLxRuntimeController(bluetooth_address=device.address)

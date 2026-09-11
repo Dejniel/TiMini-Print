@@ -118,7 +118,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 The list below covers TiMini Print Community. The [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/) supports every Community model plus additional “WalkPrint”, “Paperang”, and other printers.
 
 <!-- BEGIN supported-models -->
-A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, M220, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
+A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, M220, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
 
 - 15P3 and clones: YK06
 - 58P5 and clones: WL01
@@ -133,7 +133,6 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D110, DL_X2, DL_
 - BQ02 and clones: BQ03, BQ17
 - CMT-0510 and clones: SC03, SC04, GV-MA211
 - CTP-500 and clones: CorePrint, Teal Printer, Purple Printer, B Pink Printer, Cherry Printer, Floral Printer, Check Printer, Smiley Printer, Stone Printer, P Pink Printer, YHK
-- D11 and clones: D11S
 - D80 and clones: DP_D80, DP-D80, E80, CASA-01, PeriPage_A40, DYD80
 - DL_X2Pro and clones: P5
 - DYA49 and clones: ITP06, DP_ITP06, TPA46Pro

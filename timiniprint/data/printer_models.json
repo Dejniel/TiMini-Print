@@ -2281,15 +2281,34 @@
   {
     "model_key": "niimbot_d11",
     "profile_key": "niimbot_d11",
+    "protocol_override": {
+      "packets_type": "d11_auto"
+    },
     "detections": [
       {
         "exact_names": [
-          "D11",
-          "D11S"
+          "D11"
         ],
         "prefixes": [
           "D11-",
-          "D11_",
+          "D11_"
+        ]
+      }
+    ],
+    "whitespace_mode": "preserve",
+    "origin_app_packages": [
+      "com.gengcon.android.jccloudprinter"
+    ]
+  },
+  {
+    "model_key": "niimbot_d11s",
+    "profile_key": "niimbot_d11",
+    "detections": [
+      {
+        "exact_names": [
+          "D11S"
+        ],
+        "prefixes": [
           "D11S-",
           "D11S_"
         ]

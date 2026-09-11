@@ -18,6 +18,6 @@ BEHAVIOR = ProtocolBehavior(
     image_encoding_support={
         ImageEncoding.NIIMBOT_D110: (PixelFormat.BW1,),
     },
-    supported_protocol_variants=("d11_v1", "d110"),
+    supported_protocol_variants=("d11_auto", "d11_v1", "d110"),
     job_builder=build_job,
 )

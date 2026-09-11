@@ -253,7 +253,10 @@ class NiimbotProtocolTests(unittest.TestCase):
                 assert detected is not None
                 self.assertEqual(detected.profile_key, "niimbot_d11")
                 self.assertEqual(detected.protocol_family.value, "niimbot")
-                self.assertEqual(detected.protocol_variant, "d11_v1")
+                self.assertEqual(
+                    detected.protocol_variant,
+                    "d11_v1" if name.startswith("D11S") else "d11_auto",
+                )
 
     def test_catalog_does_not_treat_d110_m_as_d110(self) -> None:
         detected = PrinterCatalog.load().detect_device("D110_M")
