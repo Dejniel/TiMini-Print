@@ -230,6 +230,12 @@ For full support of runtime-sensitive families, the connection may also implemen
 
 `wait_for_reply(...)` is the transport-neutral passive receive operation used by protocol steps and completion controllers. A Classic SPP connection reads from its socket; a BLE connection can satisfy the same operation through notifications. `wait_for_notification(...)` remains available for controllers whose behavior is specifically tied to BLE notification state.
 
+Deliver received bytes to an attached runtime controller before evaluating
+pending reply predicates, so they can use the controller's updated state.
+BLE connectors should honor `device.ble_transport_profile.notify_service_uuids`
+when nonempty: subscribe to every notify/indicate characteristic in those
+services, not just the profile's primary notification UUID.
+
 `ProtocolStep.query(...)` and `ProtocolStep.wait(...)` can set
 `reply_required=True`. A missing or rejected reply then fails the job before
 the next step; repeated queries first use their configured polling budget.

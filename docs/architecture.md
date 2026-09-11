@@ -108,6 +108,13 @@ Runtime resolution happens after the connection has already been opened. It may 
 
 GATT write response is not a printer protocol ACK. If a family needs ACKs, status, or completion waits, model that as protocol steps and runtime controller behavior, not as transport adapter policy.
 
+BLE profiles may opt into `notify_service_uuids`: the adapter subscribes to all
+notify/indicate characteristics in those services and cleans up each successful
+subscription. Empty service selection preserves the existing characteristic
+selection. The transport selects endpoints by GATT metadata, never by opcodes.
+On receipt, runtime observers update session state before pending reply
+predicates run; this allows passive waits to depend on parsed runtime state.
+
 ## Detecting Versus Discovering
 
 Catalog detection and Bluetooth discovery are different concerns.
@@ -130,6 +137,12 @@ low-level values they understand, such as left padding, maximum sheet height,
 or `paper_mode`. Transport does not receive media data.
 
 `paper_mode` is a protocol recipe value. It must not become the GUI/CLI data source for paper selection.
+
+`PrinterProtocol` resolves editable profile values before dispatching a
+`PrintJobRequest`. The request carries the selected text/image `energy`,
+the image-only `image_energy` at the same density, and `back_paper_num`
+for recipes that need a positioning offset. Family builders must not maintain
+a second model-specific table for these profile values.
 
 Detailed paper preset data rules are in [catalog.md](catalog.md).
 
