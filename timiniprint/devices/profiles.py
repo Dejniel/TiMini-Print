@@ -614,8 +614,10 @@ class PrinterModel:
                 f"Printer model {self.model_key} marketing_names must not contain blanks"
             )
         object.__setattr__(self, "marketing_names", marketing_names)
-        if not self.detections:
-            raise ValueError(f"Printer model {self.model_key} requires detections")
+        if not self.detections and not self.marketing_names:
+            raise ValueError(
+                f"Printer model {self.model_key} requires detections or marketing names"
+            )
         if self.detection_ambiguity_group is not None:
             group = self.detection_ambiguity_group.strip()
             if not group:

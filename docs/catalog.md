@@ -43,7 +43,16 @@ Use unsupported entries to:
 
 ## Detection Rules
 
-Each model has one or more flat detection objects. A detection may also carry `marketing_names` when an alias belongs specifically to that rule:
+Automatic detection uses flat detection objects. A manual-only model may use
+`"detections": []` with non-empty model-level `marketing_names`: it appears in
+the catalogue and can be selected by name or model key, but never matches a
+Bluetooth advertisement.
+
+An unsupported entry may likewise list marketing names without detection
+rules; it remains non-printable and does not match Bluetooth advertisements.
+
+A detection may also carry `marketing_names` when an alias belongs specifically
+to that rule:
 
 ```json
 {

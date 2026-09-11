@@ -109,6 +109,9 @@ def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any]) -> dict[str, Any] | None:
+    if not model.get("detections"):
+        # Manual-only entries are validated by the catalog and have no BT match.
+        return None
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
@@ -179,6 +182,8 @@ def _find_unsupported_model_reachability_error(
     catalog: PrinterCatalog,
     model: dict[str, Any],
 ) -> dict[str, Any] | None:
+    if not model.get("detections"):
+        return None
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None

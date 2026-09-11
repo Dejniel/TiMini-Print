@@ -137,6 +137,30 @@ def _model_keys(matches: tuple[ModelMatch, ...]) -> set[str]:
 
 
 class DevicesModelsTests(unittest.TestCase):
+    def test_manual_only_model_roundtrips_and_never_matches_bluetooth(self) -> None:
+        profile = model_from_json(PrinterProfile, _profile_payload())
+        payload = {
+            "model_key": "manual_only",
+            "profile_key": profile.profile_key,
+            "marketing_names": ["Manual model"],
+            "detections": [],
+        }
+        model = model_from_json(SupportedPrinterModel, payload)
+        catalog = PrinterCatalog([profile], [model])
+        self.assertEqual(model.names, ("Manual model",))
+        self.assertEqual(
+            model_from_json(SupportedPrinterModel, model_to_json(model)), model,
+        )
+        self.assertEqual(catalog.device_from_key("Manual model").model_key, "manual_only")
+        self.assertEqual(catalog.device_from_model("manual_only").profile_key, profile.profile_key)
+        for name in ("Manual model", "manual_only", "Manual model-1234"):
+            self.assertEqual(catalog.detect_model(name), ())
+            self.assertIsNone(catalog.detect_device(name))
+        with self.assertRaisesRegex(ValueError, "requires detections or marketing names"):
+            model_from_json(SupportedPrinterModel, {**payload, "marketing_names": []})
+        with self.assertRaisesRegex(ValueError, "must not contain blanks"):
+            model_from_json(SupportedPrinterModel, {**payload, "marketing_names": [" "]})
+
     def setUp(self) -> None:
         reset_registry_cache()
         self.catalog = PrinterCatalog.load()

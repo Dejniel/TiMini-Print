@@ -117,6 +117,42 @@ class CatalogAuditTests(unittest.TestCase):
             {"generic", "specific"},
         )
 
+    def test_manual_only_model_does_not_require_automatic_reachability(self) -> None:
+        profiles = [_profile_payload("manual")]
+        models = [{
+            "model_key": "manual",
+            "profile_key": "manual",
+            "marketing_names": ["Manual device"],
+            "detections": [],
+            "origin_app_packages": ["com.example.manual"],
+        }]
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = Path(tmp) / "profiles.json"
+            model_path = Path(tmp) / "models.json"
+            profile_path.write_text(json.dumps(profiles), encoding="utf-8")
+            model_path.write_text(json.dumps(models), encoding="utf-8")
+            report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
+        self.assertEqual(report["errors"], [])
+
+    def test_named_unsupported_entry_without_bluetooth_rules_is_not_unreachable(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path = Path(tmp) / "profiles.json"
+            model_path = Path(tmp) / "models.json"
+            unsupported_path = Path(tmp) / "unsupported.json"
+            profile_path.write_text("[]", encoding="utf-8")
+            model_path.write_text("[]", encoding="utf-8")
+            unsupported_path.write_text(json.dumps([{
+                "model_key": "named_only",
+                "marketing_names": ["Named only"],
+                "detections": [],
+                "origin_app_packages": ["com.example.manual"],
+            }]), encoding="utf-8")
+            report = self.tool.generate_report(
+                profile_path=profile_path, model_path=model_path,
+                unsupported_model_path=unsupported_path,
+            )
+        self.assertEqual(report["errors"], [])
+
     def test_catalog_audit_detects_mergeable_model_body(self) -> None:
         profiles = [_profile_payload("base")]
         models = [
