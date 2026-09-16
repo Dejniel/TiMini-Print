@@ -36,6 +36,10 @@ class PhomemoEscRecipe:
     justification: int = 1
     include_density: bool = True
 
+    @property
+    def print_controls(self) -> tuple[str, ...]:
+        return ("density",) if self.include_density else ()
+
     def build_job(self, request: PrintJobRequest) -> bytes:
         if request.protocol_variant not in (None, self.protocol_variant):
             raise ValueError(
@@ -62,6 +66,7 @@ class PhomemoEscRecipe:
 
 @dataclass(frozen=True)
 class PrintMasterM110Recipe:
+    print_controls: ClassVar[tuple[str, ...]] = ()
     # TODO: The M110/M120 recipe does not set medium type inline.
     paper_modes: ClassVar[tuple[PaperMode, ...]] = (PaperMode.TAG,)
     protocol_variant: str
@@ -108,6 +113,10 @@ def build_phomemo_esc_job(request: PrintJobRequest) -> bytes:
 
 def supported_paper_modes(protocol_variant: str | None) -> tuple[PaperMode, ...]:
     return _recipe_for_variant(protocol_variant).paper_modes
+
+
+def print_controls(protocol_variant, encoding):
+    return _recipe_for_variant(protocol_variant).print_controls
 
 
 def advance_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None = None) -> bytes:

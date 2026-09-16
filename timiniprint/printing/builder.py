@@ -30,7 +30,13 @@ class PreparedPageJob:
 
 
 class PrintJobBuilder:
-    """Build printable jobs from files for a resolved ``PrinterDevice``."""
+    """Load/render files and build jobs without opening a printer connection.
+
+    ``settings=None`` uses PrintSettings defaults. The caller must supply a
+    resolved device and any required prepared runtime context; this builder
+    cannot perform capability negotiation. Prefer ConnectedPrinter's high-level
+    print methods when building for a live session.
+    """
 
     def __init__(
         self,
@@ -52,7 +58,13 @@ class PrintJobBuilder:
         )
 
     def build_from_file(self, path: str) -> ProtocolJob:
-        """Load a file, rasterize it, and build one printable protocol job."""
+        """Build a complete document job in memory without sending it.
+
+        Preserves ordered page steps and their completion policy. Missing files
+        raise ``FileNotFoundError``; unsupported extensions and invalid settings
+        or geometry raise ``ValueError``. Decoder/runtime-data errors propagate.
+        Use ``iter_page_jobs()`` when the caller needs to consume jobs incrementally.
+        """
         page_count = 0
         pipeline: ImagePipelineConfig | None = None
         page_jobs: list[ProtocolJob] = []
@@ -132,6 +144,7 @@ class PrintJobBuilder:
 
     def _default_image_pipeline(self) -> ImagePipelineConfig:
         return PrinterProtocol(self.device).resolve_image_pipeline(
+            paper_preset_key=self.settings.paper_preset_key,
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
             runtime_capabilities=self.runtime_context.capabilities,

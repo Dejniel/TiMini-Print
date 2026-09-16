@@ -8,6 +8,8 @@ from ..raster import PixelFormat
 
 
 class ImageEncoding(str, Enum):
+    """Wire codec/recipe identifier, distinct from the input raster pixel format."""
+
     TINY_RAW = "tiny_raw"
     TINY_RLE = "tiny_rle"
     LUCK_NORMAL_RAW = "luck_normal_raw"
@@ -31,6 +33,8 @@ class ImageEncoding(str, Enum):
 
 
 class PaperMode(str, Enum):
+    """Low-level medium/recipe selection; user-facing sizes come from paper presets."""
+
     PLAIN = "plain"
     DOCUMENT = "document"
     A4_SHEET = "a4_sheet"
@@ -56,12 +60,26 @@ class PaperMode(str, Enum):
 
 
 class PageFlow(str, Enum):
+    """Whether raster pages are independent media pages or one continuous flow.
+
+    ``PAGED`` permits per-page positioning/finalization. ``CONTINUOUS`` marks
+    intermediate fragments of one print flow; it is not a paper-width setting.
+    """
+
     PAGED = "paged"
     CONTINUOUS = "continuous"
 
 
 @dataclass(frozen=True)
 class ImagePipelineConfig:
+    """Immutable ordered input formats and the selected wire encoding.
+
+    The first entry in nonempty, unique ``formats`` is the default raster.
+    Construction normalizes formats but does not check hardware or codec
+    compatibility; use ``PrinterProtocol.resolve_image_pipeline()`` for that
+    recipe-level check. Building this object neither converts pixels nor probes.
+    """
+
     formats: Tuple[PixelFormat, ...]
     encoding: ImageEncoding
 
@@ -78,12 +96,19 @@ class ImagePipelineConfig:
 
     @property
     def default_format(self) -> PixelFormat:
+        """Return the first input format in this pipeline."""
         return self.formats[0]
 
     def supports(self, pixel_format: PixelFormat) -> bool:
+        """Test membership in this pipeline, not the printer's full capabilities."""
         return pixel_format in self.formats
 
     def with_default_format(self, pixel_format: PixelFormat) -> "ImagePipelineConfig":
+        """Move an existing format to the front, preserving the encoding.
+
+        Returns this object when already selected; raises ``ValueError`` when
+        the format is absent. Does not add a format or choose a different codec.
+        """
         if pixel_format not in self.formats:
             raise ValueError(
                 f"Image pipeline does not support raster format {pixel_format.value}"

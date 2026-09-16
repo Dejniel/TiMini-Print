@@ -134,7 +134,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
         ):
             connected = await connect_printer(device, connector)
 
-        self.assertIs(connected.raster_capabilities(), capabilities)
+        self.assertIs(connected.print_capabilities(), capabilities)
         self.assertIs(connected.printer_device(), device)
         with patch(
             "timiniprint.printing.connected._build_raster_page_job",

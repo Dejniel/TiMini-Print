@@ -184,7 +184,14 @@ def _build_variant_job(request: PrintJobRequest) -> ProtocolPlan | None:
     return ProtocolPlan.stream(payload)
 
 
+def print_controls(variant, encoding):
+    if variant in (VARIANT_ESC_STAR, VARIANT_ESC_STAR_EIGHT):
+        return ("energy", "text_mode")
+    return ("blackening", "text_mode")
+
+
 BEHAVIOR = ProtocolBehavior(
+    print_controls_resolver=print_controls,
     requires_speed=True,
     supported_protocol_variants=(
         VARIANT_LINE_EIGHT,

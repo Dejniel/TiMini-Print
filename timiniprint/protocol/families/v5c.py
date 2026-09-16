@@ -88,6 +88,7 @@ def build_job(request: PrintJobRequest) -> ProtocolPlan:
 
 
 BEHAVIOR = ProtocolBehavior(
+    print_controls=("blackening", "text_mode"),
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),
         encoding=ImageEncoding.V5C_A4,

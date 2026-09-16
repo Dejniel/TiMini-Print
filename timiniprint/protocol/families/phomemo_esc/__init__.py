@@ -10,6 +10,7 @@ from .core import (
     RECIPES,
     advance_paper_cmd,
     build_phomemo_esc_job,
+    print_controls,
     retract_paper_cmd,
     supported_paper_modes,
 )
@@ -20,6 +21,7 @@ def build_job(request: PrintJobRequest) -> ProtocolPlan:
 
 
 BEHAVIOR = ProtocolBehavior(
+    print_controls_resolver=print_controls,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.PHOMEMO_ESC_RASTER,

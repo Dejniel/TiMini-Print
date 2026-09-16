@@ -79,7 +79,16 @@ TransportTarget = Union[BluetoothTarget, SerialTarget]
 
 @dataclass(frozen=True)
 class PrinterDevice:
-    """Concrete runtime printer description shared by protocol and transport."""
+    """Immutable printer description, not a live connection or status snapshot.
+
+    The profile supplies geometry/defaults; the family, variant and image
+    pipeline select the recipe. ``transport_target=None`` allows offline job
+    building but supplies no connection destination. ``model_key`` identifies
+    a catalog model and can be empty for profile-only construction.
+
+    Discovery may return provisional geometry. After connecting, use the device
+    returned by ``ConnectedPrinter.printer_device()`` for printing and controls.
+    """
 
     display_name: str
     profile: "PrinterProfile"

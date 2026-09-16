@@ -8,6 +8,7 @@ from collections.abc import Awaitable, Callable
 from ...devices.profiles import DetectionNormalizer
 from ...protocol.families.funny_lx.core import challenge_crc
 from ...protocol.steps import ProtocolStep, ProtocolStepOperation
+from ...protocol.runtime import RuntimePrintCapabilities
 from ..step_execution import (
     bytes_preview,
     execute_protocol_step,
@@ -102,6 +103,9 @@ class FunnyLxRuntimeController(RuntimeController):
             "Funny LX verification complete "
             f"mtu_payload={mtu_size} mac={mac_bytes.hex(':')} mac_source={mac_source}"
         )
+
+    def runtime_capabilities(self) -> RuntimePrintCapabilities:
+        return RuntimePrintCapabilities(supports_blackening=self._supports_darkness)
 
     async def _send_default_darkness(
         self,

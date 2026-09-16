@@ -26,6 +26,7 @@ def retract_paper_cmd(_dpi: int, _protocol_family, _protocol_variant: str | None
 
 
 BEHAVIOR = ProtocolBehavior(
+    print_controls=("blackening",),
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.FUNNY_LX_RASTER,

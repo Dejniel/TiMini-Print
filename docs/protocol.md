@@ -126,6 +126,48 @@ The key must be one of the paper preset keys supported by the device profile. Th
 
 See [catalog.md](catalog.md) for the data model behind paper presets.
 
+## Available Print Controls
+
+Connect first, then query the resolved device and live capabilities. Do not
+maintain a separate list of printer families in a GUI:
+
+```python
+from timiniprint.protocol import PrinterProtocol
+from timiniprint.raster import PixelFormat
+
+device = printer.printer_device()
+capabilities = printer.print_capabilities()
+protocol = PrinterProtocol(device)
+paper_key = device.profile.default_paper_preset.key
+formats = protocol.supported_pixel_formats(
+    paper_preset_key=paper_key, runtime_capabilities=capabilities,
+)
+adjustments = protocol.supported_print_settings(
+    paper_preset_key=paper_key, runtime_capabilities=capabilities,
+)
+can_feed = protocol.supports_paper_motion("feed")
+can_retract = protocol.supports_paper_motion("retract")
+```
+
+`formats` describes input pixel formats, not user-facing codec names. Re-query
+it when the selected paper changes. When the user chooses a format, pass it as
+`pixel_format` to `supported_print_settings(...)` as well. The returned keys
+are `blackening` and/or `text_mode` when those printer adjustments are
+implemented. Rendering controls such as rotation, trimming and monochrome
+dithering are separate; they do not require printer commands.
+
+For high-level printing, `PrintSettings(pixel_format_override=PixelFormat.GRAY4)`
+selects a compatible encoding automatically, if available. Omitting the format
+keeps the profile's default. An explicitly selected incompatible encoding is
+still rejected. Dithering controls apply to monochrome conversion, not native
+grayscale printing.
+
+These capability methods do not send anything. `print_capabilities()` returns
+information already collected by the live session; it replaces the former
+`raster_capabilities()` method. Integrations must update that call; there is no
+compatibility alias. A `None` result means no additional runtime restrictions
+were reported, not that the printer has no capabilities.
+
 ## Build A Job Without Sending
 
 Use `PrintJobBuilder` only when you want to build file-based `ProtocolJob` objects yourself.

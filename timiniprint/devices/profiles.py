@@ -171,6 +171,21 @@ class RuntimeSettings:
 
 @dataclass(frozen=True)
 class PaperPreset:
+    """Named paper geometry and media recipe; dimensions ending in ``_px`` are dots.
+
+    ``paper_width_px`` is the protocol-side width, not necessarily the physical
+    roll width. ``render_width_px`` is the content width before protocol padding.
+    ``render_height_px=None`` leaves content height automatic; a value defines
+    a content-height target. ``raster_height_px`` reserves a total raster height,
+    including top padding; ``max_height_px`` is a recipe-specific sheet limit.
+    Neither height is a generic command to calibrate physical label pitch.
+
+    ``paper_mode`` selects the medium/recipe, not density or width. Preset
+    construction validates basic geometry, not every model's raster constraints.
+    Select one of the resolved profile's presets through PrintSettings rather
+    than using this data object as a command to change printer configuration.
+    """
+
     key: str
     label: str
     paper_width_px: int

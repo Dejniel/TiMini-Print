@@ -366,6 +366,7 @@ class DocumentRenderer:
         runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> tuple[ImagePipelineConfig, DitherMode, bool, float | None]:
         pipeline = PrinterProtocol(device).resolve_image_pipeline(
+            paper_preset_key=settings.paper_preset_key,
             image_encoding_override=settings.image_encoding_override,
             pixel_format_override=settings.pixel_format_override,
             runtime_capabilities=runtime_capabilities,

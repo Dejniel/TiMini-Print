@@ -184,6 +184,7 @@ RECIPE = LuckNormalFamilyRecipe(
 
 
 BEHAVIOR = ProtocolBehavior(
+    print_controls=("blackening",),
     default_image_pipeline=RECIPE.default_image_pipeline,
     image_encoding_support=RECIPE.image_encoding_support,
     supported_protocol_variants=RECIPE.supported_variants(),

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import ClassVar
 
 from ....raster import PixelFormat, RasterBuffer
 from ...types import PaperMode
@@ -21,6 +22,7 @@ _PAPER_MEDIA = {PaperMode.PLAIN: 0x0B, PaperMode.TAG: 0x0B, PaperMode.BLACK_TAG:
 
 @dataclass(frozen=True)
 class PhomemoCompactRecipe:
+    print_controls: ClassVar[tuple[str, ...]] = ("density",)
     content_width: int
     left_padding: int = 0
     label_right_padding: int = 0

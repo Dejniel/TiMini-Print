@@ -284,6 +284,7 @@ S001_VARIANT = AstraP1VariantRecipe(
 PUBLIC_RECIPE = AstraP1FamilyRecipe(variants={"s001": S001_VARIANT})
 
 BEHAVIOR = ProtocolBehavior(
+    print_controls=("blackening",),
     requires_speed=True,
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),

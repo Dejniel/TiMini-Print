@@ -26,7 +26,13 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, init=False)
 class ConnectedPrinter:
-    """Resolved printer with an active transport connection and prepared runtime."""
+    """Resolved printer with an open connection and prepared protocol runtime.
+
+    Normally obtain this object through ``connect_printer()``, not its low-level
+    constructor. Capability accessors and raster job builders perform no I/O;
+    print/send/motion methods communicate through the prepared connection.
+    Use ``async with`` or call ``disconnect()`` to release it.
+    """
 
     _device: "PrinterDevice"
     _connection: "PrinterConnection"
@@ -48,7 +54,15 @@ class ConnectedPrinter:
         object.__setattr__(self, "_reporter", reporter)
 
     async def send_job(self, job: ProtocolJob, *, timeout: float = 1.0) -> None:
-        """Send an already-built protocol job through this prepared connection."""
+        """Send a prepared job, preserving its steps and runtime completion policy.
+
+        The job must have been built for this resolved device and session.
+        ``timeout`` is a runtime-operation budget in seconds, not a deadline for
+        the entire print; individual protocol steps may have their own limits.
+        Send/reply failures propagate. Returning successfully does not guarantee
+        mechanical completion on protocols without a completion acknowledgement.
+        The connection stays open.
+        """
         await send_prepared_job(
             self._device,
             self._connection,
@@ -58,12 +72,21 @@ class ConnectedPrinter:
             runtime_context=self._runtime_context,
         )
 
-    def raster_capabilities(self) -> RuntimePrintCapabilities | None:
-        """Return live-session capabilities that affect raster rendering and encoding."""
+    def print_capabilities(self) -> RuntimePrintCapabilities | None:
+        """Return the capability snapshot prepared for this connection, without I/O.
+
+        ``None`` means no additional session findings were provided, not that
+        the printer lacks features. Pass this snapshot to ``PrinterProtocol``
+        capability/pipeline queries; this method does not re-query the printer.
+        """
         return self._runtime_context.capabilities
 
     def printer_device(self) -> "PrinterDevice":
-        """Return the immutable printer description resolved for this connection."""
+        """Return the resolved immutable device description, without I/O.
+
+        Use this instead of the discovery-time device for paper choices and job
+        building: connection setup may have refined geometry or the variant.
+        """
         return self._device
 
     def raster_page_job(
@@ -77,7 +100,14 @@ class ConnectedPrinter:
         page_flow: PageFlow = PageFlow.PAGED,
         image_pipeline: ImagePipelineConfig | None = None,
     ) -> ProtocolJob:
-        """Build one printable protocol page from an already rendered raster."""
+        """Build a page using this session's device/capabilities, without sending.
+
+        ``settings=None`` creates default PrintSettings. Paper placement is
+        applied to the supplied raster; this does not load or rasterize a file.
+        Page indices are one-based. Use ``CONTINUOUS`` for fragments of a single
+        media page, and ``PAGED`` for independent pages. Invalid geometry or
+        format combinations raise ``ValueError``.
+        """
         return _build_raster_page_job(
             self._device,
             raster_set,
@@ -98,7 +128,11 @@ class ConnectedPrinter:
         settings: PrintSettings | None = None,
         image_pipeline: ImagePipelineConfig | None = None,
     ) -> ProtocolJob:
-        """Build a complete one-page raster protocol job."""
+        """Build a complete single-page job without sending; see ``raster_page_job``.
+
+        Uses this session's capabilities and default PrintSettings when omitted.
+        Pass the result to ``send_job()`` to execute it.
+        """
         page_job = self.raster_page_job(
             raster_set,
             is_text=is_text,
@@ -113,7 +147,11 @@ class ConnectedPrinter:
         self,
         page_jobs: Iterable[ProtocolJob],
     ) -> ProtocolJob:
-        """Build one protocol job from already-built raster page jobs."""
+        """Combine prepared page jobs in order, preserving steps, without sending.
+
+        Pages must already use this device's recipe and correct page-flow/index
+        metadata. This method neither renders nor re-encodes their payloads.
+        """
         return _combine_raster_page_jobs(page_jobs)
 
     async def print_file(
@@ -123,7 +161,13 @@ class ConnectedPrinter:
         settings: PrintSettings | None = None,
         timeout: float = 1.0,
     ) -> None:
-        """Build and send a print job for a supported document/image file."""
+        """Load, render and send a supported image, PDF or text file.
+
+        ``settings=None`` uses PrintSettings defaults. File/format/settings errors
+        occur during building, before sending; transport/runtime errors propagate
+        from ``send_job()``. Its timeout and completion semantics also apply here.
+        The connection remains open for subsequent prints.
+        """
         job = PrintJobBuilder(
             self._device,
             settings=settings,
@@ -139,7 +183,11 @@ class ConnectedPrinter:
         settings: PrintSettings | None = None,
         timeout: float = 1.0,
     ) -> None:
-        """Render and print raw text using the same pipeline as a temporary text file."""
+        """Print text through ``print_file()`` using a temporary UTF-8 text file.
+
+        The temporary file is removed on success or failure. Settings, timeout
+        and completion semantics are the same as for ``print_file()``.
+        """
         temp_path = None
         try:
             with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as handle:
@@ -155,11 +203,21 @@ class ConnectedPrinter:
         await self.send_job(job, timeout=timeout)
 
     async def feed(self, *, timeout: float = 1.0) -> None:
-        """Advance paper using the connected printer's protocol-specific command."""
+        """Send one recipe-specific paper advance; no distance argument is implied.
+
+        Check ``PrinterProtocol.supports_paper_motion("feed")`` before offering
+        this action. Unsupported recipes may raise or do nothing. Send failures
+        propagate; the timeout has the same meaning as in ``send_job()``.
+        """
         await self._paper_motion("feed", timeout=timeout)
 
     async def retract(self, *, timeout: float = 1.0) -> None:
-        """Retract paper when the connected printer protocol supports it."""
+        """Send one recipe-specific paper retraction, when implemented.
+
+        Check ``PrinterProtocol.supports_paper_motion("retract")`` first; there
+        is no universal reverse-feed command. Unsupported recipes may raise or
+        do nothing. Send failures and timeout semantics follow ``send_job()``.
+        """
         await self._paper_motion("retract", timeout=timeout)
 
     async def disconnect(self) -> None:
@@ -182,6 +240,16 @@ async def connect_printer(
     timeout: float = 1.0,
     reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
 ) -> ConnectedPrinter:
+    """Open a connection, prepare protocol runtime, and return its resolved device.
+
+    This performs I/O, including any required handshake or capability queries.
+    ``timeout`` is passed to runtime preparation, not ``connector.connect()``;
+    connection establishment uses the connector's own policy. Preparation may
+    refine the device's geometry, presets or variant before returning.
+
+    On an ordinary preparation exception, attempt to close the connection and re-raise
+    the original error. On success, the caller owns cleanup (use ``async with``).
+    """
     connection = await connector.connect(device)
     try:
         runtime_context = await prepare_connection_runtime(

@@ -16,7 +16,7 @@ ManualMotionBuilder = Callable[[int, ProtocolFamily, Optional[str]], bytes]
 FamilyJobBuilder = Callable[["PrintJobRequest"], Optional[ProtocolPlan]]
 PaperModeResolver = Callable[[Optional[str]], Tuple[PaperMode, ...]]
 ImageEncodingSupportResolver = Callable[
-    [Optional[str]],
+    [Optional[str], Optional[PaperMode]],
     Mapping[ImageEncoding, Tuple[PixelFormat, ...]],
 ]
 
@@ -24,6 +24,9 @@ ImageEncodingSupportResolver = Callable[
 @dataclass(frozen=True)
 class ProtocolBehavior:
     implemented: bool = True
+    # Consumed wire controls; density/energy use the profile's blackening levels.
+    print_controls: tuple[str, ...] = ()
+    print_controls_resolver: Callable[[Optional[str], ImageEncoding], tuple[str, ...]] | None = None
     requires_speed: bool = False
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(
@@ -45,9 +48,10 @@ class ProtocolBehavior:
     def image_encoding_support_for(
         self,
         protocol_variant: str | None,
+        paper_mode: PaperMode | None = None,
     ) -> Mapping[ImageEncoding, tuple[PixelFormat, ...]]:
         if self.image_encoding_support_resolver is not None:
-            return self.image_encoding_support_resolver(protocol_variant)
+            return self.image_encoding_support_resolver(protocol_variant, paper_mode)
         return self.image_encoding_support
 
     def supported_paper_modes_for(

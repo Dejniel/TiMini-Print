@@ -14,6 +14,22 @@ DEFAULT_FEED_PADDING = 12
 
 @dataclass
 class PrintSettings:
+    """File/raster print options; creating settings performs no I/O.
+
+    ``paper_preset_key=None`` selects the resolved profile's default paper.
+    For file printing, ``text_mode=None`` derives text/image treatment from the
+    source; a bool overrides it. ``blackening`` is a user level 1..5, not wire density.
+    ``feed_padding`` retains recipe-specific units; it is not a millimetre gap.
+    ``page_gap_mm`` controls spacing between PDF pages where the recipe uses it.
+
+    A lone ``pixel_format_override`` lets PrinterProtocol choose a compatible
+    codec; ``image_encoding_override`` requests a specific codec. Incompatible
+    format/codec choices are rejected during building, while family runtime
+    fallbacks still apply. ``lsb_first=None`` keeps profile bit ordering.
+    Query PrinterProtocol's available controls/formats for the selected paper:
+    having a settings field does not mean every recipe implements that option.
+    """
+
     dither_mode: DitherMode = DitherMode.ATKINSON
     lsb_first: Optional[bool] = None
     text_mode: Optional[bool] = None
