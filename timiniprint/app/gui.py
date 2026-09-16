@@ -471,10 +471,10 @@ class TiMiniPrintGUI(tk.Tk):
         return f"{item.address}{source}{transport}{status}"
 
     def _device_source_label(self, device) -> str:
-        app_names = ", ".join(self.catalog.origin_app_names(device.origin_app_packages))
-        if not app_names and not device.model_key:
+        sources = ", ".join(self.catalog.origin_names(device.origin_ids))
+        if not sources and not device.model_key:
             return ""
-        source = app_names or "unknown app"
+        source = sources or "unknown source"
         model = device.model_key or "unknown model"
         return f" [{source}: {model}]"
 
@@ -767,10 +767,9 @@ class TiMiniPrintGUI(tk.Tk):
     def _build_manual_model_choice_map(self) -> dict[str, str]:
         choices: dict[str, str] = {}
         for model in sorted(self.catalog.models, key=lambda item: item.model_key):
-            app_names = ", ".join(self.catalog.origin_app_names(model.origin_app_packages))
+            sources = ", ".join(self.catalog.origin_names(model.origin_ids))
             names = ", ".join(model.names[:3])
-            suffix = f" [{app_names}]" if app_names else ""
-            choices[f"{model.model_key} - {names}{suffix}"] = model.model_key
+            choices[f"{model.model_key} - {names} [{sources}]"] = model.model_key
         return choices
 
     @staticmethod

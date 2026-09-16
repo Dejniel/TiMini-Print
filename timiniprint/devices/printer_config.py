@@ -37,7 +37,7 @@ class PrinterConfigParts:
     display_name: str
     transport_target: Optional[TransportTarget]
     model_key: Optional[str] = None
-    origin_app_packages: Tuple[str, ...] = ()
+    origin_ids: Tuple[str, ...] = ()
 
 
 def runtime_settings_from_parts(
@@ -103,7 +103,7 @@ def parse_printer_config(
         display_name=str(device_entry.get("display_name") or profile.profile_key),
         transport_target=_parse_transport_target(device_entry.get("transport_target")),
         model_key=None if printer_config.get("model_key") in (None, "") else base_device.model_key,
-        origin_app_packages=base_device.origin_app_packages,
+        origin_ids=base_device.origin_ids,
     )
 
 

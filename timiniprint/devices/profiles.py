@@ -595,14 +595,18 @@ class ModelDetection:
 class PrinterModel:
     model_key: str
     detections: Tuple[ModelDetection, ...]
+    origin_ids: Tuple[str, ...]
     whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE
     marketing_names: Tuple[str, ...] = ()
-    origin_app_packages: Tuple[str, ...] = ()
     detection_ambiguity_group: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.model_key:
             raise ValueError("Printer model requires model_key")
+        origin_ids = tuple(self.origin_ids)
+        if not origin_ids or any(not value or value != value.strip() for value in origin_ids):
+            raise ValueError(f"Printer model {self.model_key} requires non-blank origin IDs")
+        object.__setattr__(self, "origin_ids", origin_ids)
         object.__setattr__(
             self,
             "whitespace_mode",

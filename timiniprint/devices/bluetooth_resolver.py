@@ -294,7 +294,7 @@ class BluetoothEndpointResolver:
             runtime_settings=classic_candidate.device.runtime_settings,
             transport_target=target,
             model_key=classic_candidate.device.model_key,
-            origin_app_packages=classic_candidate.device.origin_app_packages,
+            origin_ids=classic_candidate.device.origin_ids,
         )
 
     def _attach_single_anonymous_ble_endpoint(

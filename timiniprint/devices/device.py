@@ -89,7 +89,7 @@ class PrinterDevice:
     runtime_settings: Optional["RuntimeSettings"] = None
     transport_target: Optional[TransportTarget] = None
     model_key: str = ""
-    origin_app_packages: Tuple[str, ...] = ()
+    origin_ids: Tuple[str, ...] = ()
 
     @property
     def name(self) -> str:

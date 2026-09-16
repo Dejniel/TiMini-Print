@@ -55,7 +55,7 @@ def _unsupported_detection_matches_model(
     is_prefix: bool,
 ) -> bool:
     candidates = (f"{trigger}ABCD", trigger) if is_prefix else (trigger,)
-    model_origins = set(model.origin_app_packages)
+    model_origins = set(model.origin_ids)
     for candidate in candidates:
         for match in catalog.detect_model(candidate):
             if isinstance(match, UnsupportedModelMatch) and match.model.model_key == model.model_key:
@@ -63,7 +63,7 @@ def _unsupported_detection_matches_model(
             if (
                 isinstance(match, SupportedModelMatch)
                 and model_origins
-                and model_origins.isdisjoint(match.model.origin_app_packages)
+                and model_origins.isdisjoint(match.model.origin_ids)
             ):
                 return True
     return False
@@ -128,6 +128,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         model = SupportedPrinterModel(
             model_key="demo",
             profile_key="demo",
+            origin_ids=("vendor.manual",),
             marketing_names=("Friendly Cat Printer",),
             detections=(
                 ModelDetection(exact_names=("BT-01", "BT-02")),
@@ -143,6 +144,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         model = SupportedPrinterModel(
             model_key="demo",
             profile_key="demo",
+            origin_ids=("vendor.manual",),
             marketing_names=("Friendly Cat Printer",),
             detections=(
                 ModelDetection(exact_names=("BT-01",)),

@@ -115,7 +115,7 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
-    model_origins = set(model.get("origin_app_packages", []))
+    model_origins = set(model.get("origin_ids", []))
     for sample in samples:
         for address in addresses:
             matches = catalog.detect_model(sample, address=address)
@@ -138,7 +138,7 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
                             ],
                         }
                     for candidate in matches:
-                        candidate_origins = set(candidate.model.origin_app_packages)
+                        candidate_origins = set(candidate.model.origin_ids)
                         if (
                             candidate.model.model_key != model["model_key"]
                             and model_origins.intersection(candidate_origins)
@@ -246,7 +246,7 @@ def _model_merge_key(model: dict[str, Any]) -> str:
         {
             key: value
             for key, value in model.items()
-            if key not in {"model_key", "marketing_names", "detections", "origin_app_packages"}
+            if key not in {"model_key", "marketing_names", "detections", "origin_ids"}
         },
         sort_keys=True,
     )
@@ -313,13 +313,6 @@ def generate_report(
                         )
 
     for model in unsupported_models_raw:
-        if not model.get("origin_app_packages"):
-            errors.append(
-                {
-                    "kind": "missing_unsupported_model_origin_app_packages",
-                    "model_key": model["model_key"],
-                }
-            )
         profile_key_prediction = model.get("profile_key_prediction")
         if profile_key_prediction is not None and (
             not isinstance(profile_key_prediction, str)
@@ -368,15 +361,6 @@ def generate_report(
                     "kind": "unknown_profile_reference",
                     "model_key": model["model_key"],
                     "profile_key": model["profile_key"],
-                }
-            )
-
-    for model in models_raw:
-        if not model.get("origin_app_packages"):
-            errors.append(
-                {
-                    "kind": "missing_model_origin_app_packages",
-                    "model_key": model["model_key"],
                 }
             )
 

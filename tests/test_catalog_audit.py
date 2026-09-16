@@ -91,14 +91,14 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.generic"],
+                "origin_ids": ["com.example.generic"],
             },
             {
                 "model_key": "specific",
                 "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "specific_profile",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.generic"],
+                "origin_ids": ["com.example.generic"],
             },
         ]
 
@@ -124,7 +124,7 @@ class CatalogAuditTests(unittest.TestCase):
             "profile_key": "manual",
             "marketing_names": ["Manual device"],
             "detections": [],
-            "origin_app_packages": ["com.example.manual"],
+            "origin_ids": ["com.example.manual"],
         }]
         with tempfile.TemporaryDirectory() as tmp:
             profile_path = Path(tmp) / "profiles.json"
@@ -145,7 +145,7 @@ class CatalogAuditTests(unittest.TestCase):
                 "model_key": "named_only",
                 "marketing_names": ["Named only"],
                 "detections": [],
-                "origin_app_packages": ["com.example.manual"],
+                "origin_ids": ["com.example.manual"],
             }]), encoding="utf-8")
             report = self.tool.generate_report(
                 profile_path=profile_path, model_path=model_path,
@@ -161,14 +161,14 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.source"],
+                "origin_ids": ["com.example.source"],
             },
             {
                 "model_key": "second",
                 "detections": [{"prefixes": ["BAR"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.other_source"],
+                "origin_ids": ["com.example.other_source"],
             },
         ]
 
@@ -194,7 +194,7 @@ class CatalogAuditTests(unittest.TestCase):
                 ],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.source"],
+                "origin_ids": ["com.example.source"],
             },
         ]
 
@@ -237,7 +237,7 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [{"exact_names": ["FOO"]}],
                 "profile_key": "first_profile",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.source"],
+                "origin_ids": ["com.example.source"],
                 "detection_ambiguity_group": "foo_protocol",
             },
             {
@@ -245,7 +245,7 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [{"exact_names": ["FOO"]}],
                 "profile_key": "second_profile",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.source"],
+                "origin_ids": ["com.example.source"],
                 "detection_ambiguity_group": "foo_protocol",
             },
         ]
@@ -271,14 +271,14 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [{"prefixes": ["FOO"]}],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},
-                "origin_app_packages": ["com.example.supported"],
+                "origin_ids": ["com.example.supported"],
             },
         ]
         unsupported_models = [
             {
                 "model_key": "unsupported",
                 "detections": [{"prefixes": ["FOO"]}],
-                "origin_app_packages": ["com.example.unsupported"],
+                "origin_ids": ["com.example.unsupported"],
             },
         ]
 

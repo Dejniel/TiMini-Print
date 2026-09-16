@@ -66,19 +66,18 @@ def list_models() -> int:
     catalog = PrinterCatalog.load()
     for model in sorted(catalog.models, key=lambda model: model.model_key):
         names = ", ".join(model.names)
-        origin_apps = ", ".join(catalog.origin_app_names(model.origin_app_packages))
-        app_suffix = f" [app: {origin_apps}]" if origin_apps else ""
-        print(f"{model.model_key}: {names}{app_suffix}")
+        sources = ", ".join(catalog.origin_names(model.origin_ids))
+        print(f"{model.model_key}: {names} [source: {sources}]")
     return 0
 
 
 def _model_source_label(catalog: PrinterCatalog, device: PrinterDevice) -> str:
-    app_names = ", ".join(catalog.origin_app_names(device.origin_app_packages))
-    if not app_names and not device.model_key:
+    sources = ", ".join(catalog.origin_names(device.origin_ids))
+    if not sources and not device.model_key:
         return ""
-    source = app_names or "unknown app"
+    source = sources or "unknown source"
     model = device.model_key or "unknown model"
-    return f" [model: {model}; app: {source}]"
+    return f" [model: {model}; source: {source}]"
 
 
 def emit_update_warning(reporter: reporting.Reporter) -> None:
@@ -356,7 +355,7 @@ def _debug_resolved_device(
 ) -> None:
     runtime_settings = device.runtime_settings
     runtime_preset = None if runtime_settings is None else runtime_settings.preset
-    origin_app_packages = device.origin_app_packages
+    origin_ids = device.origin_ids
     reporter.debug(
         short="Device",
         detail=(
@@ -370,7 +369,7 @@ def _debug_resolved_device(
             f"runtime={getattr(runtime_settings, 'control_algorithm', None) or '<none>'} "
             f"runtime_preset={getattr(runtime_preset, 'key', None) or '<none>'} "
             f"model={device.model_key or '<none>'} "
-            f"origin_app_packages={','.join(origin_app_packages) or '<none>'} "
+            f"origin_ids={','.join(origin_ids) or '<none>'} "
             f"use_spp={device.profile.use_spp}"
         ),
     )

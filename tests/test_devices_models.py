@@ -109,7 +109,7 @@ def _model_payload(
 ) -> dict:
     payload = {
         "model_key": model_key,
-        "origin_app_packages": ["com.example.demo"],
+        "origin_ids": ["com.example.demo"],
         "detections": [
             {
                 "prefixes": prefixes or ["DEMO"],
@@ -142,6 +142,7 @@ class DevicesModelsTests(unittest.TestCase):
         payload = {
             "model_key": "manual_only",
             "profile_key": profile.profile_key,
+            "origin_ids": ["vendor.manual"],
             "marketing_names": ["Manual model"],
             "detections": [],
         }
@@ -207,7 +208,7 @@ class DevicesModelsTests(unittest.TestCase):
         }
 
         for model in (*self.catalog.models, *self.catalog.unsupported_models):
-            for package in model.origin_app_packages:
+            for package in model.origin_ids:
                 with self.subTest(model=model.model_key, package=package):
                     self.assertEqual(model.whitespace_mode, expected_modes[package])
 
@@ -277,7 +278,7 @@ class DevicesModelsTests(unittest.TestCase):
         for model in self.catalog.unsupported_models:
             with self.subTest(model=model.model_key):
                 self.assertIsInstance(model, PrinterModel)
-                self.assertTrue(model.origin_app_packages)
+                self.assertTrue(model.origin_ids)
                 if model.profile_key_prediction is not None:
                     self.assertNotIn(model.profile_key_prediction, profile_keys)
                     self.assertNotIn("Print Master", model.profile_key_prediction)
@@ -302,9 +303,9 @@ class DevicesModelsTests(unittest.TestCase):
         assert isinstance(niimbot_d11s, SupportedModelMatch)
         assert isinstance(luck_d11s, UnsupportedModelMatch)
         self.assertEqual(niimbot_d11s.model.model_key, "niimbot_d11s")
-        self.assertEqual(niimbot_d11s.model.origin_app_packages, ("com.gengcon.android.jccloudprinter",))
+        self.assertEqual(niimbot_d11s.model.origin_ids, ("com.gengcon.android.jccloudprinter",))
         self.assertEqual(luck_d11s.model.model_key, "unsupported_todo_luck_mpl11")
-        self.assertEqual(luck_d11s.model.origin_app_packages, ("com.dingdang.newprint",))
+        self.assertEqual(luck_d11s.model.origin_ids, ("com.dingdang.newprint",))
 
     def test_detect_model_returns_supported_match_for_printable_models(self) -> None:
         match = _single_match(self.catalog.detect_model("X6H-1234"))
@@ -340,9 +341,9 @@ class DevicesModelsTests(unittest.TestCase):
                     self.assertIsInstance(preset_key, str)
                     self.assertIn(preset_key, paper_presets)
 
-    def test_origin_app_names_are_loaded_from_catalog_data(self) -> None:
+    def test_origin_names_are_loaded_from_catalog_data(self) -> None:
         self.assertEqual(
-            self.catalog.origin_app_names(
+            self.catalog.origin_names(
                 (
                     "com.frogtosea.tinyPrint",
                     "com.fyhd.toprint",
@@ -929,7 +930,7 @@ class DevicesModelsTests(unittest.TestCase):
             (PaperMode.PLAIN, PaperMode.A4_SHEET),
         )
 
-    def test_origin_app_packages_keep_conflicting_names_explicit(self) -> None:
+    def test_origin_ids_keep_conflicting_names_explicit(self) -> None:
         tiny_p1 = self.catalog.detect_model("P1-")
         eleph_p1 = _single_match(self.catalog.detect_model("P1_"))
         toprint_p1 = self.catalog.detect_model("P1")
@@ -947,21 +948,21 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(tiny_d1.model.model_key, "pocket_printer")
         self.assertEqual(
             {
-                match.model.origin_app_packages[0]
+                match.model.origin_ids[0]
                 for match in tiny_p1
             },
             {"com.frogtosea.tinyPrint", "com.fyhd.toprint"},
         )
-        self.assertEqual(eleph_p1.model.origin_app_packages[0], "com.sandu.JxPrinter")
+        self.assertEqual(eleph_p1.model.origin_ids[0], "com.sandu.JxPrinter")
         self.assertEqual(
             {
-                match.model.origin_app_packages[0]
+                match.model.origin_ids[0]
                 for match in toprint_p1
             },
             {"com.frogtosea.tinyPrint", "com.fyhd.toprint"},
         )
-        self.assertEqual(dck_d1.model.origin_app_packages[0], "com.fun.mxw")
-        self.assertEqual(dck_d1.model.origin_app_packages[1], "com.bleem.liugm")
+        self.assertEqual(dck_d1.model.origin_ids[0], "com.fun.mxw")
+        self.assertEqual(dck_d1.model.origin_ids[1], "com.bleem.liugm")
 
     def test_niimbot_d110_matches_source_separator_forms(self) -> None:
         for name in ("D110", "D110-ABCD", "D110_1234", "D110__1234", "D110--1234"):
@@ -1030,7 +1031,7 @@ class DevicesModelsTests(unittest.TestCase):
         source_apps = {"com.fun.mxw", "com.bleem.liugm"}
 
         for model in [*self.catalog.models, *self.catalog.unsupported_models]:
-            if not source_apps.intersection(model.origin_app_packages):
+            if not source_apps.intersection(model.origin_ids):
                 continue
             for detection in model.detections:
                 with self.subTest(model=model.model_key, detection=detection.names):
@@ -1152,7 +1153,7 @@ class DevicesModelsTests(unittest.TestCase):
             self.assertEqual(match.model.model_key, model_key)
             self.assertEqual(match.profile.profile_key, "printmaster_m_384")
             self.assertEqual(
-                match.model.origin_app_packages,
+                match.model.origin_ids,
                 ("com.project.aimotech.printmaster",),
             )
 
@@ -1176,7 +1177,7 @@ class DevicesModelsTests(unittest.TestCase):
             assert isinstance(match, UnsupportedModelMatch)
             self.assertEqual(match.model.model_key, model_key)
             self.assertEqual(
-                match.model.origin_app_packages,
+                match.model.origin_ids,
                 ("com.project.aimotech.printmaster",),
             )
 
@@ -1228,7 +1229,7 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertIsInstance(match, SupportedModelMatch)
                 assert isinstance(match, SupportedModelMatch)
                 self.assertEqual(match.model.model_key, model_key)
-                self.assertEqual(match.model.origin_app_packages, ("com.bes.print.insta",))
+                self.assertEqual(match.model.origin_ids, ("com.bes.print.insta",))
                 self.assertEqual(match.profile.profile_key, "instaprint_ctp500")
                 self.assertEqual(match.profile.protocol_default.type, ProtocolFamily.INSTAPRINT_CORE)
                 self.assertEqual(
@@ -1247,7 +1248,7 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertIsInstance(match, UnsupportedModelMatch)
                 assert isinstance(match, UnsupportedModelMatch)
                 self.assertEqual(match.model.model_key, model_key)
-                self.assertEqual(match.model.origin_app_packages, ("com.bes.print.insta",))
+                self.assertEqual(match.model.origin_ids, ("com.bes.print.insta",))
 
         label_matches = self.catalog.detect_model("Label Printer")
         self.assertEqual(

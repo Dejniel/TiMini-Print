@@ -38,7 +38,7 @@ from .profiles import (
 PROFILE_DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "printer_profiles.json"
 MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models.json")
 UNSUPPORTED_MODEL_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_models_unsupported.json")
-ORIGIN_APP_DATA_PATH = PROFILE_DATA_PATH.with_name("origin_apps.json")
+ORIGIN_DATA_PATH = PROFILE_DATA_PATH.with_name("origins.json")
 PAPER_PRESET_DATA_PATH = PROFILE_DATA_PATH.with_name("printer_paper_presets.json")
 _UNSET = object()
 
@@ -53,7 +53,7 @@ class PrinterCatalog:
         profiles: Iterable[PrinterProfile],
         models: Iterable[SupportedPrinterModel],
         unsupported_models: Iterable[UnsupportedPrinterModel] = (),
-        origin_app_names: Mapping[str, str] | None = None,
+        origin_names: Mapping[str, str] | None = None,
     ) -> None:
         self._profiles = list(profiles)
         self._models = sorted(
@@ -72,7 +72,7 @@ class PrinterCatalog:
         self._unsupported_model_by_key = {
             model.model_key: model for model in self._unsupported_models
         }
-        self._origin_app_names = dict(origin_app_names or {})
+        self._origin_names = dict(origin_names or {})
         self._supported_detection_entries = self._sorted_detection_entries(self._models)
         self._unsupported_detection_entries = self._sorted_detection_entries(
             self._unsupported_models
@@ -84,7 +84,7 @@ class PrinterCatalog:
         self._validate_unsupported_model_keys()
         self._validate_model_references()
         self._validate_implemented_protocols()
-        self._validate_origin_app_names()
+        self._validate_origin_names()
 
     @staticmethod
     def _detection_specificity(model: SupportedPrinterModel | UnsupportedPrinterModel) -> tuple[int, int]:
@@ -198,7 +198,7 @@ class PrinterCatalog:
         model_path: Path = MODEL_DATA_PATH,
         unsupported_model_path: Path = UNSUPPORTED_MODEL_DATA_PATH,
         paper_preset_path: Path = PAPER_PRESET_DATA_PATH,
-        origin_app_path: Path | None = ORIGIN_APP_DATA_PATH,
+        origin_path: Path | None = ORIGIN_DATA_PATH,
     ) -> "PrinterCatalog":
         """Load the shared catalog instance from JSON profile and model files."""
         cache_key = (
@@ -206,7 +206,7 @@ class PrinterCatalog:
             model_path,
             unsupported_model_path,
             paper_preset_path,
-            origin_app_path,
+            origin_path,
         )
         cached = cls._cache.get(cache_key)
         if cached is not None:
@@ -215,10 +215,10 @@ class PrinterCatalog:
         models_raw = json.loads(model_path.read_text(encoding="utf-8"))
         unsupported_models_raw = json.loads(unsupported_model_path.read_text(encoding="utf-8"))
         paper_presets_raw = json.loads(paper_preset_path.read_text(encoding="utf-8"))
-        origin_app_names_raw = (
+        origin_names_raw = (
             {}
-            if origin_app_path is None
-            else json.loads(origin_app_path.read_text(encoding="utf-8"))
+            if origin_path is None
+            else json.loads(origin_path.read_text(encoding="utf-8"))
         )
         if not isinstance(profiles_raw, list):
             raise ValueError("Profile file must contain a JSON list")
@@ -228,8 +228,8 @@ class PrinterCatalog:
             raise ValueError("Unsupported model file must contain a JSON list")
         if not isinstance(paper_presets_raw, dict):
             raise ValueError("Paper preset file must contain a JSON object")
-        if not isinstance(origin_app_names_raw, dict):
-            raise ValueError("Origin app file must contain a JSON object")
+        if not isinstance(origin_names_raw, dict):
+            raise ValueError("Origin file must contain a JSON object")
         paper_presets = cls._load_paper_presets(paper_presets_raw)
         profiles = [
             model_from_json(
@@ -243,15 +243,15 @@ class PrinterCatalog:
             model_from_json(UnsupportedPrinterModel, entry)
             for entry in unsupported_models_raw
         ]
-        origin_app_names = {
-            str(package): str(name)
-            for package, name in origin_app_names_raw.items()
+        origin_names = {
+            str(origin_id): str(name)
+            for origin_id, name in origin_names_raw.items()
         }
         catalog = cls(
             profiles,
             models,
             unsupported_models,
-            origin_app_names,
+            origin_names,
         )
         cls._cache[cache_key] = catalog
         return catalog
@@ -399,18 +399,18 @@ class PrinterCatalog:
                 f"protocol family {protocol_family.value}"
             )
 
-    def _validate_origin_app_names(self) -> None:
-        if not self._origin_app_names:
+    def _validate_origin_names(self) -> None:
+        if not self._origin_names:
             return
-        known_packages = {
-            package
+        known_ids = {
+            origin_id
             for model in [*self._models, *self._unsupported_models]
-            for package in model.origin_app_packages
+            for origin_id in model.origin_ids
         }
-        missing = sorted(known_packages - set(self._origin_app_names))
+        missing = sorted(known_ids - set(self._origin_names))
         if missing:
             raise ValueError(
-                "Origin app names are missing packages: "
+                "Origin names are missing IDs: "
                 + ", ".join(missing)
             )
 
@@ -486,7 +486,7 @@ class PrinterCatalog:
         from stealing an unrelated model. At equal specificity, supported normally
         wins; an explicit shared ambiguity group keeps both candidates. Any
         ambiguous result returns ``None`` so callers can ask the user to choose the
-        source app/model explicitly.
+        source/model explicitly.
         """
         matches = self.detect_model(device_name, address)
         if len(matches) != 1 or not isinstance(matches[0], SupportedModelMatch):
@@ -515,7 +515,7 @@ class PrinterCatalog:
             image_pipeline=self._select_image_pipeline(profile, model),
             runtime_settings=self._runtime_settings_for_model(model, profile),
             model_key=model.model_key,
-            origin_app_packages=model.origin_app_packages,
+            origin_ids=model.origin_ids,
             transport_target=transport_target,
         )
 
@@ -536,7 +536,7 @@ class PrinterCatalog:
             image_pipeline=profile.default_image_pipeline,
             runtime_settings=None,
             model_key=f"manual:{profile.profile_key}",
-            origin_app_packages=(),
+            origin_ids=(),
             transport_target=transport_target,
         )
 
@@ -565,7 +565,7 @@ class PrinterCatalog:
         if len(matches) > 1:
             candidates = ", ".join(self._format_model_candidate(model) for model in matches)
             raise RuntimeError(
-                f"Printer name '{key}' is ambiguous; choose the original app and use one of these model keys: "
+                f"Printer name '{key}' is ambiguous; choose the source and use one of these model keys: "
                 f"{candidates}"
             )
         raise RuntimeError(f"Unknown printer model or catalog name '{key}'")
@@ -586,14 +586,12 @@ class PrinterCatalog:
     def get_unsupported_model(self, model_key: str) -> UnsupportedPrinterModel | None:
         return self._unsupported_model_by_key.get(model_key)
 
-    def origin_app_names(self, packages: Iterable[str]) -> tuple[str, ...]:
-        return tuple(self._origin_app_names.get(package, package) for package in packages)
+    def origin_names(self, origin_ids: Iterable[str]) -> tuple[str, ...]:
+        """Resolve source labels for app, SDK, or manufacturer-documentation IDs."""
+        return tuple(self._origin_names.get(origin_id, origin_id) for origin_id in origin_ids)
 
     def _format_model_candidate(self, model: SupportedPrinterModel) -> str:
-        app_names = self.origin_app_names(model.origin_app_packages)
-        if not app_names:
-            return model.model_key
-        return f"{model.model_key} ({', '.join(app_names)})"
+        return f"{model.model_key} ({', '.join(self.origin_names(model.origin_ids))})"
 
     def require_unsupported_model(self, model_key: str) -> UnsupportedPrinterModel:
         model = self.get_unsupported_model(model_key)
@@ -666,7 +664,7 @@ class PrinterCatalog:
         """Return printable device candidates for a known detected name.
 
         This keeps supported candidate construction in one place. It may return
-        multiple devices when the same advertised name is source-app ambiguous.
+        multiple devices when the same advertised name is ambiguous across sources.
         """
         return tuple(
             self.device_from_match(
@@ -781,7 +779,7 @@ class PrinterCatalog:
             image_pipeline=self._select_image_pipeline(profile, model),
             runtime_settings=self._runtime_settings_for_model(model, profile),
             model_key=model.model_key,
-            origin_app_packages=model.origin_app_packages,
+            origin_ids=model.origin_ids,
             transport_target=transport_target,
         )
 
@@ -824,7 +822,7 @@ class PrinterCatalog:
             runtime_settings=printer_config_parts.runtime_settings,
             model_key=printer_config_parts.model_key
             or f"printer_config:{printer_config_parts.profile.profile_key}",
-            origin_app_packages=printer_config_parts.origin_app_packages,
+            origin_ids=printer_config_parts.origin_ids,
             transport_target=resolved_transport_target,
         )
 
@@ -858,7 +856,7 @@ class PrinterCatalog:
         image_pipeline: ImagePipelineConfig,
         runtime_settings: RuntimeSettings | None,
         model_key: str,
-        origin_app_packages: tuple[str, ...],
+        origin_ids: tuple[str, ...],
         transport_target: TransportTarget | None,
     ) -> PrinterDevice:
         self._validate_protocol_variant(protocol_family, protocol_variant)
@@ -876,7 +874,7 @@ class PrinterCatalog:
             runtime_settings=runtime_settings,
             transport_target=transport_target,
             model_key=model_key,
-            origin_app_packages=origin_app_packages,
+            origin_ids=origin_ids,
         )
 
     @staticmethod

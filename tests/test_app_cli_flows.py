@@ -85,7 +85,7 @@ class AppCliFlowsTests(unittest.TestCase):
         warnings.assert_not_called()
         self.assertEqual(output.getvalue(), "all licenses\n")
 
-    def test_list_models_includes_origin_app_names(self) -> None:
+    def test_list_models_includes_origin_names(self) -> None:
         output = io.StringIO()
 
         with contextlib.redirect_stdout(output):
@@ -94,8 +94,8 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertEqual(code, 0)
         text = output.getvalue()
         self.assertIn("pocket_printer: ", text)
-        self.assertIn("[app: Tiny Print]", text)
-        self.assertIn("toprint_tspl_p1: P1 [app: ToPrint]", text)
+        self.assertIn("[source: Tiny Print]", text)
+        self.assertIn("toprint_tspl_p1: P1 [source: ToPrint]", text)
 
     def test_scan_lists_ambiguous_supported_source_variants(self) -> None:
         reporter, _sink = build_capture_reporter()
@@ -120,8 +120,8 @@ class AppCliFlowsTests(unittest.TestCase):
 
         self.assertEqual(code, 0)
         text = output.getvalue()
-        self.assertIn("model: pocket_printer; app: Tiny Print", text)
-        self.assertIn("model: toprint_tspl_p1; app: ToPrint", text)
+        self.assertIn("model: pocket_printer; source: Tiny Print", text)
+        self.assertIn("model: toprint_tspl_p1; source: ToPrint", text)
 
     def test_emit_update_warning_reports_available_release(self) -> None:
         reporter, sink = build_capture_reporter()
@@ -414,7 +414,7 @@ class AppCliFlowsTests(unittest.TestCase):
             preset=types.SimpleNamespace(key="mx10_mx06"),
         )
         device.model_key = "mx10"
-        device.origin_app_packages = ("com.fun.mxw",)
+        device.origin_ids = ("com.fun.mxw",)
         device.profile.use_spp = False
 
         cli._debug_resolved_device(reporter, device, action="print")
@@ -426,7 +426,7 @@ class AppCliFlowsTests(unittest.TestCase):
         self.assertIn("runtime=mx10", detail)
         self.assertIn("runtime_preset=mx10_mx06", detail)
         self.assertIn("model=mx10", detail)
-        self.assertIn("origin_app_packages=com.fun.mxw", detail)
+        self.assertIn("origin_ids=com.fun.mxw", detail)
 
 
 if __name__ == "__main__":

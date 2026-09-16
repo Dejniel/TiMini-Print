@@ -100,7 +100,7 @@ def validate_catalog_models() -> list[str]:
     for model in catalog.models:
         for name in model.names:
             supported_origins_by_name.setdefault(DetectionNormalizer.fold_name(name), set()).update(
-                model.origin_app_packages
+                model.origin_ids
             )
     for model in catalog.models:
         if not model.names:
@@ -111,7 +111,7 @@ def validate_catalog_models() -> list[str]:
         for name in model.names:
             normalized_name = DetectionNormalizer.fold_name(name)
             supported_origins = supported_origins_by_name.get(normalized_name)
-            if supported_origins and set(model.origin_app_packages).issubset(supported_origins):
+            if supported_origins and set(model.origin_ids).issubset(supported_origins):
                 errors.append(
                     f"Unsupported model {model.model_key} display name {name!r} is already supported"
                 )

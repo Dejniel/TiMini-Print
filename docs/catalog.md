@@ -10,7 +10,7 @@ Catalog data lives in `timiniprint/data`:
 - `printer_models_unsupported.json`: known-but-not-implemented models
 - `printer_profiles.json`: shared printable parameter recipes
 - `printer_paper_presets.json`: reusable paper/render geometry presets
-- `origin_apps.json`: Android package to human app name mapping
+- `origins.json`: stable source ID to human-readable source name mapping
 
 `PrinterCatalog.load()` loads all of these files together and validates cross-references.
 
@@ -21,11 +21,11 @@ A supported model entry represents a source-backed printer model that TiMini can
 - `model_key`: stable public model key used by CLI/configs/manual selection
 - optional `marketing_names`: product/store/manual aliases
 - `detections`: Bluetooth matching rules and optional aliases associated with each rule
-- `origin_app_packages`: source app package names
+- `origin_ids`: required, non-empty list of source IDs
 - `profile_key`: shared printable profile recipe
 - optional `protocol_override`, `image_pipeline_override`, and runtime override fields
 
-Several model entries may point to the same profile when they use the same protocol recipe. If two source apps use the same advertised Bluetooth name for different protocols or values, keep both variants explicit and let automatic detection stay conservative.
+Several model entries may point to the same profile when they use the same protocol recipe. If two sources use the same advertised Bluetooth name for different protocols or values, keep both variants explicit and let automatic detection stay conservative.
 
 Marketing names never trigger automatic Bluetooth detection. They are public catalog names, so they are shown in model inventories and can be used for explicit CLI/GUI selection.
 
@@ -40,6 +40,39 @@ Use unsupported entries to:
 - group README future-support names
 
 `profile_key_prediction`, when present, is a future extraction/grouping hint. It is not an implemented profile key and must not route hardware to a protocol.
+
+## Sources
+
+Every supported and unsupported catalog model must have a non-empty `origin_ids`
+list. A source may be an application, an SDK, or manufacturer documentation;
+it does not have to be an Android app. IDs are opaque, stable strings. Existing
+Android package names remain valid IDs, without implying a package-name format
+for other sources. Each built-in ID must have a display name in `origins.json`.
+
+Sources describe a model variant; they are not extra detection rules. If a name
+is ambiguous, show the candidates with their source labels and let the user
+select a `model_key`, using the existing model-selection flow:
+
+```python
+for match in catalog.detect_model(bluetooth_name):
+    model = match.model
+    print(model.model_key, catalog.origin_names(model.origin_ids))
+```
+
+`PrinterDevice.origin_ids` retains the selected model's sources, including after
+exporting and importing a model-based printer config. A raw profile-based device
+has no model attribution and may have an empty tuple. Custom catalogs without a
+display-name registry show their source IDs directly.
+
+### API migration
+
+Integrators must rename `origin_app_packages` to `origin_ids` and
+`PrinterCatalog.origin_app_names(...)` to `PrinterCatalog.origin_names(...)`.
+The constructor's mapping argument is also `origin_names`; `load()` accepts
+`origin_path` instead of `origin_app_path`. The registry is now `origins.json`.
+No aliases for the old names are provided. Update consumers before advancing
+their backend revision. Existing model-based printer config files need no
+migration: they store `model_key`, not source metadata.
 
 ## Detection Rules
 
@@ -115,7 +148,7 @@ Public model names are the ordered union of model-level `marketing_names` and, f
 - BLE MTU request
 - legacy protocol flags that are still profile-level behavior
 
-A profile alone does not include Bluetooth detection metadata, source app metadata, model-specific overrides, or transport target. Prefer model-based configs for normal use.
+A profile alone does not include Bluetooth detection metadata, source metadata, model-specific overrides, or transport target. Prefer model-based configs for normal use.
 
 ## Runtime Settings
 
@@ -168,7 +201,7 @@ Editable printer configs are serialized `PrinterDevice` descriptions. They can s
 - runtime overrides
 - optional transport target
 
-If `model_key` is present, deleting an override falls back to the current catalog model. Raw profile-based configs are possible for low-level diagnostics but do not carry model detection or source-app metadata.
+If `model_key` is present, deleting an override falls back to the current catalog model. Raw profile-based configs are possible for low-level diagnostics but do not carry model detection or source metadata.
 
 ## README Rendering
 
@@ -180,7 +213,7 @@ Catalog changes should be checked by tests or `tools/catalog_audit.py` when they
 
 - duplicate model keys
 - detection conflicts
-- missing origin app names
+- missing source IDs or names
 - unsupported/support overlap
 - profile references
 - paper preset references
