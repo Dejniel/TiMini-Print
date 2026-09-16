@@ -18,6 +18,9 @@ class RuntimeConnectionSession:
             return
         await attach_runtime_controller(runtime_controller, timeout=timeout)
 
+    def report_status(self, message: str) -> None:
+        self._reporter.status(short=message)
+
     def report_debug(self, message: str) -> None:
         self._reporter.debug(short="Runtime", detail=message)
 
