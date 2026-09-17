@@ -4,7 +4,7 @@ from collections.abc import Callable
 import unittest
 from unittest.mock import patch
 
-from timiniprint.printing.runtime.base import PreparedRuntimeContext, RuntimeController
+from timiniprint.printing.runtime.base import PreparedPrinter, RuntimeController
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
 from timiniprint.printing.runtime.v5g import V5GRuntimeController
 from timiniprint.printing.send import send_prepared_job
@@ -202,7 +202,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         )
         job = ProtocolJob(steps=steps)
 
-        await send_prepared_job(object(), connection, job, timeout=0.1, reporter=reporter)
+        await send_prepared_job(PreparedPrinter(object()), connection, job, timeout=0.1, reporter=reporter)
 
         self.assertEqual(connection.query_packets, [b"D", b"S", b"F"])
         self.assertEqual(connection.query_timeouts, [0.25, 0.25, 0.25])
@@ -220,49 +220,37 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             steps=(ProtocolStep.send("bitmap", b"B"),),
         )
 
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            timeout=0.1,
-            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
         self.assertEqual(controller.calls, 1)
-        self.assertEqual(connection.attached_runtime_controllers, [controller])
+        self.assertEqual(connection.attached_runtime_controllers, [])
         self.assertEqual(connection.standard_payloads, [b"runtime"])
         self.assertEqual(connection.sent_jobs, [])
 
-    async def test_send_prepared_job_attaches_runtime_controller_for_stream_job(self) -> None:
+    async def test_send_prepared_job_reuses_ready_runtime_without_attaching(self) -> None:
         connection = _Connection()
         controller = RuntimeController()
         job = ProtocolJob(payload=b"stream")
 
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            timeout=0.1,
-            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
-        self.assertEqual(connection.attached_runtime_controllers, [controller])
+        self.assertEqual(connection.attached_runtime_controllers, [])
         self.assertEqual(connection.sent_jobs, [job])
 
-    async def test_send_prepared_job_resolves_runtime_for_print_job(self) -> None:
+    async def test_send_prepared_job_does_not_resolve_runtime(self) -> None:
         connection = _Connection()
         controller = RuntimeController()
         device = object()
         job = ProtocolJob(payload=b"print", wait_for_completion=True)
 
         with patch(
-            "timiniprint.printing.send.runtime_controller_for_device",
+            "timiniprint.printing.runtime.prepare.runtime_controller_for_device",
             return_value=controller,
         ) as runtime_factory:
-            await send_prepared_job(device, connection, job, timeout=0.1)
+            await send_prepared_job(PreparedPrinter(device, controller), connection, job, timeout=0.1)
 
-        runtime_factory.assert_called_once_with(device)
-        self.assertEqual(connection.attached_runtime_controllers, [controller])
+        runtime_factory.assert_not_called()
+        self.assertEqual(connection.attached_runtime_controllers, [])
         self.assertEqual(connection.sent_jobs, [job])
 
     async def test_v5c_runtime_executes_status_steps(self) -> None:
@@ -276,13 +264,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             wait_for_completion=True,
         )
 
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            timeout=0.1,
-            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
         self.assertEqual(
             connection.standard_payloads,
@@ -302,13 +284,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             wait_for_completion=True,
         )
 
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            timeout=0.1,
-            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
         self.assertEqual(connection.sent_jobs, [job])
         self.assertFalse(controller.debug_snapshot()["query_status_in_flight"])
@@ -324,13 +300,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             wait_for_completion=True,
         )
 
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            timeout=0.1,
-            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
         self.assertEqual(connection.standard_payloads, [b"PAGE1PAGE2"])
         self.assertEqual(connection.sent_jobs, [])
@@ -345,13 +315,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             wait_for_completion=True,
         )
 
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            timeout=0.1,
-            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
         self.assertEqual(connection.sent_jobs, [job])
         self.assertFalse(controller.debug_snapshot()["printing"])
@@ -370,7 +334,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         )
         job = ProtocolJob(steps=steps)
 
-        await send_prepared_job(object(), connection, job, timeout=0.1, reporter=reporter)
+        await send_prepared_job(PreparedPrinter(object()), connection, job, timeout=0.1, reporter=reporter)
 
         self.assertEqual(connection.standard_payloads, [b"A", b"B"])
         self.assertEqual(connection.wait_labels, ["page index"])
@@ -389,7 +353,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        await send_prepared_job(object(), connection, job, reporter=reporter)
+        await send_prepared_job(PreparedPrinter(object()), connection, job, reporter=reporter)
 
         self.assertEqual(connection.query_packets, [])
         self.assertEqual(connection.standard_payloads, [])
@@ -403,7 +367,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         reporter = _Reporter()
         job = ProtocolJob(steps=(ProtocolStep.send("bitmap", b"B"),))
 
-        await send_prepared_job(object(), connection, job, reporter=reporter)
+        await send_prepared_job(PreparedPrinter(object()), connection, job, reporter=reporter)
 
         self.assertEqual(len(connection.sent_jobs), 1)
         self.assertEqual(connection.sent_jobs[0].payload, b"B")
@@ -428,7 +392,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        await send_prepared_job(object(), connection, job, reporter=reporter)
+        await send_prepared_job(PreparedPrinter(object()), connection, job, reporter=reporter)
 
         self.assertEqual(connection.notification_query_packets, [b"Q"])
         self.assertEqual(connection.query_match_results, [True])
@@ -453,7 +417,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        await send_prepared_job(object(), connection, job, reporter=reporter)
+        await send_prepared_job(PreparedPrinter(object()), connection, job, reporter=reporter)
 
         self.assertEqual(connection.notification_query_packets, [])
         self.assertEqual(connection.query_match_results, [])
@@ -481,7 +445,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        await send_prepared_job(object(), connection, job, timeout=5.0, reporter=reporter)
+        await send_prepared_job(PreparedPrinter(object()), connection, job, timeout=5.0, reporter=reporter)
 
         self.assertEqual(connection.query_packets, [b"P"])
         self.assertLessEqual(connection.query_timeouts[0], 0.01)

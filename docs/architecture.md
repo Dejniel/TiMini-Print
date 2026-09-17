@@ -8,12 +8,33 @@ The app-level flow is:
 
 1. `devices` resolves an initial `PrinterDevice`
 2. `transport` opens a connector-specific connection
-3. `printing.connected.connect_printer(...)` prepares runtime state and may refine print capabilities from a documented device query
+3. `printing.connected.connect_printer(...)` prepares the complete configuration and runtime before publishing a connected printer
 4. `ConnectedPrinter` prints files/text or sends prepared jobs
 5. `protocol` builds packet payloads and optional protocol steps
 6. `transport` writes bytes and exposes generic query/wait primitives
 
-The important object at runtime is `PrinterDevice`. It is the shared description used by protocol, printing, and transport without making those packages own each other. After runtime preparation, `ConnectedPrinter.printer_device` exposes the refined immutable device description used to build jobs.
+`PrinterDevice` is an immutable configuration, not a live connection. A catalog
+selection may still need identification. `RuntimeController.prepare(...)`
+returns one `PreparedPrinter`: the final device, its negotiated capability
+snapshot, and the controller owning the session state. `ConnectedPrinter`
+stores this result, not a second independently supplied device description.
+
+Model, geometry, and protocol selection are parts of the same preparation.
+A bootstrap may select a different family, but must return its prepared
+controller and explicitly transfer any necessary negotiated state. Preparation
+checks that the selected configuration still fits the open transport. It never
+silently reconnects or changes GATT bindings. Failed or cancelled preparation
+closes the acquired connection before exposing a printable object.
+
+Sending reuses that controller for all pages, copies, and subsequent jobs. It
+does not construct controllers or copy state from a previous controller.
+Reconnect starts a fresh preparation. Live status and flow control remain
+mutable controller state; the published print configuration remains immutable.
+
+The file/raster builders take a device and optional capability data, never a
+live controller. Known configurations can still build jobs offline. Printer
+identity aliases are matched by the catalog independently of Bluetooth names;
+unknown or ambiguous identities are not resolved by catalog order.
 
 ## Package Boundaries
 
@@ -53,7 +74,7 @@ It contains connector interfaces, connection implementations, Bluetooth adapters
 A resolved printer instance as the program intends to use it. It combines display name, profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, optional transport target, and the BLE transport profile derived by the devices layer.
 
 ### `ConnectedPrinter`
-The high-level object for an active printer session. It owns an active connection and prepared runtime context, then exposes `print_file(...)`, `print_text(...)`, `send_job(...)`, `feed()`, `retract()`, and `disconnect()`.
+The high-level object for an active printer session. It owns an active connection and its `PreparedPrinter` result, then exposes `print_file(...)`, `print_text(...)`, `send_job(...)`, `feed()`, `retract()`, and `disconnect()`.
 
 CLI and GUI should use `ConnectedPrinter` instead of manually combining `PrintJobBuilder`, runtime preparation, and `send_prepared_job`.
 
@@ -102,9 +123,16 @@ There are two kinds of protocol-related behavior:
 
 Stateless packet formats belong in `timiniprint.protocol.families.*`. Runtime behavior belongs in `timiniprint.printing.runtime.*` when it depends on current session state, notifications, timing, previous writes, firmware replies, or completion waits.
 
-`prepare_connection_runtime(...)` selects a runtime controller for the initial `PrinterDevice`. If no controller is needed, it returns an empty context. If a controller is needed, it may attach to the connection, probe capabilities, run a handshake, prepare notification state, or return a refined immutable device description.
+`prepare_connection_runtime(...)` selects a runtime controller for the initial `PrinterDevice`, or uses an explicitly supplied bootstrap. Without a controller, the result still contains the final device. With a controller, its `prepare(...)` resolves identity, geometry, capabilities and session state in one operation.
 
-Runtime resolution happens after the connection has already been opened. It may therefore refine print-facing fields such as image width, paper presets, image pipeline, or runtime capabilities, but it must not change the active protocol family, transport target, SPP/BLE selection, stream settings, or BLE MTU request. A controller that attempts to change those connection-facing fields is rejected.
+Preparation may select another protocol family only with its ready runtime (or no controller for a stateless recipe). It must retain the transport target, SPP/BLE policy, stream settings and BLE MTU request. An active BLE connection must retain its applied GATT profile, exposed by `connection.active_ble_profile`; an SPP/serial connection reports `None`. This is based on the transport that connected, including fallback, not the discovery candidates. Custom connections without that metadata cannot select a different BLE profile. A different active transport setup requires a separate connection, not an in-place mutation of the session.
+
+The adapter owns the lifecycle of an attached controller: it stops the old
+receiver in its owning event loop before replacement or disconnect. A prepared
+replacement is installed without repeating initialization or copying runtime
+state. Executor-backed I/O must finish before closing the socket and its loop,
+including after caller cancellation. These are transport lifecycle rules, not
+printer-family policy.
 
 GATT write response is not a printer protocol ACK. If a family needs ACKs, status, or completion waits, model that as protocol steps and runtime controller behavior, not as transport adapter policy.
 

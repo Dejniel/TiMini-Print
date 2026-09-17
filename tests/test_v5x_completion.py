@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+
 import unittest
 
-from timiniprint.printing.runtime.base import PreparedRuntimeContext, RuntimeController
+from timiniprint.printing.runtime.base import PreparedPrinter, RuntimeController
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.job import ProtocolJob
@@ -152,10 +153,7 @@ class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
         connection = _SendOnlyConnection()
         job = ProtocolJob(payload=b"data", wait_for_completion=True)
 
-        await send_prepared_job(
-            object(), connection, job,
-            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job)
 
         self.assertEqual(connection.sent, [job])
         self.assertFalse(controller.debug_snapshot()["await_start_ready"])
@@ -165,12 +163,7 @@ class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
         spy = _SpyController()
         job = ProtocolJob(payload=b"data", wait_for_completion=True)
         connection = _SendOnlyConnection()
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            runtime_context=PreparedRuntimeContext(runtime_controller=spy),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=spy), connection, job)
         self.assertEqual(len(connection.sent), 1)
         self.assertEqual(spy.completed, 1)
 
@@ -182,12 +175,7 @@ class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
         )
         connection = _StandardPayloadConnection()
 
-        await send_prepared_job(
-            object(),
-            connection,
-            job,
-            runtime_context=PreparedRuntimeContext(runtime_controller=spy),
-        )
+        await send_prepared_job(PreparedPrinter(object(), runtime_controller=spy), connection, job)
 
         self.assertEqual(connection.standard_payloads, [b"data"])
         self.assertEqual(connection.sent, [])
@@ -196,7 +184,7 @@ class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
     async def test_send_prepared_job_without_controller_is_fine(self) -> None:
         job = ProtocolJob(payload=b"data")
         connection = _SendOnlyConnection()
-        await send_prepared_job(object(), connection, job)
+        await send_prepared_job(PreparedPrinter(object()), connection, job)
         self.assertEqual(len(connection.sent), 1)
 
 

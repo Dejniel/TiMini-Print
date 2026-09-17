@@ -160,18 +160,12 @@ class _RuntimeControllerSpy:
         self.payloads = []
         self.received = threading.Event()
 
-    def adopt_previous(self, _previous):
-        return None
-
     def handle_notification(self, _session, payload):
         self.payloads.append(bytes(payload))
         self.received.set()
 
 
 class _FlowRuntimeController:
-    def adopt_previous(self, _previous):
-        return None
-
     def handle_notification(self, session, payload):
         if payload == b"pause":
             session.set_flow_paused(True, payload=payload)
@@ -715,6 +709,25 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
         self.assertTrue(controller.received.wait(0.2))
         self.assertEqual(controller.payloads, [b"err:\x02."])
+
+    def test_classic_runtime_replacement_and_detach(self) -> None:
+        backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
+        self.addCleanup(backend._stop_classic_receive_hub)
+        backend._sock = _QuerySocket([])
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        first, selected = _RuntimeControllerSpy(), _RuntimeControllerSpy()
+        selected.payloads.append(b"negotiated state")
+
+        backend._attach_runtime_controller_blocking(first, 0.1)
+        backend._handle_classic_payload(b"identity")
+        backend._attach_runtime_controller_blocking(selected, 0.1)
+        backend._handle_classic_payload(b"status")
+        backend._attach_runtime_controller_blocking(None, 0.1)
+        backend._handle_classic_payload(b"after detach")
+
+        self.assertEqual(first.payloads, [b"identity"])
+        self.assertEqual(selected.payloads, [b"negotiated state", b"status"])
 
     def test_wait_for_reply_blocking_delegates_ble_notification_wait(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)

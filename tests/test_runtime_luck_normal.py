@@ -100,9 +100,9 @@ class LuckNormalRuntimeControllerTests(unittest.TestCase):
         controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
         session = _Session(replies=["PPA2L_GY".encode("gb2312"), b"1.26"])
 
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().device_from_profile("luck_ppa2l"), session, timeout=0.1))
 
-        caps = controller.runtime_capabilities()
+        caps = prepared.capabilities
         self.assertIsNotNone(caps)
         self.assertTrue(caps.supports_gray)
         self.assertIsNone(caps.gray_level_override)
@@ -122,9 +122,9 @@ class LuckNormalRuntimeControllerTests(unittest.TestCase):
         controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal")
         session = _Session(replies=["PPA2L".encode("gb2312"), None])
 
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().device_from_profile("luck_ppa2l"), session, timeout=0.1))
 
-        caps = controller.runtime_capabilities()
+        caps = prepared.capabilities
         self.assertIsNotNone(caps)
         self.assertFalse(caps.supports_gray)
         self.assertIsNone(controller.debug_snapshot()["firmware_version"])
@@ -134,9 +134,9 @@ class LuckNormalRuntimeControllerTests(unittest.TestCase):
         controller = LuckNormalRuntimeController(protocol_variant="lujiang_normal_h")
         session = _Session(can_send=True, can_query=False, reply=None)
 
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().device_from_profile("luck_ppa2l"), session, timeout=0.1))
 
-        caps = controller.runtime_capabilities()
+        caps = prepared.capabilities
         self.assertIsNotNone(caps)
         self.assertFalse(caps.supports_gray)
         self.assertEqual(caps.gray_level_override, 12)

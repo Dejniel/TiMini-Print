@@ -34,10 +34,6 @@ class V5CRuntimeController(RuntimeController):
     def __init__(self) -> None:
         self._state = _V5CSessionState()
 
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if isinstance(previous, V5CRuntimeController):
-            self._state = previous._state
-
     def debug_snapshot(self) -> dict[str, object]:
         return {
             "status_code": self._state.status_code,

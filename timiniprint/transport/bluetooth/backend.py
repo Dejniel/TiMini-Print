@@ -134,28 +134,70 @@ class SppBackend:
         device: DeviceInfo,
         pairing_hint: Optional[bool] = None,
     ) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._connect_attempts_blocking, [device], pairing_hint)
+        await self.connect_attempts([device], pairing_hint=pairing_hint)
 
     async def connect_attempts(
         self,
         attempts: List[DeviceInfo],
         pairing_hint: Optional[bool] = None,
     ) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._connect_attempts_blocking, attempts, pairing_hint)
+        try:
+            await self._run_blocking(self._connect_attempts_blocking, attempts, pairing_hint)
+        except BaseException:
+            try:
+                await self.disconnect()
+            except Exception as exc:
+                self._reporter.warning(short="Connection cleanup failed", detail=str(exc))
+            raise
 
     def is_connected(self) -> bool:
         return self._connected
 
+    @property
+    def transport(self) -> DeviceTransport | None:
+        """Transport which actually connected, including the outcome of fallback."""
+        return self._transport
+
+    async def _run_blocking(self, operation, *args):
+        """Do not abandon live socket I/O when its asyncio caller is cancelled.
+
+        An executor future cannot stop its worker. Let the current operation
+        finish (or reach its transport timeout) before allowing cleanup to
+        close the socket/event loop. Repeated cancellation must not skip this.
+        """
+        pending = asyncio.get_running_loop().run_in_executor(None, operation, *args)
+        try:
+            return await asyncio.shield(pending)
+        except asyncio.CancelledError:
+            while not pending.done():
+                try:
+                    await asyncio.shield(pending)
+                except asyncio.CancelledError:
+                    continue
+                except Exception:
+                    break
+            if not pending.cancelled():
+                pending.exception()  # Retrieve errors without replacing caller cancellation.
+            raise
+
+    async def _stop_classic_runtime_controller(self) -> None:
+        previous = self._classic_runtime_controller
+        self._classic_runtime_controller = None
+        if previous is not None:
+            await previous.stop(self._classic_runtime_session)
+
     async def disconnect(self) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(None, self._disconnect_blocking)
+        try:
+            await self._stop_classic_runtime_controller()
+        finally:
+            await self._run_blocking(self._disconnect_blocking)
 
     async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(
-            None,
+        if self._transport == DeviceTransport.CLASSIC:
+            if runtime_controller is self._classic_runtime_controller:
+                return
+            await self._stop_classic_runtime_controller()
+        await self._run_blocking(
             self._attach_runtime_controller_blocking,
             runtime_controller,
             timeout,
@@ -180,18 +222,14 @@ class SppBackend:
         return self._can_send_control_packet_wait_notification_blocking()
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
+        return await self._run_blocking(
             self._send_control_packet_blocking,
             packet,
             timeout,
         )
 
     async def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
+        return await self._run_blocking(
             self._send_bulk_payload_blocking,
             data,
             timeout,
@@ -204,9 +242,7 @@ class SppBackend:
         timeout: float = 1.0,
         reply_complete: Callable[[bytes], bool] | None = None,
     ) -> bytes | None:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
+        return await self._run_blocking(
             self._query_control_packet_blocking,
             packet,
             timeout,
@@ -221,9 +257,7 @@ class SppBackend:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
+        return await self._run_blocking(
             self._wait_for_notification_blocking,
             label,
             match,
@@ -239,9 +273,7 @@ class SppBackend:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
+        return await self._run_blocking(
             self._wait_for_reply_blocking,
             label,
             match,
@@ -258,9 +290,7 @@ class SppBackend:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(
-            None,
+        return await self._run_blocking(
             self._send_control_packet_wait_notification_blocking,
             packet,
             label,
@@ -275,9 +305,7 @@ class SppBackend:
         chunk_size: int,
         delay_ms: int,
     ) -> None:
-        loop = asyncio.get_running_loop()
-        await loop.run_in_executor(
-            None,
+        await self._run_blocking(
             self._write_blocking,
             data,
             chunk_size,
@@ -479,12 +507,14 @@ class SppBackend:
             self._transport = None
 
     def _attach_runtime_controller_blocking(self, runtime_controller, timeout: float) -> None:
-        if runtime_controller is None or not self._sock or not self._connected:
+        if not self._sock or not self._connected:
             return
         if self._transport == DeviceTransport.CLASSIC:
+            if runtime_controller is None:
+                self._classic_runtime_controller = None
+                return
             previous = self._classic_runtime_controller
             if runtime_controller is not previous:
-                runtime_controller.adopt_previous(previous)
                 self._classic_runtime_controller = runtime_controller
             hub = self._ensure_classic_receive_hub()
             hub.set_listener(self._handle_classic_payload)

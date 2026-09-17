@@ -20,6 +20,7 @@ A supported model entry represents a source-backed printer model that TiMini can
 
 - `model_key`: stable public model key used by CLI/configs/manual selection
 - optional `marketing_names`: product/store/manual aliases
+- optional `identity_names`: exact printer-reported names and protocol aliases, not Bluetooth detection rules
 - `detections`: Bluetooth matching rules and optional aliases associated with each rule
 - `origin_ids`: required, non-empty list of source IDs
 - `profile_key`: shared printable profile recipe
@@ -28,6 +29,14 @@ A supported model entry represents a source-backed printer model that TiMini can
 Several model entries may point to the same profile when they use the same protocol recipe. If two sources use the same advertised Bluetooth name for different protocols or values, keep both variants explicit and let automatic detection stay conservative.
 
 Marketing names never trigger automatic Bluetooth detection. They are public catalog names, so they are shown in model inventories and can be used for explicit CLI/GUI selection.
+
+`identity_names` is used only after a protocol identity query. The catalog's
+`device_from_identity(identity, origin_id=...)` performs case-insensitive exact
+matching within the specified source, without trimming or using scan-name
+heuristics. Protocol decoding/normalization belongs to the family. An unknown
+or ambiguous identity raises `ValueError`; it never selects the first row.
+Identity aliases do not automatically appear in the public model list. Add
+them to `marketing_names` too when they are useful public selection names.
 
 ## Unsupported Models
 

@@ -254,10 +254,7 @@ class PrintingJobTests(unittest.TestCase):
         builder = self.job_mod.PrintJobBuilder(
             device,
             document_renderer=renderer,
-            runtime_context=types.SimpleNamespace(
-                capabilities=capabilities,
-                runtime_controller=None,
-            ),
+            runtime_capabilities=capabilities,
         )
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "a.txt"

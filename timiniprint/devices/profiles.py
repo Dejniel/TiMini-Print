@@ -657,6 +657,7 @@ class PrinterModel:
 
 @dataclass(frozen=True)
 class SupportedPrinterModel(PrinterModel):
+    identity_names: Tuple[str, ...] = ()
     profile_key: str = ""
     protocol_override: Optional[ProtocolOverride] = None
     image_pipeline: Optional[ImagePipelineConfig] = None
@@ -664,6 +665,8 @@ class SupportedPrinterModel(PrinterModel):
 
     def __post_init__(self) -> None:
         super().__post_init__()
+        if any(not name or name != name.strip() for name in self.identity_names):
+            raise ValueError(f"Printer model {self.model_key} requires non-blank, trimmed identity names")
         if not self.profile_key:
             raise ValueError(f"Printer model {self.model_key} requires profile_key")
 

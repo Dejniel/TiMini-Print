@@ -13,10 +13,6 @@ class TinyRuntimeController(RuntimeController):
         # the standard 51 78 packet dialect.
         self._decoder = PrefixedPacketStreamDecoder(ProtocolFamily.TINY)
 
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if isinstance(previous, TinyRuntimeController):
-            self._decoder = previous._decoder
-
     def handle_notification(
         self,
         session: RuntimeSessionApi,

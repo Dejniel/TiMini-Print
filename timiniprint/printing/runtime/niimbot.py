@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Mapping
 
 from ...protocol.families.niimbot.core import (
@@ -14,7 +14,7 @@ from ...protocol.families.niimbot.core import (
     response_matcher,
     status_data_query_packet,
 )
-from .base import RuntimeController, RuntimeSessionApi
+from .base import PreparedPrinter, RuntimeController, RuntimeSessionApi
 
 if TYPE_CHECKING:
     from ...devices import PrinterDevice
@@ -32,11 +32,17 @@ class NiimbotRuntimeController(RuntimeController):
     def __init__(self) -> None:
         self._state = _NiimbotProbeState()
 
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if isinstance(previous, NiimbotRuntimeController):
-            self._state = previous._state
+    async def prepare(
+        self,
+        device: PrinterDevice,
+        session: RuntimeSessionApi,
+        *,
+        timeout: float,
+    ) -> PreparedPrinter:
+        await self._query_printer(session, timeout=timeout)
+        return PreparedPrinter(device, self)
 
-    async def probe_capabilities(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+    async def _query_printer(self, session: RuntimeSessionApi, *, timeout: float) -> None:
         self._state = _NiimbotProbeState()
         connect_reply = await self._query(
             session,
@@ -146,13 +152,16 @@ class VersionedNiimbotRuntimeController(NiimbotRuntimeController):
         self._variants = dict(variants)
         self._fallback_variant = fallback_variant
 
-    def resolve_device(self, device: PrinterDevice) -> PrinterDevice:
+    async def prepare(
+        self,
+        device: PrinterDevice,
+        session: RuntimeSessionApi,
+        *,
+        timeout: float,
+    ) -> PreparedPrinter:
+        await self._query_printer(session, timeout=timeout)
         variant = self._variants.get(self._state.protocol_version, self._fallback_variant)
-        profile = replace(
-            device.profile,
-            protocol_default=replace(device.profile.protocol_default, packets_type=variant),
-        )
-        return replace(device, profile=profile, protocol_variant=variant)
+        return PreparedPrinter(device.with_protocol_variant(variant), self)
 
     def debug_snapshot(self) -> dict[str, object]:
         snapshot = super().debug_snapshot()

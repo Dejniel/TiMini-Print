@@ -92,7 +92,7 @@ class NiimbotRuntimeTests(unittest.TestCase):
             notification_only=notification_only,
         )
         controller = NiimbotRuntimeController()
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().detect_device("D11"), session, timeout=0.1))
         snapshot = controller.debug_snapshot()
         assert snapshot["connect_result"] == connect_result
         assert snapshot["protocol_version"] == expected
@@ -123,12 +123,12 @@ class NiimbotRuntimeTests(unittest.TestCase):
             model_id_query_packet(): frame(NiimbotResponse.PRINTER_INFO_MODEL_ID, b"\x02\x00"),
         })
         controller = NiimbotRuntimeController()
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().detect_device("D11"), session, timeout=0.1))
         session.replies[connect_packet()] = (
             frame(NiimbotResponse.CONNECT, reply) if reply is not None else None
         )
         session.queries.clear()
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().detect_device("D11"), session, timeout=0.1))
         assert controller.debug_snapshot()["protocol_version"] is None
         assert controller.debug_snapshot()["model_id"] is None
         assert session.queries == [connect_packet()]
@@ -158,8 +158,8 @@ class NiimbotRuntimeTests(unittest.TestCase):
                 (514 if name == "D11S" else 512).to_bytes(2, "big"),
             ),
         })
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
-        resolved = controller.resolve_device(device)
+        prepared = asyncio.run(controller.prepare(device, session, timeout=0.1))
+        resolved = prepared.device
         expected = "d110" if name == "D11" and connect_result == 2 else "d11_v1"
         assert resolved.protocol_variant == expected
         assert resolved.profile.protocol_default.packets_type == expected

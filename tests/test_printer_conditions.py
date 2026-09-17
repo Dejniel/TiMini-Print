@@ -15,7 +15,7 @@ from timiniprint import reporting
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing import PrinterNotReadyError
 from timiniprint.printing.connected import ConnectedPrinter
-from timiniprint.printing.runtime.base import PreparedRuntimeContext
+from timiniprint.printing.runtime.base import PreparedPrinter
 from timiniprint.printing.runtime.phomemo_esc import PhomemoEscRuntimeController
 from timiniprint.protocol import PrinterStatusCode, ProtocolJob, ProtocolStep
 
@@ -80,8 +80,8 @@ class ReplyConnection:
 ])
 def test_connected_print_reports_device_condition_and_allows_explicit_later_print(steps, reply, reason):
     connection = ReplyConnection([reply, b"\x1a\x0f\x0c"])
-    context = PreparedRuntimeContext(runtime_controller=PhomemoEscRuntimeController())
-    printer = ConnectedPrinter(PrinterCatalog.load().device_from_model("printmaster_m110"), connection, context)
+    context = PreparedPrinter(PrinterCatalog.load().device_from_model("printmaster_m110"), runtime_controller=PhomemoEscRuntimeController())
+    printer = ConnectedPrinter(connection, context)
     job = ProtocolJob(payload=b"raster", wait_for_completion=True,
                       steps=(ProtocolStep.send("raster", b"raster"),) if steps else ())
 
@@ -102,10 +102,7 @@ def test_connected_print_reports_device_condition_and_allows_explicit_later_prin
 @pytest.mark.parametrize("failure", [TimeoutError("no reply"), OSError("disconnected"), asyncio.CancelledError()])
 def test_transport_failure_and_cancellation_are_not_reclassified(failure):
     connection = ReplyConnection([failure])
-    printer = ConnectedPrinter(
-        PrinterCatalog.load().device_from_model("printmaster_m110"), connection,
-        PreparedRuntimeContext(runtime_controller=PhomemoEscRuntimeController()),
-    )
+    printer = ConnectedPrinter(connection, PreparedPrinter(PrinterCatalog.load().device_from_model('printmaster_m110'), runtime_controller=PhomemoEscRuntimeController()))
     with pytest.raises(type(failure)) as caught:
         asyncio.run(printer.send_job(ProtocolJob(payload=b"raster", wait_for_completion=True)))
     assert caught.value is failure

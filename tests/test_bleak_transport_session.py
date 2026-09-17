@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from timiniprint.devices import PrinterCatalog
+
 from timiniprint.printing import PrinterNotReadyError
 from timiniprint.protocol import PrinterStatusCode
 
@@ -183,15 +185,15 @@ class _NotificationCountingController:
     def __init__(self) -> None:
         self.notifications: list[bytes] = []
 
-    def adopt_previous(self, previous) -> None:
-        _ = previous
-
     async def initialize_connection(self, session, *, mtu_size: int, timeout: float) -> None:
         _ = mtu_size, timeout
         session.handle_notification(b"during init")
 
     async def after_initialize(self, session, *, timeout: float) -> None:
         _ = session, timeout
+
+    async def stop(self, session) -> None:
+        pass
 
     def handle_notification(self, session, payload: bytes) -> None:
         _ = session
@@ -621,6 +623,28 @@ class BleakTransportSessionTests(unittest.TestCase):
             [b"before attach", b"during init"],
         )
 
+    def test_prepared_controller_replacement_and_detach_do_not_reinitialize(self) -> None:
+        reporter, _sink = build_capture_reporter()
+        session = _BleakTransportSession(
+            get_ble_transport_profile(ProtocolFamily.V5X),
+            _BleWriteEndpointResolver(reporter=reporter),
+            reporter,
+        )
+        first = _NotificationCountingController()
+        selected = _NotificationCountingController()
+
+        async def run():
+            await session.attach_runtime_controller(first, mtu_size=180, timeout=0.01)
+            selected.notifications.append(b"negotiated state")
+            await session.attach_runtime_controller(selected, mtu_size=180, timeout=0.01)
+            session.handle_notification(b"new status")
+            await session.attach_runtime_controller(None, mtu_size=180, timeout=0.01)
+            session.handle_notification(b"after detach")
+
+        asyncio.run(run())
+        self.assertEqual(first.notifications, [b"during init"])
+        self.assertEqual(selected.notifications, [b"negotiated state", b"new status"])
+
     def test_initialize_connection_waits_for_family_settle_delay(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)
         cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
@@ -832,7 +856,10 @@ class BleakTransportSessionTests(unittest.TestCase):
                 session.handle_notification(make_packet(0xD3, bytes([28]), ProtocolFamily.V5G))
 
             task = asyncio.create_task(notify_temperature())
-            await runtime_controller.probe_capabilities(session, timeout=0.2)
+            await runtime_controller.prepare(
+                PrinterCatalog.load().device_from_profile("v5g_small_203"),
+                session, timeout=0.2,
+            )
             await task
 
         asyncio.run(run())
@@ -847,7 +874,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        _controller(session).debug_update(temperature_c=60)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
             profile_runtime_preset_key="mx06",
@@ -856,6 +882,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             applies_d2_status=True,
             applies_didian_status=False,
         )
+        runtime_controller.debug_update(temperature_c=60)
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
@@ -886,7 +913,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        _controller(session).debug_update(temperature_c=54)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
             profile_runtime_preset_key="mx06",
@@ -895,6 +921,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             applies_d2_status=True,
             applies_didian_status=False,
         )
+        runtime_controller.debug_update(temperature_c=54)
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
@@ -925,7 +952,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        _controller(session).debug_update(temperature_c=50)
         runtime_controller = _make_v5g_controller(
             helper_kind="mx10",
             profile_runtime_preset_key="mx06",
@@ -934,6 +960,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             applies_d2_status=True,
             applies_didian_status=False,
         )
+        runtime_controller.debug_update(temperature_c=50)
         density_packet = _v5g_density_packet(180)
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
@@ -966,7 +993,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        _controller(session).debug_update(temperature_c=60)
         runtime_controller = _make_v5g_controller(
             helper_kind="pd01",
             profile_runtime_preset_key="mx11",
@@ -975,6 +1001,7 @@ class BleakTransportSessionTests(unittest.TestCase):
             applies_d2_status=False,
             applies_didian_status=False,
         )
+        runtime_controller.debug_update(temperature_c=60)
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
             + make_packet(0xBE, bytes([0x00]), ProtocolFamily.V5G)
@@ -1005,11 +1032,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        _controller(session).debug_update(
-            d2_status=True,
-            last_complete_time=time.time(),
-            last_single_density_value=150,
-        )
         runtime_controller = _make_v5g_controller(
             helper_kind="mx06",
             profile_runtime_preset_key="mx06",
@@ -1017,6 +1039,11 @@ class BleakTransportSessionTests(unittest.TestCase):
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=True,
             applies_didian_status=False,
+        )
+        runtime_controller.debug_update(
+            d2_status=True,
+            last_complete_time=time.time(),
+            last_single_density_value=150,
         )
         data = (
             make_packet(0xA4, bytes([0x33]), ProtocolFamily.V5G)
@@ -1048,11 +1075,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.bindings.write_selection_strategy = "preferred_uuid"
         session.bindings.write_response_preference = False
         session.bindings.write_char_uuid = cmd.uuid
-        _controller(session).debug_update(
-            d2_status=True,
-            last_complete_time=time.time(),
-            last_print_record_density=150,
-        )
         runtime_controller = _make_v5g_controller(
             helper_kind="mx06",
             profile_runtime_preset_key="mx06",
@@ -1060,6 +1082,11 @@ class BleakTransportSessionTests(unittest.TestCase):
             text_levels=DensityLevels(low=100, middle=130, high=150),
             applies_d2_status=True,
             applies_didian_status=False,
+        )
+        runtime_controller.debug_update(
+            d2_status=True,
+            last_complete_time=time.time(),
+            last_print_record_density=150,
         )
         density_packet = _v5g_density_packet(180)
         data = (

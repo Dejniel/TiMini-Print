@@ -1,3 +1,4 @@
+from timiniprint.printing.runtime.base import PreparedPrinter
 import asyncio
 
 import pytest
@@ -66,7 +67,7 @@ def test_reusing_a_query_step_does_not_reuse_its_reply_buffer():
     connection = FragmentedConnection([(b"A", b"CK"), (b"AC", b"K")])
     step = query_step()
     job = ProtocolJob(steps=(step, ProtocolStep.send("raster", b"DATA"), step))
-    asyncio.run(send_prepared_job(_GenericDevice(), connection, job))
+    asyncio.run(send_prepared_job(PreparedPrinter(_GenericDevice()), connection, job))
     assert connection.notification_query_packets == [b"Q", b"Q"]
     assert connection.standard_payloads == [b"DATA"]
     assert not connection.sent_jobs
@@ -86,7 +87,7 @@ def test_incomplete_or_negative_response_stops_before_raster_and_keeps_reply(fra
     step = query_step()
     job = ProtocolJob(steps=(step, ProtocolStep.send("raster", b"DATA")))
     with pytest.raises(RuntimeError, match="Required protocol reply") as raised:
-        asyncio.run(send_prepared_job(_GenericDevice(), connection, job))
+        asyncio.run(send_prepared_job(PreparedPrinter(_GenericDevice()), connection, job))
     assert f"got {b''.join(fragments).hex(' ') if fragments else '<none>'}" in str(raised.value)
     assert not connection.standard_payloads
     assert not connection.sent_jobs
@@ -96,6 +97,6 @@ def test_notification_query_limits_unmatched_reply_data():
     connection = FragmentedConnection([(b"X" * 4096,) * 17])
     job = ProtocolJob(steps=(query_step(), ProtocolStep.send("raster", b"DATA")))
     with pytest.raises(RuntimeError, match="reassembly limit"):
-        asyncio.run(send_prepared_job(_GenericDevice(), connection, job))
+        asyncio.run(send_prepared_job(PreparedPrinter(_GenericDevice()), connection, job))
     assert not connection.standard_payloads
     assert not connection.sent_jobs

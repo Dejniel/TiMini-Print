@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
+from ...devices import PrinterDevice
 from ...devices.profiles import RuntimeSettings
 from ...protocol.family import ProtocolFamily
 from ...protocol.families.v5g import (
@@ -20,7 +21,7 @@ from ...protocol.packet import (
     split_prefixed_packets,
 )
 from ...protocol.steps import ProtocolStepOperation
-from .base import RuntimeController
+from .base import PreparedPrinter, RuntimeSessionApi, RuntimeController
 from .v5g_density import (
     DensityLevels,
     V5GContinuousPlan,
@@ -65,19 +66,6 @@ class V5GRuntimeController(RuntimeController):
             profile_runtime_preset_key=None if preset is None else preset.key,
         )
         self._runtime_settings = runtime_settings
-
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if not isinstance(previous, V5GRuntimeController):
-            return
-        helper_kind = self._state.helper_kind
-        profile_runtime_preset_key = self._state.profile_runtime_preset_key
-        pending_reset_task = self._state.pending_reset_task
-        runtime_settings = self._runtime_settings
-        self._state = previous._state
-        self._state.helper_kind = helper_kind or self._state.helper_kind
-        self._state.profile_runtime_preset_key = profile_runtime_preset_key or self._state.profile_runtime_preset_key
-        self._state.pending_reset_task = pending_reset_task
-        self._runtime_settings = runtime_settings or previous._runtime_settings
 
     def debug_snapshot(self) -> dict[str, object]:
         density_levels = None
@@ -130,9 +118,15 @@ class V5GRuntimeController(RuntimeController):
         if not sent:
             raise RuntimeError("V5G connect query send unavailable")
 
-    async def probe_capabilities(self, session, *, timeout: float) -> None:
+    async def prepare(
+        self,
+        device: PrinterDevice,
+        session: RuntimeSessionApi,
+        *,
+        timeout: float,
+    ) -> PreparedPrinter:
         if not session.can_send_control_packet_wait_notification():
-            return
+            return PreparedPrinter(device, self)
         await session.send_control_packet_wait_notification(
             V5G_TEMPERATURE_QUERY_PACKET,
             label="v5g temperature",
@@ -140,6 +134,7 @@ class V5GRuntimeController(RuntimeController):
             timeout=min(timeout, 0.4),
             required=False,
         )
+        return PreparedPrinter(device, self)
 
     async def stop(self, session) -> None:
         if self._state.pending_reset_task is None:

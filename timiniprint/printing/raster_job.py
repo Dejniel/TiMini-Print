@@ -4,10 +4,10 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from ..protocol.job import PrinterProtocol, ProtocolJob
+from ..protocol.runtime import RuntimePrintCapabilities
 from ..protocol.types import ImagePipelineConfig, PageFlow
 from ..raster import RasterSet
 from .paper import apply_paper_layout_to_raster_set, resolve_paper
-from .runtime.base import PreparedRuntimeContext
 from .settings import PrintSettings
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ def build_raster_page_job(
     *,
     is_text: bool,
     settings: PrintSettings | None = None,
-    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
     page_index: int = 1,
     page_count: int = 1,
     page_flow: PageFlow = PageFlow.PAGED,
@@ -46,7 +46,7 @@ def build_raster_page_job(
         page_index=page_index,
         page_count=page_count,
         page_flow=page_flow,
-        runtime_capabilities=runtime_context.capabilities,
+        runtime_capabilities=runtime_capabilities,
     )
 
 
@@ -67,7 +67,7 @@ def build_raster_job(
     *,
     is_text: bool,
     settings: PrintSettings | None = None,
-    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
+    runtime_capabilities: RuntimePrintCapabilities | None = None,
 ) -> ProtocolJob:
     """Build a complete one-page protocol job from an already prepared raster."""
     page_job = build_raster_page_job(
@@ -75,6 +75,6 @@ def build_raster_job(
         raster_set,
         is_text=is_text,
         settings=settings,
-        runtime_context=runtime_context,
+        runtime_capabilities=runtime_capabilities,
     )
     return combine_raster_page_jobs((page_job,))

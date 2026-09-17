@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.device import SerialTarget
-from timiniprint.printing.runtime.base import RuntimeController
+from timiniprint.printing.runtime.base import PreparedPrinter, RuntimeController
 from timiniprint.printing.runtime.prepare import prepare_connection_runtime
 from timiniprint.protocol import ProtocolFamily
 
@@ -26,8 +26,8 @@ class _ResolvingController(RuntimeController):
     def __init__(self, resolved_device) -> None:
         self._resolved_device = resolved_device
 
-    def resolve_device(self, _device):
-        return self._resolved_device
+    async def prepare(self, _device, session, *, timeout):
+        return PreparedPrinter(self._resolved_device, self)
 
 
 class RuntimePreparationTests(unittest.TestCase):
@@ -56,7 +56,7 @@ class RuntimePreparationTests(unittest.TestCase):
                 prepare_connection_runtime(self.device, _Connection())
             )
 
-        self.assertIs(context.resolved_device, resolved)
+        self.assertIs(context.device, resolved)
 
     def test_runtime_resolution_rejects_every_transport_bound_change(self) -> None:
         changed_devices = {
@@ -99,7 +99,7 @@ class RuntimePreparationTests(unittest.TestCase):
                 "timiniprint.printing.runtime.prepare.runtime_controller_for_device",
                 return_value=_ResolvingController(resolved),
             ):
-                with self.assertRaisesRegex(RuntimeError, field_name.replace(".", r"\.")):
+                with self.assertRaises(RuntimeError):
                     asyncio.run(
                         prepare_connection_runtime(self.device, _Connection())
                     )

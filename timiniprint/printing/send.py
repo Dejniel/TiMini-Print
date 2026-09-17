@@ -4,34 +4,26 @@ from typing import TYPE_CHECKING
 
 from .. import reporting
 from ..protocol import ProtocolJob, ProtocolStep, ProtocolStepOperation
-from .runtime.base import PreparedRuntimeContext
-from .runtime.factory import runtime_controller_for_device
+from .runtime.base import PreparedPrinter
 from .runtime.session import RuntimeConnectionSession
 from .step_execution import bytes_preview, execute_protocol_step, reply_matches_for
 
 if TYPE_CHECKING:
-    from ..devices import PrinterDevice
     from ..transport.base import PrinterConnection
 
 
 async def send_prepared_job(
-    device: PrinterDevice,
+    prepared: PreparedPrinter,
     connection: PrinterConnection,
     job: ProtocolJob,
     *,
     timeout: float = 1.0,
     reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
-    runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
 ) -> None:
     """Send a prepared protocol job, executing named protocol steps when present."""
     session = RuntimeConnectionSession(connection, reporter=reporter)
     sent_via_steps = False
-    controller = runtime_context.runtime_controller
-    if controller is None and job.wait_for_completion:
-        controller = runtime_controller_for_device(device)
-
-    if controller is not None:
-        await session.attach_runtime_controller(controller, timeout=timeout)
+    controller = prepared.runtime_controller
 
     if job.steps:
         if controller is not None:

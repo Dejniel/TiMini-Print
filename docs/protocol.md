@@ -81,7 +81,68 @@ async with await connect_printer(device, BleakBluetoothConnector()) as printer:
     )
 ```
 
-This path handles file conversion, rendering, protocol job building, protocol steps, runtime waits, stream chunking, and disconnect cleanup. The caller does not manually pass `chunk_size`, `delay_ms`, `runtime_context`, or `runtime_controller`.
+This path handles file conversion, rendering, protocol job building, protocol steps, runtime waits, stream chunking, and disconnect cleanup. The caller does not manually pass stream parameters or runtime controllers.
+
+### Prepared sessions and low-level integration
+
+`connect_printer(...)` returns only after identification and preparation have
+completed. Use `printer.printer_device()` and `printer.print_capabilities()`
+for paper choices and job building, not the discovery-time configuration.
+These accessors perform no I/O. Model, geometry and protocol do not change
+between jobs on that connection; reconnect performs preparation again.
+
+An adapter which opens its own connection can use:
+
+```python
+from timiniprint.printing.connected import ConnectedPrinter
+from timiniprint.printing.runtime import prepare_connection_runtime
+
+prepared = await prepare_connection_runtime(selection, connection)
+printer = ConnectedPrinter(connection, prepared)
+```
+
+The adapter owns cleanup if preparation raises, including cancellation.
+Prefer `connect_printer(...)` when possible because it provides that cleanup.
+`PreparedPrinter` contains one required `device`, optional `capabilities`, and
+the selected `runtime_controller` (possibly `None` for a stateless protocol).
+Do not assemble a prepared result around an uninitialized controller.
+
+Low-level API migration:
+
+- `PreparedRuntimeContext` is replaced by the complete `PreparedPrinter` result.
+- `ConnectedPrinter` takes `(connection, prepared)`, without a separate device.
+- `send_prepared_job` takes `(prepared, connection, job)` and never initializes a runtime.
+- File/raster builders take `runtime_capabilities=prepared.capabilities`, not a runtime context.
+- Custom controllers implement `prepare(device, session, timeout=...)` and return
+  `PreparedPrinter`; separate probe/resolution/capability hooks and implicit
+  `adopt_previous` state copying are removed.
+
+The optional `controller=` argument to preparation/`connect_printer` supplies a
+fresh bootstrap controller for that connection. A bootstrap selecting another
+family must return that family's ready controller and negotiated state.
+Connection bindings and stream settings must remain compatible. This is an
+integration extension, not permission to probe unrelated Bluetooth devices.
+
+For custom transports, `attach_runtime_controller` owns the attached controller's
+lifecycle: detach and stop the previous controller in the event loop that owns
+its tasks before installing the replacement. The replacement is already
+prepared; do not copy old state or rerun initialization. Attaching `None`
+stops and detaches the receiver. Connection initialization hooks belong to the
+first attachment, not replacement. Disconnect must also stop the attached
+controller and release the transport even if controller cleanup fails.
+
+Expose `connection.active_ble_profile` as the GATT configuration applied to
+the active BLE connection, or `None` for Classic/SPP or serial. Preparation
+checks that configuration, not the list of discovery endpoints: a successful
+SPP fallback is not constrained by an unused BLE profile. Without this
+property, preparation rejects a change of BLE profile because the active
+bindings cannot be verified.
+
+Cancelling Bluetooth I/O waits for the current worker operation to finish or
+reach its timeout before cleanup can close its socket/event loop. Cancellation
+is therefore not necessarily immediate and does not undo bytes already sent.
+Custom executor-backed transports must likewise settle worker I/O before
+releasing resources; cancelling its asyncio future alone does not stop a thread.
 
 ## Choose A Bluetooth Printer
 

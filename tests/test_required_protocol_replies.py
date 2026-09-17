@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+
+from timiniprint.printing.runtime.base import PreparedPrinter
+
 import unittest
 from dataclasses import replace
 
@@ -81,10 +84,10 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
                         connection = _NiimbotCompletionConnection(done=done, notification_only=notification_only)
                         job = ProtocolJob(steps=steps, wait_for_completion=True)
                         if done:
-                            await send_prepared_job(device, connection, job)
+                            await send_prepared_job(PreparedPrinter(device), connection, job)
                         else:
                             with self.assertRaisesRegex(RuntimeError, "Required protocol reply"):
-                                await send_prepared_job(device, connection, job)
+                                await send_prepared_job(PreparedPrinter(device), connection, job)
                         sent = connection.query_packets + connection.notification_query_packets
                         if not done and any(s.label in ("print status", "page index") for s in completion):
                             self.assertNotIn(frame(NiimbotRequest.PRINT_END), sent)
@@ -104,7 +107,7 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
                         )
                         job = ProtocolJob(steps=(step, ProtocolStep.send("end", b"E")))
                         with self.assertRaisesRegex(RuntimeError, "completion"):
-                            await send_prepared_job(_GenericDevice(), connection, job)
+                            await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, job)
                         self.assertEqual(connection.standard_payloads, [])
                         self.assertEqual(connection.sent_jobs, [])
 
@@ -115,10 +118,7 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
                 "completion", b"Q", expect=ProtocolReplyExpectation.OK,
                 reply_required=True, repeat_interval_sec=0.001, repeat_timeout_sec=1,
             )
-            await send_prepared_job(
-                _GenericDevice(), connection,
-                ProtocolJob(steps=(step, ProtocolStep.send("end", b"E"))),
-            )
+            await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, ProtocolJob(steps=(step, ProtocolStep.send('end', b'E'))))
             self.assertEqual(connection.standard_payloads, [b"E"])
 
     async def test_required_passive_wait_checks_confirmation(self):
@@ -134,11 +134,11 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
             )
             job = ProtocolJob(steps=(step, ProtocolStep.send("end", b"E")))
             if accepted:
-                await send_prepared_job(_GenericDevice(), connection, job)
+                await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, job)
                 self.assertEqual(connection.standard_payloads, [b"E"])
             else:
                 with self.assertRaisesRegex(RuntimeError, "page index"):
-                    await send_prepared_job(_GenericDevice(), connection, job)
+                    await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, job)
                 self.assertEqual(connection.standard_payloads, [])
 
     async def test_required_steps_cannot_fall_back_to_unchecked_stream(self):
@@ -157,26 +157,17 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
                         )
                     )
                     with self.assertRaisesRegex(RuntimeError, "stream-only"):
-                        await send_prepared_job(
-                            _GenericDevice(), connection, ProtocolJob(steps=(step,)),
-                        )
+                        await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, ProtocolJob(steps=(step,)))
                     self.assertEqual(connection.sent_jobs, [])
 
     async def test_optional_reply_and_raw_payload_keep_existing_behavior(self):
         connection = _Connection(replies=[b"busy"])
         reporter = _Reporter()
-        await send_prepared_job(
-            _GenericDevice(), connection,
-            ProtocolJob(steps=(
-                ProtocolStep.query("optional", b"Q", expect=ProtocolReplyExpectation.OK),
-                ProtocolStep.send("image", b"I"),
-            )),
-            reporter=reporter,
-        )
+        await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, ProtocolJob(steps=(ProtocolStep.query('optional', b'Q', expect=ProtocolReplyExpectation.OK), ProtocolStep.send('image', b'I'))), reporter=reporter)
         self.assertEqual(connection.standard_payloads, [b"I"])
         self.assertTrue(reporter.warnings)
         raw_job = ProtocolJob(payload=b"raw")
-        await send_prepared_job(_GenericDevice(), connection, raw_job)
+        await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, raw_job)
         self.assertEqual(connection.sent_jobs, [raw_job])
 
     def test_required_reply_must_have_an_expectation(self):
@@ -205,6 +196,6 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
                 frame(NiimbotResponse.PRINT_STATUS, b"\x00\x00"),
             ])
             with self.assertRaisesRegex(RuntimeError, "print status"):
-                await send_prepared_job(device, connection, ProtocolJob(steps=(status, finish)))
+                await send_prepared_job(PreparedPrinter(device), connection, ProtocolJob(steps=(status, finish)))
             sent = connection.query_packets + connection.notification_query_packets
             self.assertNotIn(frame(NiimbotRequest.PRINT_END), sent)

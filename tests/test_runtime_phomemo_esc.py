@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from tests.runtime_helpers import prepare_and_send
+
+
 import unittest
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.runtime.factory import runtime_controller_for_device
 from timiniprint.printing.runtime.phomemo_esc import PhomemoEscRuntimeController
-from timiniprint.printing.send import send_prepared_job
 from timiniprint.protocol import ProtocolJob, ProtocolStep
 
 
@@ -55,7 +57,7 @@ class PhomemoEscRuntimeTests(unittest.IsolatedAsyncioTestCase):
         connection = _ReplyConnection([b"\x1a\x0f\x0c"])
         job = ProtocolJob(payload=b"raster", wait_for_completion=True)
 
-        await send_prepared_job(self.device, connection, job, timeout=0.1)
+        await prepare_and_send(self.device, connection, job, timeout=0.1)
 
         self.assertEqual(connection.sent_jobs, [job])
         self.assertEqual(connection.wait_labels, ["Print Master completion"])
@@ -67,7 +69,7 @@ class PhomemoEscRuntimeTests(unittest.IsolatedAsyncioTestCase):
             wait_for_completion=True,
         )
 
-        await send_prepared_job(self.device, connection, job, timeout=0.1)
+        await prepare_and_send(self.device, connection, job, timeout=0.1)
 
         self.assertEqual(connection.standard_payloads, [b"raster"])
         self.assertEqual(connection.wait_labels, ["Print Master completion"])

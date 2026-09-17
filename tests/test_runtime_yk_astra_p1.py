@@ -105,7 +105,7 @@ class AstraP1RuntimeTests(unittest.TestCase):
         assert isinstance(controller, AstraP1RuntimeController)
         session = _AstraSession(status_bits=(1 << 13) | (1 << 15))
 
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().device_from_model("orgstra_s001"), session, timeout=0.1))
 
         commands = [next(iter_yk_frames(packet)).command for packet in session.queries]
         self.assertEqual(commands, [0x10, 0x72])
@@ -121,7 +121,7 @@ class AstraP1RuntimeTests(unittest.TestCase):
         controller = AstraP1RuntimeController(paper_query_on_valid=True)
         session = _AstraSession(status_bits=0)
 
-        asyncio.run(controller.probe_capabilities(session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().device_from_model("orgstra_s001"), session, timeout=0.1))
 
         self.assertEqual(
             [next(iter_yk_frames(packet)).command for packet in session.queries],

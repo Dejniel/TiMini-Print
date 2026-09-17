@@ -164,12 +164,17 @@ class _BleakTransportSession:
         mtu_size: int,
         timeout: float,
     ):
+        previous = self._runtime_controller
+        if runtime_controller is previous:
+            return
+        self._runtime_controller = None
+        if previous is not None:
+            # Controller tasks/notification callbacks belong to this BLE loop.
+            await previous.stop(self)
         if runtime_controller is None:
-            return None
-        if runtime_controller is not self._runtime_controller:
-            previous = self._runtime_controller
-            runtime_controller.adopt_previous(previous)
-            if previous is None:
+            return
+        if previous is None:
+            try:
                 await runtime_controller.initialize_connection(
                     self,
                     mtu_size=mtu_size,
@@ -178,8 +183,15 @@ class _BleakTransportSession:
                 self._runtime_controller = runtime_controller
                 self._replay_notifications_to_runtime_controller()
                 await runtime_controller.after_initialize(self, timeout=timeout)
-            else:
-                self._runtime_controller = runtime_controller
+            except BaseException:
+                self._runtime_controller = None
+                try:
+                    await runtime_controller.stop(self)
+                except Exception as exc:
+                    self.report_warning(short="Runtime cleanup failed", detail=str(exc))
+                raise
+        else:
+            self._runtime_controller = runtime_controller
 
     @staticmethod
     def _service_notify_characteristics(services, service_uuids) -> tuple[Any, ...]:
@@ -211,8 +223,7 @@ class _BleakTransportSession:
             self.report_debug(f"subscribed to notify characteristics {self._subscribed_notify_uuids}")
 
     async def stop_notify_if_started(self, client: Any) -> None:
-        if self._runtime_controller is not None:
-            await self._runtime_controller.stop(self)
+        await self.attach_runtime_controller(None, mtu_size=0, timeout=0)
         self._cancel_notification_waiters()
         if not self.notify_started:
             return

@@ -9,6 +9,7 @@ from ...devices import (
     bluetooth_connection_plan,
 )
 from ...devices.device import BluetoothEndpointTransport
+from ...devices.bluetooth_profiles import BleTransportProfile
 from ...protocol import ProtocolJob
 from .backend import SppBackend
 from .types import DeviceInfo, DeviceTransport
@@ -34,6 +35,13 @@ class BleakBluetoothConnection:
     @property
     def reporter(self) -> reporting.Reporter:
         return self._reporter
+
+    @property
+    def active_ble_profile(self) -> BleTransportProfile | None:
+        """Applied BLE configuration, or None when Classic/SPP connected."""
+        if self._backend.transport is DeviceTransport.BLE:
+            return self._device.ble_transport_profile
+        return None
 
     async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
         await self._backend.attach_runtime_controller(runtime_controller, timeout=timeout)

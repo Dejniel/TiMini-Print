@@ -6,7 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import AsyncMock, patch
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.printing.runtime.base import PreparedRuntimeContext
+from timiniprint.printing.runtime.base import PreparedPrinter
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.printing import PrinterNotReadyError
 from timiniprint.protocol import PrinterStatusCode
@@ -152,7 +152,6 @@ class _PrintSession(_Session):
 
     async def attach_runtime_controller(self, controller, *, timeout):
         if controller is not self.controller:
-            controller.adopt_previous(self.controller)
             self.controller = controller
 
     async def wait_for_notification(self, label, match, *, timeout, required):
@@ -182,8 +181,8 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         )
         idle = make_packet(0xA1, bytes(8), ProtocolFamily.V5X)
         for reply in (idle, None):
-            for replace_controller in (False, True):
-                with self.subTest(reply=reply, replace_controller=replace_controller):
+            for _same_session in (True,):
+                with self.subTest(reply=reply):
                     controller = V5XRuntimeController()
                     session = _PrintSession(controller, reply)
                     with patch.multiple(
@@ -191,16 +190,8 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
                     ), patch(
                         "timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0,
                     ):
-                        await send_prepared_job(
-                            device, session, job, timeout=0.001,
-                            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-                        )
-                        if replace_controller:
-                            controller = V5XRuntimeController()
-                        await send_prepared_job(
-                            device, session, job, timeout=0.001,
-                            runtime_context=PreparedRuntimeContext(runtime_controller=controller),
-                        )
+                        await send_prepared_job(PreparedPrinter(device, runtime_controller=controller), session, job, timeout=0.001)
+                        await send_prepared_job(PreparedPrinter(device, runtime_controller=controller), session, job, timeout=0.001)
                     self.assertEqual(sum(kind == "bulk" for kind, _ in session.events), 2)
                     self.assertEqual(session.completion_waits, 2)
                     self.assertEqual(
@@ -263,11 +254,9 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         session.send_control_packet = blocked
         controller.handle_notification(session, challenge)
         await asyncio.wait_for(started.wait(), 0.2)
-        successor = V5XRuntimeController()
-        successor.adopt_previous(controller)
-        await successor.stop(session)
+        await controller.stop(session)
         self.assertTrue(cancelled.is_set())
-        self.assertEqual(successor.debug_snapshot()["mxw_sign_responses_sent"], 0)
+        self.assertEqual(controller.debug_snapshot()["mxw_sign_responses_sent"], 0)
 
     async def test_public_send_keeps_command_shaped_raster_on_bulk_channel(self) -> None:
         device = PrinterCatalog.load().detect_device("MXW01")
@@ -279,7 +268,7 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         controller = V5XRuntimeController()
         session = _Session(controller)
         with patch.object(controller, "wait_for_completion", new=AsyncMock()):
-            await send_prepared_job(device, session, job, runtime_context=PreparedRuntimeContext(runtime_controller=controller))
+            await send_prepared_job(PreparedPrinter(device, runtime_controller=controller), session, job)
         self.assertEqual([p[2] for kind, p in session.events if kind == "control"], [0xA2, 0xA9, 0xAD])
         self.assertEqual([p for kind, p in session.events if kind == "bulk"], [raw])
 
@@ -339,8 +328,7 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
             await controller.send_protocol_steps(session, (step,), timeout=0.1)
             self.assertFalse(any(kind == "wait" for kind, _ in session.events))
-            next_controller = V5XRuntimeController()
-            next_controller.adopt_previous(controller)
+            next_controller = controller
             session.controller = next_controller
             task = asyncio.create_task(next_controller.send_protocol_steps(session, (step,), timeout=0.1))
             await asyncio.sleep(0)

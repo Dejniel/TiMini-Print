@@ -12,12 +12,18 @@ if TYPE_CHECKING:
 
 
 @dataclass(frozen=True)
-class PreparedRuntimeContext:
-    """Prepared live-session state reused by later protocol job builds."""
+class PreparedPrinter:
+    """Complete result of connection preparation, never a provisional device.
 
+    The device and capability snapshot are immutable print inputs. The
+    controller owns mutable session state and may be absent for stateless
+    protocols. A preparation which selects another family must also supply its
+    prepared controller, including any negotiated state needed by that family.
+    """
+
+    device: "PrinterDevice"
     runtime_controller: "RuntimeController | None" = None
     capabilities: RuntimePrintCapabilities | None = None
-    resolved_device: "PrinterDevice | None" = None
 
 
 class RuntimeSessionApi(Protocol):
@@ -81,8 +87,6 @@ class RuntimeSessionApi(Protocol):
 
 
 class RuntimeController:
-    def adopt_previous(self, previous: "RuntimeController | None") -> None:
-        return None
 
     async def initialize_connection(
         self,
@@ -118,15 +122,20 @@ class RuntimeController:
     ) -> bool:
         return False
 
-    async def probe_capabilities(self, session: RuntimeSessionApi, *, timeout: float) -> None:
-        return None
+    async def prepare(
+        self,
+        device: "PrinterDevice",
+        session: RuntimeSessionApi,
+        *,
+        timeout: float,
+    ) -> PreparedPrinter:
+        """Resolve all print inputs and select the controller for this connection.
 
-    def runtime_capabilities(self) -> RuntimePrintCapabilities | None:
-        return None
-
-    def resolve_device(self, device: "PrinterDevice") -> "PrinterDevice":
-        """Return the immutable device description resolved for this live session."""
-        return device
+        Called once before publishing a ConnectedPrinter, not during sending.
+        Family-specific bootstrap may return a different family/controller;
+        the open transport must remain compatible with the selected device.
+        """
+        return PreparedPrinter(device, self)
 
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
         return None

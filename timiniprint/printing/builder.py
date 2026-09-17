@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Iterator, Optional, TYPE_CHECKING
 
 from .. import reporting
-from ..printing.runtime.base import PreparedRuntimeContext
+from ..protocol.runtime import RuntimePrintCapabilities
 from ..protocol.job import PrinterProtocol, ProtocolJob
 from ..protocol.types import ImagePipelineConfig
 from ..rendering.converters import PdfRenderer
@@ -33,7 +33,7 @@ class PrintJobBuilder:
     """Load/render files and build jobs without opening a printer connection.
 
     ``settings=None`` uses PrintSettings defaults. The caller must supply a
-    resolved device and any required prepared runtime context; this builder
+    resolved device and any required negotiated capabilities; this builder
     cannot perform capability negotiation. Prefer ConnectedPrinter's high-level
     print methods when building for a live session.
     """
@@ -45,12 +45,12 @@ class PrintJobBuilder:
         document_renderer: DocumentRenderer | None = None,
         pdf_renderer: PdfRenderer | None = None,
         image_renderer: PrintImageRenderer | None = None,
-        runtime_context: PreparedRuntimeContext = PreparedRuntimeContext(),
+        runtime_capabilities: RuntimePrintCapabilities | None = None,
         reporter: reporting.Reporter | None = None,
     ) -> None:
         self.device = device
         self.settings = settings or PrintSettings()
-        self.runtime_context = runtime_context
+        self.runtime_capabilities = runtime_capabilities
         self._reporter = reporter
         self.document_renderer = document_renderer or DocumentRenderer(
             pdf_renderer=pdf_renderer,
@@ -102,7 +102,7 @@ class PrintJobBuilder:
                 page,
                 self.device,
                 self.settings,
-                runtime_capabilities=self.runtime_context.capabilities,
+                runtime_capabilities=self.runtime_capabilities,
             )
             raster_set = rendered.raster_set
             if self.settings.debug_row_markers_interval is not None:
@@ -128,7 +128,7 @@ class PrintJobBuilder:
                 raster_set,
                 is_text=rendered.is_text,
                 settings=self.settings,
-                runtime_context=self.runtime_context,
+                runtime_capabilities=self.runtime_capabilities,
                 page_index=page.number,
                 page_count=page_count,
                 page_flow=plan.page_flow,
@@ -147,7 +147,7 @@ class PrintJobBuilder:
             paper_preset_key=self.settings.paper_preset_key,
             image_encoding_override=self.settings.image_encoding_override,
             pixel_format_override=self.settings.pixel_format_override,
-            runtime_capabilities=self.runtime_context.capabilities,
+            runtime_capabilities=self.runtime_capabilities,
         )
 
     def _validate_input_path(self, path: str) -> None:

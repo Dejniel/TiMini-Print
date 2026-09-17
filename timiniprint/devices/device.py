@@ -140,3 +140,59 @@ class PrinterDevice:
     def with_transport_target(self, transport_target: Optional[TransportTarget]) -> "PrinterDevice":
         """Return a copy of this device with a different transport target."""
         return replace(self, transport_target=transport_target)
+
+    def with_protocol_variant(self, variant: str | None) -> "PrinterDevice":
+        """Select one effective variant, keeping the exported profile consistent."""
+        return replace(
+            self,
+            protocol_variant=variant,
+            profile=replace(
+                self.profile,
+                protocol_default=replace(
+                    self.profile.protocol_default,
+                    type=self.protocol_family,
+                    packets_type=variant,
+                ),
+            ),
+        )
+
+    def with_print_profile(
+        self,
+        profile: "PrinterProfile",
+        *,
+        image_pipeline: ImagePipelineConfig | None = None,
+    ) -> "PrinterDevice":
+        """Replace print defaults without changing this device's effective recipe.
+
+        Geometry/profile refinements must not reset model-level protocol or
+        raster overrides to the catalog template's defaults.
+        """
+        pipeline = image_pipeline if image_pipeline is not None else self.image_pipeline
+        profile = replace(
+            profile,
+            protocol_default=replace(
+                profile.protocol_default,
+                type=self.protocol_family,
+                packets_type=self.protocol_variant,
+            ),
+            default_image_pipeline=pipeline,
+        )
+        return replace(self, profile=profile, image_pipeline=pipeline)
+
+    def for_connection(self, connected_device: "PrinterDevice") -> "PrinterDevice":
+        """Bind a selected catalog device to an already open connection.
+
+        Keep its print recipe, but retain the connection's address and stream
+        settings. Preparation must separately validate GATT compatibility.
+        """
+        return replace(
+            self,
+            display_name=connected_device.display_name,
+            transport_target=connected_device.transport_target,
+            profile=replace(
+                self.profile,
+                use_spp=connected_device.profile.use_spp,
+                stream=connected_device.profile.stream,
+                ble_mtu_request=connected_device.profile.ble_mtu_request,
+            ),
+        )

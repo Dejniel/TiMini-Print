@@ -14,7 +14,7 @@ from ..raster import RasterSet
 from .builder import PrintJobBuilder
 from .raster_job import build_raster_page_job as _build_raster_page_job
 from .raster_job import combine_raster_page_jobs as _combine_raster_page_jobs
-from .runtime.base import PreparedRuntimeContext
+from .runtime.base import PreparedPrinter, RuntimeController
 from .runtime.prepare import prepare_connection_runtime
 from .send import send_prepared_job
 from .settings import PrintSettings
@@ -39,23 +39,20 @@ class ConnectedPrinter:
     Print failures do not close this session. Exiting its context still does.
     """
 
-    _device: "PrinterDevice"
     _connection: "PrinterConnection"
-    _runtime_context: PreparedRuntimeContext
+    _prepared: PreparedPrinter
     _reporter: reporting.Reporter = reporting.DUMMY_REPORTER
 
     def __init__(
         self,
-        device: "PrinterDevice",
         connection: "PrinterConnection",
-        runtime_context: PreparedRuntimeContext,
+        prepared: PreparedPrinter,
         *,
         reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
     ) -> None:
         """Wrap a connection whose runtime has already been prepared by the caller."""
-        object.__setattr__(self, "_device", device)
         object.__setattr__(self, "_connection", connection)
-        object.__setattr__(self, "_runtime_context", runtime_context)
+        object.__setattr__(self, "_prepared", prepared)
         object.__setattr__(self, "_reporter", reporter)
 
     async def send_job(self, job: ProtocolJob, *, timeout: float = 1.0) -> None:
@@ -69,12 +66,11 @@ class ConnectedPrinter:
         The connection stays open.
         """
         await send_prepared_job(
-            self._device,
+            self._prepared,
             self._connection,
             job,
             timeout=timeout,
             reporter=self._reporter,
-            runtime_context=self._runtime_context,
         )
 
     def print_capabilities(self) -> RuntimePrintCapabilities | None:
@@ -84,7 +80,7 @@ class ConnectedPrinter:
         the printer lacks features. Pass this snapshot to ``PrinterProtocol``
         capability/pipeline queries; this method does not re-query the printer.
         """
-        return self._runtime_context.capabilities
+        return self._prepared.capabilities
 
     def printer_device(self) -> "PrinterDevice":
         """Return the resolved immutable device description, without I/O.
@@ -92,7 +88,7 @@ class ConnectedPrinter:
         Use this instead of the discovery-time device for paper choices and job
         building: connection setup may have refined geometry or the variant.
         """
-        return self._device
+        return self._prepared.device
 
     def raster_page_job(
         self,
@@ -114,11 +110,11 @@ class ConnectedPrinter:
         format combinations raise ``ValueError``.
         """
         return _build_raster_page_job(
-            self._device,
+            self._prepared.device,
             raster_set,
             is_text=is_text,
             settings=settings,
-            runtime_context=self._runtime_context,
+            runtime_capabilities=self._prepared.capabilities,
             page_index=page_index,
             page_count=page_count,
             page_flow=page_flow,
@@ -174,9 +170,9 @@ class ConnectedPrinter:
         The connection remains open for subsequent prints.
         """
         job = PrintJobBuilder(
-            self._device,
+            self._prepared.device,
             settings=settings,
-            runtime_context=self._runtime_context,
+            runtime_capabilities=self._prepared.capabilities,
             reporter=self._reporter,
         ).build_from_file(path)
         await self.send_job(job, timeout=timeout)
@@ -204,7 +200,7 @@ class ConnectedPrinter:
                 os.remove(temp_path)
 
     async def _paper_motion(self, action: str, *, timeout: float = 1.0) -> None:
-        job = PrinterProtocol(self._device).build_paper_motion(action)
+        job = PrinterProtocol(self._prepared.device).build_paper_motion(action)
         await self.send_job(job, timeout=timeout)
 
     async def feed(self, *, timeout: float = 1.0) -> None:
@@ -244,34 +240,37 @@ async def connect_printer(
     *,
     timeout: float = 1.0,
     reporter: reporting.Reporter = reporting.DUMMY_REPORTER,
+    controller: RuntimeController | None = None,
 ) -> ConnectedPrinter:
     """Open a connection, prepare protocol runtime, and return its resolved device.
 
     This performs I/O, including any required handshake or capability queries.
     ``timeout`` is passed to runtime preparation, not ``connector.connect()``;
     connection establishment uses the connector's own policy. Preparation may
-    refine the device's geometry, presets or variant before returning.
+    refine the device's geometry, presets, variant or family before returning.
+    An explicit ``controller`` must be a fresh bootstrap for this connection;
+    omit it to use the catalog-selected runtime.
 
-    On an ordinary preparation exception, attempt to close the connection and re-raise
+    On preparation failure or cancellation, close the connection and re-raise
     the original error. On success, the caller owns cleanup (use ``async with``).
     """
     connection = await connector.connect(device)
     try:
-        runtime_context = await prepare_connection_runtime(
+        prepared = await prepare_connection_runtime(
             device,
             connection,
             timeout=timeout,
             reporter=reporter,
+            controller=controller,
         )
-    except Exception:
+    except BaseException:
         try:
             await connection.disconnect()
         except Exception:
             pass
         raise
     return ConnectedPrinter(
-        runtime_context.resolved_device or device,
         connection,
-        runtime_context,
+        prepared,
         reporter=reporter,
     )

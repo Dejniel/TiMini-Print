@@ -10,7 +10,7 @@ install_crc8_stub()
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.connected import connect_printer
-from timiniprint.printing.runtime.base import PreparedRuntimeContext
+from timiniprint.printing.runtime.base import PreparedPrinter
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.protocol import ProtocolJob
 from timiniprint.protocol.runtime import RuntimePrintCapabilities
@@ -74,12 +74,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
         with patch("timiniprint.printing.connected.PrintJobBuilder", return_value=builder) as builder_cls:
             await connected.print_file("input.png", settings=settings)
 
-        builder_cls.assert_called_once_with(
-            device,
-            settings=settings,
-            runtime_context=ANY,
-            reporter=ANY,
-        )
+        builder_cls.assert_called_once_with(device, settings=settings, runtime_capabilities=ANY, reporter=ANY)
         builder.build_from_file.assert_called_once_with("input.png")
         self.assertEqual(connection.sent_jobs, [job])
 
@@ -120,10 +115,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
             encoding=ImageEncoding.TINY_RAW,
         )
         capabilities = RuntimePrintCapabilities(supports_gray=False)
-        context = PreparedRuntimeContext(
-            runtime_controller=object(),
-            capabilities=capabilities,
-        )
+        context = PreparedPrinter(device, runtime_controller=object(), capabilities=capabilities)
         page_job = ProtocolJob(payload=b"page")
         one_page_job = ProtocolJob(payload=b"one-page")
         combined_job = ProtocolJob(payload=b"combined")
@@ -153,17 +145,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
                 page_job,
             )
 
-        build_page.assert_called_once_with(
-            device,
-            raster_set,
-            is_text=True,
-            settings=settings,
-            runtime_context=context,
-            page_index=2,
-            page_count=3,
-            page_flow=PageFlow.CONTINUOUS,
-            image_pipeline=pipeline,
-        )
+        build_page.assert_called_once_with(device, raster_set, is_text=True, settings=settings, runtime_capabilities=context.capabilities, page_index=2, page_count=3, page_flow=PageFlow.CONTINUOUS, image_pipeline=pipeline)
 
         with patch(
             "timiniprint.printing.connected._build_raster_page_job",
@@ -183,17 +165,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
                     combined_job,
                 )
 
-        build_page.assert_called_once_with(
-            device,
-            raster_set,
-            is_text=False,
-            settings=settings,
-            runtime_context=context,
-            page_index=1,
-            page_count=1,
-            page_flow=PageFlow.PAGED,
-            image_pipeline=pipeline,
-        )
+        build_page.assert_called_once_with(device, raster_set, is_text=False, settings=settings, runtime_capabilities=context.capabilities, page_index=1, page_count=1, page_flow=PageFlow.PAGED, image_pipeline=pipeline)
         combine_pages.assert_called_once_with(
             (one_page_job,),
         )
@@ -231,7 +203,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
         )
         connection = _Connection()
         connector = _Connector(connection)
-        context = PreparedRuntimeContext(resolved_device=resolved)
+        context = PreparedPrinter(resolved)
 
         with patch(
             "timiniprint.printing.connected.prepare_connection_runtime",

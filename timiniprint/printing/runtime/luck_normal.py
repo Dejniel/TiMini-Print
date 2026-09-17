@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ...devices import PrinterDevice
 from ...protocol.runtime import RuntimePrintCapabilities
-from .base import RuntimeController, RuntimeSessionApi
+from .base import PreparedPrinter, RuntimeController, RuntimeSessionApi
 
 LUCK_MODEL_QUERY_PACKET = bytes([0x10, 0xFF, 0x20, 0xF0])
 LUCK_VERSION_QUERY_PACKET = bytes([0x10, 0xFF, 0x20, 0xF1])
@@ -22,14 +23,13 @@ class LuckNormalRuntimeController(RuntimeController):
     def __init__(self, *, protocol_variant: str) -> None:
         self._state = _LuckNormalProbeState(protocol_variant=protocol_variant)
 
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if not isinstance(previous, LuckNormalRuntimeController):
-            return
-        if previous._state.protocol_variant != self._state.protocol_variant:
-            return
-        self._state = previous._state
-
-    async def probe_capabilities(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+    async def prepare(
+        self,
+        device: PrinterDevice,
+        session: RuntimeSessionApi,
+        *,
+        timeout: float,
+    ) -> PreparedPrinter:
         gray_level_override = self._gray_level_override()
         if not session.can_query_control_packet():
             self._warn_degraded(session, reason="query transport is unavailable")
@@ -37,7 +37,7 @@ class LuckNormalRuntimeController(RuntimeController):
                 supports_gray=False,
                 gray_level_override=gray_level_override,
             )
-            return
+            return PreparedPrinter(device, self, self._state.capabilities)
 
         reply = await self._query_logged(
             session,
@@ -51,7 +51,7 @@ class LuckNormalRuntimeController(RuntimeController):
                 supports_gray=False,
                 gray_level_override=gray_level_override,
             )
-            return
+            return PreparedPrinter(device, self, self._state.capabilities)
 
         model_name = reply.decode("gb2312", errors="ignore").replace("\x00", "").strip()
         self._state.probed_model = model_name
@@ -70,9 +70,7 @@ class LuckNormalRuntimeController(RuntimeController):
             supports_gray=bool(model_name) and model_name.endswith("_GY"),
             gray_level_override=gray_level_override,
         )
-
-    def runtime_capabilities(self) -> RuntimePrintCapabilities | None:
-        return self._state.capabilities
+        return PreparedPrinter(device, self, self._state.capabilities)
 
     def debug_snapshot(self) -> dict[str, object]:
         return {

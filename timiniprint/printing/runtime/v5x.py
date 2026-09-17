@@ -74,11 +74,6 @@ class V5XRuntimeController(RuntimeController):
     def __init__(self) -> None:
         self._state = _V5XSessionState()
 
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if not isinstance(previous, V5XRuntimeController):
-            return
-        self._state = previous._state
-
     def debug_snapshot(self) -> dict[str, object]:
         return {
             "task_state_name": self._state.task_state_name,

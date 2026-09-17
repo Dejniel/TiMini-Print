@@ -28,6 +28,11 @@ class SerialConnection:
     def reporter(self) -> reporting.Reporter:
         return self._reporter
 
+    @property
+    def active_ble_profile(self) -> None:
+        """Serial connections have no active GATT configuration."""
+        return None
+
     def can_send_control_packet(self) -> bool:
         return False
 

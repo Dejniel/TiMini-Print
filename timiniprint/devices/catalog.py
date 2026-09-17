@@ -573,6 +573,24 @@ class PrinterCatalog:
     def get_model(self, model_key: str) -> SupportedPrinterModel | None:
         return self._model_by_key.get(model_key)
 
+    def device_from_identity(self, identity: str, *, origin_id: str) -> PrinterDevice:
+        """Resolve an exact printer-reported name within one source's catalog.
+
+        Identity aliases are independent of Bluetooth detection and marketing
+        names. Unknown or ambiguous replies never select the first candidate.
+        The caller decodes protocol framing before passing the name here.
+        """
+        identity_key = identity.casefold()
+        matches = [
+            model for model in self._models
+            if origin_id in model.origin_ids
+            and any(name.casefold() == identity_key for name in model.identity_names)
+        ]
+        if len(matches) != 1:
+            reason = "Unknown" if not matches else "Ambiguous"
+            raise ValueError(f"{reason} printer identity {identity!r} for {origin_id}")
+        return self.device_from_model(matches[0].model_key)
+
     def get_models_by_public_name(self, name: str) -> tuple[SupportedPrinterModel, ...]:
         normalized = DetectionNormalizer.fold_name(name)
         return self._models_by_public_name.get(normalized, ())

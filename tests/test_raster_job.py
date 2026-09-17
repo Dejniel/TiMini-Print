@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.raster_job import build_raster_job
-from timiniprint.printing.runtime.base import PreparedRuntimeContext
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.protocol import PageFlow
 from timiniprint.protocol.runtime import RuntimePrintCapabilities
@@ -41,20 +40,14 @@ class RasterJobTests(unittest.TestCase):
 
     def test_build_raster_job_accepts_settings_and_runtime_context(self) -> None:
         capabilities = RuntimePrintCapabilities(supports_gray=False)
-        context = PreparedRuntimeContext(capabilities=capabilities)
+        context = capabilities
         settings = PrintSettings(feed_padding=7, blackening=5)
 
         with patch(
             "timiniprint.protocol.job._build_job_model_from_raster_set",
             return_value=(b"B", ()),
         ) as build_job_mock:
-            job = build_raster_job(
-                self.device,
-                self.raster,
-                is_text=False,
-                settings=settings,
-                runtime_context=context,
-            )
+            job = build_raster_job(self.device, self.raster, is_text=False, settings=settings, runtime_capabilities=context)
 
         self.assertTrue(job.wait_for_completion)
         self.assertEqual(build_job_mock.call_args.kwargs["feed_padding"], 7)

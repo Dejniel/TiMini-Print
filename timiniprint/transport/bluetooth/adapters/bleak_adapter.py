@@ -384,14 +384,15 @@ class _BleakSocket:
         if not self._client:
             return
         self._transport.report_disconnect_diagnostics()
-        await self._transport.stop_notify_if_started(self._client)
-        disconnect = getattr(self._client, "disconnect", None)
-        if not callable(disconnect):
-            return
         try:
-            await disconnect()
-        except Exception:
-            pass
+            await self._transport.stop_notify_if_started(self._client)
+        finally:
+            disconnect = getattr(self._client, "disconnect", None)
+            if callable(disconnect):
+                try:
+                    await disconnect()
+                except Exception:
+                    pass
 
     def _cleanup_loop(self) -> None:
         """Dispose the temporary event loop used by the socket wrapper."""

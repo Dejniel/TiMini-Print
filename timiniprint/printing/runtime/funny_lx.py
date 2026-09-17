@@ -5,6 +5,7 @@ import secrets
 from collections import deque
 from collections.abc import Awaitable, Callable
 
+from ...devices import PrinterDevice
 from ...devices.profiles import DetectionNormalizer
 from ...protocol.families.funny_lx.core import challenge_crc
 from ...protocol.steps import ProtocolStep, ProtocolStepOperation
@@ -15,7 +16,7 @@ from ..step_execution import (
     reply_complete_for,
     reply_matches_for,
 )
-from .base import RuntimeController, RuntimeSessionApi
+from .base import PreparedPrinter, RuntimeController, RuntimeSessionApi
 
 _HANDSHAKE_RANDOM_BYTES = 10
 _MIN_HANDSHAKE_TIMEOUT_SEC = 5.0
@@ -41,13 +42,6 @@ class FunnyLxRuntimeController(RuntimeController):
         self._packet_delay_hint_sec = _DEFAULT_PACKET_DELAY_HINT_SEC
         self._supports_darkness = False
         self._darkness_code: int | None = None
-
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if isinstance(previous, FunnyLxRuntimeController):
-            self._verified = previous._verified
-            self._packet_delay_hint_sec = previous._packet_delay_hint_sec
-            self._supports_darkness = previous._supports_darkness
-            self._darkness_code = previous._darkness_code
 
     async def initialize_connection(
         self,
@@ -104,8 +98,17 @@ class FunnyLxRuntimeController(RuntimeController):
             f"mtu_payload={mtu_size} mac={mac_bytes.hex(':')} mac_source={mac_source}"
         )
 
-    def runtime_capabilities(self) -> RuntimePrintCapabilities:
-        return RuntimePrintCapabilities(supports_blackening=self._supports_darkness)
+    async def prepare(
+        self,
+        device: PrinterDevice,
+        session: RuntimeSessionApi,
+        *,
+        timeout: float,
+    ) -> PreparedPrinter:
+        return PreparedPrinter(
+            device, self,
+            RuntimePrintCapabilities(supports_blackening=self._supports_darkness),
+        )
 
     async def _send_default_darkness(
         self,

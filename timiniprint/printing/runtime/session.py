@@ -24,6 +24,10 @@ class RuntimeConnectionSession:
     def report_debug(self, message: str) -> None:
         self._reporter.debug(short="Runtime", detail=message)
 
+    def can_observe_replies(self) -> bool:
+        """Whether the connection can deliver received bytes to an attached controller."""
+        return callable(getattr(self._connection, "attach_runtime_controller", None))
+
     def report_warning(self, *, short: str, detail: str) -> None:
         self._reporter.warning(short=short, detail=detail)
 

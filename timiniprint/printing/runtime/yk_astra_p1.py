@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
+from ...devices import PrinterDevice
 from ...protocol.families.yk_astra_p1.session import (
     AstraP1PaperDetails,
     AstraP1Status,
@@ -18,7 +19,7 @@ from ...protocol.families.yk_common import (
     YkFrameStreamDecoder,
     iter_yk_frames,
 )
-from .base import RuntimeController, RuntimeSessionApi
+from .base import PreparedPrinter, RuntimeController, RuntimeSessionApi
 
 _COMPLETION_TIMEOUT_SEC = 30.0
 
@@ -42,22 +43,13 @@ class AstraP1RuntimeController(RuntimeController):
             paper_query_on_valid=paper_query_on_valid,
         )
 
-    def adopt_previous(self, previous: RuntimeController | None) -> None:
-        if not isinstance(previous, AstraP1RuntimeController):
-            return
-        if (
-            previous._astra_state.paper_query_on_valid
-            != self._astra_state.paper_query_on_valid
-        ):
-            return
-        self._astra_state = previous._astra_state
-
-    async def probe_capabilities(
+    async def prepare(
         self,
+        device: PrinterDevice,
         session: RuntimeSessionApi,
         *,
         timeout: float,
-    ) -> None:
+    ) -> PreparedPrinter:
         if not session.can_query_control_packet():
             self._astra_state.status_probe_available = False
             session.report_warning(
@@ -67,7 +59,7 @@ class AstraP1RuntimeController(RuntimeController):
                     "continue, but printer errors and paper details are unavailable."
                 ),
             )
-            return
+            return PreparedPrinter(device, self)
         reply = await session.query_control_packet(
             pack_status_query(sequence=self._take_sequence()),
             timeout=max(1.0, timeout),
@@ -83,11 +75,12 @@ class AstraP1RuntimeController(RuntimeController):
                     "Printing can continue without preflight diagnostics."
                 ),
             )
-            return
+            return PreparedPrinter(device, self)
         self._astra_state.status_probe_available = True
         self._consume_status(session, status)
         if self._astra_state.paper_query_on_valid and status.valid_paper:
             await self._query_paper_details(session, timeout=timeout)
+        return PreparedPrinter(device, self)
 
     async def wait_for_completion(
         self,
