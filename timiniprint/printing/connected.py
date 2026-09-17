@@ -32,6 +32,11 @@ class ConnectedPrinter:
     constructor. Capability accessors and raster job builders perform no I/O;
     print/send/motion methods communicate through the prepared connection.
     Use ``async with`` or call ``disconnect()`` to release it.
+
+    Blocking device conditions (e.g. paper out) raise ``PrinterNotReadyError``
+    with machine-readable reasons, not a transport error. A failed operation
+    may already have printed part of the job; it is not retried automatically.
+    Print failures do not close this session. Exiting its context still does.
     """
 
     _device: "PrinterDevice"

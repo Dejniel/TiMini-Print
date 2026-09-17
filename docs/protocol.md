@@ -30,6 +30,33 @@ A connector opens a low-level transport connection for that device. The built-in
 - `feed()` and `retract()` for manual paper motion
 - `disconnect()` or `async with` for connection cleanup
 
+## Printer Conditions And Failed Operations
+
+Blocking states reported by the printer raise
+`timiniprint.printing.PrinterNotReadyError`. Its `reasons` tuple contains
+`timiniprint.protocol.PrinterStatusCode` values: `paper_out`, `cover_open`,
+`overheated`, `low_battery`, `busy`, `ribbon_error`, `cutter_error`, `not_ready`,
+or `printer_error`. Use these stable codes for UI decisions and localization;
+`detail` / `str(error)` preserves the family-specific diagnostic message.
+An unspecified refusal is not guessed to mean paper out.
+
+Catch this exception around connected print/send/paper-motion operations and
+connection preparation. Present the condition as requiring printer attention,
+not as a connection failure or program bug. GUI/CLI reporting uses the
+`printer_not_ready` warning key and includes the string codes in `reasons`.
+CLI still returns a nonzero exit status (2); it did not complete the operation.
+
+A failed print stops subsequent pages/copies, does not automatically retry or
+resume, and does not itself disconnect an established session. Some content may
+already have printed. Resolve the condition and let the user decide what to
+print next. Normal connection cleanup still applies: exiting a context or
+failing initial preparation closes the acquired connection.
+
+This does not make every status fatal: family-specific warnings stay warnings.
+Missing/malformed replies and timeouts are never `PrinterNotReadyError`;
+each family keeps its existing required/optional-reply policy. No new status
+queries or retry policy are implied.
+
 ## Print A File Over Bluetooth
 
 ```python

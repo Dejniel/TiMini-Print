@@ -8,6 +8,8 @@ from unittest.mock import AsyncMock, patch
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.runtime.base import PreparedRuntimeContext
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
+from timiniprint.printing import PrinterNotReadyError
+from timiniprint.protocol import PrinterStatusCode
 from timiniprint.printing.send import send_prepared_job
 from timiniprint.protocol import PrinterProtocol, ProtocolJob
 from timiniprint.protocol.family import ProtocolFamily
@@ -293,8 +295,9 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
                         controller.handle_notification(session, reply)
                     return True
                 session.send_control_packet = reject
-                with self.assertRaisesRegex(RuntimeError, "start print was rejected"):
+                with self.assertRaisesRegex(PrinterNotReadyError, "start print was rejected") as caught:
                     await controller.send_protocol_steps(session, (ProtocolStep.send("page", _page_payload()),), timeout=0.1)
+                self.assertEqual(caught.exception.reasons, (PrinterStatusCode.NOT_READY,))
                 self.assertFalse(any(kind == "bulk" or p[2] == 0xAD for kind, p in session.events))
 
     async def test_density_settle_is_before_start_and_only_after_changes(self) -> None:

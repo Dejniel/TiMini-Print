@@ -19,6 +19,8 @@ from ...protocol.families.v5x import (
 )
 from ...protocol.packet import make_packet, prefixed_packet_opcode, prefixed_packet_payload
 from ...protocol.steps import ProtocolStepOperation
+from ...protocol.status import PrinterStatusCode
+from ..errors import PrinterNotReadyError
 from .base import RuntimeController
 from .v5x_density import V5XJobContext, adjust_density_payload, start_delay_ms
 
@@ -445,7 +447,10 @@ class V5XRuntimeController(RuntimeController):
         if status is None:
             raise RuntimeError("V5X start print response did not include a status byte")
         if status != 0x00:
-            raise RuntimeError(f"V5X start print was rejected (status=0x{status:02x})")
+            raise PrinterNotReadyError(
+                f"V5X start print was rejected (status=0x{status:02x})",
+                PrinterStatusCode.NOT_READY,
+            )
 
     def _update_info_from_a7(self, payload: bytes) -> None:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5X)

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import time
 
+from ...protocol.status import PrinterStatusCode
+from ..errors import PrinterNotReadyError
 from .base import RuntimeSessionApi
 
 _STATUS_PREFIX = 0x1A
@@ -49,16 +51,16 @@ async def wait_for_phomemo_completion(
                 f"type=0x{status_type:02X} value=0x{value:02X} outcome={outcome}"
             )
             if status_type == _TEMPERATURE_STATUS and value == 0xA9:
-                raise RuntimeError(f"{device_label} reported print-head overheat")
+                raise PrinterNotReadyError(f"{device_label} reported print-head overheat", PrinterStatusCode.OVERHEATED)
             if status_type == _COVER_STATUS and value == 0x99:
-                raise RuntimeError(f"{device_label} reported an open cover")
+                raise PrinterNotReadyError(f"{device_label} reported an open cover", PrinterStatusCode.COVER_OPEN)
             if status_type == _PAPER_STATUS and value == 0x88:
-                raise RuntimeError(f"{device_label} reported that it is out of paper")
+                raise PrinterNotReadyError(f"{device_label} reported that it is out of paper", PrinterStatusCode.PAPER_OUT)
             if status_type == _COMPLETION_STATUS:
                 if value == 0x0C:
                     return
-                raise RuntimeError(
-                    f"{device_label} reported page failure 0x{value:02X}"
+                raise PrinterNotReadyError(
+                    f"{device_label} reported page failure 0x{value:02X}", PrinterStatusCode.PRINTER_ERROR,
                 )
 
 

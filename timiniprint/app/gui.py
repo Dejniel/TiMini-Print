@@ -18,6 +18,7 @@ from .. import reporting
 from ..devices import PrinterCatalog, PrinterDevice, ResolvedBluetoothTarget
 from ..licensing import license_text
 from ..printing.connected import ConnectedPrinter, connect_printer
+from ..printing.errors import PrinterNotReadyError
 from ..printing.paper import default_paper_preset_for_device, paper_presets_for_device
 from ..printing.settings import PrintSettings
 from ..rendering.converters.text import TextConverter
@@ -527,6 +528,12 @@ class TiMiniPrintGUI(tk.Tk):
         self.reporter.warning(key, detail=detail, **ctx)
 
     def _queue_error(self, key: str, detail=None, exc=None, **ctx) -> None:
+        if isinstance(exc, PrinterNotReadyError):
+            self.reporter.warning(
+                reporting.WARNING_PRINTER_NOT_READY, reason=str(exc), detail=str(exc), exc=exc,
+                reasons=tuple(code.value for code in exc.reasons),
+            )
+            return
         self.reporter.error(key, detail=detail, exc=exc, **ctx)
 
     def scan(self) -> None:
@@ -892,11 +899,12 @@ class TiMiniPrintGUI(tk.Tk):
         self._schedule_paper_motion()
 
     def _stop_paper_motion(self, *_args) -> None:
+        was_active = self._paper_motion_action is not None
         self._paper_motion_action = None
         if self._paper_motion_job is not None:
             self.after_cancel(self._paper_motion_job)
             self._paper_motion_job = None
-        if not self._paper_motion_busy:
+        if was_active and not self._paper_motion_busy:
             self._restore_status_after_paper_motion()
 
     def _send_paper_motion(self, action: str) -> None:
@@ -905,8 +913,8 @@ class TiMiniPrintGUI(tk.Tk):
         connected_device = self.connected_device
         connected = self.connected_printer
         if not connected_device or connected is None:
-            self._queue_error(reporting.ERROR_PROFILE_NOT_DETECTED)
             self._stop_paper_motion()
+            self._queue_error(reporting.ERROR_PROFILE_NOT_DETECTED)
             return
         self._paper_motion_busy = True
 
@@ -925,8 +933,8 @@ class TiMiniPrintGUI(tk.Tk):
                 if not self._paper_motion_action:
                     self._restore_status_after_paper_motion()
             except Exception as exc:
-                self._queue_error(reporting.ERROR_PAPER_MOTION_FAILED, detail=str(exc), exc=exc)
                 self._stop_paper_motion()
+                self._queue_error(reporting.ERROR_PAPER_MOTION_FAILED, detail=str(exc), exc=exc)
 
         self.ble_loop.submit(run(), callback=done)
 

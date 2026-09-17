@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from timiniprint.printing import PrinterNotReadyError
+from timiniprint.protocol import PrinterStatusCode
+
 import asyncio
 import time
 import unittest
@@ -1592,8 +1595,9 @@ class BleakTransportSessionTests(unittest.TestCase):
                 session.handle_notification(make_packet(0xA9, bytes([0x03]), ProtocolFamily.V5X))
 
             task = asyncio.create_task(notify())
-            with self.assertRaisesRegex(RuntimeError, "status=0x03"):
+            with self.assertRaisesRegex(PrinterNotReadyError, "status=0x03") as caught:
                 await _send_v5x_runtime_payload(session, client, data)
+            self.assertEqual(caught.exception.reasons, (PrinterStatusCode.NOT_READY,))
             await task
 
         asyncio.run(run())

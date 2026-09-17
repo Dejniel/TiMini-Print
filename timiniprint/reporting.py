@@ -18,6 +18,7 @@ STATUS_PAPER_FEED = "paper_feed"
 STATUS_PAPER_RETRACT = "paper_retract"
 
 WARNING_DEPENDENCY = "dependency_missing"
+WARNING_PRINTER_NOT_READY = "printer_not_ready"
 WARNING_SCAN_CLASSIC_FAILED = "scan_classic_failed"
 WARNING_SCAN_BLE_FAILED = "scan_ble_failed"
 
@@ -47,6 +48,7 @@ class MessageCatalog:
         STATUS_PAPER_RETRACT: "Retracting paper...",
     }
     WARNING = {
+        WARNING_PRINTER_NOT_READY: "Printer needs attention: {reason}",
         WARNING_DEPENDENCY: "Missing dependency",
         WARNING_SCAN_CLASSIC_FAILED: "Classic scan failed",
         WARNING_SCAN_BLE_FAILED: "BLE scan failed",

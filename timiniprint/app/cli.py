@@ -14,6 +14,7 @@ from .. import __version__, reporting
 from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarget
 from ..licensing import license_text
 from ..printing.connected import connect_printer
+from ..printing.errors import PrinterNotReadyError
 from ..printing.settings import PrintSettings
 from ..protocol import ImageEncoding
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
@@ -662,6 +663,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if args.serial:
             return print_serial(args, reporter)
         return print_bluetooth(args, reporter)
+    except PrinterNotReadyError as exc:
+        reporter.warning(
+            reporting.WARNING_PRINTER_NOT_READY, reason=str(exc), detail=str(exc), exc=exc,
+            reasons=tuple(code.value for code in exc.reasons),
+        )
+        return 2
     except Exception as exc:
         reporter.error(detail=str(exc), exc=exc)
         return 2
