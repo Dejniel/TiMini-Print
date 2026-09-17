@@ -10,6 +10,10 @@ Thanks for helping TiMini-Print support more printers and work better across pla
 - For printer tests, include the model, detected Bluetooth name, transport, relevant profile/runtime settings, and the exact before/after result.
 - Do not assume that one tested model proves the same behavior for a whole printer family.
 
+Install test dependencies with `python -m pip install -r requirements.txt pytest`.
+Run the full suite with `python -m pytest -q tests`, or pass a specific test file
+for a focused check. Pytest runs both the unittest-based and function-based tests.
+
 ## Rights and source material
 
 By submitting a contribution, you confirm that you have the right to submit it and agree that it is licensed under Apache-2.0.
