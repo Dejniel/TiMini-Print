@@ -103,9 +103,13 @@ def test_connected_print_reports_device_condition_and_allows_explicit_later_prin
 def test_transport_failure_and_cancellation_are_not_reclassified(failure):
     connection = ReplyConnection([failure])
     printer = ConnectedPrinter(connection, PreparedPrinter(PrinterCatalog.load().device_from_model('printmaster_m110'), runtime_controller=PhomemoEscRuntimeController()))
-    with pytest.raises(type(failure)) as caught:
-        asyncio.run(printer.send_job(ProtocolJob(payload=b"raster", wait_for_completion=True)))
-    assert caught.value is failure
+    async def run():
+        # Check propagation before asyncio.run handles task cancellation itself.
+        with pytest.raises(type(failure)) as caught:
+            await printer.send_job(ProtocolJob(payload=b"raster", wait_for_completion=True))
+        assert caught.value is failure
+
+    asyncio.run(run())
 
 
 @pytest.mark.parametrize("operation", [reporting.ERROR_PRINT_FAILED, reporting.ERROR_PAPER_MOTION_FAILED,
