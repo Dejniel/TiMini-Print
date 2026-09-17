@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from timiniprint import licensing
@@ -32,6 +33,26 @@ class LicensingTests(unittest.TestCase):
             text = licensing.build_license_text()
 
         self.assertLess(text.index("Installed component manifest"), text.index("Apache License"))
+
+    def test_release_includes_verified_pyobjc_licenses_missing_from_wheels(self) -> None:
+        names = (
+            "pyobjc-core", "pyobjc-framework-Cocoa", "pyobjc-framework-IOBluetooth",
+            "pyobjc-framework-CoreBluetooth", "pyobjc-framework-libdispatch",
+        )
+        distributions = [
+            SimpleNamespace(metadata={"Name": name}, version="12.2.2", files=())
+            for name in names
+        ]
+        with patch.object(licensing, "_resolve_runtime_distributions", return_value=distributions):
+            text = licensing.build_license_text()
+
+        for name in names:
+            self.assertIn(f"{name}==12.2.2", text)
+            self.assertIn(f"{name} 12.2.2 — LICENSE.txt", text)
+        official_license = (
+            Path(__file__).resolve().parents[1] / "licenses" / "pyobjc" / "LICENSE.txt"
+        ).read_text(encoding="utf-8").strip()
+        self.assertEqual(text.count(official_license), len(names))
 
     def test_source_run_skips_missing_optional_distribution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

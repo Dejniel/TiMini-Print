@@ -18,7 +18,7 @@ _STATIC_LICENSE_FALLBACKS = {
     "winsdk": ("winsdk", frozenset({"1.0.0b10"})),
 }
 _STATIC_LICENSE_FALLBACK_FAMILIES = (
-    ("pyobjc-", "pyobjc", frozenset({"12.2.1"})),
+    ("pyobjc-", "pyobjc", frozenset({"12.2.1", "12.2.2"})),
     ("winrt-", "winrt", frozenset({"3.2.1"})),
 )
 
