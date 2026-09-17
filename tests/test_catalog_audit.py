@@ -191,6 +191,8 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [
                     {"exact_names": ["FOO"]},
                     {"prefixes": ["BAR"]},
+                    {"prefixes": ["BAR"], "substrings": ["PRO"], "all_of": True},
+                    {"prefixes": ["BAZ"], "substrings": ["MAX"], "all_of": True},
                 ],
                 "profile_key": "base",
                 "protocol_override": {"type": "tiny"},

@@ -72,6 +72,10 @@ def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
         tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]], int
     ] = {}
     for index, detection in enumerate(model.get("detections", [])):
+        # Unioning conjunctions (or mixing them with OR rules) changes which
+        # combinations of name triggers match.
+        if detection.get("all_of"):
+            continue
         group = (
             tuple(
                 sorted(
