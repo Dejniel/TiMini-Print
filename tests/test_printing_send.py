@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 import unittest
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 from timiniprint.printing.runtime.base import PreparedPrinter, RuntimeController
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
@@ -445,7 +445,17 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             )
         )
 
-        await send_prepared_job(PreparedPrinter(object()), connection, job, timeout=5.0, reporter=reporter)
+        # Exercise the deadline without relying on sub-10ms platform timers.
+        with patch("timiniprint.printing.step_execution.time") as clock, patch(
+            "timiniprint.printing.step_execution.asyncio"
+        ) as async_ops:
+            clock.monotonic.side_effect = (0.0, 0.0, 0.005, 0.02)
+            async_ops.sleep = AsyncMock()
+            await send_prepared_job(
+                PreparedPrinter(object()), connection, job, timeout=5.0, reporter=reporter,
+            )
+
+        async_ops.sleep.assert_awaited_once_with(0.005)
 
         self.assertEqual(connection.query_packets, [b"P"])
         self.assertLessEqual(connection.query_timeouts[0], 0.01)
