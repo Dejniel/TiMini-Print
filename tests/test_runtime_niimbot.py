@@ -58,13 +58,13 @@ class NiimbotRuntimeTests(unittest.TestCase):
         versions = (
             (1, b"\x03\x00", 0),
             (2, b"\x03\x00", 1),
-            (3, b"\x02\x03", 0),
+            (3, b"\x02\x03", 2),
             (3, b"\x02\x04", 3),
             (3, b"\x02\x63", 3),
             (3, b"\x03\x00", 4),
             (3, b"\x03\x01", 4),
             (3, b"\x03\x02", 5),
-            (3, None, None),
+            (3, None, 2),
         )
         for notification_only in (False, True):
             for connect_result, status_version, expected in versions:
@@ -98,7 +98,7 @@ class NiimbotRuntimeTests(unittest.TestCase):
         assert snapshot["protocol_version"] == expected
         assert snapshot["model_id"] == 512
         assert session.queries == (
-            [connect_packet(), status_data_query_packet(), model_id_query_packet()]
+            [connect_packet(), model_id_query_packet(), status_data_query_packet()]
             if connect_result == 3 else [connect_packet(), model_id_query_packet()]
         )
 

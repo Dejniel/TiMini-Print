@@ -162,7 +162,7 @@ device = await discovery.resolve_device("X6H-ABCD")
 `BluetoothDiscovery` scans hardware. `PrinterCatalog.detect_device(...)` does not scan; it only maps a known advertised name/address to a `PrinterDevice`. Use catalog detection when another platform already scanned Bluetooth for you.
 
 NIIMBOT D11 uses the runtime-selected `d11_auto` task. Connect first and use
-`printer.printer_device` for direct job building: negotiated versions 1/2 select
+`printer.printer_device()` for direct job building: negotiated versions 1/2 select
 `d110`, and other or unavailable versions select `d11_v1`. D11S and the explicit
 `niimbot_d11` profile keep the older task. `PrinterProtocol` alone cannot
 negotiate an unresolved task.
@@ -369,9 +369,11 @@ services, not just the profile's primary notification UUID.
 `ProtocolStep.query(...)` and `ProtocolStep.wait(...)` can set
 `reply_required=True`. A missing or rejected reply then fails the job before
 the next step; repeated queries first use their configured polling budget.
-Such jobs cannot fall back to unchecked stream-only sending. NIIMBOT uses
-this for print completion and print-end acknowledgements. Other steps retain
-their existing optional-reply behavior unless explicitly marked required.
+Such jobs cannot fall back to unchecked stream-only sending. NIIMBOT requires
+setup, page and print-end acknowledgements as well as its task-specific
+completion confirmation. Its runtime retains early page-index notifications,
+reassembles fragmented replies and reports printer faults separately from
+transport errors. Other families retain their existing required/optional policy.
 
 ## Editable Printer Configs
 

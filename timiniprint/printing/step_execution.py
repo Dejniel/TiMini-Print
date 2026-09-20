@@ -2,13 +2,27 @@ from __future__ import annotations
 
 import asyncio
 import time
+from typing import TYPE_CHECKING
 
 from ..protocol import ProtocolReplyExpectation, ProtocolStep, ProtocolStepOperation
 from ..protocol.steps import reply_matches_expectation
-from .runtime.base import RuntimeSessionApi
+if TYPE_CHECKING:
+    from .runtime.base import RuntimeSessionApi
 
 
 _MAX_QUERY_REPLY_BYTES = 65536
+
+
+class ProtocolReplyError(RuntimeError):
+    """A required protocol reply was missing or did not satisfy its step."""
+
+    def __init__(self, step: ProtocolStep, reply: bytes | None) -> None:
+        self.step = step
+        self.reply = reply
+        super().__init__(
+            f"Required protocol reply for {step.label!r} was not confirmed: "
+            f"got {bytes_preview(reply)}"
+        )
 
 
 async def execute_protocol_step(
@@ -39,10 +53,7 @@ async def execute_protocol_step(
     else:
         raise ValueError(f"Unsupported protocol step operation: {step.operation.value}")
     if step.reply_required and not reply_matches_for(step, reply):
-        raise RuntimeError(
-            f"Required protocol reply for {step.label!r} was not confirmed: "
-            f"got {bytes_preview(reply)}"
-        )
+        raise ProtocolReplyError(step, reply)
     return reply
 
 

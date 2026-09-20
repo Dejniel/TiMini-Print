@@ -72,16 +72,48 @@ class NiimbotPacket:
     data: bytes
 
 
+class NiimbotReplyDecoder:
+    """Incremental ordinary-frame decoder; retain fragments and validate XOR."""
+
+    def __init__(self) -> None:
+        self._buffer = bytearray()
+
+    def feed(self, data: bytes) -> tuple[NiimbotPacket, ...]:
+        self._buffer.extend(data)
+        packets = []
+        while self._buffer:
+            start = self._buffer.find(b"\x55\x55")
+            if start < 0:
+                self._buffer[:] = self._buffer[-1:] if self._buffer[-1] == 0x55 else b""
+                break
+            del self._buffer[:start]
+            if len(self._buffer) < 4:
+                break
+            size = self._buffer[3] + 7
+            if len(self._buffer) < size:
+                break
+            try:
+                packet, = parse_packets(bytes(self._buffer[:size]))
+            except ValueError:
+                del self._buffer[0]
+                continue
+            packets.append(packet)
+            del self._buffer[:size]
+        return tuple(packets)
+
+
 @dataclass(frozen=True)
 class _NiimbotRowEncoder:
     indexed_row_threshold: int = 6
     counts_mode: str = "auto"
     check_line_interval: int | None = None
     check_line_timeout_sec: float = 10.0
+    head_width_pixels: int | None = None
 
-    def build_steps(self, raster: RasterBuffer) -> tuple[ProtocolStep, ...]:
+    def encode(self, raster: RasterBuffer) -> tuple[tuple[int, int, bytes], ...]:
+        """Return (absolute row, repeat count, frame), split at block boundaries."""
         rows = _coalesced_rows(raster)
-        steps: list[ProtocolStep] = []
+        encoded = []
         for row in rows:
             for offset, repeat, check_line in _repeat_chunks(
                 row.repeat,
@@ -101,7 +133,7 @@ class _NiimbotRowEncoder:
                         + bytes(
                             _count_pixels(
                                 row.row_data,
-                                raster.width,
+                                self.head_width_pixels or raster.width,
                                 mode=self.counts_mode,
                             )
                         )
@@ -115,33 +147,33 @@ class _NiimbotRowEncoder:
                         + bytes(
                             _count_pixels(
                                 row.row_data,
-                                raster.width,
+                                self.head_width_pixels or raster.width,
                                 mode=self.counts_mode,
                             )
                         )
                         + bytes([repeat])
                         + row.row_data,
                     )
-                steps.append(ProtocolStep.send(f"image row {row_number}", packet))
-                if check_line is not None:
-                    expected_check = _u16be(check_line) + b"\x01"
-                    steps.append(
-                        ProtocolStep.query(
-                            f"check line {check_line}",
-                            frame(
-                                NiimbotRequest.PRINTER_CHECK_LINE,
-                                expected_check,
-                            ),
-                            expect=ProtocolReplyExpectation.NONE,
-                            timeout_sec=self.check_line_timeout_sec,
-                            reply_matcher=response_matcher(
-                                NiimbotResponse.PRINTER_CHECK_LINE,
-                                data_matches=lambda payload, expected=expected_check: (
-                                    payload == expected
-                                ),
-                            ),
-                        )
-                    )
+                encoded.append((row_number, repeat, packet))
+        return tuple(encoded)
+
+    def build_steps(self, raster: RasterBuffer) -> tuple[ProtocolStep, ...]:
+        steps = []
+        for row_number, repeat, packet in self.encode(raster):
+            steps.append(ProtocolStep.send(f"image row {row_number}", packet))
+            if self.check_line_interval and (row_number + repeat) % self.check_line_interval == 0:
+                check_line = row_number + repeat - 1
+                expected_check = _u16be(check_line) + b"\x01"
+                steps.append(ProtocolStep.query(
+                    f"check line {check_line}",
+                    frame(NiimbotRequest.PRINTER_CHECK_LINE, expected_check),
+                    expect=ProtocolReplyExpectation.NONE,
+                    timeout_sec=self.check_line_timeout_sec,
+                    reply_matcher=response_matcher(
+                        NiimbotResponse.PRINTER_CHECK_LINE,
+                        data_matches=lambda data, expected=expected_check: data == expected,
+                    ),
+                ))
         return tuple(steps)
 
 
@@ -257,14 +289,14 @@ class _NiimbotPrintTask(ABC):
         *,
         timeout_sec: float | None = None,
         matcher: ProtocolReplyMatcher | None = None,
-        reply_required: bool = False,
+        reply_required: bool = True,
     ) -> ProtocolStep:
         return ProtocolStep.query(
             label,
             packet,
             expect=ProtocolReplyExpectation.NONE,
             timeout_sec=self.packet_timeout_sec if timeout_sec is None else timeout_sec,
-            reply_matcher=matcher or response_matcher(expected),
+            reply_matcher=matcher or response_matcher(expected, data_matches=lambda data: bool(data and data[0] == 1)),
             reply_required=reply_required,
         )
 
@@ -276,10 +308,6 @@ class _D11V1PrintTask(_NiimbotPrintTask):
     def _after_page_steps(self, request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
         if not request.is_last_page:
             return ()
-        # TODO: this mirrors the source D11_V1 flow: wait for page-index after
-        # PageEnd. If hardware shows the notification can arrive before this
-        # waiter is registered, add a NIIMBOT notification accumulator instead
-        # of moving this logic into transport.
         return (
             ProtocolStep.wait(
                 "page index",
@@ -371,7 +399,8 @@ def response_matcher(
         for packet in _safe_parse_packets(raw):
             if packet.command not in expected_ids:
                 continue
-            return True if data_matches is None else data_matches(packet.data)
+            if data_matches is None or data_matches(packet.data):
+                return True
         return False
 
     return ProtocolReplyMatcher(complete=complete, matches=matches)
@@ -395,7 +424,7 @@ def page_index_done_matcher(expected_page: int) -> ProtocolReplyMatcher:
         for packet in _safe_parse_packets(raw):
             if packet.command != int(NiimbotResponse.PRINTER_PAGE_INDEX):
                 continue
-            if len(packet.data) >= 2 and int.from_bytes(packet.data[:2], "big") == expected_pages:
+            if len(packet.data) >= 2 and int.from_bytes(packet.data[:2], "big") >= expected_pages:
                 return True
         return False
 
@@ -453,7 +482,7 @@ def model_id_from_reply(raw: bytes | None) -> int | None:
         if len(packet.data) == 1:
             return packet.data[0] << 8
         if len(packet.data) == 2:
-            return int.from_bytes(packet.data, "big", signed=True)
+            return int.from_bytes(packet.data, "big")
     return None
 
 
@@ -464,7 +493,7 @@ def protocol_version_from_status_data(raw: bytes | None) -> int | None:
         if packet.command != int(NiimbotResponse.PRINTER_STATUS_DATA):
             continue
         if len(packet.data) <= 12:
-            return 0
+            return None
         encoded = packet.data[11] * 100 + packet.data[12]
         if 204 <= encoded < 300:
             return 3
@@ -472,7 +501,7 @@ def protocol_version_from_status_data(raw: bytes | None) -> int | None:
             return 5
         if encoded == 300 or encoded == 301:
             return 4
-        return 0
+        return None
     return None
 
 
@@ -487,8 +516,6 @@ class _EncodedRow:
 def _coalesced_rows(raster: RasterBuffer) -> tuple[_EncodedRow, ...]:
     if raster.pixel_format is not PixelFormat.BW1:
         raise ValueError("NIIMBOT requires BW1 raster data")
-    if raster.width % 8 != 0:
-        raise ValueError("NIIMBOT raster width must be divisible by 8")
     rows: list[_EncodedRow] = []
     pixels = list(raster.pixels)
     for row_number in range(raster.height):
@@ -550,11 +577,20 @@ def _count_pixels(
     *,
     mode: str = "auto",
 ) -> tuple[int, int, int]:
-    if mode not in {"auto", "split", "total"}:
+    if mode not in {"auto", "split", "total", "total_be", "regional"}:
         raise ValueError(f"Unsupported NIIMBOT pixel-count mode: {mode}")
+    if mode == "regional":
+        boundary = row_width_pixels // 3
+        if boundary <= 0:
+            raise ValueError("NIIMBOT regional counts require a positive head width")
+        parts = [0, 0, 0]
+        for x in range(len(row_data) * 8):
+            if row_data[x // 8] & (0x80 >> (x % 8)):
+                parts[min(2, x // boundary)] += 1
+        return tuple(value & 0xFF for value in parts)
     chunk_size = row_width_pixels // 8 // 3
     split = (
-        mode != "total"
+        mode not in ("total", "total_be")
         and chunk_size > 0
         and len(row_data) <= chunk_size * 3
     )
@@ -568,6 +604,8 @@ def _count_pixels(
             parts[chunk_index] += bit_count
     if split:
         return parts[0], parts[1], parts[2]
+    if mode == "total_be":
+        return (0, (total >> 8) & 0xFF, total & 0xFF)
     return (0, total & 0xFF, (total >> 8) & 0xFF)
 
 
@@ -587,10 +625,7 @@ def _response_ids(expected: NiimbotResponse | Iterable[NiimbotResponse]) -> froz
 
 
 def _safe_parse_packets(raw: bytes) -> tuple[NiimbotPacket, ...]:
-    try:
-        return parse_packets(raw)
-    except ValueError:
-        return ()
+    return NiimbotReplyDecoder().feed(raw)
 
 
 def _checksum(command: int, payload: bytes) -> int:

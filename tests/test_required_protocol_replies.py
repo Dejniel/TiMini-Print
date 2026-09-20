@@ -75,7 +75,9 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
             completion = [s for s in built.steps if s.label in ("print status", "page index", "print end")]
             self.assertTrue(completion)
             self.assertTrue(all(s.reply_required for s in completion))
-            self.assertTrue(all(not s.reply_required for s in built.steps if s not in completion))
+            setup = [s for s in built.steps if s.label in ("set density", "set label type", "print start", "set page size")]
+            self.assertTrue(setup)
+            self.assertTrue(all(s.reply_required for s in setup))
             steps = tuple(replace(s, repeat_interval_sec=0.001, repeat_timeout_sec=0.002)
                           if s.repeat_interval_sec else s for s in built.steps)
             for notification_only in (False, True):
