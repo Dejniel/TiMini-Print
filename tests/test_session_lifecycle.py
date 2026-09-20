@@ -402,7 +402,7 @@ def test_classic_or_custom_replacement_stops_controller_in_application_loop(adap
 
 class _SelectProfile(RuntimeController):
     async def prepare(self, device, session, *, timeout):
-        selected = PrinterCatalog.load().device_from_profile('v5g_small_203').for_connection(device)
+        selected = PrinterCatalog.load().device_from_profile('v5g_small_203').resolve_for_connection(device)
         return PreparedPrinter(selected, RuntimeController())
 
 

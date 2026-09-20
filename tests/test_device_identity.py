@@ -5,7 +5,8 @@ from dataclasses import replace
 import pytest
 
 from timiniprint.devices import PrinterCatalog
-from timiniprint.devices.profiles import ModelDetection, SupportedPrinterModel
+from timiniprint.devices.device import SerialTarget
+from timiniprint.devices.profiles import ModelDetection, RuntimeCapabilities, RuntimeSettings, SupportedPrinterModel
 
 
 def catalog(*, ambiguous=False):
@@ -54,3 +55,71 @@ def test_profile_refinement_preserves_effective_protocol_and_pipeline():
     assert refined.protocol_variant == refined.profile.protocol_default.packets_type == "b1"
     assert refined.image_pipeline == refined.profile.default_image_pipeline == device.image_pipeline
     assert device.protocol_variant != "b1"
+
+
+@pytest.mark.parametrize("same_profile", [False, True])
+@pytest.mark.parametrize("same_model", [False, True])
+def test_connection_resolution_keeps_only_matching_profile_overrides(same_profile, same_model):
+    entries = PrinterCatalog.load()
+    original = entries.device_from_profile("x6h")
+    original = replace(
+        original, display_name="User's printer", transport_target=SerialTarget("/dev/test"),
+        runtime_settings=RuntimeSettings(capabilities=RuntimeCapabilities(d2_status=True)),
+        profile=replace(original.profile, post_print_feed_count=9,
+                        stream=replace(original.profile.stream, chunk_size=17),
+                        use_spp=True, ble_mtu_request=64),
+    )
+    identified = entries.device_from_profile("v5g_small_203")
+    identified = replace(
+        identified, model_key=original.model_key if same_model else "confirmed-model",
+        origin_ids=("confirmed-source",),
+        profile=replace(identified.profile,
+                        profile_key=original.profile_key if same_profile else identified.profile_key),
+    )
+
+    identified_profile = identified.profile
+    resolved = identified.resolve_for_connection(original)
+
+    expected_profile = original.profile if same_profile else identified.profile
+    assert resolved.profile.post_print_feed_count == expected_profile.post_print_feed_count
+    assert resolved.profile.paper_presets == expected_profile.paper_presets
+    assert resolved.profile.dev_dpi == expected_profile.dev_dpi
+    assert resolved.model_key == identified.model_key
+    assert resolved.origin_ids == identified.origin_ids
+    assert resolved.runtime_settings == identified.runtime_settings
+    assert resolved.protocol_family == resolved.profile.protocol_default.type == identified.protocol_family
+    assert resolved.protocol_variant == resolved.profile.protocol_default.packets_type == identified.protocol_variant
+    assert resolved.image_pipeline == resolved.profile.default_image_pipeline == identified.image_pipeline
+    assert resolved.display_name == original.display_name
+    assert resolved.transport_target == original.transport_target
+    assert resolved.profile.stream == original.profile.stream
+    assert resolved.profile.use_spp == original.profile.use_spp
+    assert resolved.profile.ble_mtu_request == original.profile.ble_mtu_request
+    assert identified.profile is identified_profile
+    assert original.profile.post_print_feed_count == 9
+
+
+@pytest.mark.parametrize("same_profile", [False, True])
+def test_connection_resolution_applies_hardware_constraints_after_user_overrides(same_profile):
+    entries = PrinterCatalog.load()
+    original = entries.device_from_profile("niimbot_d110")
+    original = original.with_print_profile(replace(original.profile, dev_dpi=111, post_print_feed_count=9))
+    identified = original.with_protocol_variant("d110") if same_profile else entries.device_from_profile("x6h")
+    seen = []
+
+    def refine(profile):
+        seen.append(profile)
+        return replace(profile, dev_dpi=300, stream=replace(profile.stream, chunk_size=1),
+                       protocol_default=original.profile.protocol_default,
+                       default_image_pipeline=original.image_pipeline)
+
+    resolved = identified.resolve_for_connection(original, refine_profile=refine)
+
+    assert seen == [original.profile if same_profile else identified.profile]
+    assert resolved.profile.dev_dpi == 300
+    assert resolved.profile.post_print_feed_count == (9 if same_profile else 2)
+    assert resolved.profile.stream == original.profile.stream
+    assert resolved.profile.protocol_default.type == identified.protocol_family
+    assert resolved.profile.protocol_default.packets_type == identified.protocol_variant
+    assert resolved.profile.default_image_pipeline == identified.image_pipeline
+    assert original.profile.dev_dpi == 111

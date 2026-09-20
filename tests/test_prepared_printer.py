@@ -86,7 +86,7 @@ class Bootstrap(RuntimeController):
             raise self.failure
         reply = await session.query_control_packet(b"identify", timeout=timeout)
         self.selected = None if self.stateless else SelectedController(reply[0])
-        selected = PrinterCatalog.load().device_from_profile("v5g_small_203").for_connection(device)
+        selected = PrinterCatalog.load().device_from_profile("v5g_small_203").resolve_for_connection(device)
         return PreparedPrinter(selected, self.selected, RuntimePrintCapabilities(supports_gray=False))
 
     async def stop(self, session):

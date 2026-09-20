@@ -26,6 +26,16 @@ checks that the selected configuration still fits the open transport. It never
 silently reconnects or changes GATT bindings. Failed or cancelled preparation
 closes the acquired connection before exposing a printable object.
 
+Preparation keeps protocol queries separate from configuration assembly.
+Once a family has selected and validated its recipe, use
+`selected.resolve_for_connection(original, refine_profile=...)` to assemble the
+device without I/O. The selected recipe owns identity, protocol, raster and
+runtime settings. User profile overrides survive only for the same profile
+key; the optional pure profile refinement then applies confirmed hardware
+constraints. The original connection address, stream settings and MTU request
+are retained. This does not bypass preparation's GATT or controller checks.
+Manual recipe validation and any conditional queries remain family-specific.
+
 Sending reuses that controller for all pages, copies, and subsequent jobs. It
 does not construct controllers or copy state from a previous controller.
 Reconnect starts a fresh preparation. Live status and flow control remain

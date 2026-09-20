@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from enum import Enum
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Optional, Tuple, Union
 
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImagePipelineConfig
@@ -179,18 +179,35 @@ class PrinterDevice:
         )
         return replace(self, profile=profile, image_pipeline=pipeline)
 
-    def for_connection(self, connected_device: "PrinterDevice") -> "PrinterDevice":
-        """Bind a selected catalog device to an already open connection.
+    def resolve_for_connection(
+        self,
+        connected_device: "PrinterDevice",
+        *,
+        refine_profile: Callable[["PrinterProfile"], "PrinterProfile"] | None = None,
+    ) -> "PrinterDevice":
+        """Assemble the final device from a confirmed recipe and an open selection.
 
-        Keep its print recipe, but retain the connection's address and stream
-        settings. Preparation must separately validate GATT compatibility.
+        This device owns identity, protocol, raster and runtime settings. Keep
+        user profile overrides only when both selections use the same catalog
+        profile; sharing a Bluetooth name or model key alone is not sufficient.
+        Apply ``refine_profile`` afterwards so confirmed hardware constraints
+        win over those overrides. It must be a pure profile transformation.
+
+        Family preparation validates any manual recipe before calling this
+        method. Connection address and stream settings always remain unchanged;
+        runtime preparation must still validate the actual GATT bindings.
         """
+        profile = (connected_device.profile if self.profile_key == connected_device.profile_key
+                   else self.profile)
+        if refine_profile is not None:
+            profile = refine_profile(profile)
+        selected = self.with_print_profile(profile)
         return replace(
-            self,
+            selected,
             display_name=connected_device.display_name,
             transport_target=connected_device.transport_target,
             profile=replace(
-                self.profile,
+                selected.profile,
                 use_spp=connected_device.profile.use_spp,
                 stream=connected_device.profile.stream,
                 ble_mtu_request=connected_device.profile.ble_mtu_request,
