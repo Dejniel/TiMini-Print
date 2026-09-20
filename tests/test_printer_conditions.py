@@ -76,7 +76,7 @@ class ReplyConnection:
     (b"\x1a\x03\xa9", PrinterStatusCode.OVERHEATED),
     (b"\x1a\x05\x99", PrinterStatusCode.COVER_OPEN),
     (b"\x1a\x06\x88", PrinterStatusCode.PAPER_OUT),
-    (b"\x1a\x0f\x01", PrinterStatusCode.PRINTER_ERROR),
+    (b"\x1a\x0b\xb8", PrinterStatusCode.NOT_READY),
 ])
 def test_connected_print_reports_device_condition_and_allows_explicit_later_print(steps, reply, reason):
     connection = ReplyConnection([reply, b"\x1a\x0f\x0c"])

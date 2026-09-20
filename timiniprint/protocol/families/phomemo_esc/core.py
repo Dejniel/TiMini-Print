@@ -66,7 +66,7 @@ class PhomemoEscRecipe:
 
 @dataclass(frozen=True)
 class PrintMasterM110Recipe:
-    print_controls: ClassVar[tuple[str, ...]] = ()
+    print_controls: ClassVar[tuple[str, ...]] = ("density",)
     # TODO: The M110/M120 recipe does not set medium type inline.
     paper_modes: ClassVar[tuple[PaperMode, ...]] = (PaperMode.TAG,)
     protocol_variant: str
@@ -82,6 +82,10 @@ class PrintMasterM110Recipe:
         raster = _require_printmaster_m110_width(raster)
 
         payload = bytearray()
+        if request.density not in (None, 0):
+            payload += _density_command(_byte(request.density, default=0, minimum=1, maximum=255))
+        if request.speed is not None:
+            payload += b"\x1f\x11\x23" + bytes([_byte(request.speed, default=0, minimum=0, maximum=255)])
         payload += _INIT
         if self.include_print_multi:
             payload += _printmaster_print_multi_command(1)
