@@ -120,12 +120,14 @@ Detection supports:
 - `exact_names`: normalized advertised name must match exactly
 - `prefixes`: normalized advertised name must start with the prefix
 - `substrings`: normalized advertised name must contain the value
+- `suffixes`: normalized advertised name must end with the value; a literal
+  space requires model-level `whitespace_mode: "preserve"`
 - `mac_prefixes`: optional required address-prefix alternatives
 - `mac_suffixes`: optional address suffix filter
 - `excluded_mac_suffixes`: optional address suffixes which reject the rule
 - `all_of`: require every populated name-trigger group in this detection
 
-By default, `exact_names`, `prefixes`, and `substrings` are alternative trigger
+By default, `exact_names`, `prefixes`, `substrings`, and `suffixes` are alternative trigger
 groups. With `all_of: true`, every populated group must match, while values
 inside each array remain alternatives. MAC constraints are additional in both
 modes: a configured prefix and suffix must both match, while any excluded
@@ -142,7 +144,7 @@ Matching is sorted by specificity. Longer and more constrained rules win over br
 
 Raw trigger spelling is preserved for the public catalog. Private matching copies apply the model's `whitespace_mode`. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
 
-Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and standalone `substrings`. Substrings used as `all_of` constraints are not published as model names. One trailing `-` or `_` is removed from prefix/substring display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC constraints are not public model names.
+Public model names are the ordered union of model-level `marketing_names` and, for each detection in order, its `marketing_names`, `exact_names`, `prefixes`, and standalone `substrings`/`suffixes`. Substrings and suffixes used as `all_of` constraints are not published as model names. One trailing `-` or `_` is removed from pattern display names. Values are deduplicated case-insensitively while preserving the first spelling and order; whitespace remains significant for display, so aliases such as `PM241` and `PM 241` may both remain searchable. MAC constraints are not public model names.
 
 ## Profiles
 

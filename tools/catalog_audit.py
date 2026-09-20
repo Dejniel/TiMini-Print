@@ -25,6 +25,25 @@ from timiniprint.devices.profiles import (  # noqa: E402
 def _sample_names(model: dict[str, Any]) -> list[str]:
     samples: list[str] = []
     for detection in model.get("detections", []):
+        if detection.get("all_of"):
+            prefixes = [str(value) for value in detection.get("prefixes", [])]
+            substrings = [str(value) for value in detection.get("substrings", [])]
+            exact_names = [str(value) for value in detection.get("exact_names", [])]
+            bases = exact_names or prefixes or [""]
+            for base in bases:
+                sample = base
+                for substring in substrings:
+                    if substring not in sample:
+                        sample += substring
+                suffixes = detection.get("suffixes", [])
+                if suffixes:
+                    samples.extend(
+                        sample if sample.endswith(str(suffix)) else sample + str(suffix)
+                        for suffix in suffixes
+                    )
+                else:
+                    samples.append(sample)
+            continue
         for name in detection.get("exact_names", []):
             samples.append(str(name))
         for prefix in detection.get("prefixes", []):
@@ -37,6 +56,8 @@ def _sample_names(model: dict[str, Any]) -> list[str]:
                     samples.append(prefix + "-ABCD")
         for substring in detection.get("substrings", []):
             samples.append(str(substring))
+        for suffix in detection.get("suffixes", []):
+            samples.append("Printer" + str(suffix))
     deduped: list[str] = []
     seen: set[str] = set()
     for sample in samples:
@@ -303,7 +324,7 @@ def generate_report(
 
     for model in models_raw:
         for detection in model.get("detections", []):
-            for field in ("prefixes", "exact_names", "substrings"):
+            for field in ("prefixes", "exact_names", "substrings", "suffixes"):
                 for trigger in detection.get(field, []):
                     if trigger != trigger.strip():
                         errors.append(
@@ -345,7 +366,7 @@ def generate_report(
                 }
             )
         for detection in model.get("detections", []):
-            for field in ("prefixes", "exact_names", "substrings"):
+            for field in ("prefixes", "exact_names", "substrings", "suffixes"):
                 for trigger in detection.get(field, []):
                     if trigger != trigger.strip():
                         errors.append(

@@ -100,7 +100,7 @@ class PrinterCatalog:
             )
             triggers.extend(
                 DetectionNormalizer.normalize_name(value)
-                for value in detection.substrings
+                for value in (*detection.substrings, *detection.suffixes)
             )
             triggers.extend(detection.mac_suffixes)
             triggers.extend(detection.mac_prefixes)
@@ -118,6 +118,7 @@ class PrinterCatalog:
                 *detection.exact_names,
                 *detection.prefixes,
                 *detection.substrings,
+                *detection.suffixes,
             )
         ]
         trigger_lengths = [

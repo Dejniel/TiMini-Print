@@ -364,6 +364,7 @@ class ModelDetection:
     prefixes: Tuple[str, ...] = ()
     exact_names: Tuple[str, ...] = ()
     substrings: Tuple[str, ...] = ()
+    suffixes: Tuple[str, ...] = ()
     mac_prefixes: Tuple[str, ...] = ()
     mac_suffixes: Tuple[str, ...] = ()
     excluded_mac_suffixes: Tuple[str, ...] = ()
@@ -374,18 +375,21 @@ class ModelDetection:
         prefixes = tuple(self.prefixes)
         exact_names = tuple(self.exact_names)
         substrings = tuple(self.substrings)
+        suffixes = tuple(self.suffixes)
+        if any(not value for value in suffixes):
+            raise ValueError("Model detection suffixes must not be empty")
         marketing_names = tuple(value.strip() for value in self.marketing_names)
         if any(not value.strip() for value in (*prefixes, *exact_names, *substrings)):
             raise ValueError("Model detection triggers must not be blank")
         if any(not value for value in marketing_names):
             raise ValueError("Model detection marketing_names must not contain blanks")
-        if not prefixes and not exact_names and not substrings:
+        if not prefixes and not exact_names and not substrings and not suffixes:
             raise ValueError(
-                "Model detection requires at least one prefix, exact_name, or substring"
+                "Model detection requires at least one name trigger"
             )
         populated_name_groups = sum(
             bool(values)
-            for values in (prefixes, exact_names, substrings)
+            for values in (prefixes, exact_names, substrings, suffixes)
         )
         if self.all_of and populated_name_groups < 2:
             raise ValueError(
@@ -394,6 +398,7 @@ class ModelDetection:
         object.__setattr__(self, "prefixes", prefixes)
         object.__setattr__(self, "exact_names", exact_names)
         object.__setattr__(self, "substrings", substrings)
+        object.__setattr__(self, "suffixes", suffixes)
         object.__setattr__(self, "marketing_names", marketing_names)
         object.__setattr__(
             self,
@@ -433,7 +438,7 @@ class ModelDetection:
 
     @property
     def names(self) -> Tuple[str, ...]:
-        public_substrings = () if self.all_of else self.substrings
+        public_patterns = () if self.all_of else (*self.substrings, *self.suffixes)
         return DetectionNormalizer.dedupe_public_names(
             (
                 *self.marketing_names,
@@ -444,7 +449,7 @@ class ModelDetection:
                 ),
                 *(
                     DetectionNormalizer.public_pattern_name(value)
-                    for value in public_substrings
+                    for value in public_patterns
                 ),
             )
         )
@@ -559,10 +564,21 @@ class ModelDetection:
                         has_mac_suffix=has_mac_constraint,
                     )
                 )
+        matched_suffixes: list[Tuple[int, int, int, int, int]] = []
+        for value in self.suffixes:
+            trigger = DetectionNormalizer.normalize_name(value, whitespace_mode)
+            candidate = trigger if case_sensitive else trigger.upper()
+            if candidate and target_name.endswith(candidate):
+                matched_suffixes.append(
+                    self._trigger_specificity(
+                        trigger, match_rank=1, has_mac_suffix=has_mac_constraint,
+                    )
+                )
         matched_groups = (
             (self.exact_names, matched_exact_names),
             (self.prefixes, matched_prefixes),
             (self.substrings, matched_substrings),
+            (self.suffixes, matched_suffixes),
         )
         if self.all_of:
             if any(configured and not matched for configured, matched in matched_groups):
@@ -581,7 +597,7 @@ class ModelDetection:
             )
 
         return max(
-            (*matched_exact_names, *matched_prefixes, *matched_substrings),
+            (*matched_exact_names, *matched_prefixes, *matched_substrings, *matched_suffixes),
             default=None,
         )
 
@@ -633,6 +649,12 @@ class PrinterModel:
                 f"Printer model {self.model_key} marketing_names must not contain blanks"
             )
         object.__setattr__(self, "marketing_names", marketing_names)
+        if any(
+            not DetectionNormalizer.normalize_name(suffix, self.whitespace_mode)
+            for detection in self.detections
+            for suffix in detection.suffixes
+        ):
+            raise ValueError("Whitespace-only suffixes require whitespace_mode=preserve")
         if not self.detections and not self.marketing_names:
             raise ValueError(
                 f"Printer model {self.model_key} requires detections or marketing names"
