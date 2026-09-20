@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Mapping
 
 from ..raster import PixelFormat, RasterSet
 from ._builders import _build_job_model_from_raster_set
@@ -295,7 +295,7 @@ class PrinterProtocol:
             formats=tuple(fmt for fmt in pipeline.formats if fmt in allowed_formats),
             encoding=pipeline.encoding,
         )
-        return self._apply_runtime_capabilities(pipeline, runtime_capabilities)
+        return self._apply_runtime_capabilities(pipeline, runtime_capabilities, image_encoding_support)
 
     def _paper_mode(self, paper_preset_key: str | None) -> PaperMode | None:
         if paper_preset_key is None:
@@ -409,17 +409,21 @@ class PrinterProtocol:
     def _apply_runtime_capabilities(
         pipeline: ImagePipelineConfig,
         runtime_capabilities: RuntimePrintCapabilities | None,
+        support: Mapping[ImageEncoding, tuple[PixelFormat, ...]],
     ) -> ImagePipelineConfig:
-        if runtime_capabilities is None:
+        if runtime_capabilities is None or runtime_capabilities.supports_gray is not False:
             return pipeline
-        if (
-            pipeline.encoding == ImageEncoding.LUCK_NORMAL_GRAY
-            and runtime_capabilities.supports_gray is False
-        ):
+        gray_formats = (PixelFormat.GRAY4, PixelFormat.GRAY8)
+        if pipeline.default_format not in gray_formats:
             return ImagePipelineConfig(
-                formats=(PixelFormat.BW1,) + tuple(
-                    value for value in pipeline.formats if value is not PixelFormat.BW1
-                ),
-                encoding=ImageEncoding.LUCK_NORMAL_RAW,
+                formats=tuple(fmt for fmt in pipeline.formats if fmt not in gray_formats),
+                encoding=pipeline.encoding,
             )
-        return pipeline
+        # Prefer the selected codec when it also supports monochrome. Otherwise
+        # use the first declared monochrome recipe, not a family-name heuristic.
+        encoding = pipeline.encoding if PixelFormat.BW1 in support.get(pipeline.encoding, ()) else next(
+            (codec for codec, formats in support.items() if PixelFormat.BW1 in formats), None,
+        )
+        if encoding is None:
+            raise ValueError("Printer does not support grayscale and has no monochrome fallback")
+        return ImagePipelineConfig(formats=(PixelFormat.BW1,), encoding=encoding)

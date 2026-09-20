@@ -9,8 +9,9 @@ class RuntimePrintCapabilities:
 
     Optional booleans distinguish confirmed support/non-support from ``None``
     (unknown or not queried). Unknown values leave recipe defaults in charge.
-    ``supports_gray`` and ``gray_level_override`` are consumed by recipes that
-    implement those negotiations; they are not universal codec switches.
+    ``supports_gray=False`` excludes grayscale from format choices and resolves
+    a grayscale request to an implemented monochrome codec. It never enables
+    a codec absent from the recipe. ``gray_level_override`` is recipe-specific.
     ``supports_blackening=False`` hides that adjustment from the public
     capability query. The object itself performs no communication or discovery.
     """
