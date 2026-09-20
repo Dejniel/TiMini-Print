@@ -144,6 +144,25 @@ is therefore not necessarily immediate and does not undo bytes already sent.
 Custom executor-backed transports must likewise settle worker I/O before
 releasing resources; cancelling its asyncio future alone does not stop a thread.
 
+### BLE Write Control
+
+Custom BLE adapters must retain notification-channel identity. A profile's
+`control_notify_char_uuid` is a separate flow-control channel: subscribe when
+present and deliver its bytes to `RuntimeController.handle_control_notification`,
+not `handle_notification` or printer-reply waiters. Report a successful
+subscription through `session.can_observe_control_notifications()`. Failure
+to subscribe to a present control characteristic must fail connection setup.
+Notifications received before runtime attachment must retain their channel
+during replay.
+
+Immediately before **each physical GATT write**, after chunking, await
+`controller.before_write(session, size=len(chunk), timeout=timeout)`.
+This applies to payload, protocol-step, control-packet and bulk writes.
+An exception stops sending; do not invent a credit, retry a failed write or
+refund its permission. Credit interpretation belongs to the runtime, never
+the adapter. The default hooks do nothing, preserving other families' behavior.
+Classic/SPP writes do not use these BLE hooks.
+
 ## Choose A Bluetooth Printer
 
 Use `scan_devices()` when you want printable devices that TiMini can resolve automatically.

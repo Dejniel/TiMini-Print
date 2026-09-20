@@ -28,6 +28,10 @@ class RuntimeConnectionSession:
         """Whether the connection can deliver received bytes to an attached controller."""
         return callable(getattr(self._connection, "attach_runtime_controller", None))
 
+    def can_observe_control_notifications(self) -> bool:
+        capability = getattr(self._connection, "can_observe_control_notifications", None)
+        return bool(capability()) if callable(capability) else False
+
     def report_warning(self, *, short: str, detail: str) -> None:
         self._reporter.warning(short=short, detail=detail)
 

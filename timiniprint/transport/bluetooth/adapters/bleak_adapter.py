@@ -404,7 +404,7 @@ class _BleakSocket:
             self._loop = None
 
     def _handle_notification(self, _sender: Any, data: Any) -> None:
-        self._transport.handle_notification(bytes(data))
+        self._transport.handle_notification(bytes(data), source=_sender)
 
 
 class _BleakBleAdapter(_BleBluetoothAdapter):

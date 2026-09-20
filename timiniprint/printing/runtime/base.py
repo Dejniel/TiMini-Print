@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -8,7 +9,7 @@ from ...protocol.runtime import RuntimePrintCapabilities
 
 if TYPE_CHECKING:
     from ...devices import PrinterDevice
-    from ...protocol import ProtocolStep
+    from ...protocol import ProtocolJob, ProtocolStep
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,8 @@ class RuntimeSessionApi(Protocol):
     def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None: ...
 
     def can_send_control_packet(self) -> bool: ...
+    def can_observe_replies(self) -> bool: ...
+    def can_observe_control_notifications(self) -> bool: ...
     def can_query_control_packet(self) -> bool: ...
     def can_wait_for_reply(self) -> bool: ...
     def can_wait_for_notification(self) -> bool: ...
@@ -87,6 +90,12 @@ class RuntimeSessionApi(Protocol):
 
 
 class RuntimeController:
+    @asynccontextmanager
+    async def job_scope(
+        self, session: RuntimeSessionApi, job: ProtocolJob, *, timeout: float,
+    ) -> AsyncIterator[None]:
+        """Scope runtime state around one send and its completion, including failures."""
+        yield
 
     async def initialize_connection(
         self,
@@ -138,6 +147,21 @@ class RuntimeController:
         return PreparedPrinter(device, self)
 
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
+        return None
+
+    def handle_control_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
+        """Receive a dedicated BLE control channel, separate from printer replies."""
+        return None
+
+    async def before_write(
+        self, session: RuntimeSessionApi, *, size: int, timeout: float,
+    ) -> None:
+        """Reserve permission immediately before each physical BLE write.
+
+        Called after chunking, for standard, control-packet and bulk sends.
+        Returning permits exactly one write; raising prevents that write.
+        A failed physical write must abort sending, not refund/retry a credit.
+        """
         return None
 
     def debug_snapshot(self) -> dict[str, Any]:

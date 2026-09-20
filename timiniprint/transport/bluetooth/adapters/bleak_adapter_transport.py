@@ -67,7 +67,7 @@ class _BleakTransportSession:
         self._client: Any = None
         self._runtime_controller = None
         self._notification_waiters: list[_NotificationWaiter] = []
-        self._notification_history: deque[tuple[float, bytes]] = deque(
+        self._notification_history: deque[tuple[float, bytes, bool]] = deque(
             maxlen=_NOTIFICATION_HISTORY_LIMIT
         )
         self._notification_count = 0
@@ -150,6 +150,12 @@ class _BleakTransportSession:
         self.bindings.notify_char_uuid = _BleWriteEndpointResolver._normalize_uuid(
             getattr(self.bindings.notify_char, "uuid", "")
         )
+        if transport.control_notify_char_uuid:
+            control = self._find_characteristic_by_uuid(services, transport.control_notify_char_uuid)
+            if control is not None:
+                uuid = _BleWriteEndpointResolver._normalize_uuid(control.uuid)
+                if uuid != self.bindings.notify_char_uuid and uuid not in self.bindings.additional_notify_char_uuids:
+                    self.bindings.additional_notify_char_uuids += (uuid,)
         if self.bindings.notify_char:
             self.report_debug(
                 f"selected notify characteristic char={self.bindings.notify_char_uuid}"
@@ -213,7 +219,9 @@ class _BleakTransportSession:
         uuids = (self.bindings.notify_char_uuid, *self.bindings.additional_notify_char_uuids)
         try:
             for uuid in filter(None, uuids):
-                await start_notify(uuid, callback)
+                def channel_callback(_sender, data, *, _uuid=uuid):
+                    callback(_uuid, data)
+                await start_notify(uuid, channel_callback)
                 self._subscribed_notify_uuids.append(uuid)
                 self.notify_started = True
         except Exception:
@@ -408,6 +416,8 @@ class _BleakTransportSession:
             if wait_for_flow:
                 await self._wait_for_flow(timeout)
             chunk = data[offset : offset + chunk_size]
+            if self._runtime_controller is not None:
+                await self._runtime_controller.before_write(self, size=len(chunk), timeout=timeout)
             await client.write_gatt_char(char, chunk, response=response)
             self._record_write_activity(progress_label, len(chunk))
             chunks_written = chunk_index
@@ -437,16 +447,23 @@ class _BleakTransportSession:
         except asyncio.TimeoutError:
             raise TimeoutError("Timed out waiting for BLE flow-control resume") from None
 
-    def handle_notification(self, payload: bytes) -> None:
+    def handle_notification(self, payload: bytes, source: Any = None) -> None:
         self._notification_count += 1
         now = time.monotonic()
         self._last_notification_monotonic = now
-        self._remember_notification(now, payload)
+        source_value = getattr(source, "uuid", source)
+        source_uuid = _BleWriteEndpointResolver._normalize_uuid(source_value) if isinstance(source_value, str) else ""
+        is_control = self._is_control_channel(source_uuid)
+        self._remember_notification(now, payload, is_control)
         try:
             if self._runtime_controller is not None:
-                self._runtime_controller.handle_notification(self, payload)
+                if is_control:
+                    self._runtime_controller.handle_control_notification(self, payload)
+                else:
+                    self._runtime_controller.handle_notification(self, payload)
         finally:
-            self._match_notification_waiters(payload)
+            if not is_control:
+                self._match_notification_waiters(payload)
         self.report_debug(f"BLE notify: {payload.hex()}")
 
     def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
@@ -459,6 +476,13 @@ class _BleakTransportSession:
             label = "flow resume"
         detail = "" if not payload else f": {payload.hex()}"
         self.report_debug(label + detail)
+
+    def _is_control_channel(self, uuid: str) -> bool:
+        configured = self._transport_profile.control_notify_char_uuid
+        return bool(configured) and uuid == _BleWriteEndpointResolver._normalize_uuid(configured)
+
+    def can_observe_control_notifications(self) -> bool:
+        return any(self._is_control_channel(uuid) for uuid in self._subscribed_notify_uuids)
 
     @staticmethod
     def _find_characteristic_by_uuid(
@@ -730,8 +754,8 @@ class _BleakTransportSession:
         self._notification_waiters.append(waiter)
         return waiter
 
-    def _remember_notification(self, now: float, payload: bytes) -> None:
-        self._notification_history.append((now, bytes(payload)))
+    def _remember_notification(self, now: float, payload: bytes, is_control: bool) -> None:
+        self._notification_history.append((now, bytes(payload), is_control))
         self._trim_notification_history(now)
 
     def _replay_notifications_to_runtime_controller(self) -> None:
@@ -739,14 +763,17 @@ class _BleakTransportSession:
             return
         now = time.monotonic()
         self._trim_notification_history(now)
-        for _timestamp, payload in self._notification_history:
-            self._runtime_controller.handle_notification(self, payload)
+        for _timestamp, payload, is_control in self._notification_history:
+            if is_control:
+                self._runtime_controller.handle_control_notification(self, payload)
+            else:
+                self._runtime_controller.handle_notification(self, payload)
 
     def _match_notification_history(self, match: Callable[[bytes], bool]) -> bytes | None:
         now = time.monotonic()
         self._trim_notification_history(now)
-        for _timestamp, payload in reversed(self._notification_history):
-            if match(payload):
+        for _timestamp, payload, is_control in reversed(self._notification_history):
+            if not is_control and match(payload):
                 return payload
         return None
 

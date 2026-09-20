@@ -20,6 +20,8 @@ class BleTransportProfile:
     preferred_service_uuid: str = ""
     preferred_write_char_uuid: str = ""
     notify_char_uuid: str = ""
+    # A separate runtime flow-control channel, not a printer reply stream.
+    control_notify_char_uuid: str = ""
     # Subscribe every notify/indicate characteristic in these services.
     notify_service_uuids: tuple[str, ...] = ()
     prefer_generic_notify: bool = False
