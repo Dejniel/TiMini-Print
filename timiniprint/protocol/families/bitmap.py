@@ -25,14 +25,28 @@ def pad_raster(
     return RasterBuffer(pixels, width, raster.pixel_format)
 
 
-def pack_bw1_rows(raster: RasterBuffer, *, lsb_first: bool = False) -> bytes:
+def pack_bw1_rows(
+    raster: RasterBuffer,
+    *,
+    lsb_first: bool = False,
+    reverse_traversal: bool = False,
+) -> bytes:
+    """Pack BW1 rows, optionally walking from bottom-right to top-left."""
+
     raster.validate()
     if raster.pixel_format != PixelFormat.BW1:
         raise ValueError("BW1 raster packing requires a bw1 raster")
 
     payload = bytearray()
-    for row in range(raster.height):
+    rows = (
+        range(raster.height - 1, -1, -1)
+        if reverse_traversal
+        else range(raster.height)
+    )
+    for row in rows:
         line = raster.pixels[row * raster.width : (row + 1) * raster.width]
+        if reverse_traversal:
+            line = line[::-1]
         payload += pack_line(list(line), lsb_first=lsb_first)
     return bytes(payload)
 

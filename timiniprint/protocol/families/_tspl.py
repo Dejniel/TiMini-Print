@@ -21,6 +21,8 @@ def bitmap_command(
     *,
     line_end: bytes,
     invert_bits: bool = False,
+    mode: int = 0,
+    reverse_traversal: bool = False,
 ) -> bytes:
     raster.validate()
     if raster.pixel_format is not PixelFormat.BW1:
@@ -28,13 +30,15 @@ def bitmap_command(
     if raster.width % 8 != 0:
         raise ValueError("TSPL bitmap jobs require width divisible by 8")
 
-    packed = pack_bw1_rows(raster, lsb_first=False)
+    if mode not in (0, 1, 2):
+        raise ValueError("Uncompressed TSPL bitmap mode must be 0, 1, or 2")
+    packed = pack_bw1_rows(raster, lsb_first=False, reverse_traversal=reverse_traversal)
     if invert_bits:
         packed = bytes(value ^ 0xFF for value in packed)
     return (
         command_head(
             "BITMAP",
-            f"0,0,{packed_row_width_bytes(raster.width)},{raster.height},0,",
+            f"0,0,{packed_row_width_bytes(raster.width)},{raster.height},{mode},",
         )
         + packed
         + line_end
