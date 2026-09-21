@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Iterator, Optional, TYPE_CHECKING
 
 from .. import reporting
@@ -96,6 +96,9 @@ class PrintJobBuilder:
             self.settings,
         )
         page_count = plan.page_count
+        # Rendering has already resolved user overrides and runtime fallbacks.
+        # Keep that pipeline authoritative when encoding the resulting raster.
+        job_settings = replace(self.settings, image_encoding_override=None, pixel_format_override=None)
         for page in plan.pages:
             rendered = self.document_renderer.print_page(
                 plan,
@@ -127,7 +130,7 @@ class PrintJobBuilder:
                 self.device,
                 raster_set,
                 is_text=rendered.is_text,
-                settings=self.settings,
+                settings=job_settings,
                 runtime_capabilities=self.runtime_capabilities,
                 page_index=page.number,
                 page_count=page_count,
