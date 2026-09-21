@@ -322,12 +322,26 @@ job = PrinterProtocol(device).build_job(
 
 When an integration splits one continuous raster document into several calls, pass `page_index`, `page_count`, and `page_flow=PageFlow.CONTINUOUS` for every chunk. The default is `PageFlow.PAGED`, so existing one-page raster calls remain self-contained.
 
+### Phomemo Sessions
+
+Connection preparation reads device information through the connection's
+query/reply interface; the runtime does not select or require a particular
+transport. Missing optional firmware, battery or feature replies do not block
+printing. Recipes that need a serial number for raster selection require its
+reply before preparation completes.
+
+Pass `printer.print_capabilities()` to builders as `runtime_capabilities`, just
+as for other prepared printers. The snapshot is immutable; later status
+notifications update runtime diagnostics, not an already prepared job.
+Reported grayscale or double-DPI flags do not automatically enable an encoder.
+Print Master recipes have their own reply format and do not use Phomemo startup.
+
 ### Phomemo Compact Raster Input
 
 Phomemo M02/T02 accept up to 384 content dots; M02S/M02 Pro accept up to
-576 at 300 dpi. Pass the content raster without the four blank left dots:
-the encoder adds them, plus the M02S/M02 Pro label-roll right extension.
-M110/M120 accept up to 384 dots and M220 up to 576, with no implicit margin.
+576 at 300 dpi. Pass the content raster without the four blank top rows:
+the encoder adds them. M02S/M02 Pro label rolls are first padded on the left
+to their respective wire widths of 588/583 dots.
 Partial bytes are zero-filled without resizing or reversing the image.
 
 These profiles use compact density levels 1..4, mapped to wire density and

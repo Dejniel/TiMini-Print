@@ -8,6 +8,7 @@ from .funny_lx import FunnyLxRuntimeController
 from .luck_normal import LuckNormalRuntimeController
 from .niimbot import NiimbotRuntimeController, VersionedNiimbotRuntimeController
 from .phomemo_esc import PhomemoEscRuntimeController
+from .phomemo import PhomemoRuntimeController
 from .tiny import TinyRuntimeController
 from .v5c import V5CRuntimeController
 from .v5g import V5GRuntimeController
@@ -42,6 +43,8 @@ def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | 
         and device.protocol_variant in {"printmaster_m110", "printmaster_m120"}
     ):
         return PhomemoEscRuntimeController()
+    if device.protocol_family is ProtocolFamily.PHOMEMO_ESC:
+        return PhomemoRuntimeController()
     if device.protocol_family is ProtocolFamily.YK_ASTRA_P1:
         return AstraP1RuntimeController(
             paper_query_on_valid=device.protocol_variant == "s001",

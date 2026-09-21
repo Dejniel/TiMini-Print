@@ -1,5 +1,12 @@
 [
   {
+    "model_key": "unsupported_phomemo_printmaster_redirect",
+    "whitespace_mode": "trim",
+    "origin_ids": ["com.quyin.phomemo"],
+    "detections": [{"prefixes": ["M110", "M120", "M220"]}],
+    "notes": "These Phomemo name prefixes redirect to Print Master, not to a Phomemo printer recipe. Confirmed exact models use their Print Master entries; an arbitrary suffix does not identify a supported variant."
+  },
+  {
     "model_key": "unsupported_toprint_p3",
     "whitespace_mode": "preserve",
     "origin_ids": [
@@ -390,7 +397,8 @@
       {
         "exact_names": [
           "M02X/L",
-          "M02L"
+          "M02L",
+          "Q02E"
         ]
       }
     ]

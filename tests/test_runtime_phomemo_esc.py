@@ -50,8 +50,8 @@ class PhomemoEscRuntimeTests(unittest.IsolatedAsyncioTestCase):
             runtime_controller_for_device(m120),
             PhomemoEscRuntimeController,
         )
-        phomemo = PrinterCatalog.load().device_from_model("phomemo_m110")
-        self.assertIsNone(runtime_controller_for_device(phomemo))
+        phomemo = PrinterCatalog.load().device_from_model("phomemo_m02")
+        self.assertNotIsInstance(runtime_controller_for_device(phomemo), PhomemoEscRuntimeController)
 
     async def test_payload_job_waits_for_inherited_completion(self) -> None:
         connection = _ReplyConnection([b"\x1a\x0f\x0c"])

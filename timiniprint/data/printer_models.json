@@ -2413,7 +2413,6 @@
         "exact_names": [
           "T02",
           "T02E",
-          "Q02E",
           "C02E"
         ]
       }
@@ -2435,51 +2434,6 @@
           "M02 Pro",
           "M02PRO",
           "sandymaro"
-        ]
-      }
-    ],
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ]
-  },
-  {
-    "model_key": "phomemo_m110",
-    "profile_key": "phomemo_m110",
-    "protocol_override": {
-      "packets_type": "m110"
-    },
-    "detections": [
-      {
-        "exact_names": [
-          "M110",
-          "M120"
-        ],
-        "prefixes": [
-          "M110",
-          "M120"
-        ]
-      }
-    ],
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ]
-  },
-  {
-    "model_key": "phomemo_m220",
-    "detection_ambiguity_group": "m220_protocol",
-    "profile_key": "phomemo_m220",
-    "protocol_override": {
-      "packets_type": "m220"
-    },
-    "detections": [
-      {
-        "exact_names": [
-          "M220"
-        ],
-        "prefixes": [
-          "M220"
         ]
       }
     ],

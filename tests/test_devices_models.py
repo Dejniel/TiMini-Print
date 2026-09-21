@@ -1107,24 +1107,16 @@ class DevicesModelsTests(unittest.TestCase):
         m110 = self.catalog.detect_device("M110")
         m120 = self.catalog.detect_device("M120")
 
-        self.assertIsNone(m110)
-        self.assertIsNone(m120)
-        self.assertEqual(
-            _model_keys(self.catalog.detect_model("M110")),
-            {"phomemo_m110", "printmaster_m110"},
-        )
-        self.assertEqual(
-            _model_keys(self.catalog.detect_model("M120")),
-            {"phomemo_m110", "printmaster_m120"},
-        )
+        self.assertEqual(m110.model_key, "printmaster_m110")
+        self.assertEqual(m120.model_key, "printmaster_m120")
         self.assertEqual(
             _model_keys(self.catalog.detect_model("M220")),
-            {"phomemo_m220", "unsupported_printmaster_m200_series"},
+            {"unsupported_printmaster_m200_series"},
         )
-        self.assertIsNone(self.catalog.detect_device("M220"))
-        m220_prefix = _single_match(self.catalog.detect_model("M220-ABCD"))
-        self.assertIsInstance(m220_prefix, SupportedModelMatch)
-        self.assertEqual(m220_prefix.model.model_key, "phomemo_m220")
+        self.assertFalse(any(
+            match.model.model_key.startswith("phomemo_")
+            for match in self.catalog.detect_model("M220-ABCD")
+        ))
         self.assertEqual(
             _model_keys(self.catalog.detect_model("P12")),
             {

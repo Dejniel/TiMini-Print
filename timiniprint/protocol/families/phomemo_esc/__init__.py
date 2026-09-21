@@ -6,6 +6,7 @@ from ....raster import PixelFormat
 from ...plan import ProtocolPlan
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
+from .flow import PhomemoPageStep
 from .core import (
     RECIPES,
     advance_paper_cmd,
@@ -17,7 +18,10 @@ from .core import (
 
 
 def build_job(request: PrintJobRequest) -> ProtocolPlan:
-    return ProtocolPlan.stream(build_phomemo_esc_job(request))
+    job = build_phomemo_esc_job(request)
+    if isinstance(job, PhomemoPageStep):
+        return ProtocolPlan.sequence((job,))
+    return ProtocolPlan.stream(job)
 
 
 BEHAVIOR = ProtocolBehavior(

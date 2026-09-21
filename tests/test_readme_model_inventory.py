@@ -117,7 +117,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertRegex(supported, r"(?<![A-Z0-9_-])M110(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])M120(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])T02(?![A-Z0-9_-])")
-        self.assertRegex(supported, r"(?<![A-Z0-9_-])Q02E(?![A-Z0-9_-])")
+        self.assertNotRegex(supported, r"(?<![A-Z0-9_-])Q02E(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])D11(?![A-Z0-9_-])")
         self.assertRegex(supported, r"(?<![A-Z0-9_-])D11S(?![A-Z0-9_-])")
 

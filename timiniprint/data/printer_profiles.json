@@ -6300,14 +6300,14 @@
       },
       "density": {
         "image": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         },
         "text": {
-          "low": 3,
-          "middle": 4,
-          "high": 6
+          "low": 1,
+          "middle": 2,
+          "high": 4
         }
       }
     },
@@ -6428,122 +6428,6 @@
     "paper_presets": [
       "plain_576r",
       "tag_576r"
-    ]
-  },
-  {
-    "profile_key": "phomemo_m110",
-    "size": 2,
-    "one_length": 8,
-    "dev_dpi": 203,
-    "has_id": false,
-    "use_spp": true,
-    "can_print_label": true,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "protocol_default": {
-      "type": "phomemo_esc",
-      "packets_type": "m110"
-    },
-    "default_image_pipeline": {
-      "formats": [
-        "bw1"
-      ],
-      "encoding": "phomemo_esc_raster"
-    },
-    "stream": {
-      "chunk_size": 128,
-      "delay_ms": 20
-    },
-    "post_print_feed_count": 2,
-    "print_defaults": {
-      "energy": {
-        "image": {
-          "low": 0,
-          "middle": 0,
-          "high": 0
-        },
-        "text": {
-          "low": 0,
-          "middle": 0,
-          "high": 0
-        }
-      },
-      "density": {
-        "image": {
-          "low": 1,
-          "middle": 2,
-          "high": 4
-        },
-        "text": {
-          "low": 1,
-          "middle": 2,
-          "high": 4
-        }
-      }
-    },
-    "a4xii": false,
-    "paper_presets": [
-      "tag_384r",
-      "plain_384r",
-      "blacktag_384r"
-    ]
-  },
-  {
-    "profile_key": "phomemo_m220",
-    "size": 2,
-    "one_length": 8,
-    "dev_dpi": 203,
-    "has_id": false,
-    "use_spp": true,
-    "can_print_label": true,
-    "label_value": "0",
-    "back_paper_num": 0,
-    "protocol_default": {
-      "type": "phomemo_esc",
-      "packets_type": "m220"
-    },
-    "default_image_pipeline": {
-      "formats": [
-        "bw1"
-      ],
-      "encoding": "phomemo_esc_raster"
-    },
-    "stream": {
-      "chunk_size": 128,
-      "delay_ms": 20
-    },
-    "post_print_feed_count": 2,
-    "print_defaults": {
-      "energy": {
-        "image": {
-          "low": 0,
-          "middle": 0,
-          "high": 0
-        },
-        "text": {
-          "low": 0,
-          "middle": 0,
-          "high": 0
-        }
-      },
-      "density": {
-        "image": {
-          "low": 1,
-          "middle": 2,
-          "high": 4
-        },
-        "text": {
-          "low": 1,
-          "middle": 2,
-          "high": 4
-        }
-      }
-    },
-    "a4xii": false,
-    "paper_presets": [
-      "tag_576r",
-      "plain_576r",
-      "blacktag_576r"
     ]
   },
   {

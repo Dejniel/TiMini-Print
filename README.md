@@ -118,7 +118,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 The list below covers TiMini Print Community. The [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/) supports every Community model plus additional “WalkPrint”, “Paperang”, and other printers.
 
 <!-- BEGIN supported-models -->
-A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, M220, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
+A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
 
 - 15P3 and clones: YK06
 - 58P5 and clones: WL01
@@ -156,7 +156,6 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S,
 - M02X and clones: M02D, M02E, MR2, M02A, KP-Q1
 - M102 and clones: M120, Q306, Q481, Q485, Q009, Q244, Q451, Q592
 - M108 and clones: M108_Z, M108TA, M109, M105, M110, M110S, M110R, Q042, Q045, Q061, Q062, Q194, Q431, Q437, Q120, Q524, Q593, Q043, Q317, M002, Q002, Q011, Q026, Q034, Q119, Q192, Q468
-- M110 and clones: M120
 - MINIPRINTER and clones: JL-BR22
 - MV-B530 and clones: GL-VS9, QDID, X9
 - MX05 and clones: MX06, MXTP-100, CYLOBTPRINTER, EWTTOET-Z0499
@@ -171,7 +170,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S,
 - PR893 and clones: XW007
 - SC03H and clones: FC02
 - SeznikNeo and clones: RS9000, XiaoWa, JRX01, QDX01, wts07, CP01, DY49, S5A, P20 max, S9A, DY33A, YMS-BT01, WJ-HOT-PRT
-- T02 and clones: T02E, Q02E, C02E
+- T02 and clones: T02E, C02E
 - V5X and clones: X1, X2, MXW01, MXW01-1, C17, MXW-W5, AC695X_PRINT, JK01, PORTABLEPRINTER, INSTANTPRINTPLUS, REKA, HDMDT-00, KERUI, BH03
 - X16 and clones: Audio Print, A2, A3
 - XW004 and clones: PR35
