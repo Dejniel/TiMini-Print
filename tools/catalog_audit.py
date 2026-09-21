@@ -238,7 +238,9 @@ def _find_unsupported_model_reachability_error(
                 continue
             match = matches[0] if matches else None
             if isinstance(match, SupportedModelMatch):
-                return {
+                # A known exact name may override an unsupported prefix while
+                # suffixed names still reach that prefix. Check all samples.
+                blocking = {
                     "kind": "unsupported_model_matches_supported_model",
                     "model_key": model["model_key"],
                     "sample_name": sample,
@@ -246,6 +248,7 @@ def _find_unsupported_model_reachability_error(
                     "supported_model_key": match.model.model_key,
                     "supported_profile_key": match.profile.profile_key,
                 }
+                continue
             if not isinstance(match, UnsupportedModelMatch):
                 continue
             if match.model.model_key == model["model_key"]:

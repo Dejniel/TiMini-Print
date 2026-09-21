@@ -183,6 +183,39 @@ class CatalogAuditTests(unittest.TestCase):
         errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_body"]
         self.assertEqual(errors, [{"kind": "mergeable_model_body", "model_keys": ["first", "second"]}])
 
+    def test_exact_supported_name_can_override_an_unsupported_prefix(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            profile_path, model_path, unsupported_path = (
+                Path(tmp) / name for name in ("profiles.json", "models.json", "unsupported.json")
+            )
+            profile_path.write_text(json.dumps([_profile_payload("base")]), encoding="utf-8")
+            model_path.write_text(json.dumps([{
+                "model_key": "known", "profile_key": "base",
+                "detections": [{"exact_names": ["ABC"]}],
+                "origin_ids": ["com.example.known"],
+            }]), encoding="utf-8")
+            unsupported_path.write_text(json.dumps([{
+                "model_key": "unknown_suffix",
+                "detections": [{"prefixes": ["ABC"]}],
+                "origin_ids": ["com.example.unknown"],
+            }]), encoding="utf-8")
+            report = self.tool.generate_report(
+                profile_path=profile_path, model_path=model_path,
+                unsupported_model_path=unsupported_path,
+            )
+            self.assertEqual(report["errors"], [])
+            # A genuinely shadowed unsupported exact name remains an error.
+            unsupported_path.write_text(json.dumps([{
+                "model_key": "shadowed", "detections": [{"exact_names": ["ABC"]}],
+                "origin_ids": ["com.example.unknown"],
+            }]), encoding="utf-8")
+            report = self.tool.generate_report(
+                profile_path=profile_path, model_path=model_path,
+                unsupported_model_path=unsupported_path,
+            )
+            self.assertTrue(any(error["kind"] == "unsupported_model_matches_supported_model"
+                                for error in report["errors"]))
+
     def test_catalog_audit_detects_mergeable_detection_objects(self) -> None:
         profiles = [_profile_payload("base")]
         models = [
