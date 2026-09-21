@@ -7,15 +7,15 @@ from ..encoding import pack_line
 
 def pad_raster(
     raster: RasterBuffer, *, left: int = 0, right: int = 0,
-    bottom: int = 0, fill: int = 0,
+    top: int = 0, bottom: int = 0, fill: int = 0,
 ) -> RasterBuffer:
     """Add constant-value margins required by a wire raster layout."""
-    if min(left, right, bottom) < 0:
+    if min(left, right, top, bottom) < 0:
         raise ValueError("Raster padding must be non-negative")
-    if not (left or right or bottom):
+    if not (left or right or top or bottom):
         return raster
     width = left + raster.width + right
-    pixels: list[int] = []
+    pixels: list[int] = [fill] * (width * top)
     for row in range(raster.height):
         start = row * raster.width
         pixels.extend([fill] * left)
@@ -123,6 +123,7 @@ def build_gs_v0_blocks(
     max_lines_per_block: int = 0xFF,
     lsb_first: bool = False,
     mode: int = 0,
+    command: int = 0x76,
 ) -> bytes:
     raster.validate()
     if max_lines_per_block <= 0:
@@ -137,7 +138,7 @@ def build_gs_v0_blocks(
     while line < height:
         lines = min(max_lines_per_block, height - line)
         block = raster.slice_rows(line, lines)
-        payload += b"\x1d\x76\x30"
+        payload += bytes((0x1D, command, 0x30))
         payload += bytes([mode])
         payload += width_bytes.to_bytes(2, "little")
         payload += lines.to_bytes(2, "little")
