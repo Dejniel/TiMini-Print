@@ -3,12 +3,11 @@ from __future__ import annotations
 from .. import reporting
 from ..devices import PrinterDevice
 from ..protocol import ImagePipelineConfig, ProtocolJob
-from ..raster import PixelFormat, RasterBuffer, RasterSet
+from ..raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
 from ..rendering.converters import Page
-from .settings import DitherMode
 from .debug_dump import build_protocol_packet_summary
 from .paper import resolve_paper
-from .settings import PrintSettings
+from .settings import ImageMode, PrintSettings
 
 
 def report_raster_build(
@@ -90,6 +89,7 @@ def report_protocol_job_build(
                 else device.runtime_settings.control_algorithm
             ),
             effective_encoding=pipeline.encoding.value,
+            image_mode="<preferred>" if settings.image_mode is None else ImageMode(settings.image_mode).value,
             formats=[pixel_format.value for pixel_format in pipeline.formats],
             pages=page_count,
             blackening=settings.blackening,

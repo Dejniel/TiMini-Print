@@ -8,7 +8,7 @@ from PIL import Image
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.document_renderer import DocumentRenderer, RenderDocument
-from timiniprint.printing.settings import PrintSettings
+from timiniprint.printing.settings import ImageMode, PrintSettings
 from timiniprint.protocol import ImageEncoding, PageFlow, RuntimePrintCapabilities
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
@@ -56,7 +56,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
             image_renderer=image_renderer,
         )
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -158,7 +158,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -190,7 +190,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.ATKINSON,
+            image_mode=ImageMode.ATKINSON,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -202,8 +202,11 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(rendered.raster_set.height, 57)
         self.assertEqual(
             image_renderer.raster_dither_modes,
-            [DitherMode.COLUMN_FLOYD_STEINBERG],
+            [DitherMode.ATKINSON],
         )
+        settings.image_mode = None
+        renderer.print_page(plan, plan.pages[0], device, settings)
+        self.assertEqual(image_renderer.raster_dither_modes[-1], DitherMode.COLUMN_FLOYD_STEINBERG)
 
     def test_paper_preset_centers_render_width_on_full_paper_width(self) -> None:
         renderer = DocumentRenderer(
@@ -224,7 +227,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -262,7 +265,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -289,7 +292,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -321,7 +324,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -358,7 +361,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -394,7 +397,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         )
         device = replace(self.device, profile=profile)
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -417,7 +420,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertIsNotNone(device)
         settings = PrintSettings(
             image_encoding_override=ImageEncoding.LUCK_NORMAL_GRAY,
-            pixel_format_override=PixelFormat.GRAY4,
+            image_mode=ImageMode.GRAYSCALE,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -439,7 +442,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         renderer = DocumentRenderer(image_loader=lambda _path: _test_image())
         settings = PrintSettings(
             text_mode=True,
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )
@@ -449,14 +452,14 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         self.assertTrue(rendered.is_text)
 
-    def test_print_render_uses_v5c_default_bw1_pipeline(self) -> None:
+    def test_print_render_uses_v5c_explicit_bw1_pipeline(self) -> None:
         image_renderer = _RecordingImageRenderer()
         renderer = DocumentRenderer(
             image_loader=lambda _path: _test_image("L"),
             image_renderer=image_renderer,
         )
         device = self._family_device(ProtocolFamily.V5C)
-        settings = PrintSettings(trim_side_margins=False, trim_top_bottom_margins=False)
+        settings = PrintSettings(image_mode=ImageMode.ATKINSON, trim_side_margins=False, trim_top_bottom_margins=False)
         plan = renderer.plan_document(RenderDocument("label.png"), device, settings)
 
         rendered = renderer.print_page(plan, plan.pages[0], device, settings)
@@ -467,7 +470,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertFalse(rendered.gamma_handle)
         self.assertIsNone(rendered.gamma_value)
 
-    def test_print_render_can_override_v5c_a5_to_gray8_with_gamma(self) -> None:
+    def test_print_render_selects_v5c_grayscale_with_gamma(self) -> None:
         image_renderer = _RecordingImageRenderer()
         renderer = DocumentRenderer(
             image_loader=lambda _path: _test_image("L"),
@@ -476,7 +479,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         device = self._family_device(ProtocolFamily.V5C)
         settings = PrintSettings(
             image_encoding_override=ImageEncoding.V5C_A5,
-            pixel_format_override=PixelFormat.GRAY8,
+            image_mode=ImageMode.GRAYSCALE,
             v5c_gamma_value=1.2,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
@@ -485,9 +488,9 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         rendered = renderer.print_page(plan, plan.pages[0], device, settings)
 
-        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY8,)])
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY4,)])
         self.assertEqual(rendered.image_pipeline.encoding, ImageEncoding.V5C_A5)
-        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY8)
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY4)
         self.assertTrue(rendered.gamma_handle)
         self.assertEqual(rendered.gamma_value, 1.2)
 
@@ -522,7 +525,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         device = self._family_device(ProtocolFamily.V5X)
         settings = PrintSettings(
             image_encoding_override=ImageEncoding.V5X_GRAY,
-            pixel_format_override=PixelFormat.GRAY8,
+            image_mode=ImageMode.GRAYSCALE,
             v5x_gamma_handle=True,
             v5x_gamma_value=1.1,
             trim_side_margins=False,
@@ -532,9 +535,9 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         rendered = renderer.print_page(plan, plan.pages[0], device, settings)
 
-        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY8,)])
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY4,)])
         self.assertEqual(rendered.image_pipeline.encoding, ImageEncoding.V5X_GRAY)
-        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY8)
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY4)
         self.assertTrue(rendered.gamma_handle)
         self.assertEqual(rendered.gamma_value, 1.1)
 
@@ -543,7 +546,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
             image_loader=lambda _path: Image.new("RGB", (800, 200), "black"),
         )
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             rotate_90_clockwise=True,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
@@ -559,7 +562,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
     def test_rotated_text_uses_full_print_width(self) -> None:
         renderer = DocumentRenderer()
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             rotate_90_clockwise=True,
             text_columns=35,
         )
@@ -574,7 +577,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
     def test_rotated_short_text_does_not_use_full_page_length(self) -> None:
         renderer = DocumentRenderer()
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             rotate_90_clockwise=True,
             text_columns=35,
         )

@@ -8,9 +8,8 @@ from PIL import Image, ImageOps
 
 from ..devices.device import PrinterDevice
 from ..protocol import ImagePipelineConfig, PageFlow
-from ..protocol.job import PrinterProtocol
 from ..protocol.runtime import RuntimePrintCapabilities
-from ..raster import DitherMode, RasterSet
+from ..raster import DitherMode, PixelFormat, RasterSet
 from ..rendering.converters import Page
 from ..rendering.converters.base import ImageLoader, PageSource
 from ..rendering.converters.image import ImageConverter
@@ -19,7 +18,7 @@ from ..rendering.converters.text import TextConverter
 from ..rendering.formats import document_kind, mm_to_px
 from ..rendering.renderer import PrintImageRenderer
 from .paper import ResolvedPaper, _plan_paper_layout, resolve_paper
-from .settings import PrintSettings, resolve_gray_preprocessing
+from .settings import ImageMode, PrintSettings, resolve_gray_preprocessing
 
 TextFontResolver = Callable[[Optional[str]], Optional[str]]
 TextLoader = Callable[[str], str]
@@ -365,10 +364,8 @@ class DocumentRenderer:
         *,
         runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> tuple[ImagePipelineConfig, DitherMode, bool, float | None]:
-        pipeline = PrinterProtocol(device).resolve_image_pipeline(
-            paper_preset_key=settings.paper_preset_key,
-            image_encoding_override=settings.image_encoding_override,
-            pixel_format_override=settings.pixel_format_override,
+        pipeline = settings.resolve_image_pipeline(
+            device,
             runtime_capabilities=runtime_capabilities,
         )
         gamma_handle, gamma_value = resolve_gray_preprocessing(
@@ -379,12 +376,12 @@ class DocumentRenderer:
         paper_dither = resolve_paper(device, settings).dither_mode
         dither_mode = (
             paper_dither
-            if paper_dither is not None
-            else settings.dither_mode
+            if paper_dither is not None and settings.image_mode is None
+            else ImageMode(settings.image_mode or ImageMode.ATKINSON).dither_mode
         )
         return (
             pipeline,
-            dither_mode if page.dither else DitherMode.NONE,
+            dither_mode if page.dither and pipeline.default_format is PixelFormat.BW1 else DitherMode.NONE,
             gamma_handle,
             gamma_value,
         )

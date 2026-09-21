@@ -7,11 +7,11 @@ from PIL import Image
 from timiniprint.devices import BluetoothTransportPolicy, PrinterCatalog
 from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from timiniprint.printing.document_renderer import DocumentRenderer, RenderDocument
-from timiniprint.printing.settings import PrintSettings
+from timiniprint.printing.settings import ImageMode, PrintSettings
 from timiniprint.protocol import PaperMode, PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding
-from timiniprint.raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
+from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
 class ElephTsplProtocolTests(unittest.TestCase):
@@ -50,7 +50,7 @@ class ElephTsplProtocolTests(unittest.TestCase):
             image.putpixel(point, (0, 0, 0))
         renderer = DocumentRenderer(image_loader=lambda _path: image.copy())
         settings = PrintSettings(
-            dither_mode=DitherMode.NONE,
+            image_mode=ImageMode.THRESHOLD,
             trim_side_margins=False,
             trim_top_bottom_margins=False,
         )

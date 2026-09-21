@@ -17,7 +17,8 @@ from timiniprint.devices import PrinterCatalog, PrinterDevice, get_ble_transport
 from timiniprint.devices.printer_config import runtime_settings_from_parts  # noqa: E402
 from timiniprint.printing.builder import PrintJobBuilder  # noqa: E402
 from timiniprint.printing.debug_dump import build_protocol_packet_entries  # noqa: E402
-from timiniprint.protocol import ImageEncoding, ImagePipelineConfig, PaperMode, PrinterProtocol, ProtocolJob  # noqa: E402
+from timiniprint.printing.settings import ImageMode, PrintSettings  # noqa: E402
+from timiniprint.protocol import ImageEncoding, ImagePipelineConfig, PaperMode, ProtocolJob  # noqa: E402
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -34,6 +35,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--text", metavar="TEXT", help="Render text into a protocol job instead of a file")
     parser.add_argument("--out", required=True, metavar="PATH", help="Output JSON dump path")
     parser.add_argument("--image-encoding", choices=[encoding.value for encoding in ImageEncoding])
+    parser.add_argument("--image-mode", choices=[mode.value for mode in ImageMode])
     parser.add_argument("--debug-row-markers", type=int, metavar="N")
     parser.add_argument("--force-text-mode", action="store_true")
     parser.add_argument("--force-image-mode", action="store_true")
@@ -119,6 +121,7 @@ def build_print_job(
     image_encoding_override: ImageEncoding | None,
     debug_row_markers_interval: int | None,
     reporter: reporting.Reporter | None,
+    image_mode: ImageMode | None = None,
 ) -> ProtocolJob:
     paper_preset_key = None if paper_mode is None else device.profile.paper_preset_for_mode(paper_mode).key
     settings = cli.create_print_settings(
@@ -133,6 +136,7 @@ def build_print_job(
         page_gap_mm=page_gap_mm,
         paper_preset_key=paper_preset_key,
         image_encoding_override=image_encoding_override,
+        image_mode=image_mode,
         debug_row_markers_interval=debug_row_markers_interval,
     )
     builder = PrintJobBuilder(device, settings=settings, reporter=reporter)
@@ -251,9 +255,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     reporter = cli._build_cli_reporter(args.verbose)
     device = resolve_device(catalog, args)
     image_encoding_override = _image_encoding_override(args)
-    effective_image_pipeline = PrinterProtocol(device).resolve_image_pipeline(
+    paper_mode = _paper_mode(args)
+    effective_image_pipeline = PrintSettings(
+        image_mode=args.image_mode,
+        paper_preset_key=None if paper_mode is None else device.profile.paper_preset_for_mode(paper_mode).key,
         image_encoding_override=image_encoding_override,
-    )
+    ).resolve_image_pipeline(device)
     job = build_print_job(
         device,
         args.path,
@@ -269,6 +276,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         page_gap_mm=cli._resolve_page_gap(args),
         paper_mode=_paper_mode(args),
         image_encoding_override=image_encoding_override,
+        image_mode=args.image_mode,
         debug_row_markers_interval=args.debug_row_markers,
         reporter=reporter if args.verbose else None,
     )
@@ -280,6 +288,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             "text_mode": cli._resolve_text_mode(args),
             "paper_mode": args.paper_mode,
             "image_encoding_override": args.image_encoding,
+            "image_mode": args.image_mode,
             "debug_row_markers": args.debug_row_markers,
         },
         effective_image_pipeline=effective_image_pipeline,

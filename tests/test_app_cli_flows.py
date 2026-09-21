@@ -41,6 +41,7 @@ class AppCliFlowsTests(unittest.TestCase):
             debug_row_markers=None,
             force_text_mode=False,
             force_image_mode=False,
+            image_mode=None,
             darkness=None,
             text_font=None,
             text_columns=None,

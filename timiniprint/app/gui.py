@@ -20,7 +20,7 @@ from ..licensing import license_text
 from ..printing.connected import ConnectedPrinter, connect_printer
 from ..printing.errors import PrinterNotReadyError
 from ..printing.paper import default_paper_preset_for_device, paper_presets_for_device
-from ..printing.settings import PrintSettings
+from ..printing.settings import ImageMode, PrintSettings
 from ..rendering.converters.text import TextConverter
 from ..rendering.formats import normalized_width
 from ..transport.bluetooth import BleakBluetoothConnector, BluetoothDiscovery, BluetoothScanResult
@@ -140,6 +140,17 @@ class TiMiniPrintGUI(tk.Tk):
         self.rotate_90_var = tk.BooleanVar(value=False)
         self.darkness_var = tk.IntVar(value=3)
         self.paper_var = tk.StringVar(value="")
+        self.image_mode_var = tk.StringVar()
+        self._explicit_image_mode: ImageMode | None = None
+        self._image_choice_map: dict[str, ImageMode] = {}
+        self._image_mode_labels = {
+            ImageMode.GRAYSCALE: "Grayscale",
+            ImageMode.ATKINSON: "Atkinson",
+            ImageMode.FLOYD_STEINBERG: "Floyd–Steinberg",
+            ImageMode.BAYER_4: "Bayer 4×4",
+            ImageMode.BAYER_8: "Bayer 8×8",
+            ImageMode.THRESHOLD: "Threshold",
+        }
         self.text_font_var = tk.StringVar()
         self.text_columns_var = tk.IntVar(value=35)
         self.text_wrap_var = tk.BooleanVar(value=True)
@@ -271,6 +282,12 @@ class TiMiniPrintGUI(tk.Tk):
         )
         self.paper_combo.grid(row=2, column=1, sticky="w", **padding)
         self.paper_combo.bind("<<ComboboxSelected>>", self._on_paper_selection_changed)
+        ttk.Label(options_frame, text="Dithering:").grid(row=3, column=0, sticky="w", **padding)
+        self.image_mode_combo = ttk.Combobox(
+            options_frame, textvariable=self.image_mode_var, state="readonly",
+        )
+        self.image_mode_combo.grid(row=3, column=1, sticky="ew", **padding)
+        self.image_mode_combo.bind("<<ComboboxSelected>>", self._on_image_mode_selected)
         options_frame.columnconfigure(1, weight=1)
 
         self.text_frame = ttk.LabelFrame(self, text="Txt Options")
@@ -661,6 +678,7 @@ class TiMiniPrintGUI(tk.Tk):
     def _on_paper_selection_changed(self, _event=None) -> None:
         device = self.connected_device or self._effective_selected_device()
         self._configure_text_columns(device, reset=False)
+        self._refresh_image_options()
 
     def _on_show_unknown_devices_changed(self) -> None:
         self._refresh_device_list()
@@ -830,7 +848,25 @@ class TiMiniPrintGUI(tk.Tk):
             self.paper_var.set("")
             self.paper_label.grid_remove()
             self.paper_combo.grid_remove()
+        self._refresh_image_options()
         self._refresh_min_height()
+
+    def _on_image_mode_selected(self, _event=None) -> None:
+        self._explicit_image_mode = self._image_choice_map.get(self.image_mode_var.get())
+        self._refresh_image_options()
+
+    def _refresh_image_options(self) -> None:
+        device = self.connected_device or self._effective_selected_device()
+        capabilities = self.connected_printer.print_capabilities() if self.connected_printer else None
+        settings = PrintSettings(paper_preset_key=self._selected_paper_key())
+        modes = settings.available_image_modes(device, runtime_capabilities=capabilities) if device else ()
+        if modes and self._explicit_image_mode not in modes:
+            self._explicit_image_mode = None
+        mode = self._explicit_image_mode or (modes[0] if modes else None)
+        self._image_choice_map = {self._image_mode_labels[value]: value for value in modes}
+        self.image_mode_combo["values"] = list(self._image_choice_map)
+        self.image_mode_var.set(self._image_mode_labels[mode] if mode in modes else "")
+        self._set_widget_state(self.image_mode_combo, self.connected_device is not None and len(modes) > 1)
 
     def print_file(self) -> None:
         path = self.file_var.get().strip()
@@ -848,6 +884,7 @@ class TiMiniPrintGUI(tk.Tk):
             pdf_pages = self.pdf_pages_var.get().strip() or None
             page_gap_mm = int(self.pdf_gap_var.get())
         settings = PrintSettings(
+            image_mode=self._image_choice_map.get(self.image_mode_var.get()),
             text_mode=self.text_mode_var.get(),
             rotate_90_clockwise=self.rotate_90_var.get(),
             blackening=self.darkness_var.get(),

@@ -27,8 +27,18 @@ def build_raster_page_job(
     image_pipeline: ImagePipelineConfig | None = None,
     _paper_layout_applied: bool = False,
 ) -> ProtocolJob:
-    """Build one protocol page from an already prepared raster."""
+    """Build one protocol page from an already prepared raster.
+
+    An explicit image_pipeline is authoritative: user image choices must not
+    be applied again to already rendered pixels. Otherwise select a pipeline
+    from settings, restricted to the formats actually supplied. No dithering
+    or grayscale conversion is performed here.
+    """
     effective_settings = settings or PrintSettings()
+    pipeline = image_pipeline or effective_settings.resolve_image_pipeline(
+        device, runtime_capabilities=runtime_capabilities,
+        raster_formats=tuple(raster_set.rasters),
+    )
     paper = resolve_paper(device, effective_settings)
     if not _paper_layout_applied:
         raster_set = apply_paper_layout_to_raster_set(raster_set, paper)
@@ -40,9 +50,7 @@ def build_raster_page_job(
         paper_preset_key=paper.key,
         paper_mode=paper.paper_mode,
         lsb_first=effective_settings.lsb_first,
-        image_pipeline=image_pipeline,
-        image_encoding_override=effective_settings.image_encoding_override,
-        pixel_format_override=effective_settings.pixel_format_override,
+        image_pipeline=pipeline,
         page_index=page_index,
         page_count=page_count,
         page_flow=page_flow,

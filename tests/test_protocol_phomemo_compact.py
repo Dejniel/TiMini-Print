@@ -10,10 +10,10 @@ from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import LevelProfile, ModeLevelProfile
 from timiniprint.printing.builder import PrintJobBuilder
 from timiniprint.printing.document_renderer import DocumentRenderer
-from timiniprint.printing.settings import PrintSettings
+from timiniprint.printing.settings import ImageMode, PrintSettings
 from timiniprint.protocol import PageFlow, PaperMode, PrinterProtocol
 from timiniprint.protocol.families.phomemo_esc.flow import PhomemoPageStep
-from timiniprint.raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
+from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 _PROFILES = {
     "phomemo_m02": (384, 203, 0),
@@ -137,7 +137,7 @@ class PhomemoCompactTests(unittest.TestCase):
                 image.putpixel((0, 0), (0, 0, 0))
                 image.putpixel((width - 1, 1), (0, 0, 0))
                 builder = PrintJobBuilder(device, settings=PrintSettings(
-                    paper_preset_key=preset.key, dither_mode=DitherMode.NONE,
+                    paper_preset_key=preset.key, image_mode=ImageMode.THRESHOLD,
                     trim_side_margins=False, trim_top_bottom_margins=False, feed_padding=0,
                 ), document_renderer=DocumentRenderer(image_loader=lambda _: image))
                 with patch("timiniprint.printing.builder.os.path.isfile", return_value=True):

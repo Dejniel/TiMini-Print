@@ -48,6 +48,13 @@ unknown or ambiguous identities are not resolved by catalog order.
 
 ## Package Boundaries
 
+High-level image selection belongs to `PrintSettings` (defined in
+`printing.settings`): `image_mode` combines grayscale and monochrome conversion
+choices for UI/API clients. It resolves through `PrinterProtocol` using the
+selected paper and prepared capabilities. `DitherMode` and `PixelFormat` stay
+separate raster concepts; protocol encoders do not learn UI image-mode names.
+Once rendered, a page's resolved pipeline is authoritative when building its job.
+
 ### `timiniprint.devices`
 Owns printer description and catalog resolution.
 

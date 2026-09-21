@@ -263,11 +263,46 @@ are `blackening` and/or `text_mode` when those printer adjustments are
 implemented. Rendering controls such as rotation, trimming and monochrome
 dithering are separate; they do not require printer commands.
 
-For high-level printing, `PrintSettings(pixel_format_override=PixelFormat.GRAY4)`
-selects a compatible encoding automatically, if available. Omitting the format
-keeps the profile's default. An explicitly selected incompatible encoding is
-still rejected. Dithering controls apply to monochrome conversion, not native
-grayscale printing.
+High-level printing uses a single `PrintSettings.image_mode`:
+`grayscale`, `atkinson`, `floyd_steinberg`, `bayer_4`, `bayer_8` or
+`threshold`. Omitting it prefers grayscale when available, otherwise Atkinson.
+The GUI presents these in one **Dithering** list without an Automatic entry.
+Grayscale does not run a monochrome dither algorithm.
+
+```python
+from timiniprint.printing.settings import ImageMode, PrintSettings
+
+settings = PrintSettings(paper_preset_key=paper_key)
+modes = settings.available_image_modes(device, runtime_capabilities=capabilities)
+# Preferred choice is modes[0]. Keep a user's explicit choice while supported.
+settings.image_mode = modes[0]
+pipeline = settings.resolve_image_pipeline(device, runtime_capabilities=capabilities)
+adjustments = protocol.supported_print_settings(
+    paper_preset_key=paper_key, pixel_format=pipeline.default_format,
+    runtime_capabilities=capabilities,
+)
+await printer.print_file("photo.png", settings=settings)
+```
+
+Recompute available modes after connection preparation and paper changes. Pass
+the prepared capabilities to previews and job building too. Unknown capabilities
+mean catalog-only choices; recipes requiring negotiated data still require a
+prepared session. An explicit unsupported mode raises `ValueError`; an existing
+runtime grayscale rejection keeps the protocol's monochrome fallback.
+
+Integration migration: replace `PrintSettings.dither_mode` with `image_mode`
+(`none` becomes `threshold`), and replace `PrintSettings.pixel_format_override`
+with `image_mode="grayscale"` or a monochrome algorithm. There are no constructor
+aliases. Low-level `DitherMode`, `PixelFormat` and `PrinterProtocol` format/codec
+parameters are unchanged. `image_encoding_override` remains an expert codec
+constraint, not another user-facing selector.
+
+Prepared-raster helpers choose only among supplied raster formats; they never
+convert BW1 into grayscale or apply dithering again. A rendered page's explicit
+pipeline remains authoritative when its protocol job is built.
+
+The CLI exposes the same values as `--image-mode`, e.g.
+`--image-mode grayscale` or `--image-mode atkinson`.
 
 These capability methods do not send anything. `print_capabilities()` returns
 information already collected by the live session; it replaces the former

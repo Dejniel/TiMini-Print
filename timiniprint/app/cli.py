@@ -15,7 +15,7 @@ from ..devices import BluetoothTarget, PrinterCatalog, PrinterDevice, SerialTarg
 from ..licensing import license_text
 from ..printing.connected import connect_printer
 from ..printing.errors import PrinterNotReadyError
-from ..printing.settings import PrintSettings
+from ..printing.settings import ImageMode, PrintSettings
 from ..protocol import ImageEncoding
 from ..transport.bluetooth import BluetoothDiscovery, BleakBluetoothConnector
 from ..transport.bluetooth.types import DeviceTransport
@@ -50,6 +50,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--no-trim-top-bottom-margins", action="store_false", dest="trim_top_bottom_margins", help="Disable auto-trimming white top/bottom margins for images and PDFs")
     parser.add_argument("--darkness", type=int, choices=range(1, 6), help="Print darkness (1-5)")
     parser.add_argument("--paper", metavar="KEY", help="Select an exact paper preset key supported by this printer model")
+    parser.add_argument("--image-mode", choices=[mode.value for mode in ImageMode],
+                        help="Image conversion (default: grayscale when available, otherwise atkinson)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug logs (CLI only)")
     parser.set_defaults(trim_side_margins=True)
     parser.set_defaults(trim_top_bottom_margins=True)
@@ -214,6 +216,7 @@ def create_print_settings(
     page_gap_mm: int = 5,
     paper_preset_key: Optional[str] = None,
     image_encoding_override: Optional[ImageEncoding] = None,
+    image_mode: ImageMode | None = None,
     debug_row_markers_interval: Optional[int] = None,
 ) -> PrintSettings:
     if debug_row_markers_interval is not None and debug_row_markers_interval <= 0:
@@ -229,6 +232,7 @@ def create_print_settings(
         page_gap_mm=page_gap_mm,
         paper_preset_key=paper_preset_key,
         image_encoding_override=image_encoding_override,
+        image_mode=image_mode,
         debug_row_markers_interval=debug_row_markers_interval,
     )
     if blackening is not None:
@@ -248,6 +252,7 @@ def create_print_settings_from_args(args: argparse.Namespace) -> PrintSettings:
         pdf_pages=_resolve_pdf_pages(args),
         page_gap_mm=_resolve_page_gap(args),
         paper_preset_key=_resolve_paper_preset_key(args),
+        image_mode=args.image_mode,
         debug_row_markers_interval=args.debug_row_markers,
     )
 
