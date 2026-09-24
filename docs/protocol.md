@@ -443,6 +443,32 @@ completion confirmation. Its runtime retains early page-index notifications,
 reassembles fragmented replies and reports printer faults separately from
 transport errors. Other families retain their existing required/optional policy.
 
+Luck normal/A4 jobs require density acknowledgement, a usable status reply and
+confirmed finalization. Control queries wait up to 3 seconds; finalization
+waits up to 70 seconds, or 120 seconds for Lujiang A4. These are response
+timeouts, not fixed delays. Optional paper-setting replies retain their wait
+without aborting the job on a missing ACK; A2/A2H paper selection does not read
+a reply. Keep the full `ProtocolJob.steps`: sending only its payload bypasses
+these transaction rules. Reported printer faults raise `PrinterNotReadyError`;
+missing required replies raise `ProtocolReplyError`.
+Normal status faults preserve all reported conditions, including both
+overheat bits. Charging and the unused high bit do not block a new job.
+
+Luck normal presets include black-mark and tattoo media. Black-mark positioning
+keeps the selected variant's paper command and page-marker policy; tattoo uses
+paper `0x40`, the profile's trailing feed and no label markers. D80 tattoo uses
+the local `0x40` recipe without serial-range heating overrides. These media use
+the same raster encoders and reply contracts as the existing jobs.
+
+LuckP A41 reads firmware during connection preparation. Normalized versions
+below `1.26` use density `0..2` (default 1); versions at or above it use
+`1..15` (default 8) and speed `0..8` (default 4). The firmware gate compares
+text, not semantic versions. No reply keeps the initial density `0..15`
+(default 7) with speed disabled and emits a warning. Build jobs from the
+returned `PreparedPrinter.device` to use these negotiated defaults. An enabled
+speed command requires its own `OK`-prefix acknowledgement. A42 does not probe
+firmware and remains at density `0..2` without a speed command.
+
 ## Editable Printer Configs
 
 Use printer configs when you want an explicit, editable runtime device instead of auto-detection every time.

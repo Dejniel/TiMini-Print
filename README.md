@@ -118,7 +118,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 The list below covers TiMini Print Community. The [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/) supports every Community model plus additional “WalkPrint”, “Paperang”, and other printers.
 
 <!-- BEGIN supported-models -->
-A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
+A33, A40, A41III, A43, A4300, AI01, AN01, APA41, APA46Y, APA49H, D100, D11, D110, D11S, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
 
 - 15P3 and clones: YK06
 - 58P5 and clones: WL01
@@ -127,7 +127,6 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S,
 - A41II and clones: A42II, A200
 - A80H-HD and clones: DP_A80H
 - APA40 and clones: APA42, APA43
-- APA41 and clones: E49, A49, APA49
 - APL86HL and clones: L86H_Printer, APL86H
 - BH-01 and clones: LX-D01, LX-D02, LX-D2, LX-D3, LX-D4, LX-D5, LX-D6, LX-D7, LX-D8, LX-D9, LX-D03, LX-D04, LX-D05, LX-D06, LX-D07, LX-D08, LX-D09
 - BQ02 and clones: BQ03, BQ17
@@ -137,6 +136,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA46Y, APA49H, D100, D11, D110, D11S,
 - DL_X2Pro and clones: P5
 - DYA49 and clones: ITP06, DP_ITP06, TPA46Pro
 - DYD80H and clones: DP_D80H
+- E49 and clones: A49, APA49
 - ewtto ET-Z0504 and clones: IM.04, X103H, SC05, X102, X5HP, X6HP, P7H, X2H, X5H, X6H, X7H
 - FL01 and clones: KF-5
 - GB03 and clones: GB06
