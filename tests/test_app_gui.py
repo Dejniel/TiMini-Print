@@ -93,7 +93,11 @@ class GuiPaperChoiceTests(unittest.TestCase):
         device = catalog.device_from_profile("luck_a40")
 
         labels = [label for label, _key in TiMiniPrintGUI._paper_choices_for_device(device)]
-        self.assertEqual(labels, ["Plain roll", "Tag", "Black tag", "Folder", "Tattoo"])
+        self.assertEqual(labels, [
+            "216 mm roll", "56 mm roll", "77 mm roll", "107 mm roll",
+            "148 mm roll", "210 mm roll", "Tag", "Black mark",
+            "A4 sheet", "A5 sheet", "Letter sheet", "Legal sheet", "Tattoo",
+        ])
 
     def test_paper_choices_follow_qirui_variant_subset(self) -> None:
         catalog = PrinterCatalog.load()
@@ -101,7 +105,7 @@ class GuiPaperChoiceTests(unittest.TestCase):
 
         self.assertIsNotNone(device)
         labels = [label for label, _key in TiMiniPrintGUI._paper_choices_for_device(device)]
-        self.assertEqual(labels, ["Plain roll", "Tag"])
+        self.assertEqual(labels, ["Plain roll", "Tag", "Black tag", "Tattoo"])
 
     def test_text_columns_follow_selected_paper_width(self) -> None:
         narrow = PaperPreset(

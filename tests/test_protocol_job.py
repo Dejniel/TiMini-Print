@@ -30,7 +30,7 @@ class ProtocolJobTests(unittest.TestCase):
             encoding=cls.types.ImageEncoding.TINY_RLE,
         )
         cls.luck_normal_raw = cls.types.ImagePipelineConfig(
-            formats=(cls.raster.PixelFormat.BW1, cls.raster.PixelFormat.GRAY4, cls.raster.PixelFormat.GRAY8),
+            formats=(cls.raster.PixelFormat.BW1,),
             encoding=cls.types.ImageEncoding.LUCK_NORMAL_RAW,
         )
         cls.luck_normal_gray = cls.types.ImagePipelineConfig(
@@ -511,11 +511,11 @@ class ProtocolJobTests(unittest.TestCase):
         device = PrinterCatalog.load().device_from_profile("luck_ppa2l")
         raster_set = self._raster_set(self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0]))
 
-        with self.assertRaisesRegex(ValueError, "profile luck_ppa2l does not define paper mode tattoo"):
+        with self.assertRaisesRegex(ValueError, "profile luck_ppa2l does not define paper mode folder"):
             PrinterProtocol(device).build_job(
                 raster_set,
                 is_text=False,
-                paper_mode=self.types.PaperMode.TATTOO,
+                paper_mode=self.types.PaperMode.FOLDER,
             )
 
     def test_build_luck_normal_gray_job_uses_gray_bitmap_header(self) -> None:
@@ -536,6 +536,7 @@ class ProtocolJobTests(unittest.TestCase):
             blackening=3,
             lsb_first=True,
             protocol_family=ProtocolFamily.LUCK_NORMAL,
+            protocol_variant="lujiang_normal",
             feed_padding=12,
             dev_dpi=203,
             image_pipeline=self.luck_normal_gray,
@@ -546,6 +547,7 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes(12)
             + bytes([0x1D, 0x47, 0x59, 0x10, 0x01, 0x00, 0x01, 0x00, 0xF0])
             + bytes([0x1B, 0x4A, 0x50])
+            + bytes([0x1B, 0xBB, 0xBB])
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
 
@@ -583,7 +585,7 @@ class ProtocolJobTests(unittest.TestCase):
             bytes([0x10, 0xFF, 0xF1, 0x03])
             + bytes(12)
             + bytes([0x1D, 0x47, 0x59, 0x0C, 0x01, 0x00, 0x01, 0x00, 0xBB])
-            + bytes([0x1B, 0x4A, 0x3C])
+            + bytes([0x1B, 0x4A, 0x78])
             + bytes([0x1B, 0xBB, 0xBB])
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
@@ -848,8 +850,8 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
 
-    def test_qirui_variant_rejects_tattoo_mode(self) -> None:
-        with self.assertRaisesRegex(ValueError, "does not support paper mode tattoo"):
+    def test_qirui_variant_rejects_folder_mode(self) -> None:
+        with self.assertRaisesRegex(ValueError, "does not support paper mode folder"):
             self.builders._build_job(
                 pixels=[1, 0, 1, 0, 1, 0, 1, 0],
                 width=8,
@@ -864,7 +866,7 @@ class ProtocolJobTests(unittest.TestCase):
                 feed_padding=12,
                 dev_dpi=200,
                 image_pipeline=self.luck_normal_raw,
-                paper_mode=self.types.PaperMode.TATTOO,
+                paper_mode=self.types.PaperMode.FOLDER,
             )
 
     def test_build_luckp_a41_plain_job_omits_paper_type_command(self) -> None:
@@ -872,7 +874,7 @@ class ProtocolJobTests(unittest.TestCase):
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
             is_text=False,
-            speed=20,
+            speed=None,
             energy=10000,
             density=None,
             blackening=3,
@@ -897,7 +899,7 @@ class ProtocolJobTests(unittest.TestCase):
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
             is_text=False,
-            speed=20,
+            speed=None,
             energy=10000,
             density=None,
             blackening=3,
@@ -923,7 +925,7 @@ class ProtocolJobTests(unittest.TestCase):
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
             is_text=False,
-            speed=20,
+            speed=None,
             energy=10000,
             density=None,
             blackening=3,
@@ -1029,25 +1031,6 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
 
-    def test_build_d80_tattoo_job_is_rejected_until_runtime_config_is_modeled(self) -> None:
-        with self.assertRaisesRegex(ValueError, "does not support paper mode tattoo"):
-            self.builders._build_job(
-                pixels=[1, 0, 1, 0, 1, 0, 1, 0],
-                width=8,
-                is_text=False,
-                speed=20,
-                energy=10000,
-                density=None,
-                blackening=3,
-                lsb_first=True,
-                protocol_family=ProtocolFamily.LUCK_NORMAL_A4,
-                protocol_variant="d80",
-                feed_padding=12,
-                dev_dpi=200,
-                image_pipeline=self.luck_normal_raw,
-                paper_mode=self.types.PaperMode.TATTOO,
-            )
-
     def test_build_d80h_tattoo_job_uses_tattoo_paper_type(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
@@ -1075,13 +1058,13 @@ class ProtocolJobTests(unittest.TestCase):
             + bytes([0x10, 0xFF, 0xF1, 0x45]),
         )
 
-    def test_luck_normal_a4_supported_paper_modes_can_vary_by_variant(self) -> None:
+    def test_luck_normal_a4_supports_local_d80_tattoo(self) -> None:
         families = importlib.import_module("timiniprint.protocol.families.luck.normal_a4")
 
         d80_modes = families.BEHAVIOR.supported_paper_modes_resolver("d80")
         d80h_modes = families.BEHAVIOR.supported_paper_modes_resolver("d80h")
 
-        self.assertNotIn(self.types.PaperMode.TATTOO, d80_modes)
+        self.assertIn(self.types.PaperMode.TATTOO, d80_modes)
         self.assertIn(self.types.PaperMode.TATTOO, d80h_modes)
 
     def test_luck_normal_supported_paper_modes_can_vary_by_variant(self) -> None:
@@ -1092,13 +1075,15 @@ class ProtocolJobTests(unittest.TestCase):
 
         self.assertEqual(
             default_modes,
-            (self.types.PaperMode.PLAIN, self.types.PaperMode.TAG),
+            (self.types.PaperMode.PLAIN, self.types.PaperMode.TAG,
+             self.types.PaperMode.BLACK_TAG, self.types.PaperMode.TATTOO),
         )
         self.assertEqual(
             lujiang_modes,
-            (self.types.PaperMode.PLAIN, self.types.PaperMode.TAG),
+            (self.types.PaperMode.PLAIN, self.types.PaperMode.TAG,
+             self.types.PaperMode.BLACK_TAG, self.types.PaperMode.TATTOO),
         )
-        self.assertNotIn(self.types.PaperMode.TATTOO, lujiang_modes)
+        self.assertNotIn(self.types.PaperMode.FOLDER, lujiang_modes)
 
     def test_build_lujiang_a4_tattoo_job_uses_tattoo_paper_type_and_short_feed(self) -> None:
         data = self.builders._build_job(

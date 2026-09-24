@@ -43,7 +43,8 @@ class PrintingPaperPresetTests(unittest.TestCase):
         default_preset = default_paper_preset_for_device(device)
 
         self.assertEqual(presets, device.profile.paper_presets)
-        self.assertEqual([preset.key for preset in presets], ["tag_384r", "plain_384r"])
+        self.assertEqual([preset.key for preset in presets],
+                         ["tag_384r", "plain_384r", "blacktag_384r", "tattoo_384r"])
         self.assertIsNotNone(default_preset)
         assert default_preset is not None
         self.assertEqual(default_preset.key, "tag_384r")

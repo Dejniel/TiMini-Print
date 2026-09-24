@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from ...protocol.family import ProtocolFamily
 from .base import RuntimeController
 from .funny_lx import FunnyLxRuntimeController
-from .luck_normal import LuckNormalRuntimeController
+from .luck_normal import LuckA41RuntimeController, LuckNormalRuntimeController, LuckTransactionController
 from .niimbot import NiimbotRuntimeController, VersionedNiimbotRuntimeController
 from .phomemo_esc import PhomemoEscRuntimeController
 from .phomemo import PhomemoRuntimeController
@@ -54,4 +54,8 @@ def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | 
         and device.protocol_variant in {"lujiang_normal", "lujiang_normal_h"}
     ):
         return LuckNormalRuntimeController(protocol_variant=device.protocol_variant)
+    if device.protocol_family is ProtocolFamily.LUCK_NORMAL_A4 and device.protocol_variant == "luckp_a41":
+        return LuckA41RuntimeController()
+    if device.protocol_family in {ProtocolFamily.LUCK_NORMAL, ProtocolFamily.LUCK_NORMAL_A4}:
+        return LuckTransactionController()
     return None

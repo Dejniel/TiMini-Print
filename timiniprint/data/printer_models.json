@@ -1935,20 +1935,11 @@
   },
   {
     "model_key": "luck_apa41",
-    "profile_key": "luck_lujiang_a4_dense",
+    "profile_key": "luck_apa41",
     "detections": [
       {
         "prefixes": [
-          "APA41_",
-          "E49_"
-        ]
-      },
-      {
-        "prefixes": [
-          "APA49_"
-        ],
-        "marketing_names": [
-          "A49"
+          "APA41_"
         ]
       }
     ],
@@ -2607,6 +2598,29 @@
     "whitespace_mode": "preserve",
     "origin_ids": [
       "com.xinye.snaptag"
+    ]
+  },
+  {
+    "model_key": "luck_apa49",
+    "profile_key": "luck_lujiang_a4_dense",
+    "detections": [
+      {
+        "prefixes": [
+          "E49_"
+        ]
+      },
+      {
+        "prefixes": [
+          "APA49_"
+        ],
+        "marketing_names": [
+          "A49"
+        ]
+      }
+    ],
+    "whitespace_mode": "preserve",
+    "origin_ids": [
+      "com.dingdang.newprint"
     ]
   }
 ]

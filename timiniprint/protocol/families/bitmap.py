@@ -57,6 +57,20 @@ def packed_row_width_bytes(width: int) -> int:
     return (width + 7) // 8
 
 
+def packed_raster_dimensions_le16(raster: RasterBuffer) -> bytes:
+    """Encode byte-packed row width and row count as two little-endian words."""
+    width_bytes = packed_row_width_bytes(raster.width)
+    height = raster.height
+    if width_bytes > 0xFFFF or not 0 < height <= 0xFFFF:
+        raise ValueError("raster dimensions must fit in two bytes")
+    return width_bytes.to_bytes(2, "little") + height.to_bytes(2, "little")
+
+
+def build_gs_v0_single_raster(raster: RasterBuffer) -> bytes:
+    """Build one uncompressed GS v 0 frame without splitting the page."""
+    return b"\x1d\x76\x30\x00" + packed_raster_dimensions_le16(raster) + pack_bw1_rows(raster)
+
+
 def build_esc_star_raster(
     raster: RasterBuffer,
     *,

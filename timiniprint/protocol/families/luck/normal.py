@@ -3,9 +3,9 @@ from __future__ import annotations
 from ....raster import PixelFormat
 from ...family import ProtocolFamily
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
-from ..base import ProtocolBehavior
 from .core import (
     LUCK_NORMAL_IMAGE_SUPPORT,
+    LUCK_NORMAL_MONO_IMAGE_SUPPORT,
     LUCK_NORMAL_MODE2_DIALECT,
     LuckNormalFamilyRecipe,
     LuckNormalModeRecipe,
@@ -17,7 +17,11 @@ from .core import (
 TAG_POSITION_RECIPE = LuckNormalModeRecipe(
     paper_mode=LuckNormalPaperMode.TAG,
     finish_action="position",
+    wait_for_paper_reply=False,
 )
+
+BLACK_TAG_POSITION_RECIPE = LuckNormalModeRecipe(finish_action="position")
+TATTOO_RECIPE = LuckNormalModeRecipe(paper_mode=LuckNormalPaperMode.TATTOO)
 
 LUJIANG_NORMAL_MODE_RECIPES = {
     PaperMode.PLAIN: LuckNormalModeRecipe(
@@ -28,35 +32,44 @@ LUJIANG_NORMAL_MODE_RECIPES = {
         finish_action="position",
         page_marker_flow=LuckNormalPageMarkerFlow.LAST_ONLY,
     ),
+    PaperMode.BLACK_TAG: LuckNormalModeRecipe(
+        paper_mode=LuckNormalPaperMode.BLACK_TAG,
+        finish_action="position",
+        page_marker_flow=LuckNormalPageMarkerFlow.LAST_ONLY,
+    ),
+    PaperMode.TATTOO: TATTOO_RECIPE,
 }
 
 QIRUI_MODE_RECIPES = {
     PaperMode.PLAIN: LuckNormalModeRecipe(),
-    PaperMode.TAG: TAG_POSITION_RECIPE,
+    PaperMode.TAG: LuckNormalModeRecipe(finish_action="position"),
+    PaperMode.BLACK_TAG: BLACK_TAG_POSITION_RECIPE,
+    PaperMode.TATTOO: TATTOO_RECIPE,
 }
 
 RECIPE = LuckNormalFamilyRecipe(
     protocol_family=ProtocolFamily.LUCK_NORMAL,
     default_image_pipeline=ImagePipelineConfig(
-        formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),
+        formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.LUCK_NORMAL_RAW,
     ),
-    image_encoding_support=LUCK_NORMAL_IMAGE_SUPPORT,
+    image_encoding_support=LUCK_NORMAL_MONO_IMAGE_SUPPORT,
     mode_recipes={
         PaperMode.PLAIN: LuckNormalModeRecipe(),
         PaperMode.TAG: TAG_POSITION_RECIPE,
+        PaperMode.BLACK_TAG: BLACK_TAG_POSITION_RECIPE,
+        PaperMode.TATTOO: TATTOO_RECIPE,
     },
     end_line_dots_200dpi=80,
     end_line_dots_300dpi=120,
     variants={
         "lujiang_normal": LuckNormalVariantRecipe(
             mode_recipes=LUJIANG_NORMAL_MODE_RECIPES,
-            query_interleaved=True,
+            image_encoding_support=LUCK_NORMAL_IMAGE_SUPPORT,
         ),
         "lujiang_normal_h": LuckNormalVariantRecipe(
             mode_recipes=LUJIANG_NORMAL_MODE_RECIPES,
-            end_line_dots_300dpi=60,
-            query_interleaved=True,
+            image_encoding_support=LUCK_NORMAL_IMAGE_SUPPORT,
         ),
         "qirui_q1": LuckNormalVariantRecipe(
             dialect=LUCK_NORMAL_MODE2_DIALECT,
@@ -71,14 +84,4 @@ RECIPE = LuckNormalFamilyRecipe(
 )
 
 
-BEHAVIOR = ProtocolBehavior(
-    print_controls=("blackening",),
-    default_image_pipeline=RECIPE.default_image_pipeline,
-    image_encoding_support=RECIPE.image_encoding_support,
-    supported_protocol_variants=RECIPE.supported_variants(),
-    supported_paper_modes=RECIPE.supported_paper_modes(),
-    supported_paper_modes_resolver=RECIPE.supported_paper_modes,
-    advance_paper_builder=RECIPE.build_advance_paper,
-    retract_paper_builder=RECIPE.build_retract_paper,
-    job_builder=RECIPE.build_job,
-)
+BEHAVIOR = RECIPE.build_behavior()

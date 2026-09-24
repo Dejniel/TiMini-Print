@@ -1,4 +1,30 @@
 {
+  "luck_a4_roll_56mm": {"label":"56 mm roll","paper_mode":"plain","paper_width_px":432,"render_width_px":432},
+  "luck_a4_roll_77mm": {"label":"77 mm roll","paper_mode":"plain","paper_width_px":591,"render_width_px":591},
+  "luck_a4_roll_107mm": {"label":"107 mm roll","paper_mode":"plain","paper_width_px":832,"render_width_px":832},
+  "luck_a4_roll_148mm": {"label":"148 mm roll","paper_mode":"plain","paper_width_px":1184,"render_width_px":1184},
+  "luck_a4_roll_210mm": {"label":"210 mm roll","paper_mode":"plain","paper_width_px":1616,"render_width_px":1616},
+  "luck_a4_roll_216mm": {"label":"216 mm roll","paper_mode":"plain","paper_width_px":1648,"render_width_px":1648},
+  "luck_a4_folder_a4": {"label":"A4 sheet","paper_mode":"folder","paper_width_px":1616,"render_width_px":1616,"render_height_px":2300},
+  "luck_a4_folder_a5": {"label":"A5 sheet","paper_mode":"folder","paper_width_px":1108,"render_width_px":1108,"render_height_px":1616},
+  "luck_a4_folder_letter": {"label":"Letter sheet","paper_mode":"folder","paper_width_px":1648,"render_width_px":1648,"render_height_px":2160},
+  "luck_a4_folder_legal": {"label":"Legal sheet","paper_mode":"folder","paper_width_px":1648,"render_width_px":1648,"render_height_px":2768},
+  "luck_a4_roll_56mm_300dpi": {"label":"56 mm roll","paper_mode":"plain","paper_width_px":648,"render_width_px":648},
+  "luck_a4_roll_77mm_300dpi": {"label":"77 mm roll","paper_mode":"plain","paper_width_px":887,"render_width_px":887},
+  "luck_a4_roll_107mm_300dpi": {"label":"107 mm roll","paper_mode":"plain","paper_width_px":1248,"render_width_px":1248},
+  "luck_a4_roll_148mm_300dpi": {"label":"148 mm roll","paper_mode":"plain","paper_width_px":1776,"render_width_px":1776},
+  "luck_a4_roll_210mm_300dpi": {"label":"210 mm roll","paper_mode":"plain","paper_width_px":2400,"render_width_px":2400},
+  "luck_a4_roll_216mm_300dpi": {"label":"216 mm roll","paper_mode":"plain","paper_width_px":2496,"render_width_px":2496},
+  "luck_a4_folder_a4_300dpi": {"label":"A4 sheet","paper_mode":"folder","paper_width_px":2400,"render_width_px":2400,"render_height_px":3480},
+  "luck_a4_folder_a5_300dpi": {"label":"A5 sheet","paper_mode":"folder","paper_width_px":1692,"render_width_px":1692,"render_height_px":2400},
+  "luck_a4_folder_letter_300dpi": {"label":"Letter sheet","paper_mode":"folder","paper_width_px":2496,"render_width_px":2496,"render_height_px":3240},
+  "luck_a4_folder_legal_300dpi": {"label":"Legal sheet","paper_mode":"folder","paper_width_px":2496,"render_width_px":2496,"render_height_px":4152},
+  "tattoo_1648r": {"label":"Tattoo","paper_mode":"tattoo","paper_width_px":1648,"render_width_px":1648},
+  "tag_1648r": {"label":"Tag","paper_mode":"tag","paper_width_px":1648,"render_width_px":1648},
+  "blacktag_1648r": {"label":"Black mark","paper_mode":"black_tag","paper_width_px":1648,"render_width_px":1648},
+  "tag_1616r": {"label":"Tag","paper_mode":"tag","paper_width_px":1616,"render_width_px":1616},
+  "blacktag_1616r": {"label":"Black mark","paper_mode":"black_tag","paper_width_px":1616,"render_width_px":1616},
+  "tattoo_1616r": {"label":"Tattoo","paper_mode":"tattoo","paper_width_px":1616,"render_width_px":1616},
   "a4sheet_1600r_1624p_24pl": {
     "label": "A4 sheet",
     "paper_mode": "a4_sheet",
@@ -323,6 +349,18 @@
     "paper_mode": "tattoo",
     "paper_width_px": 1728,
     "render_width_px": 1728
+  },
+  "tattoo_384r": {
+    "label": "Tattoo",
+    "paper_mode": "tattoo",
+    "paper_width_px": 384,
+    "render_width_px": 384
+  },
+  "tattoo_576r": {
+    "label": "Tattoo",
+    "paper_mode": "tattoo",
+    "paper_width_px": 576,
+    "render_width_px": 576
   },
   "tattoo_2496r": {
     "label": "Tattoo",
