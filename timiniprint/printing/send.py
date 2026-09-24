@@ -4,10 +4,10 @@ from contextlib import AsyncExitStack
 from typing import TYPE_CHECKING
 
 from .. import reporting
-from ..protocol import ProtocolJob, ProtocolStep, ProtocolStepOperation
+from ..protocol import ProtocolJob
 from .runtime.base import PreparedPrinter
 from .runtime.session import RuntimeConnectionSession
-from .step_execution import bytes_preview, execute_protocol_step, reply_matches_for
+from .step_execution import execute_protocol_steps
 
 if TYPE_CHECKING:
     from ..transport.base import PrinterConnection
@@ -34,7 +34,7 @@ async def send_prepared_job(
             if controller is not None:
                 sent_via_steps = await controller.send_protocol_steps(session, job.steps, timeout=timeout)
             if not sent_via_steps and session.can_send_standard_payload():
-                sent_via_steps = await _send_protocol_steps(session, job.steps, timeout=timeout)
+                sent_via_steps = await execute_protocol_steps(session, job.steps, timeout=timeout)
             elif not sent_via_steps:
                 session.report_warning(
                     short="Protocol step send unavailable",
@@ -57,56 +57,3 @@ async def send_prepared_job(
         # caller closes the connection, so we don't truncate the output.
         if controller is not None and job.wait_for_completion:
             await controller.wait_for_completion(session, timeout=timeout)
-
-
-async def _send_protocol_steps(
-    session: RuntimeConnectionSession,
-    steps: tuple[ProtocolStep, ...],
-    *,
-    timeout: float,
-) -> bool:
-    if any(step.operation is ProtocolStepOperation.QUERY for step in steps):
-        if (
-            not session.can_query_control_packet()
-            and not session.can_send_control_packet_wait_notification()
-        ):
-            session.report_warning(
-                short="Protocol query unavailable",
-                detail=(
-                    "This job needs request/response protocol steps, but the current transport "
-                    "cannot query replies or send BLE notification queries. Falling back to stream-only send."
-                ),
-            )
-            return False
-    if any(step.operation is ProtocolStepOperation.WAIT for step in steps):
-        if not session.can_wait_for_reply():
-            session.report_warning(
-                short="Protocol wait unavailable",
-                detail=(
-                    "This job needs a passive protocol reply wait, but the current transport "
-                    "cannot receive protocol replies. Falling back to stream-only send."
-                ),
-            )
-            return False
-
-    for step in steps:
-        reply = await execute_protocol_step(session, step, timeout=timeout)
-        if step.operation is ProtocolStepOperation.WAIT:
-            if not reply_matches_for(step, reply):
-                session.report_warning(
-                    short=f"Protocol {step.label} wait mismatch",
-                    detail=(
-                        f"Protocol wait {step.label!r} did not receive the expected notification, "
-                        f"got {bytes_preview(reply)}. Continuing, but the printer may reject the job."
-                    ),
-                )
-            continue
-        if step.operation is ProtocolStepOperation.QUERY and not reply_matches_for(step, reply):
-            session.report_warning(
-                short=f"Protocol {step.label} reply mismatch",
-                detail=(
-                    f"Protocol step {step.label!r} expected {step.expect.value}, "
-                    f"got {bytes_preview(reply)}. Continuing, but the printer may reject the job."
-                ),
-            )
-    return True

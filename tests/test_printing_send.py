@@ -360,7 +360,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(connection.sent_jobs), 1)
         self.assertEqual(connection.sent_jobs[0].payload, b"DB")
         self.assertEqual(len(reporter.warnings), 1)
-        self.assertIn("stream-only", reporter.warnings[0][1])
+        self.assertIn("Protocol steps cannot run", reporter.warnings[0][1])
 
     async def test_send_prepared_job_falls_back_for_send_only_connections(self) -> None:
         connection = _SendOnlyConnection()

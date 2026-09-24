@@ -197,3 +197,59 @@ def bytes_preview(data: bytes | None) -> str:
     if len(data) <= 32:
         return data.hex(" ")
     return f"{data[:16].hex(' ')} ... {data[-16:].hex(' ')} ({len(data)} bytes)"
+
+
+async def execute_protocol_steps(
+    session: RuntimeSessionApi,
+    steps: tuple[ProtocolStep, ...],
+    *,
+    timeout: float,
+    log_prefix: str = "Protocol",
+) -> bool:
+    if not session.can_send_standard_payload():
+        return False
+    if any(step.operation is ProtocolStepOperation.QUERY for step in steps):
+        if (
+            not session.can_query_control_packet()
+            and not session.can_send_control_packet_wait_notification()
+        ):
+            session.report_warning(
+                short="Protocol query unavailable",
+                detail=(
+                    "This job needs request/response protocol steps, but the current transport "
+                    "cannot query replies or send BLE notification queries. Protocol steps cannot run."
+                ),
+            )
+            return False
+    if any(step.operation is ProtocolStepOperation.WAIT for step in steps):
+        if not session.can_wait_for_reply():
+            session.report_warning(
+                short="Protocol wait unavailable",
+                detail=(
+                    "This job needs a passive protocol reply wait, but the current transport "
+                    "cannot receive protocol replies. Protocol steps cannot run."
+                ),
+            )
+            return False
+
+    for step in steps:
+        reply = await execute_protocol_step(session, step, timeout=timeout, log_prefix=log_prefix)
+        if step.operation is ProtocolStepOperation.WAIT:
+            if not reply_matches_for(step, reply):
+                session.report_warning(
+                    short=f"Protocol {step.label} wait mismatch",
+                    detail=(
+                        f"Protocol wait {step.label!r} did not receive the expected notification, "
+                        f"got {bytes_preview(reply)}. Continuing, but the printer may reject the job."
+                    ),
+                )
+            continue
+        if step.operation is ProtocolStepOperation.QUERY and not reply_matches_for(step, reply):
+            session.report_warning(
+                short=f"Protocol {step.label} reply mismatch",
+                detail=(
+                    f"Protocol step {step.label!r} expected {step.expect.value}, "
+                    f"got {bytes_preview(reply)}. Continuing, but the printer may reject the job."
+                ),
+            )
+    return True
