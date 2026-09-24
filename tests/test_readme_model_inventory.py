@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import unittest
+from unittest.mock import patch
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import (
@@ -9,6 +10,7 @@ from timiniprint.devices.profiles import (
     SupportedModelMatch,
     SupportedPrinterModel,
     UnsupportedModelMatch,
+    UnsupportedPrinterModel,
 )
 from tools.render_readme_models import (
     render_supported_models_block,
@@ -72,6 +74,31 @@ def _unsupported_detection_matches_model(
 class ReadmeModelInventoryTests(unittest.TestCase):
     def test_catalog_models_validate_for_readme_rendering(self) -> None:
         self.assertEqual(validate_catalog_models(), [])
+
+    def test_case_distinct_unsupported_name_is_not_a_catalog_collision(self) -> None:
+        profile = PrinterCatalog.load().require_profile("v5x")
+        supported = SupportedPrinterModel(
+            model_key="case_supported",
+            profile_key=profile.profile_key,
+            origin_ids=("com.fun.mxw",),
+            detections=(ModelDetection(exact_names=("MODEL X",)),),
+        )
+        unsupported = UnsupportedPrinterModel(
+            model_key="case_unsupported",
+            origin_ids=("com.fun.mxw",),
+            detections=(ModelDetection(exact_names=("Model X",)),),
+        )
+        catalog = PrinterCatalog(
+            (profile,), (supported,), (unsupported,),
+            origin_names={"com.fun.mxw": "Test app"},
+        )
+
+        self.assertEqual(
+            catalog.detect_model("Model X")[0].model.model_key,
+            "case_unsupported",
+        )
+        with patch("tools.render_readme_models.PrinterCatalog.load", return_value=catalog):
+            self.assertEqual(validate_catalog_models(), [])
 
     def test_readme_names_match_catalog_detection_contract(self) -> None:
         catalog = PrinterCatalog.load()

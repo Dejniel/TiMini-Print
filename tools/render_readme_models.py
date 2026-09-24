@@ -13,6 +13,7 @@ from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import (
     DetectionNormalizer,
     SupportedPrinterModel,
+    UnsupportedModelMatch,
 )
 
 README_PATH = REPO_ROOT / "README.md"
@@ -111,7 +112,15 @@ def validate_catalog_models() -> list[str]:
         for name in model.names:
             normalized_name = DetectionNormalizer.fold_name(name)
             supported_origins = supported_origins_by_name.get(normalized_name)
-            if supported_origins and set(model.origin_ids).issubset(supported_origins):
+            if (
+                supported_origins
+                and set(model.origin_ids).issubset(supported_origins)
+                and not any(
+                    isinstance(match, UnsupportedModelMatch)
+                    and match.model.model_key == model.model_key
+                    for match in catalog.detect_model(name)
+                )
+            ):
                 errors.append(
                     f"Unsupported model {model.model_key} display name {name!r} is already supported"
                 )
