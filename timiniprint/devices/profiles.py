@@ -476,7 +476,7 @@ class ModelDetection:
         *,
         case_sensitive: bool = True,
         whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
-    ) -> Tuple[int, int, int, int, int] | None:
+    ) -> Tuple[int, int, int, int, int, int] | None:
         has_mac_constraint = bool(
             self.mac_prefixes or self.mac_suffixes or self.excluded_mac_suffixes
         )
@@ -534,7 +534,7 @@ class ModelDetection:
                 (value.upper() for value in normalized_substrings),
             )
 
-        matched_exact_names: list[Tuple[int, int, int, int, int]] = []
+        matched_exact_names: list[Tuple[int, int, int, int, int, int]] = []
         for trigger, candidate in exact_names:
             if target_name == candidate:
                 matched_exact_names.append(
@@ -542,9 +542,10 @@ class ModelDetection:
                         trigger,
                         match_rank=2,
                         has_mac_suffix=has_mac_constraint,
+                        whitespace_mode=whitespace_mode,
                     )
                 )
-        matched_prefixes: list[Tuple[int, int, int, int, int]] = []
+        matched_prefixes: list[Tuple[int, int, int, int, int, int]] = []
         for trigger, candidate in prefixes:
             if target_name.startswith(candidate):
                 matched_prefixes.append(
@@ -552,9 +553,10 @@ class ModelDetection:
                         trigger,
                         match_rank=1,
                         has_mac_suffix=has_mac_constraint,
+                        whitespace_mode=whitespace_mode,
                     )
                 )
-        matched_substrings: list[Tuple[int, int, int, int, int]] = []
+        matched_substrings: list[Tuple[int, int, int, int, int, int]] = []
         for trigger, candidate in substrings:
             if candidate in target_name:
                 matched_substrings.append(
@@ -562,9 +564,10 @@ class ModelDetection:
                         trigger,
                         match_rank=0,
                         has_mac_suffix=has_mac_constraint,
+                        whitespace_mode=whitespace_mode,
                     )
                 )
-        matched_suffixes: list[Tuple[int, int, int, int, int]] = []
+        matched_suffixes: list[Tuple[int, int, int, int, int, int]] = []
         for value in self.suffixes:
             trigger = DetectionNormalizer.normalize_name(value, whitespace_mode)
             candidate = trigger if case_sensitive else trigger.upper()
@@ -572,6 +575,7 @@ class ModelDetection:
                 matched_suffixes.append(
                     self._trigger_specificity(
                         trigger, match_rank=1, has_mac_suffix=has_mac_constraint,
+                        whitespace_mode=whitespace_mode,
                     )
                 )
         matched_groups = (
@@ -594,6 +598,7 @@ class ModelDetection:
                 sum(value[2] for value in best_by_group),
                 sum(value[3] for value in best_by_group),
                 sum(value[4] for value in best_by_group),
+                sum(value[5] for value in best_by_group),
             )
 
         return max(
@@ -607,8 +612,13 @@ class ModelDetection:
         *,
         match_rank: int,
         has_mac_suffix: bool,
-    ) -> Tuple[int, int, int, int, int]:
+        whitespace_mode: WhitespaceMode,
+    ) -> Tuple[int, int, int, int, int, int]:
         normalized_trigger = DetectionNormalizer.normalize_name(trigger)
+        whitespace_score = sum(
+            char.isspace()
+            for char in DetectionNormalizer.normalize_name(trigger, whitespace_mode)
+        )
         trigger_length = (
             len(normalized_trigger[:-1])
             if normalized_trigger.endswith(("-", "_"))
@@ -620,6 +630,7 @@ class ModelDetection:
             match_rank,
             len(normalized_trigger),
             sum(1 for char in normalized_trigger if char.isupper()),
+            whitespace_score,
         )
 
 @dataclass(frozen=True)

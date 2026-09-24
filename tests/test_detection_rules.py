@@ -50,7 +50,7 @@ class ModelDetectionTests(unittest.TestCase):
 
         self.assertEqual(
             detection.matched_specificity("X6", None),
-            (2, 0, 2, 2, 1),
+            (2, 0, 2, 2, 1, 0),
         )
 
     def test_matched_specificity_uses_the_same_case_folding_as_matches(self) -> None:
@@ -63,7 +63,7 @@ class ModelDetectionTests(unittest.TestCase):
                 None,
                 case_sensitive=False,
             ),
-            (9, 0, 1, 10, 2),
+            (9, 0, 1, 10, 2, 0),
         )
 
     def test_separator_suffix_prefix_does_not_create_base_alias(self) -> None:
