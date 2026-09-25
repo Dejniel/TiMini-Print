@@ -90,7 +90,14 @@ def _sample_addresses(model: dict[str, Any]) -> list[str | None]:
 def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
     repeated: list[dict[str, Any]] = []
     first_index_by_group: dict[
-        tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...], tuple[str, ...]], int
+        tuple[
+            tuple[str, ...],
+            tuple[str, ...],
+            tuple[str, ...],
+            tuple[str, ...],
+            tuple[str, ...],
+        ],
+        int,
     ] = {}
     for index, detection in enumerate(model.get("detections", [])):
         # Unioning conjunctions (or mixing them with OR rules) changes which
@@ -98,6 +105,10 @@ def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
         if detection.get("all_of"):
             continue
         group = (
+            tuple(
+                str(value).strip().casefold()
+                for value in detection.get("excluded_prefixes", [])
+            ),
             tuple(
                 sorted(
                     str(value).strip().upper()
@@ -327,7 +338,13 @@ def generate_report(
 
     for model in models_raw:
         for detection in model.get("detections", []):
-            for field in ("prefixes", "exact_names", "substrings", "suffixes"):
+            for field in (
+                "prefixes",
+                "exact_names",
+                "substrings",
+                "suffixes",
+                "excluded_prefixes",
+            ):
                 for trigger in detection.get(field, []):
                     if trigger != trigger.strip():
                         errors.append(
@@ -369,7 +386,13 @@ def generate_report(
                 }
             )
         for detection in model.get("detections", []):
-            for field in ("prefixes", "exact_names", "substrings", "suffixes"):
+            for field in (
+                "prefixes",
+                "exact_names",
+                "substrings",
+                "suffixes",
+                "excluded_prefixes",
+            ):
                 for trigger in detection.get(field, []):
                     if trigger != trigger.strip():
                         errors.append(

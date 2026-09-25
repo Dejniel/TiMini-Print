@@ -152,7 +152,7 @@ class PrinterCatalog:
         address: Optional[str],
         *,
         case_sensitive: bool,
-    ) -> tuple[int, int, int, int, int, int] | None:
+    ) -> tuple[int, int, int, int, int] | None:
         return detection.matched_specificity(
             device_name,
             address,
@@ -715,7 +715,7 @@ class PrinterCatalog:
             tuple[
                 SupportedPrinterModel | UnsupportedPrinterModel,
                 ModelDetection,
-                tuple[int, int, int, int, int, int],
+                tuple[int, int, int, int, int],
             ]
         ] = []
         best_specificity: tuple[int, int, int, int, int] | None = None
@@ -729,19 +729,11 @@ class PrinterCatalog:
             )
             if specificity is None:
                 continue
-            primary_specificity = specificity[:5]
-            if best_specificity is None or primary_specificity > best_specificity:
-                best_specificity = primary_specificity
+            if best_specificity is None or specificity > best_specificity:
+                best_specificity = specificity
                 matches = [(model, detection, specificity)]
-            elif primary_specificity == best_specificity:
+            elif specificity == best_specificity:
                 matches.append((model, detection, specificity))
-
-        if (len({model.whitespace_mode for model, _, _ in matches}) == 1
-                and len({model.origin_ids for model, _, _ in matches}) == 1):
-            # A preserved separator can distinguish one source app's variants,
-            # but must not erase ambiguity between different source apps.
-            best_whitespace = max((score[5] for _, _, score in matches), default=0)
-            matches = [item for item in matches if item[2][5] == best_whitespace]
 
         deduped: list[
             tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection]

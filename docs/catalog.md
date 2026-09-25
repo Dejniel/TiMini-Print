@@ -104,6 +104,7 @@ to that rule:
       "exact_names": ["BT-01"],
       "prefixes": ["BT01-"],
       "substrings": ["Core"],
+      "excluded_prefixes": ["BT-01 Pro"],
       "mac_prefixes": ["13:03"],
       "mac_suffixes": ["59"],
       "excluded_mac_suffixes": ["00"],
@@ -125,6 +126,8 @@ Detection supports:
 - `mac_prefixes`: optional required address-prefix alternatives
 - `mac_suffixes`: optional address suffix filter
 - `excluded_mac_suffixes`: optional address suffixes which reject the rule
+- `excluded_prefixes`: optional advertised-name prefixes which reject the rule;
+  they use the model's whitespace and case policy and are not public names
 - `all_of`: require every populated name-trigger group in this detection
 
 By default, `exact_names`, `prefixes`, `substrings`, and `suffixes` are alternative trigger

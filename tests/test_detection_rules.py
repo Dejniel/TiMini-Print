@@ -50,7 +50,7 @@ class ModelDetectionTests(unittest.TestCase):
 
         self.assertEqual(
             detection.matched_specificity("X6", None),
-            (2, 0, 2, 2, 1, 0),
+            (2, 0, 2, 2, 1),
         )
 
     def test_matched_specificity_uses_the_same_case_folding_as_matches(self) -> None:
@@ -63,8 +63,19 @@ class ModelDetectionTests(unittest.TestCase):
                 None,
                 case_sensitive=False,
             ),
-            (9, 0, 1, 10, 2, 0),
+            (9, 0, 1, 10, 2),
         )
+
+    def test_excluded_prefix_rejects_the_detection(self) -> None:
+        detection = ModelDetection(
+            prefixes=("X2",),
+            substrings=("Pro",),
+            excluded_prefixes=("X2 Pro",),
+            all_of=True,
+        )
+
+        self.assertFalse(detection.matches("X2 Pro-123", None))
+        self.assertTrue(detection.matches("X2-any-Pro-123", None))
 
     def test_separator_suffix_prefix_does_not_create_base_alias(self) -> None:
         detection = ModelDetection(

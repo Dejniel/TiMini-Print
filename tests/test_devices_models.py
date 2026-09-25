@@ -562,14 +562,19 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(catalog.detect_model("M50"), ())
         self.assertEqual(catalog.detect_device("M50 ").display_name, "M50")
 
-    def test_preserved_space_counts_toward_detection_specificity(self) -> None:
+    def test_detection_can_exclude_a_more_literal_prefix(self) -> None:
         literal_payload = _model_payload(model_key="literal_pro")
         literal_payload["whitespace_mode"] = "preserve"
         literal_payload["detections"] = [{"prefixes": ["X2 Pro"]}]
         broad_payload = _model_payload(model_key="broad_pro")
         broad_payload["whitespace_mode"] = "preserve"
         broad_payload["detections"] = [
-            {"prefixes": ["X2"], "substrings": ["Pro"], "all_of": True}
+            {
+                "prefixes": ["X2"],
+                "substrings": ["Pro"],
+                "excluded_prefixes": ["X2 Pro"],
+                "all_of": True,
+            }
         ]
         profile = model_from_json(PrinterProfile, _profile_payload())
         catalog = PrinterCatalog(
@@ -588,18 +593,11 @@ class DevicesModelsTests(unittest.TestCase):
             _single_match(catalog.detect_model("X2-any-Pro-123")).model.model_key,
             "broad_pro",
         )
-
-        broad_payload["origin_ids"] = ["com.example.other"]
-        cross_app_catalog = PrinterCatalog(
-            [profile],
-            [
-                model_from_json(SupportedPrinterModel, literal_payload),
-                model_from_json(SupportedPrinterModel, broad_payload),
-            ],
-        )
         self.assertEqual(
-            {match.model.model_key for match in cross_app_catalog.detect_model("X2 Pro-123")},
-            {"literal_pro", "broad_pro"},
+            model_to_json(model_from_json(SupportedPrinterModel, broad_payload))[
+                "detections"
+            ][0]["excluded_prefixes"],
+            ["X2 Pro"],
         )
 
     def test_all_of_detection_beats_its_broader_prefix(self) -> None:

@@ -224,6 +224,8 @@ class CatalogAuditTests(unittest.TestCase):
                 "detections": [
                     {"exact_names": ["FOO"]},
                     {"prefixes": ["BAR"]},
+                    {"prefixes": ["QUX"], "excluded_prefixes": ["QUX Pro"]},
+                    {"prefixes": ["ZIP"], "excluded_prefixes": ["ZIP Max"]},
                     {"prefixes": ["BAR"], "substrings": ["PRO"], "all_of": True},
                     {"prefixes": ["BAZ"], "substrings": ["MAX"], "all_of": True},
                 ],
