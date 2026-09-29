@@ -31,10 +31,12 @@ class _Session:
         *,
         can_send_bulk: bool = True,
         auto_ready: bool = True,
+        start_reply: bytes = V5X_NOTIFY_START_PRINT_OK,
     ) -> None:
         self.controller = controller
         self.can_send_bulk = can_send_bulk
         self.auto_ready = auto_ready
+        self.start_reply = start_reply
         self.events: list[tuple[str, bytes]] = []
         self.debug: list[str] = []
         self.last_reply: bytes | None = None
@@ -88,8 +90,8 @@ class _Session:
         if opcode == 0xAD and self.auto_ready:
             self.controller.handle_notification(self, V5X_NOTIFY_START_READY)
         elif opcode == 0xA9:
-            self.last_reply = V5X_NOTIFY_START_PRINT_OK
-            self.controller.handle_notification(self, V5X_NOTIFY_START_PRINT_OK)
+            self.last_reply = self.start_reply
+            self.controller.handle_notification(self, self.start_reply)
         return True
 
     async def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
@@ -273,7 +275,11 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([p for kind, p in session.events if kind == "bulk"], [raw])
 
     async def test_short_and_framed_a9_rejections_never_send_raster(self) -> None:
-        for reply in (bytes.fromhex("2221a9000100"), make_packet(0xA9, b"\x03", ProtocolFamily.V5X)):
+        for reply in (
+            bytes.fromhex("2221a9000100"),
+            bytes.fromhex("2221a90001000300"),
+            make_packet(0xA9, b"\x03", ProtocolFamily.V5X),
+        ):
             with self.subTest(reply=reply):
                 controller = V5XRuntimeController()
                 session = _Session(controller)
@@ -288,6 +294,25 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
                     await controller.send_protocol_steps(session, (ProtocolStep.send("page", _page_payload()),), timeout=0.1)
                 self.assertEqual(caught.exception.reasons, (PrinterStatusCode.NOT_READY,))
                 self.assertFalse(any(kind == "bulk" or p[2] == 0xAD for kind, p in session.events))
+
+    async def test_compact_a9_reply_allows_public_send(self) -> None:
+        device = PrinterCatalog.load().detect_device("MXW01")
+        controller = V5XRuntimeController()
+        session = _Session(controller, start_reply=bytes.fromhex("2221a90001000000"))
+        job = ProtocolJob(steps=(ProtocolStep.send("page", _page_payload()),))
+        with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
+            await send_prepared_job(PreparedPrinter(device, runtime_controller=controller), session, job)
+        self.assertEqual([p[2] for kind, p in session.events if kind == "control"], [0xA2, 0xA9, 0xAD])
+        self.assertEqual([p for kind, p in session.events if kind == "bulk"], [bytes.fromhex("AA55AA55")])
+        self.assertEqual(controller.debug_snapshot()["last_a9_status"], 0)
+
+    async def test_incomplete_a9_payload_never_sends_raster(self) -> None:
+        controller = V5XRuntimeController()
+        session = _Session(controller, start_reply=bytes.fromhex("2221a900020000"))
+        with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
+            with self.assertRaisesRegex(RuntimeError, "did not include a status byte"):
+                await controller.send_protocol_steps(session, (ProtocolStep.send("page", _page_payload()),), timeout=0.1)
+        self.assertFalse(any(kind == "bulk" or p[2] == 0xAD for kind, p in session.events))
 
     async def test_density_settle_is_before_start_and_only_after_changes(self) -> None:
         controller = V5XRuntimeController()
@@ -386,7 +411,7 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
             bytes.fromhex("2221b10000"),
             make_packet(0xB1, b"", ProtocolFamily.V5X),
             make_packet(0xB1, b"\x00" * 9, ProtocolFamily.V5X),
-            make_packet(0xB1, b"FW1.0.22", ProtocolFamily.V5X)[:-1],
+            make_packet(0xB1, b"FW1.0.22", ProtocolFamily.V5X)[:-3],
         )
         for reply in replies:
             for reply_on_send in (False, True):
@@ -410,31 +435,32 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
                         self.assertTrue(any("no readable firmware payload" in line for line in session.debug))
 
     async def test_readable_connect_info_reports_ready_before_or_during_wait(self) -> None:
-        for reply_on_send in (False, True):
-            with self.subTest(reply_on_send=reply_on_send):
-                controller = V5XRuntimeController()
-                session = _ConnectInfoSession(
-                    controller,
-                    make_packet(0xB1, b"FW1.0.22\x00", ProtocolFamily.V5X),
-                    reply_on_send=reply_on_send,
-                )
-                with patch("timiniprint.printing.runtime.v5x.asyncio.sleep", new=AsyncMock()):
-                    await controller.initialize_connection(session, mtu_size=20, timeout=0.1)
-                    await controller.after_initialize(session, timeout=0.1)
+        replies = (
+            (make_packet(0xB1, b"FW1.0.22\x00", ProtocolFamily.V5X), "FW1.0.22"),
+            (bytes.fromhex("2221b1000900312e392e332e312e3200"), "1.9.3.1.2"),
+        )
+        for reply, firmware in replies:
+            for reply_on_send in (False, True):
+                with self.subTest(reply=reply, reply_on_send=reply_on_send):
+                    controller = V5XRuntimeController()
+                    session = _ConnectInfoSession(controller, reply, reply_on_send=reply_on_send)
+                    with patch("timiniprint.printing.runtime.v5x.asyncio.sleep", new=AsyncMock()):
+                        await controller.initialize_connection(session, mtu_size=20, timeout=0.1)
+                        await controller.after_initialize(session, timeout=0.1)
 
-                state = controller.debug_snapshot()
-                self.assertTrue(state["connect_info_received"])
-                self.assertFalse(state["await_connect_info"])
-                self.assertEqual(state["firmware_version"], "FW1.0.22")
-                self.assertEqual(state["print_head_type"], "gaoya")
-                self.assertEqual(session.debug.count("connect info ready: 0xb1"), 1)
-                self.assertFalse(any("unavailable" in line for line in session.debug))
-                self.assertEqual(len(session.waits), 0 if reply_on_send else 1)
+                    state = controller.debug_snapshot()
+                    self.assertTrue(state["connect_info_received"])
+                    self.assertFalse(state["await_connect_info"])
+                    self.assertEqual(state["firmware_version"], firmware)
+                    self.assertEqual(state["print_head_type"], "gaoya")
+                    self.assertEqual(session.debug.count("connect info ready: 0xb1"), 1)
+                    self.assertFalse(any("unavailable" in line for line in session.debug))
+                    self.assertEqual(len(session.waits), 0 if reply_on_send else 1)
 
-                controller.handle_notification(session, bytes.fromhex("2221b10000"))
-                self.assertEqual(controller.debug_snapshot()["firmware_version"], "FW1.0.22")
-                self.assertTrue(controller.debug_snapshot()["connect_info_received"])
-                self.assertEqual(session.debug.count("connect info ready: 0xb1"), 1)
+                    controller.handle_notification(session, bytes.fromhex("2221b10000"))
+                    self.assertEqual(controller.debug_snapshot()["firmware_version"], firmware)
+                    self.assertTrue(controller.debug_snapshot()["connect_info_received"])
+                    self.assertEqual(session.debug.count("connect info ready: 0xb1"), 1)
 
     async def test_sends_each_page_as_command_bulk_finalize_sequence(self) -> None:
         controller = V5XRuntimeController()

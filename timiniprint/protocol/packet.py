@@ -154,17 +154,23 @@ def prefixed_packet_payload(
     packet: bytes,
     protocol_family: ProtocolFamily | str,
 ) -> bytes | None:
+    """Extract a complete declared payload without assuming a frame trailer.
+
+    Frame boundaries and checksum validation belong to the frame decoder.
+    """
     family = ProtocolFamily.from_value(protocol_family)
     prefix = family.packet_prefix
     if prefix is None:
         return None
-    packet_length = prefixed_packet_length(packet, 0, family)
-    if packet_length is None:
+    payload_start = len(prefix) + 4
+    if len(packet) < payload_start or not packet.startswith(prefix):
         return None
     payload_length_offset = len(prefix) + 2
     payload_length = (
         packet[payload_length_offset]
         | (packet[payload_length_offset + 1] << 8)
     )
-    payload_start = len(prefix) + 4
-    return packet[payload_start : payload_start + payload_length]
+    payload_end = payload_start + payload_length
+    if payload_end > len(packet):
+        return None
+    return packet[payload_start:payload_end]

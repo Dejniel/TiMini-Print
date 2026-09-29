@@ -64,6 +64,55 @@ class ProtocolCommandsTests(unittest.TestCase):
         )
         self.assertEqual(decoder.pending, b"")
 
+    def test_prefixed_payload_does_not_require_a_frame_trailer(self) -> None:
+        for family in (
+            ProtocolFamily.TINY,
+            ProtocolFamily.TINY_PREFIXED,
+            ProtocolFamily.V5X,
+            ProtocolFamily.V5C,
+            ProtocolFamily.V5G,
+        ):
+            for payload in (b"", b"\x00\xFF", bytes(range(256)) + b"\x23"):
+                packet = self.packet.make_packet(0xA9, payload, family)
+                for trailer_length in (0, 1, 2):
+                    with self.subTest(family=family, payload_length=len(payload), trailer_length=trailer_length):
+                        self.assertEqual(
+                            self.packet.prefixed_packet_payload(packet[:len(packet) - 2 + trailer_length], family),
+                            payload,
+                        )
+
+    def test_prefixed_payload_rejects_incomplete_header_or_payload(self) -> None:
+        for family in (ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED, ProtocolFamily.V5X, ProtocolFamily.V5C):
+            packet = self.packet.make_packet(0xA9, b"\x00\x23", family)
+            for length in range(len(packet) - 2):
+                with self.subTest(family=family, length=length):
+                    self.assertIsNone(self.packet.prefixed_packet_payload(packet[:length], family))
+            wrong_prefix = b"\x00" + packet[1:]
+            self.assertIsNone(self.packet.prefixed_packet_payload(wrong_prefix, family))
+        self.assertIsNone(self.packet.prefixed_packet_payload(packet, ProtocolFamily.LUCK_NORMAL))
+
+    def test_prefixed_payload_reads_compact_v5x_notifications(self) -> None:
+        for packet_hex, expected in (
+            ("2221a90001000000", b"\x00"),
+            ("2221b1000900312e392e332e312e3200", b"1.9.3.1.2"),
+        ):
+            with self.subTest(packet=packet_hex):
+                self.assertEqual(
+                    self.packet.prefixed_packet_payload(bytes.fromhex(packet_hex), ProtocolFamily.V5X),
+                    expected,
+                )
+
+    def test_prefixed_payload_extraction_preserves_frame_boundaries(self) -> None:
+        packet = self.packet.make_packet(0xA9, b"\x00", ProtocolFamily.V5X)
+        without_trailer = packet[:-2]
+        self.assertEqual(self.packet.prefixed_packet_payload(without_trailer, ProtocolFamily.V5X), b"\x00")
+        self.assertIsNone(self.packet.prefixed_packet_length(without_trailer, 0, ProtocolFamily.V5X))
+        self.assertIsNone(self.packet.split_prefixed_packets(without_trailer, ProtocolFamily.V5X))
+        decoder = self.packet.PrefixedPacketStreamDecoder(ProtocolFamily.V5X)
+        self.assertEqual(decoder.feed(without_trailer), ())
+        self.assertEqual(decoder.pending, without_trailer)
+        self.assertEqual([frame.raw for frame in decoder.feed(packet[-2:])], [packet])
+
     def test_prefixed_packet_stream_decoder_resynchronizes_after_invalid_crc(self) -> None:
         pause = bytes.fromhex("5178AE0101001070FF")
         resume = bytes.fromhex("5178AE0101000000FF")
