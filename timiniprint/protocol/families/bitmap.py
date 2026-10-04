@@ -106,24 +106,29 @@ def build_esc_star_raster(
     return bytes(payload)
 
 
-def build_1f10_zlib_raster(
+def build_zlib_raster_frame(
     raster: RasterBuffer,
     *,
+    command: bytes,
     window_bits: int = 10,
+    level: int = 6,
+    memory_level: int = 8,
 ) -> bytes:
-    """Build a ``1f 10`` zlib-compressed one-bit raster frame."""
+    """Build command + BE16 byte stride/height + BE32 compressed length + zlib."""
 
     width_bytes = packed_row_width_bytes(raster.width)
     height = raster.height
     if width_bytes > 0xFFFF or height > 0xFFFF:
-        raise ValueError("1f 10 raster dimensions must fit in two bytes")
+        raise ValueError("zlib raster dimensions exceed the 16-bit header")
 
     compressed = compress_zlib(
         pack_bw1_rows(raster),
         window_bits=window_bits,
+        level=level,
+        memory_level=memory_level,
     )
     return (
-        b"\x1f\x10"
+        command
         + width_bytes.to_bytes(2, "big")
         + height.to_bytes(2, "big")
         + len(compressed).to_bytes(4, "big")

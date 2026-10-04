@@ -23,6 +23,16 @@ def test_tspl_bitmap_defaults_preserve_existing_bytes():
     assert bitmap_command(raster, line_end=b"\n") == b"BITMAP 0,0,1,1,0,\x80\n"
 
 
+@pytest.mark.parametrize("invert", [False, True])
+def test_tspl_bitmap_partial_byte_pads_white_pixels(invert):
+    raster = RasterBuffer([1, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+                           0, 0, 0, 1, 0, 0, 0, 0, 0, 1], 10, PixelFormat.BW1)
+    body = b"\x5f\x7f\xef\xbf" if invert else b"\xa0\x80\x10\x40"
+    assert bitmap_command(raster, line_end=b"\n", invert_bits=invert) == (
+        b"BITMAP 0,0,2,2,0," + body + b"\n"
+    )
+
+
 @pytest.mark.parametrize("mode", [-1, 3, 4])
 def test_uncompressed_tspl_bitmap_rejects_other_modes(mode):
     raster = RasterBuffer([0] * 8, 8, PixelFormat.BW1)

@@ -10,7 +10,7 @@ from ...plan import ProtocolPlan
 from ...steps import ProtocolStep
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
-from ..bitmap import build_1f10_zlib_raster, build_gs_v0_single_raster, packed_raster_dimensions_le16
+from ..bitmap import build_zlib_raster_frame, build_gs_v0_single_raster, packed_raster_dimensions_le16
 
 from .transactions import (
     NORMAL_FINALIZE_TIMEOUT_SEC, density_setting, finalize, paper_setting, speed_setting, status_query,
@@ -140,7 +140,7 @@ class LuckNormalBitmapEncoder:
         return build_gs_v0_single_raster(raster)
 
     def _encode_compressed(self, raster: RasterBuffer) -> bytes:
-        return build_1f10_zlib_raster(raster)
+        return build_zlib_raster_frame(raster, command=b"\x1f\x10")
 
     def _encode_gray(self, raster: RasterBuffer, gray_level: int) -> bytes:
         return (

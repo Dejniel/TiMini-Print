@@ -27,9 +27,6 @@ def bitmap_command(
     raster.validate()
     if raster.pixel_format is not PixelFormat.BW1:
         raise ValueError("TSPL bitmap jobs require a bw1 raster")
-    if raster.width % 8 != 0:
-        raise ValueError("TSPL bitmap jobs require width divisible by 8")
-
     if mode not in (0, 1, 2):
         raise ValueError("Uncompressed TSPL bitmap mode must be 0, 1, or 2")
     packed = pack_bw1_rows(raster, lsb_first=False, reverse_traversal=reverse_traversal)
