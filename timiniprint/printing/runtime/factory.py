@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from ...protocol.family import ProtocolFamily
 from .base import RuntimeController
+from .eleph import ElephRuntimeController
 from .funny_lx import FunnyLxRuntimeController
 from .luck_normal import LuckA41RuntimeController, LuckNormalRuntimeController, LuckTransactionController
 from .niimbot import NiimbotRuntimeController, VersionedNiimbotRuntimeController
@@ -20,6 +21,8 @@ if TYPE_CHECKING:
 
 
 def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | None:
+    if device.protocol_family in (ProtocolFamily.ELEPH_TSPL, ProtocolFamily.ELEPH_ESC):
+        return ElephRuntimeController()
     if device.protocol_family in {ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED}:
         return TinyRuntimeController()
     if device.protocol_family is ProtocolFamily.V5G:
