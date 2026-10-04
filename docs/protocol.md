@@ -443,6 +443,16 @@ completion confirmation. Its runtime retains early page-index notifications,
 reassembles fragmented replies and reports printer faults separately from
 transport errors. Other families retain their existing required/optional policy.
 
+Eleph Label preparation reads the optional JX information record to select
+ESC or TSPL, bitmap compression and geometry before rendering. Missing
+information keeps the selected profile; saved command mode and media settings
+are never rewritten. Optional pre-send status reads and passive error records
+use `PrinterNotReadyError` for confirmed printer faults. An incomplete
+fixed-length reply disables further queries for that connection, not printing,
+so a late information record cannot be mistaken for status. These jobs have no
+documented physical-completion acknowledgement. Reprint prompts are diagnostic;
+they do not trigger automatic replay.
+
 Luck normal/A4 jobs require density acknowledgement, a usable status reply and
 confirmed finalization. Control queries wait up to 3 seconds; finalization
 waits up to 70 seconds, or 120 seconds for Lujiang A4. These are response
