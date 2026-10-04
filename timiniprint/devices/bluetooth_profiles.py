@@ -42,6 +42,14 @@ _TINY_TRANSPORT_PROFILE = BleTransportProfile(
     flow_resume_timeout_s=600.0,
 )
 
+_ELEPH_TRANSPORT_PROFILE = BleTransportProfile(
+    preferred_service_uuid="000018f0-0000-1000-8000-00805f9b34fb",
+    preferred_write_char_uuid="00002af1-0000-1000-8000-00805f9b34fb",
+    notify_char_uuid="00002af0-0000-1000-8000-00805f9b34fb",
+    standard_chunk_cap=20,
+    standard_write_delay_ms=30,
+)
+
 _PROFILES = {
     ProtocolFamily.TINY: _TINY_TRANSPORT_PROFILE,
     ProtocolFamily.TINY_PREFIXED: _TINY_TRANSPORT_PROFILE,
@@ -83,12 +91,8 @@ _PROFILES = {
         standard_chunk_cap=180,
         standard_write_delay_ms=10,
     ),
-    ProtocolFamily.ELEPH_TSPL: BleTransportProfile(
-        preferred_service_uuid="000018f0-0000-1000-8000-00805f9b34fb",
-        preferred_write_char_uuid="00002af1-0000-1000-8000-00805f9b34fb",
-        standard_chunk_cap=20,
-        standard_write_delay_ms=30,
-    ),
+    ProtocolFamily.ELEPH_TSPL: _ELEPH_TRANSPORT_PROFILE,
+    ProtocolFamily.ELEPH_ESC: _ELEPH_TRANSPORT_PROFILE,
     ProtocolFamily.TOPRINT_TSPL: BleTransportProfile(
         standard_chunk_cap=180,
         standard_write_delay_ms=10,

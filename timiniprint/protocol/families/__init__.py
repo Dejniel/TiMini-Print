@@ -17,6 +17,7 @@ from .luck.normal_a4 import BEHAVIOR as LUCK_NORMAL_A4_BEHAVIOR
 from .niimbot import BEHAVIOR as NIIMBOT_BEHAVIOR
 from .phomemo_esc import BEHAVIOR as PHOMEMO_ESC_BEHAVIOR
 from .eleph_tspl import BEHAVIOR as ELEPH_TSPL_BEHAVIOR
+from .eleph_esc import BEHAVIOR as ELEPH_ESC_BEHAVIOR
 from .toprint_tspl import BEHAVIOR as TOPRINT_TSPL_BEHAVIOR
 from .v5g import BEHAVIOR as V5G_BEHAVIOR
 from .v5c import BEHAVIOR as V5C_BEHAVIOR
@@ -106,6 +107,10 @@ _DEFINITIONS = {
             command_set=ProtocolCommandSet.ELEPH_TSPL,
         ),
         behavior=ELEPH_TSPL_BEHAVIOR,
+    ),
+    ProtocolFamily.ELEPH_ESC: ProtocolDefinition(
+        spec=ProtocolSpec(packet_prefix=None, command_set=ProtocolCommandSet.ELEPH_ESC),
+        behavior=ELEPH_ESC_BEHAVIOR,
     ),
     ProtocolFamily.TOPRINT_TSPL: ProtocolDefinition(
         spec=ProtocolSpec(

@@ -19,6 +19,7 @@ BEHAVIOR = ProtocolBehavior(
     ),
     image_encoding_support={
         ImageEncoding.ELEPH_TSPL_BITMAP: (PixelFormat.BW1,),
+        ImageEncoding.ELEPH_TSPL_ZLIB: (PixelFormat.BW1,),
     },
     supported_protocol_variants=("p1",),
     supported_paper_modes=(PaperMode.TAG,),

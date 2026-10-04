@@ -28,12 +28,11 @@ class ElephTsplProtocolTests(unittest.TestCase):
         )
 
         expected_order = (
-            b"SIZE 48 mm,1 mm\r\n",
-            b"GAP 2 mm,0 mm\r\n",
-            b"DIRECTION 0\r\n",
-            b"CLS\r\n",
+            b"SIZE 48 mm,1 mm\n",
+            b"CLS\n",
+            b"DIRECTION 0\n",
             b"BITMAP 0,0,48,8,0,\x7f",
-            b"PRINT 1,1\r\n",
+            b"PRINT 1,1\n",
         )
         positions = [job.payload.index(marker) for marker in expected_order]
         self.assertEqual(positions, sorted(positions))
@@ -42,6 +41,7 @@ class ElephTsplProtocolTests(unittest.TestCase):
         self.assertNotIn(b"REFERENCE", job.payload)
         self.assertNotIn(b"SPEED ", job.payload)
         self.assertNotIn(b"DENSITY ", job.payload)
+        self.assertNotIn(b"GAP ", job.payload)
 
     def test_p1_default_direction_does_not_rotate_or_mirror_the_raster(self) -> None:
         coordinates = [(0, 0), (8, 1), (31, 2), (383, 23)]
@@ -61,8 +61,8 @@ class ElephTsplProtocolTests(unittest.TestCase):
                 rendered = renderer.print_page(plan, plan.pages[0], device, settings)
                 job = PrinterProtocol(device).build_job(rendered.raster_set, is_text=False)
 
-                self.assertEqual(job.payload.count(b"DIRECTION 0\r\n"), 1)
-                self.assertNotIn(b"DIRECTION 1\r\n", job.payload)
+                self.assertEqual(job.payload.count(b"DIRECTION 0\n"), 1)
+                self.assertNotIn(b"DIRECTION 1\n", job.payload)
                 marker = b"BITMAP 0,0,48,24,0,"
                 offset = job.payload.index(marker) + len(marker)
                 bitmap = job.payload[offset : offset + 48 * 24]
@@ -84,6 +84,8 @@ class ElephTsplProtocolTests(unittest.TestCase):
         self.assertEqual(device.profile.stream.delay_ms, 0)
         self.assertEqual(device.ble_transport_profile.standard_chunk_cap, 20)
         self.assertEqual(device.ble_transport_profile.standard_write_delay_ms, 30)
+        self.assertEqual(device.ble_transport_profile.notify_char_uuid,
+                         "00002af0-0000-1000-8000-00805f9b34fb")
 
     def test_eleph_p1_prefers_classic_and_keeps_ble_fallback(self) -> None:
         policy = BluetoothTransportPolicy(PrinterCatalog.load())
