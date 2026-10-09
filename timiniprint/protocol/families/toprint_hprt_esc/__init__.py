@@ -24,6 +24,7 @@ BEHAVIOR = ProtocolBehavior(
     ),
     image_encoding_support={
         ImageEncoding.TOPRINT_HPRT_ESC_RASTER: (PixelFormat.BW1,),
+        ImageEncoding.TOPRINT_HPRT_ESC_ZLIB: (PixelFormat.BW1,),
     },
     supported_protocol_variants=("zl1",),
     supported_paper_modes=(PaperMode.TAG, PaperMode.PLAIN, PaperMode.BLACK_TAG),

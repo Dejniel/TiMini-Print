@@ -10,6 +10,7 @@ from .luck_normal import LuckA41RuntimeController, LuckNormalRuntimeController, 
 from .niimbot import NiimbotRuntimeController, VersionedNiimbotRuntimeController
 from .phomemo_esc import PhomemoEscRuntimeController
 from .phomemo import PhomemoRuntimeController
+from .toprint import ToPrintRuntimeController
 from .tiny import TinyRuntimeController
 from .v5c import V5CRuntimeController
 from .v5g import V5GRuntimeController
@@ -21,6 +22,8 @@ if TYPE_CHECKING:
 
 
 def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | None:
+    if device.protocol_family in (ProtocolFamily.TOPRINT_TSPL, ProtocolFamily.TOPRINT_HPRT_ESC):
+        return ToPrintRuntimeController()
     if device.protocol_family in (ProtocolFamily.ELEPH_TSPL, ProtocolFamily.ELEPH_ESC):
         return ElephRuntimeController()
     if device.protocol_family in {ProtocolFamily.TINY, ProtocolFamily.TINY_PREFIXED}:

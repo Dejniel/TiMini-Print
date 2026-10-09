@@ -16,9 +16,11 @@
       {
         "prefixes": [
           "P3"
-        ]
+        ],
+        "name_pattern": "(?s:(?-i:P3.*))"
       }
-    ]
+    ],
+    "notes": "P3 alone is not admitted by ToPrint discovery; its post-connect ESC condition does not establish a standalone print route."
   },
   {
     "model_key": "unsupported_toprint_gt08",
@@ -31,9 +33,14 @@
       {
         "prefixes": [
           "GT08"
-        ]
+        ],
+        "substrings": [
+          "GT08"
+        ],
+        "name_pattern": "(?s:(?-i:(?!.*LE).*GT08.*))"
       }
-    ]
+    ],
+    "notes": "The ToPrint A4 print workers are empty. The default TSPL setting does not establish this model's print recipe."
   },
   {
     "model_key": "unsupported_toprint_gw08",
@@ -46,9 +53,14 @@
       {
         "prefixes": [
           "GW08"
-        ]
+        ],
+        "substrings": [
+          "GW08"
+        ],
+        "name_pattern": "(?s:(?-i:(?!.*LE).*GW08.*))"
       }
-    ]
+    ],
+    "notes": "The ToPrint A4 print workers are empty. The default TSPL setting does not establish this model's print recipe."
   },
   {
     "model_key": "unsupported_instaprint_ctp100lg_corelargeprint",

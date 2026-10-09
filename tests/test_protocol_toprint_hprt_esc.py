@@ -103,7 +103,7 @@ class ToPrintHprtEscProtocolTests(unittest.TestCase):
                 detected = catalog.detect_device(name)
                 self.assertIsNotNone(detected)
                 assert detected is not None
-                self.assertEqual(detected.profile_key, "toprint_hprt_esc_zl1")
+                self.assertEqual(detected.profile_key, "toprint_hprt_esc_p11")
                 self.assertEqual(detected.protocol_family, ProtocolFamily.TOPRINT_HPRT_ESC)
                 self.assertEqual(detected.protocol_variant, "zl1")
                 self.assertEqual(detected.image_pipeline.encoding, ImageEncoding.TOPRINT_HPRT_ESC_RASTER)
@@ -113,7 +113,7 @@ class ToPrintHprtEscProtocolTests(unittest.TestCase):
                 matches = catalog.detect_model(name)
                 self.assertEqual(
                     {candidate.model.model_key for candidate in matches},
-                    {"toprint_hprt_esc_zl1", "instaprint_ctp500_coreprint"},
+                    {"toprint_hprt_esc_yhk", "instaprint_ctp500_coreprint"},
                 )
                 self.assertIsNone(catalog.detect_device(name))
 

@@ -113,8 +113,12 @@ def build_zlib_raster_frame(
     window_bits: int = 10,
     level: int = 6,
     memory_level: int = 8,
+    omit_zlib_header: bool = False,
 ) -> bytes:
-    """Build command + BE16 byte stride/height + BE32 compressed length + zlib."""
+    """Build command + BE16 stride/height + BE32 length + compressed rows.
+
+    ``omit_zlib_header`` removes only the two header bytes, retaining Adler-32.
+    """
 
     width_bytes = packed_row_width_bytes(raster.width)
     height = raster.height
@@ -127,6 +131,8 @@ def build_zlib_raster_frame(
         level=level,
         memory_level=memory_level,
     )
+    if omit_zlib_header:
+        compressed = compressed[2:]
     return (
         command
         + width_bytes.to_bytes(2, "big")

@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 from ....raster import PixelFormat
-from ...compression import compress_zlib
 from ...types import ImageEncoding
-from .._tspl import bitmap_command, command, command_head
+from .._tspl import bitmap_command, command, zlib_bitmap_command
 from ..base import PrintJobRequest
-from ..bitmap import pack_bw1_rows, packed_row_width_bytes
 
 
 _LINE_END = b"\n"
@@ -35,12 +33,7 @@ def build_p1_job(request: PrintJobRequest) -> bytes:
     job += command("CLS", line_end=_LINE_END)
     job += command("DIRECTION", "0", line_end=_LINE_END)
     if request.image_pipeline.encoding is ImageEncoding.ELEPH_TSPL_ZLIB:
-        # Mode 3 uses black=1, unlike mode 0's white=1, and includes a byte length.
-        compressed = compress_zlib(pack_bw1_rows(raster, lsb_first=False), window_bits=15)
-        job += command_head(
-            "BITMAP",
-            f"0,0,{packed_row_width_bytes(raster.width)},{raster.height},3,{len(compressed)},",
-        ) + compressed + _LINE_END
+        job += zlib_bitmap_command(raster, line_end=_LINE_END)
     else:
         job += bitmap_command(raster, line_end=_LINE_END, invert_bits=True)
     job += command("PRINT", "1,1", line_end=_LINE_END)

@@ -389,7 +389,10 @@ class DevicesModelsTests(unittest.TestCase):
     def test_tinyprint_head_names_are_not_detection_prefixes(self) -> None:
         for name in ("CTP500", "CTP100LG", "GG-D2100-1234", "PR20-ABCD", "PR25-ABCD"):
             with self.subTest(name=name):
-                self.assertEqual(self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58"), ())
+                matches = self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58")
+                self.assertFalse(any("com.frogtosea.tinyPrint" in m.model.origin_ids for m in matches))
+                expected = {"CTP500": {"toprint_hprt_esc_zl1"}, "CTP100LG": {"toprint_tspl_p1"}}
+                self.assertEqual(_model_keys(matches), expected.get(name, set()))
 
     def test_tinyprint_overlapping_model_no_uses_most_specific_detection(self) -> None:
         expectations = {
@@ -966,7 +969,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_origin_ids_keep_conflicting_names_explicit(self) -> None:
         tiny_p1 = self.catalog.detect_model("P1-")
-        eleph_p1 = _single_match(self.catalog.detect_model("P1_"))
+        eleph_p1 = next(m for m in self.catalog.detect_model("P1_") if m.model.model_key == "eleph_tspl_p1")
         toprint_p1 = self.catalog.detect_model("P1")
         dck_d1 = _single_match(self.catalog.detect_model("C21"))
         exact_dck_d1 = _single_match(self.catalog.detect_model("D1"))
@@ -1291,7 +1294,7 @@ class DevicesModelsTests(unittest.TestCase):
             _model_keys(matches),
             {
                 "instaprint_ctp500_coreprint",
-                "toprint_hprt_esc_zl1",
+                "toprint_hprt_esc_yhk",
             },
         )
         self.assertTrue(all(isinstance(match, SupportedModelMatch) for match in matches))

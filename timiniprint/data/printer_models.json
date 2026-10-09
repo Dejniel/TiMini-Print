@@ -2157,7 +2157,11 @@
       {
         "prefixes": [
           "P1"
-        ]
+        ],
+        "substrings": [
+          "P1"
+        ],
+        "name_pattern": "(?s:(?-i:(?!.*(?:LE|P11|P2|P3|P5|YHK)).*(?:P1).*))"
       }
     ],
     "whitespace_mode": "preserve",
@@ -2174,11 +2178,14 @@
     "detections": [
       {
         "prefixes": [
-          "P11",
           "P2",
-          "P5",
-          "YHK"
-        ]
+          "P5"
+        ],
+        "substrings": [
+          "P2",
+          "P5"
+        ],
+        "name_pattern": "(?s:(?-i:(?!.*(?:LE)).*(?:P2|P5).*))"
       }
     ],
     "whitespace_mode": "preserve",
@@ -2538,6 +2545,50 @@
     "whitespace_mode": "preserve",
     "origin_ids": [
       "com.dingdang.newprint"
+    ]
+  },
+  {
+    "model_key": "toprint_hprt_esc_p11",
+    "profile_key": "toprint_hprt_esc_p11",
+    "protocol_override": {
+      "packets_type": "zl1"
+    },
+    "detections": [
+      {
+        "prefixes": [
+          "P11"
+        ],
+        "substrings": [
+          "P11"
+        ],
+        "name_pattern": "(?s:(?-i:(?!.*(?:LE)).*(?:P11).*))"
+      }
+    ],
+    "whitespace_mode": "preserve",
+    "origin_ids": [
+      "com.fyhd.toprint"
+    ]
+  },
+  {
+    "model_key": "toprint_hprt_esc_yhk",
+    "profile_key": "toprint_hprt_esc_yhk",
+    "protocol_override": {
+      "packets_type": "zl1"
+    },
+    "detections": [
+      {
+        "prefixes": [
+          "YHK"
+        ],
+        "substrings": [
+          "YHK"
+        ],
+        "name_pattern": "(?s:(?-i:(?!.*(?:LE)).*(?:YHK).*))"
+      }
+    ],
+    "whitespace_mode": "preserve",
+    "origin_ids": [
+      "com.fyhd.toprint"
     ]
   }
 ]

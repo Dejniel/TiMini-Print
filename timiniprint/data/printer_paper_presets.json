@@ -1,4 +1,7 @@
 {
+  "toprint_p11_tag": {"label":"Label","paper_mode":"tag","paper_width_px":88,"render_width_px":88},
+  "toprint_p11_black_mark": {"label":"Black mark","paper_mode":"black_tag","paper_width_px":88,"render_width_px":88},
+  "toprint_yhk_plain": {"label":"Plain roll","paper_mode":"plain","paper_width_px":376,"render_width_px":376},
   "luck_a4_roll_56mm": {"label":"56 mm roll","paper_mode":"plain","paper_width_px":432,"render_width_px":432},
   "luck_a4_roll_77mm": {"label":"77 mm roll","paper_mode":"plain","paper_width_px":591,"render_width_px":591},
   "luck_a4_roll_107mm": {"label":"107 mm roll","paper_mode":"plain","paper_width_px":832,"render_width_px":832},

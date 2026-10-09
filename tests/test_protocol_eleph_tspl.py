@@ -56,7 +56,7 @@ class ElephTsplProtocolTests(unittest.TestCase):
         )
         for name in ("P1_A57F", "P1_F30E"):
             with self.subTest(name=name):
-                device = PrinterCatalog.load().detect_device(name)
+                device = PrinterCatalog.load().device_from_model("eleph_tspl_p1", display_name=name)
                 plan = renderer.plan_document(RenderDocument("orientation.png"), device, settings)
                 rendered = renderer.print_page(plan, plan.pages[0], device, settings)
                 job = PrinterProtocol(device).build_job(rendered.raster_set, is_text=False)
@@ -121,7 +121,7 @@ class ElephTsplProtocolTests(unittest.TestCase):
     def test_catalog_detects_eleph_p1_without_stealing_other_p1_profiles(self) -> None:
         catalog = PrinterCatalog.load()
 
-        eleph = catalog.detect_device("P1_F30E")
+        eleph = catalog.device_from_model("eleph_tspl_p1", display_name="P1_F30E")
         self.assertIsNotNone(eleph)
         assert eleph is not None
         self.assertEqual(eleph.profile_key, "eleph_tspl_p1")

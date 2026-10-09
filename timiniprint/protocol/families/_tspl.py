@@ -1,8 +1,9 @@
-"""Shared TSPL command and uncompressed bitmap encoding."""
+"""Shared TSPL command and bitmap encoding."""
 
 from __future__ import annotations
 
 from ...raster import PixelFormat, RasterBuffer
+from ..compression import compress_zlib
 from .bitmap import pack_bw1_rows, packed_row_width_bytes
 
 
@@ -38,5 +39,20 @@ def bitmap_command(
             f"0,0,{packed_row_width_bytes(raster.width)},{raster.height},{mode},",
         )
         + packed
+        + line_end
+    )
+
+
+def zlib_bitmap_command(
+    raster: RasterBuffer, *, line_end: bytes, window_bits: int = 15, level: int = 6,
+) -> bytes:
+    """Build mode 3 with black-one rows and a full, length-prefixed zlib stream."""
+    compressed = compress_zlib(pack_bw1_rows(raster), window_bits=window_bits, level=level)
+    return (
+        command_head(
+            "BITMAP",
+            f"0,0,{packed_row_width_bytes(raster.width)},{raster.height},3,{len(compressed)},",
+        )
+        + compressed
         + line_end
     )

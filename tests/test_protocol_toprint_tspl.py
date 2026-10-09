@@ -47,7 +47,7 @@ class ToPrintTsplProtocolTests(unittest.TestCase):
             b"REFERENCE 0,0\r\n",
             b"SPEED 4\r\n",
             b"CLS\r\n",
-            b"BITMAP 0,0,1,2,0,\x80@\r\n",
+            b"BITMAP 0,0,1,2,0,\x7f\xbf\r\n\r\n",
             b"PRINT 1,1\r\n",
         )
         positions = [job.payload.index(marker) for marker in expected_order]
