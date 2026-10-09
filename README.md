@@ -118,7 +118,7 @@ If you want to build your own integration instead of using only the bundled GUI 
 The list below covers TiMini Print Community. The [TiMini Print mobile app at timiniprint.com](https://timiniprint.com/) supports every Community model plus additional “WalkPrint”, “Paperang”, and other printers.
 
 <!-- BEGIN supported-models -->
-A33, A40, A41III, A43, A4300, AI01, AN01, APA41, APA46Y, APA49H, D100, D11, D110, D11S, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YTB01, ZHHC, ZP802, ZPA4Z1
+A33, A40, A41III, A43, A4300, AI01, AN01, APA41, APA46Y, APA49H, D100, D11, D110, D11S, DL_X2, DL_X7, DL_X7Pro, GB01, GB02, GB02SH, GB03SL, GB04, GB05, GT02, GT04, GW09, HD1, JXM800, Label Printer, LP100, LT01, LuckP_A41, LuckP_A42, LY01, LY02, LY03, LY05, LY10, LY11, M2, Mini Printer, MPA81, MX02, MX03, MX07, MX08, MX09, MXW010, P1, P10, P11, P4, P6, P7, PD01, PPA2L, PPA2LH, PR30, PR88, Professional Printer, PT001, QIRUI_Q1, QIRUI_Q2, S01, S101, S102, Shipping Printer, U1, U8, WQ02, X1, X101H, X5, X6, X7, X8, XW001, XW002, YHK, YTB01, ZHHC, ZP802, ZPA4Z1
 
 - 15P3 and clones: YK06
 - 58P5 and clones: WL01
@@ -164,7 +164,7 @@ A33, A40, A41III, A43, A4300, AI01, AN01, APA41, APA46Y, APA49H, D100, D11, D110
 - MX13 and clones: XOPOPPY
 - MXW01-1 and clones: KERUI, BH03, YT01, YT02, BQ17
 - Orgstra S001 and clones: S001
-- P11 and clones: P2, P5, YHK
+- P2 and clones: P5
 - P5AI and clones: PR07, XW003, XW009, M01, AI01
 - Pocket Printer and clones: Luxorp.PX10, EMX-040256, SeznikEcho, TCM690464, UXPORTMIP, DL_GE225, ML-MP-01, ROSSMANN, 0019B-C, 0019B-D, DTR-R0, GB03PL, HT0125, RT034h, DT1-0, SC03h, SC04h, X103h, DY03, X100, X2h, X5h, X6h, X7h, XC9, D1, X18, DT1-R, TD-11308, XC9-FL01, P1, P2
 - PR02 and clones: XW008

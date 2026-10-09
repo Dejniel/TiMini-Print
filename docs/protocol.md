@@ -10,6 +10,7 @@ The normal path is:
 4. call `print_file(...)`, `print_text(...)`, `feed(...)`, `retract(...)`, or `send_job(...)`
 
 For package boundaries, read [architecture.md](architecture.md). For profile/model JSON data, read [catalog.md](catalog.md).
+For ToPrint media, encodings and passive status handling, see [ToPrint integration](toprint.md).
 
 ## Mental Model
 
