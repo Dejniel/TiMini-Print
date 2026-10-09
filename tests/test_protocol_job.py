@@ -1347,7 +1347,7 @@ class ProtocolJobTests(unittest.TestCase):
                 self.commands.make_packet(0xA2, bytes([0x03, 0x01]), ProtocolFamily.V5C)
             )
         )
-        self.assertIn(self.commands.make_packet(0xA3, bytes([0x01]), ProtocolFamily.V5C), data)
+        self.assertIn(bytes.fromhex("5688a30001000101ff"), data)
         self.assertIn(self.commands.make_packet(0xA4, bytes([0x55]), ProtocolFamily.V5C), data)
         self.assertNotIn(bytes([0x1D, 0x76, 0x30, 0x00]), data)
         self.assertIn(self.commands.make_packet(0xA6, bytes([0x30, 0x00]), ProtocolFamily.V5C), data)

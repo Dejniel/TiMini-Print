@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import asynccontextmanager
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -12,15 +13,19 @@ from ...protocol.families.v5g import (
     V5G_CONNECT_QUERY_PACKET,
     V5G_TEMPERATURE_QUERY_PACKET,
     decode_density_payload,
+    decode_error_status,
     encode_density_payload,
 )
 from ...protocol.packet import (
+    PrefixedPacketStreamDecoder,
     make_packet,
     prefixed_packet_opcode,
     prefixed_packet_payload,
     split_prefixed_packets,
 )
 from ...protocol.steps import ProtocolStepOperation
+from ...protocol.status import PrinterStatusCode
+from ..errors import PrinterNotReadyError
 from .base import PreparedPrinter, RuntimeSessionApi, RuntimeController
 from .v5g_density import (
     DensityLevels,
@@ -52,6 +57,7 @@ class _V5GSessionState:
     last_print_record_density: Optional[int] = None
     last_print_mode_is_text: bool = False
     pending_reset_task: asyncio.Task | None = None
+    fatal_error: PrinterNotReadyError | None = None
 
 
 class V5GRuntimeController(RuntimeController):
@@ -66,6 +72,7 @@ class V5GRuntimeController(RuntimeController):
             profile_runtime_preset_key=None if preset is None else preset.key,
         )
         self._runtime_settings = runtime_settings
+        self._decoder = PrefixedPacketStreamDecoder(ProtocolFamily.V5G)
 
     def debug_snapshot(self) -> dict[str, object]:
         density_levels = None
@@ -142,6 +149,25 @@ class V5GRuntimeController(RuntimeController):
         self._state.pending_reset_task.cancel()
         self._state.pending_reset_task = None
 
+    @asynccontextmanager
+    async def job_scope(self, session, job, *, timeout: float):
+        self._raise_printer_error()
+        self._state.printing = True
+        try:
+            yield
+            self._raise_printer_error()
+            self._state.last_complete_time = time.time()
+        finally:
+            self._state.printing = False
+
+    async def before_write(self, session, *, size: int, timeout: float) -> None:
+        if self._state.printing:
+            self._raise_printer_error()
+
+    def _raise_printer_error(self) -> None:
+        if self._state.fatal_error is not None:
+            raise self._state.fatal_error
+
     async def send_protocol_steps(self, session, steps, *, timeout: float) -> bool:
         _ = timeout
         if not session.can_send_standard_payload():
@@ -149,23 +175,24 @@ class V5GRuntimeController(RuntimeController):
         if any(step.operation is not ProtocolStepOperation.SEND for step in steps):
             return False
         data = b"".join(step.data for step in steps)
-        self._state.printing = True
-        try:
-            data = self._prepare_v5g_standard_payload(session, data)
-            await session.send_standard_payload(data)
-        finally:
-            self._state.printing = False
-            self._state.last_complete_time = time.time()
+        data = self._prepare_v5g_standard_payload(session, data)
+        await session.send_standard_payload(data)
+        self._raise_printer_error()
         return True
 
     def handle_notification(self, session, payload: bytes) -> None:
-        opcode = prefixed_packet_opcode(payload, ProtocolFamily.V5G)
-        if opcode == 0xA3:
-            self._update_status(session, payload)
-        elif opcode == 0xD2:
-            self._update_d2_status(session, payload)
-        elif opcode == 0xD3:
-            self._update_temperature(session, payload)
+        for frame in self._decoder.feed(payload):
+            if frame.opcode == 0xA3:
+                self._update_status(session, frame.raw)
+            elif frame.opcode == 0xD2:
+                self._update_d2_status(session, frame.raw)
+            elif frame.opcode == 0xD3:
+                self._update_temperature(session, frame.raw)
+            elif frame.opcode == 0xAE:
+                if frame.payload == b"\x10":
+                    session.set_flow_paused(True, payload=frame.raw)
+                elif frame.payload == b"\x00":
+                    session.set_flow_paused(False, payload=frame.raw)
 
     def _select_levels(self, *, is_text: bool) -> DensityLevels | None:
         preset = None if self._runtime_settings is None else self._runtime_settings.preset
@@ -406,11 +433,23 @@ class V5GRuntimeController(RuntimeController):
         if not raw:
             return
         status = raw[0]
+        reason = decode_error_status(status)
+        if reason is not None:
+            if self._state.fatal_error is None or self._state.fatal_error.reasons != (reason,):
+                short = {
+                    PrinterStatusCode.PAPER_OUT: "V5G printer is out of paper",
+                    PrinterStatusCode.OVERHEATED: "V5G printer is overheated",
+                    PrinterStatusCode.LOW_BATTERY: "V5G printer reported low voltage",
+                }[reason]
+                self._state.fatal_error = PrinterNotReadyError(f"{short}: status=0x{status:02x}", reason)
+                session.report_warning(short=short, detail=f"status=0x{status:02x}")
+        elif status == 0x00 and not self._state.printing:
+            self._state.fatal_error = None
         if status == 0x00:
             self._state.didian_status = False
-        elif status == 0x08:
+        elif reason is PrinterStatusCode.LOW_BATTERY:
             self._state.didian_status = True
-        elif status == 0x04:
+        elif reason is PrinterStatusCode.OVERHEATED:
             self._state.d2_status = True
         session.report_debug(
             f"V5G status status=0x{status:02x} didian={self._state.didian_status} d2={self._state.d2_status}"

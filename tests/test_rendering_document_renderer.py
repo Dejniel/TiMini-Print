@@ -488,9 +488,9 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         rendered = renderer.print_page(plan, plan.pages[0], device, settings)
 
-        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY4,)])
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY8,)])
         self.assertEqual(rendered.image_pipeline.encoding, ImageEncoding.V5C_A5)
-        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY4)
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY8)
         self.assertTrue(rendered.gamma_handle)
         self.assertEqual(rendered.gamma_value, 1.2)
 
@@ -511,8 +511,8 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         rendered = renderer.print_page(plan, plan.pages[0], device, settings)
 
-        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY4,)])
-        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY4)
+        self.assertEqual(image_renderer.raster_formats, [(PixelFormat.GRAY8,)])
+        self.assertEqual(rendered.image_pipeline.default_format, PixelFormat.GRAY8)
         self.assertFalse(rendered.gamma_handle)
         self.assertIsNone(rendered.gamma_value)
 

@@ -29,7 +29,7 @@ def test_default_prefers_grayscale_without_changing_protocol_defaults(catalog, p
             image_pipeline=get_protocol_definition(ProtocolFamily.V5C).behavior.default_image_pipeline)
     settings = PrintSettings()
     assert settings.available_image_modes(device)[0] is ImageMode.GRAYSCALE
-    assert settings.resolve_image_pipeline(device).default_format is PixelFormat.GRAY4
+    assert settings.resolve_image_pipeline(device).default_format is (PixelFormat.GRAY8 if profile == "v5c" else PixelFormat.GRAY4)
     assert PrinterProtocol(device).resolve_image_pipeline().default_format is PixelFormat.BW1
     assert settings.image_mode is None
 

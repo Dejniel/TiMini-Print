@@ -57,6 +57,12 @@ Missing/malformed replies and timeouts are never `PrinterNotReadyError`;
 each family keeps its existing required/optional-reply policy. No new status
 queries or retry policy are implied.
 
+V5G maps `A3` status `01`/`09` to `PAPER_OUT`, `04` to `OVERHEATED`, and `08`
+to `LOW_BATTERY` (low voltage). These conditions stop the current job. A normal
+`A3` received outside the failed job clears the condition; it does not resume
+or repeat that job. `D2` and temperature reports remain inputs to density
+control, not independent blocking errors.
+
 ## Optional BLE Device Information
 
 BLE transports read the standard GATT Device Information service (`180A`) once

@@ -3875,14 +3875,14 @@
     "print_defaults": {
       "energy": {
         "image": {
-          "low": 20000,
-          "middle": 20000,
-          "high": 20000
+          "low": 10000,
+          "middle": 10000,
+          "high": 15000
         },
         "text": {
-          "low": 0,
-          "middle": 0,
-          "high": 0
+          "low": 15000,
+          "middle": 15000,
+          "high": 20000
         }
       }
     },
@@ -3920,14 +3920,14 @@
     "print_defaults": {
       "energy": {
         "image": {
-          "low": 20000,
-          "middle": 20000,
-          "high": 20000
+          "low": 10000,
+          "middle": 10000,
+          "high": 15000
         },
         "text": {
-          "low": 0,
-          "middle": 0,
-          "high": 0
+          "low": 15000,
+          "middle": 15000,
+          "high": 20000
         }
       }
     },
@@ -5776,7 +5776,9 @@
     },
     "default_image_pipeline": {
       "formats": [
-        "bw1"
+        "bw1",
+        "gray8",
+        "gray4"
       ],
       "encoding": "v5c_a4"
     },

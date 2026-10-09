@@ -256,6 +256,12 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
     async def test_v5c_runtime_executes_status_steps(self) -> None:
         connection = _Connection()
         controller = V5CRuntimeController()
+
+        async def send_and_complete(data):
+            connection.standard_payloads.append(data)
+            controller.handle_notification(connection, bytes.fromhex("5688a10001000000ff"))
+
+        connection.send_standard_payload = send_and_complete
         job = ProtocolJob(
             steps=(
                 ProtocolStep.send("print data", b"PRINT"),
@@ -271,7 +277,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
             [b"PRINT" + V5C_QUERY_STATUS_PACKET],
         )
         self.assertEqual(connection.sent_jobs, [])
-        self.assertTrue(controller.debug_snapshot()["query_status_in_flight"])
+        self.assertTrue(controller.debug_snapshot()["print_complete_seen"])
 
     async def test_v5c_steps_fall_back_to_stream_only_connection(self) -> None:
         connection = _SendOnlyConnection()
@@ -287,7 +293,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
         self.assertEqual(connection.sent_jobs, [job])
-        self.assertFalse(controller.debug_snapshot()["query_status_in_flight"])
+        self.assertFalse(controller.debug_snapshot()["print_complete_seen"])
 
     async def test_v5g_runtime_combines_page_steps_before_standard_send(self) -> None:
         connection = _Connection()

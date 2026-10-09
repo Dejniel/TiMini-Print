@@ -49,7 +49,7 @@ class _Session:
 
 
 class V5CRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
-    async def test_sends_plan_as_continuous_stream_and_arms_status_query(self) -> None:
+    async def test_sends_plan_as_continuous_stream_and_accepts_idle_status(self) -> None:
         controller = V5CRuntimeController()
         session = _Session()
         steps = (
@@ -61,17 +61,15 @@ class V5CRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(sent)
         self.assertEqual(session.payloads, [b"PRINT" + V5C_QUERY_STATUS_PACKET])
-        self.assertTrue(controller.debug_snapshot()["query_status_in_flight"])
 
         controller.debug_update(status_code=0x80, status_name="printing")
         controller.handle_notification(
             session,
             make_packet(0xA1, bytes([0x00]), ProtocolFamily.V5C),
         )
-        self.assertFalse(controller.debug_snapshot()["query_status_in_flight"])
-        self.assertFalse(controller.debug_snapshot()["print_complete_seen"])
+        self.assertTrue(controller.debug_snapshot()["print_complete_seen"])
 
-    async def test_query_send_failure_clears_armed_state(self) -> None:
+    async def test_send_failure_is_not_completion(self) -> None:
         controller = V5CRuntimeController()
         session = _Session(fail_on=b"PRINT" + V5C_QUERY_STATUS_PACKET)
         steps = (
@@ -82,7 +80,7 @@ class V5CRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(RuntimeError, "send failed"):
             await controller.send_protocol_steps(session, steps, timeout=0.2)
 
-        self.assertFalse(controller.debug_snapshot()["query_status_in_flight"])
+        self.assertFalse(controller.debug_snapshot()["print_complete_seen"])
 
     async def test_declines_steps_without_standard_send(self) -> None:
         controller = V5CRuntimeController()

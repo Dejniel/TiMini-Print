@@ -11,6 +11,7 @@ from .._prefixed_commands import (
 from ..encoding import pack_line
 from ..packet import make_packet
 from ..plan import ProtocolPlan
+from ..status import PrinterStatusCode
 from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
@@ -34,6 +35,18 @@ _GRAY_BAND_ROWS = 20
 # transport out of the old 20-byte fallback path without changing payloads.
 V5G_CONNECT_QUERY_PACKET = bytes.fromhex("5178A30001000000FF")
 V5G_TEMPERATURE_QUERY_PACKET = bytes.fromhex("5178D30001000000FF")
+
+_ERROR_STATUS_REASONS = {
+    0x01: PrinterStatusCode.PAPER_OUT,
+    0x09: PrinterStatusCode.PAPER_OUT,
+    0x04: PrinterStatusCode.OVERHEATED,
+    0x08: PrinterStatusCode.LOW_BATTERY,
+}
+
+
+def decode_error_status(status: int) -> PrinterStatusCode | None:
+    """Return the blocking condition of a V5G A3 status byte, if known."""
+    return _ERROR_STATUS_REASONS.get(status)
 
 
 def encode_density_payload(density: int) -> bytes:

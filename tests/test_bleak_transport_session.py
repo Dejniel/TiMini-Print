@@ -31,6 +31,7 @@ from timiniprint.printing.runtime.v5g_density import DensityLevels
 from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.printing.runtime.v5x_density import adjust_density_payload, start_delay_ms
 from timiniprint.protocol.family import ProtocolFamily
+from timiniprint.protocol import ProtocolJob
 from timiniprint.protocol.families.v5g import (
     V5G_CONNECT_QUERY_PACKET,
     V5G_TEMPERATURE_QUERY_PACKET,
@@ -235,11 +236,10 @@ async def _send_v5g_runtime_payload(
         mtu_size=180,
         timeout=0.2,
     )
-    sent = await runtime_controller.send_protocol_steps(
-        _StandardRuntimeSession(session, client),
-        (ProtocolStep.send("print data", data),),
-        timeout=0.2,
-    )
+    runtime_session = _StandardRuntimeSession(session, client)
+    job = ProtocolJob(payload=data, steps=(ProtocolStep.send("print data", data),))
+    async with runtime_controller.job_scope(runtime_session, job, timeout=0.2):
+        sent = await runtime_controller.send_protocol_steps(runtime_session, job.steps, timeout=0.2)
     if not sent:
         raise AssertionError("V5G runtime did not handle standard payload steps")
 
@@ -826,6 +826,34 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertFalse(_v5g_state(session).didian_status)
         self.assertTrue(_v5g_state(session).d2_status)
         self.assertEqual(_v5g_state(session).temperature_c, 60)
+
+    def test_v5g_fault_prevents_next_physical_write(self) -> None:
+        for status, reason in ((0x04, PrinterStatusCode.OVERHEATED), (0x08, PrinterStatusCode.LOW_BATTERY)):
+            with self.subTest(status=status):
+                session, client = self._make_session(ProtocolFamily.V5G)
+                char = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+                session.bindings.write_char = char
+                session.bindings.write_response_preference = False
+                controller = V5GRuntimeController()
+                native_write = client.write_gatt_char
+
+                async def write(char, chunk, response=True):
+                    await native_write(char, chunk, response=response)
+                    if bytes(chunk).startswith(b"X"):
+                        session.handle_notification(make_packet(0xA3, bytes([status]), ProtocolFamily.V5G))
+
+                client.write_gatt_char = write
+
+                async def run():
+                    with self.assertRaises(PrinterNotReadyError) as error:
+                        await _send_v5g_runtime_payload(session, client, controller, b"X" * 500)
+                    self.assertEqual(error.exception.reasons, (reason,))
+
+                asyncio.run(run())
+                chunks = [data for _char, data, _response in client.calls if data.startswith(b"X")]
+                self.assertEqual(len(chunks), 1)
+                self.assertLess(len(chunks[0]), 500)
+                self.assertFalse(controller.debug_snapshot()["printing"])
 
     def test_v5g_probe_queries_temperature_before_job_build(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5G)
@@ -1715,7 +1743,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session, _ = self._make_session(ProtocolFamily.V5C)
 
         session.handle_notification(make_packet(0xA1, bytes([0x80]), ProtocolFamily.V5C))
-        session.handle_notification(make_packet(0xAA, (800).to_bytes(2, "little"), ProtocolFamily.V5C))
+        session.handle_notification(make_packet(0xAA, b"\x00\x00" + (800).to_bytes(2, "little"), ProtocolFamily.V5C))
         session.handle_notification(
             make_packet(0xA9, bytes.fromhex("1122334455667788"), ProtocolFamily.V5C)
         )

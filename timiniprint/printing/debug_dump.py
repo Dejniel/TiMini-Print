@@ -29,6 +29,10 @@ def build_protocol_packet_summary(device: PrinterDevice, payload: bytes) -> dict
 
 def build_protocol_packet_entries(device: PrinterDevice, payload: bytes) -> list[dict[str, object]]:
     """Return packet-level diagnostic entries for verbose/debug tools."""
+    if (device.protocol_family is ProtocolFamily.V5G
+            and payload.startswith(b"\x51\x78\xa2\xff\xd8")
+            and payload.endswith(b"\xff\xd9\x51\x78\xa1")):
+        return [_raw_entry(payload, index=0, offset=0)]
     prefix = device.protocol_family.packet_prefix
     if prefix is None:
         return [_raw_entry(payload, index=0, offset=0)]

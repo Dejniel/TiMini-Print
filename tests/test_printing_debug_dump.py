@@ -93,6 +93,13 @@ class ProtocolPacketDiagnosticsTests(unittest.TestCase):
         self.assertEqual(summary["op_counts"], {"A9": 1, "raw": 1})
         self.assertEqual(summary["parse_errors"], ["not a complete prefixed packet"])
 
+    def test_v5g_jpeg_is_an_opaque_file_not_a_truncated_row_frame(self) -> None:
+        device = PrinterCatalog.load().device_from_profile("v5g_small_203")
+        payload = b"\x51\x78\xa2\xff\xd8" + make_packet(0xA3, b"\x00", "v5g") + b"\xff\xd9\x51\x78\xa1"
+        self.assertEqual(build_protocol_packet_summary(device, payload)["op_counts"], {"raw": 1})
+        self.assertEqual(build_protocol_packet_summary(device, payload)["parse_errors"], [])
+        self.assertTrue(build_protocol_packet_summary(device, payload[:-1])["parse_errors"])
+
     def test_unprefixed_protocols_still_report_one_raw_payload(self) -> None:
         device = PrinterCatalog.load().device_from_profile("eleph_tspl_p1")
         payload = b"CLS\r\nPRINT 1,1\r\n"
