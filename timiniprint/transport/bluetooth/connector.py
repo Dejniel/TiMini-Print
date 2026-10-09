@@ -13,6 +13,7 @@ from ...devices.bluetooth_profiles import BleTransportProfile
 from ...protocol import ProtocolJob
 from .backend import SppBackend
 from .types import DeviceInfo, DeviceTransport
+from .device_information import BleDeviceInformation
 
 
 class BleakBluetoothConnection:
@@ -35,6 +36,13 @@ class BleakBluetoothConnection:
     @property
     def reporter(self) -> reporting.Reporter:
         return self._reporter
+
+    async def read_device_information(self) -> BleDeviceInformation | None:
+        """Return the snapshot read at BLE connect, or None for Classic/SPP.
+
+        Reusing the snapshot avoids racing GATT reads with a running print job.
+        """
+        return self._backend.device_information
 
     @property
     def active_ble_profile(self) -> BleTransportProfile | None:

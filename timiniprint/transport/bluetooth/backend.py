@@ -10,6 +10,7 @@ from .adapters import _get_ble_adapter, _get_classic_adapter
 from .classic_receive import ClassicReceiveHub
 from .constants import IS_MACOS, IS_WINDOWS, RFCOMM_CHANNELS
 from .types import DeviceInfo, DeviceTransport, ScanFailure, SocketLike
+from .device_information import BleDeviceInformation
 from ... import reporting
 
 _MACOS_FALLBACK_COOLDOWN_SEC = 0.35
@@ -157,6 +158,13 @@ class SppBackend:
     def transport(self) -> DeviceTransport | None:
         """Transport which actually connected, including the outcome of fallback."""
         return self._transport
+
+    @property
+    def device_information(self) -> BleDeviceInformation | None:
+        """Latest metadata from the actual BLE socket; never from Classic/SPP."""
+        if self._transport is DeviceTransport.BLE:
+            return getattr(self._sock, "device_information", None)
+        return None
 
     async def _run_blocking(self, operation, *args):
         """Do not abandon live socket I/O when its asyncio caller is cancelled.

@@ -57,6 +57,28 @@ Missing/malformed replies and timeouts are never `PrinterNotReadyError`;
 each family keeps its existing required/optional-reply policy. No new status
 queries or retry policy are implied.
 
+## Optional BLE Device Information
+
+BLE transports read the standard GATT Device Information service (`180A`) once
+after connecting, before printer-family preparation, and log an endpoint-tagged
+snapshot. Missing services/fields are normal; failed reads are diagnostic only.
+This does not replace model detection or protocol negotiation: values may
+describe the Bluetooth module rather than the printer. Serial numbers are not
+collected. Classic/SPP does not read this service or open an extra BLE link.
+
+`timiniprint.transport.bluetooth.read_device_information(client, address)` reads
+an already connected Bleak-compatible client. UUIDs and UTF-8 decoding live in
+core; native mobile bridges only supply characteristic values. The result is a
+`BleDeviceInformation` with `values`, `errors`, `service_present`, `address`, and
+`read_at`; `as_dict()` is suitable for diagnostic reports. Reads use one bounded
+deadline, never writes or printer commands, and propagate cancellation.
+
+`probe_ble_device_information(address)` connects, reads, and disconnects without
+a printer profile, writable characteristic, or notification subscription. The
+caller must not invoke it alongside an active connection to the same device.
+`BleakBluetoothConnection.read_device_information()` returns the connect-time
+snapshot (or `None` for Classic); it does not race new reads with a print job.
+
 ## Print A File Over Bluetooth
 
 ```python

@@ -14,6 +14,7 @@ from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSe
 from .bleak_adapter_transport import _BleakTransportSession
 from ..constants import IS_MACOS
 from ..types import DeviceInfo, DeviceTransport, SocketLike
+from ..device_information import BleDeviceInformation, read_device_information
 from .... import reporting
 from ....devices.bluetooth_profiles import (
     DEFAULT_BLE_TRANSPORT_PROFILE,
@@ -55,6 +56,7 @@ class _BleakSocket:
         self._ble_mtu_request = ble_mtu_request
         self._reporter = reporter
         self._device_cache = device_cache if device_cache is not None else {}
+        self.device_information: BleDeviceInformation | None = None
         self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
         self._transport = _BleakTransportSession(
             transport_profile=self._ble_profile,
@@ -136,6 +138,8 @@ class _BleakSocket:
         if self._pairing_hint:
             await self._pair_if_supported()
 
+        self.device_information = await read_device_information(self._client, address)
+        self.device_information.log(self._reporter)
         selection = await self._find_write_characteristic()
         if not selection:
             await self._client.disconnect()
