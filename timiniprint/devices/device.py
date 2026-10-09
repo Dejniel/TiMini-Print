@@ -27,6 +27,8 @@ class BluetoothEndpoint:
     address: str
     paired: Optional[bool] = None
     transport: BluetoothEndpointTransport = BluetoothEndpointTransport.CLASSIC
+    # Raw AD type 0xFF values, including the two-byte company identifier.
+    manufacturer_data: Tuple[bytes, ...] = ()
 
 
 @dataclass(frozen=True)

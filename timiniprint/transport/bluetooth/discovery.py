@@ -242,12 +242,12 @@ class BluetoothDiscovery:
         classic_seen = sum(1 for item in endpoint_list if item.transport == DeviceTransport.CLASSIC)
         ble_seen = sum(1 for item in endpoint_list if item.transport == DeviceTransport.BLE)
         merged = sum(1 for item in resolved_list if item.transport_badge == "[classic+ble]")
-        attached_ble_addresses = {
-            item.transport_target.ble_endpoint.address
+        resolved_by_endpoint = {
+            (endpoint.transport.value, endpoint.address.lower()): item
             for item in resolved_list
             if isinstance(item.transport_target, BluetoothTarget)
-            and item.transport_target.classic_endpoint is not None
-            and item.transport_target.ble_endpoint is not None
+            for endpoint in (item.transport_target.classic_endpoint, item.transport_target.ble_endpoint)
+            if endpoint is not None
         }
         self._reporter.debug(
             short="Discovery",
@@ -261,21 +261,28 @@ class BluetoothDiscovery:
             ),
         )
         for endpoint in endpoint_list:
-            detected = self._catalog.detect_device(endpoint.name or "", endpoint.address)
+            detected = resolved_by_endpoint.get((endpoint.transport.value, endpoint.address.lower()))
+            if (detected is not None and endpoint.transport == DeviceTransport.BLE
+                    and not (endpoint.name or "").strip()
+                    and detected.transport_target.classic_endpoint is not None):
+                self._reporter.debug(
+                    short="Discovery",
+                    detail=reporting.format_kv(
+                        "Discovery attached",
+                        name=endpoint.name or "<unknown>",
+                        address=endpoint.address or "<unknown>",
+                        transport=endpoint.transport.value,
+                        reason="single_ble_endpoint_for_ble_first_profile",
+                        profile=detected.profile_key,
+                        family=detected.protocol_family.value,
+                        model=detected.model_key,
+                    ),
+                )
+                continue
             if detected is None:
-                if endpoint.address in attached_ble_addresses:
-                    self._reporter.debug(
-                        short="Discovery",
-                        detail=reporting.format_kv(
-                            "Discovery attached",
-                            name=endpoint.name or "<unknown>",
-                            address=endpoint.address or "<unknown>",
-                            transport=endpoint.transport.value,
-                            reason="single_ble_endpoint_for_ble_first_profile",
-                        ),
-                    )
-                    continue
-                matches = self._catalog.detect_model(endpoint.name or "", endpoint.address)
+                matches = self._catalog.detect_model(
+                    endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
+                )
                 supported = [
                     match
                     for match in matches
@@ -292,6 +299,9 @@ class BluetoothDiscovery:
                 elif unsupported:
                     reason = "known_unsupported_model"
                     candidates = ",".join(match.model.model_key for match in unsupported)
+                elif supported:
+                    reason = "unresolved_endpoint"
+                    candidates = supported[0].model.model_key
                 else:
                     reason = "no_supported_model"
                     candidates = ""
@@ -333,6 +343,7 @@ class BluetoothDiscovery:
             address=endpoint.address,
             paired=endpoint.paired,
             transport=cls._to_transport(endpoint),
+            manufacturer_data=endpoint.manufacturer_data,
         )
 
     @classmethod

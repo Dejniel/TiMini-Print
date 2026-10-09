@@ -369,6 +369,9 @@ class ModelDetection:
     mac_prefixes: Tuple[str, ...] = ()
     mac_suffixes: Tuple[str, ...] = ()
     excluded_mac_suffixes: Tuple[str, ...] = ()
+    manufacturer_data_suffixes: Tuple[str, ...] = ()
+    manufacturer_data_lengths: Tuple[int, ...] = ()
+    name_pattern: Optional[str] = None
     marketing_names: Tuple[str, ...] = ()
     all_of: bool = False
 
@@ -388,7 +391,20 @@ class ModelDetection:
             raise ValueError("Model detection triggers must not be blank")
         if any(not value for value in marketing_names):
             raise ValueError("Model detection marketing_names must not contain blanks")
-        if not prefixes and not exact_names and not substrings and not suffixes:
+        if self.name_pattern is not None:
+            try:
+                re.compile(self.name_pattern)
+            except re.error as exc:
+                raise ValueError(f"Invalid detection name_pattern: {exc}") from exc
+        if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0
+               for value in self.manufacturer_data_lengths):
+            raise ValueError("Manufacturer data lengths must be positive byte counts")
+        if self.manufacturer_data_lengths and not self.manufacturer_data_suffixes:
+            raise ValueError("Manufacturer data lengths require a suffix constraint")
+        for value in self.manufacturer_data_suffixes:
+            if not value or len(value) % 2 or re.fullmatch(r"[0-9a-fA-F]+", value) is None:
+                raise ValueError("Manufacturer data suffixes must contain complete hex bytes")
+        if not prefixes and not exact_names and not substrings and not suffixes and not self.name_pattern:
             raise ValueError(
                 "Model detection requires at least one name trigger"
             )
@@ -406,6 +422,8 @@ class ModelDetection:
         object.__setattr__(self, "suffixes", suffixes)
         object.__setattr__(self, "excluded_prefixes", excluded_prefixes)
         object.__setattr__(self, "marketing_names", marketing_names)
+        object.__setattr__(self, "manufacturer_data_suffixes", tuple(self.manufacturer_data_suffixes))
+        object.__setattr__(self, "manufacturer_data_lengths", tuple(self.manufacturer_data_lengths))
         object.__setattr__(
             self,
             "mac_prefixes",
@@ -467,12 +485,14 @@ class ModelDetection:
         *,
         case_sensitive: bool = True,
         whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
+        manufacturer_data: Tuple[bytes, ...] = (),
     ) -> bool:
         return self.matched_specificity(
             device_name,
             address,
             case_sensitive=case_sensitive,
             whitespace_mode=whitespace_mode,
+            manufacturer_data=manufacturer_data,
         ) is not None
 
     def matched_specificity(
@@ -482,10 +502,21 @@ class ModelDetection:
         *,
         case_sensitive: bool = True,
         whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE,
+        manufacturer_data: Tuple[bytes, ...] = (),
     ) -> Tuple[int, int, int, int, int] | None:
         has_mac_constraint = bool(
             self.mac_prefixes or self.mac_suffixes or self.excluded_mac_suffixes
         )
+        advertisement_rank = (
+            int(bool(self.manufacturer_data_suffixes)) + int(bool(self.manufacturer_data_lengths))
+        )
+        if self.manufacturer_data_suffixes and not any(
+            (not self.manufacturer_data_lengths or len(data) in self.manufacturer_data_lengths)
+            and any(data.hex().upper().endswith(suffix.upper())
+                    for suffix in self.manufacturer_data_suffixes)
+            for data in manufacturer_data
+        ):
+            return None
         if has_mac_constraint:
             if not address or not DetectionNormalizer.is_mac_like_address(address):
                 return None
@@ -508,6 +539,10 @@ class ModelDetection:
             device_name,
             whitespace_mode,
         )
+        if self.name_pattern is not None:
+            flags = 0 if case_sensitive else re.IGNORECASE
+            if re.fullmatch(self.name_pattern, normalized_name, flags) is None:
+                return None
         normalized_exact_names = tuple(
             DetectionNormalizer.normalize_name(value, whitespace_mode)
             for value in self.exact_names
@@ -550,6 +585,11 @@ class ModelDetection:
 
         if any(target_name.startswith(prefix) for prefix in excluded_prefixes):
             return None
+        if self.name_pattern is not None and not any(
+            (self.exact_names, self.prefixes, self.substrings, self.suffixes)
+        ):
+            return (len(normalized_name), int(has_mac_constraint) + advertisement_rank,
+                    2, len(normalized_name), 0)
 
         matched_exact_names: list[Tuple[int, int, int, int, int]] = []
         for trigger, candidate in exact_names:
@@ -607,16 +647,19 @@ class ModelDetection:
             ]
             return (
                 sum(value[0] for value in best_by_group),
-                int(has_mac_constraint),
+                int(has_mac_constraint) + advertisement_rank,
                 sum(value[2] for value in best_by_group),
                 sum(value[3] for value in best_by_group),
                 sum(value[4] for value in best_by_group),
             )
 
-        return max(
+        specificity = max(
             (*matched_exact_names, *matched_prefixes, *matched_substrings, *matched_suffixes),
             default=None,
         )
+        if specificity is not None and self.manufacturer_data_suffixes:
+            specificity = (specificity[0], specificity[1] + advertisement_rank, *specificity[2:])
+        return specificity
 
     @staticmethod
     def _trigger_specificity(

@@ -153,7 +153,7 @@ class CatalogAuditTests(unittest.TestCase):
             )
         self.assertEqual(report["errors"], [])
 
-    def test_catalog_audit_detects_mergeable_model_body(self) -> None:
+    def test_mergeable_models_preserve_name_to_source_associations(self) -> None:
         profiles = [_profile_payload("base")]
         models = [
             {
@@ -178,6 +178,11 @@ class CatalogAuditTests(unittest.TestCase):
             profile_path.write_text(json.dumps(profiles), encoding="utf-8")
             model_path.write_text(json.dumps(models), encoding="utf-8")
 
+            report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
+
+            self.assertFalse(any(error["kind"] == "mergeable_model_body" for error in report["errors"]))
+            models[1]["origin_ids"] = models[0]["origin_ids"]
+            model_path.write_text(json.dumps(models), encoding="utf-8")
             report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
 
         errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_body"]

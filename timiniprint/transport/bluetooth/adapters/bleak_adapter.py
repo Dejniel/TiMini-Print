@@ -424,10 +424,10 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
             raise _missing_bleak_error() from exc
 
         async def scan() -> List[DeviceInfo]:
-            devices = await BleakScanner.discover(timeout=timeout)
+            devices = await BleakScanner.discover(timeout=timeout, return_adv=True)
             results = []
-            for device in devices:
-                name = device.name or ""
+            for device, advertisement in devices.values():
+                name = advertisement.local_name or device.name or ""
                 self._device_cache[device.address.upper()] = device
                 results.append(
                     DeviceInfo(
@@ -435,6 +435,10 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
                         address=device.address,
                         paired=None,
                         transport=DeviceTransport.BLE,
+                        manufacturer_data=tuple(
+                            company.to_bytes(2, "little") + bytes(value)
+                            for company, value in advertisement.manufacturer_data.items()
+                        ),
                     )
                 )
             return results

@@ -128,6 +128,12 @@ Detection supports:
 - `excluded_mac_suffixes`: optional address suffixes which reject the rule
 - `excluded_prefixes`: optional advertised-name prefixes which reject the rule;
   they use the model's whitespace and case policy and are not public names
+- `manufacturer_data_suffixes`: required alternative hexadecimal suffixes of
+  BLE manufacturer AD data, including the two-byte company identifier
+- `manufacturer_data_lengths`: optional allowed lengths of that AD data in
+  bytes; requires `manufacturer_data_suffixes`
+- `name_pattern`: optional full-name regular expression, applied after the
+  model's whitespace normalization and using its case policy
 - `all_of`: require every populated name-trigger group in this detection
 
 By default, `exact_names`, `prefixes`, `substrings`, and `suffixes` are alternative trigger
@@ -136,6 +142,16 @@ inside each array remain alternatives. MAC constraints are additional in both
 modes: a configured prefix and suffix must both match, while any excluded
 suffix rejects the rule. Rules with MAC constraints require a real Bluetooth
 MAC address and do not match UUID-style platform identifiers.
+
+Manufacturer constraints require actual advertisement data; a MAC suffix is
+not a substitute. Supply it as `BluetoothEndpoint.manufacturer_data` (a tuple
+of byte strings), or pass `manufacturer_data=...` to catalog detection.
+Bleak discovery preserves it automatically. Mobile adapters must forward the
+same raw data; if absent, manufacturer-constrained rules do not match.
+
+`name_pattern` is an additional condition when literal triggers are present;
+by itself it is a name trigger and needs an explicit `marketing_names` alias.
+Patterns and manufacturer bytes are not public model names.
 
 Each model may set `whitespace_mode` to control how its detections compare the
 advertised name. `remove` is the default and removes all whitespace, `trim`

@@ -227,10 +227,10 @@ class DevicesModelsTests(unittest.TestCase):
         )
         self.assertEqual(self.catalog.detect_model("S 001"), ())
 
-    def test_v5x_aliases_share_one_detection_object(self) -> None:
+    def test_v5x_literal_aliases_and_advertisement_rules_are_separate(self) -> None:
         model = self.catalog.require_model("v5x")
 
-        self.assertEqual(len(model.detections), 1)
+        self.assertEqual(len(model.detections), 2)
         self.assertEqual(
             model.detections[0].exact_names,
             (
@@ -238,17 +238,13 @@ class DevicesModelsTests(unittest.TestCase):
                 "X1",
                 "X2",
                 "MXW01",
-                "MXW01-1",
                 "C17",
                 "MXW-W5",
-                "AC695X_PRINT",
                 "JK01",
                 "PORTABLEPRINTER",
                 "INSTANTPRINTPLUS",
                 "REKA",
                 "HDMDT-00",
-                "KERUI",
-                "BH03",
             ),
         )
 
@@ -1035,14 +1031,14 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNone(self.catalog.detect_device("GT08"))
         self.assertIsNone(self.catalog.detect_device("GW08"))
 
-    def test_old_small_bucket_uses_v5g_and_mac59_switches_family_only(self) -> None:
+    def test_small_bucket_broadcast_59_selects_complete_v5x_profile(self) -> None:
         normal = self.catalog.detect_device("MX05", "AA:BB:CC:DD:EE:58")
-        mac59 = self.catalog.detect_device("MX05", "AA:BB:CC:DD:EE:59")
+        mac59 = self.catalog.detect_device("MX05", "AA:BB:CC:DD:EE:59", manufacturer_data=(bytes(4) + b"\x59",))
 
         self.assertIsNotNone(normal)
         self.assertIsNotNone(mac59)
         self.assertEqual(normal.profile_key, "v5g_small_203")
-        self.assertEqual(mac59.profile_key, "v5g_small_203")
+        self.assertEqual(mac59.profile_key, "v5x")
         self.assertEqual(normal.protocol_family, ProtocolFamily.V5G)
         self.assertEqual(mac59.protocol_family, ProtocolFamily.V5X)
         self.assert_runtime_settings(
@@ -1059,6 +1055,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_funprint_ibleem_prefixes_are_source_backed_exceptions(self) -> None:
         source_prefixes = {
+            "AC695X_PRINT",
             "FYT2",
             "P4",
             "BAYPAGE",
@@ -1302,12 +1299,12 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_old_small_bucket_shared_names_resolve_to_shared_profile(self) -> None:
         normal = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:58")
-        mac59 = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:59")
+        mac59 = self.catalog.detect_device("XOPOPPY", "AA:BB:CC:DD:EE:59", manufacturer_data=(bytes(4) + b"\x59",))
 
         self.assertIsNotNone(normal)
         self.assertIsNotNone(mac59)
         self.assertEqual(normal.profile_key, "v5g_small_203")
-        self.assertEqual(mac59.profile_key, "v5g_small_203")
+        self.assertEqual(mac59.profile_key, "v5x")
         self.assertEqual(normal.protocol_family, ProtocolFamily.V5G)
         self.assertEqual(mac59.protocol_family, ProtocolFamily.V5X)
 
@@ -1405,14 +1402,14 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(rebuilt.runtime_settings.preset_key, "mx10_mx06")
 
     def test_printer_config_model_key_is_fallback_for_protocol_override(self) -> None:
-        resolved = self.catalog.device_from_key("yt01_mac59")
+        resolved = self.catalog.device_from_key("v5x")
         printer_config = self.catalog.serialize_printer_config(resolved)
-        self.assertEqual(printer_config["model_key"], "yt01_mac59")
+        self.assertEqual(printer_config["model_key"], "v5x")
         del printer_config["profile_overrides"]["protocol_default"]
 
         rebuilt = self.catalog.device_from_printer_config(printer_config)
 
-        self.assertEqual(rebuilt.model_key, "yt01_mac59")
+        self.assertEqual(rebuilt.model_key, "v5x")
         self.assertEqual(rebuilt.protocol_family, resolved.protocol_family)
         self.assertEqual(rebuilt.protocol_family, ProtocolFamily.V5X)
 
@@ -1475,7 +1472,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_exact_name_rules_cover_x6_without_shadowing_x6h(self) -> None:
         x6 = self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:58")
-        x6_mac59 = self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:59")
+        x6_mac59 = self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:59", manufacturer_data=(bytes(4) + b"\x59",))
         x6h = self.catalog.detect_device("X6H-1234", "AA:BB:CC:DD:EE:59")
 
         self.assertIsNotNone(x6)
@@ -1483,7 +1480,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertIsNotNone(x6h)
         self.assertEqual(x6.profile_key, "v5g_small_203")
         self.assertEqual(x6.protocol_family, ProtocolFamily.V5G)
-        self.assertEqual(x6_mac59.profile_key, "v5g_small_203")
+        self.assertEqual(x6_mac59.profile_key, "v5x")
         self.assertEqual(x6_mac59.protocol_family, ProtocolFamily.V5X)
         self.assertEqual(x6h.profile_key, "x6h")
         self.assertEqual(x6h.protocol_family, ProtocolFamily.TINY)
@@ -1680,16 +1677,17 @@ class DevicesModelsTests(unittest.TestCase):
     def test_specific_proxy_and_bucket_rules_are_not_shadowed(self) -> None:
         expected = {
             ("BQ95B", "AA:BB:CC:DD:EE:00"): ("v5g_small_203", ProtocolFamily.V5G),
-            ("BQ95B", "AA:BB:CC:DD:EE:59"): ("v5g_small_203", ProtocolFamily.V5X),
+            ("BQ95B", "AA:BB:CC:DD:EE:59"): ("v5x", ProtocolFamily.V5X),
             ("BQ95C", "AA:BB:CC:DD:EE:00"): ("v5g_small_203", ProtocolFamily.V5G),
-            ("BQ95C", "AA:BB:CC:DD:EE:59"): ("v5g_small_203", ProtocolFamily.V5X),
+            ("BQ95C", "AA:BB:CC:DD:EE:59"): ("v5x", ProtocolFamily.V5X),
             ("BQ06B", "AA:BB:CC:DD:EE:00"): ("v5g_small_203", ProtocolFamily.V5G),
-            ("BQ06B", "AA:BB:CC:DD:EE:59"): ("v5g_small_203", ProtocolFamily.V5X),
+            ("BQ06B", "AA:BB:CC:DD:EE:59"): ("v5x", ProtocolFamily.V5X),
         }
 
         for (name, address), (profile_key, family) in expected.items():
             with self.subTest(name=name, address=address):
-                resolved = self.catalog.detect_device(name, address)
+                resolved = self.catalog.detect_device(name, address,
+                    manufacturer_data=(bytes(4) + b"\x59",) if family is ProtocolFamily.V5X else ())
                 self.assertIsNotNone(resolved)
                 self.assertEqual(resolved.profile_key, profile_key)
                 self.assertEqual(resolved.protocol_family, family)

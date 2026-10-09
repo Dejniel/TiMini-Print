@@ -87,18 +87,20 @@ def _sample_addresses(model: dict[str, Any]) -> list[str | None]:
     return [None, "AA:BB:CC:DD:EE:00"]
 
 
+def _sample_manufacturer_data(model: dict[str, Any]) -> list[tuple[bytes, ...]]:
+    samples: list[tuple[bytes, ...]] = [()]
+    for detection in model.get("detections", []):
+        for suffix in detection.get("manufacturer_data_suffixes", []):
+            tail = bytes.fromhex(suffix)
+            for length in detection.get("manufacturer_data_lengths") or [len(tail)]:
+                if length >= len(tail):
+                    samples.append((bytes(length - len(tail)) + tail,))
+    return samples
+
+
 def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
     repeated: list[dict[str, Any]] = []
-    first_index_by_group: dict[
-        tuple[
-            tuple[str, ...],
-            tuple[str, ...],
-            tuple[str, ...],
-            tuple[str, ...],
-            tuple[str, ...],
-        ],
-        int,
-    ] = {}
+    first_index_by_group: dict[tuple[object, ...], int] = {}
     for index, detection in enumerate(model.get("detections", [])):
         # Unioning conjunctions (or mixing them with OR rules) changes which
         # combinations of name triggers match.
@@ -131,6 +133,9 @@ def _mergeable_detection_objects(model: dict[str, Any]) -> list[dict[str, Any]]:
                 str(value).strip().casefold()
                 for value in detection.get("marketing_names", [])
             ),
+            tuple(sorted(value.upper() for value in detection.get("manufacturer_data_suffixes", []))),
+            tuple(sorted(detection.get("manufacturer_data_lengths", []))),
+            detection.get("name_pattern"),
         )
         first_index = first_index_by_group.setdefault(group, index)
         if first_index != index:
@@ -152,9 +157,10 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
     model_origins = set(model.get("origin_ids", []))
+    probes = [(address, data) for address in addresses for data in _sample_manufacturer_data(model)]
     for sample in samples:
-        for address in addresses:
-            matches = catalog.detect_model(sample, address=address)
+        for address, data in probes:
+            matches = catalog.detect_model(sample, address=address, manufacturer_data=data)
             if len(matches) > 1:
                 if model["model_key"] in {candidate.model.model_key for candidate in matches}:
                     ambiguity_group = model.get("detection_ambiguity_group")
@@ -223,9 +229,10 @@ def _find_unsupported_model_reachability_error(
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
+    probes = [(address, data) for address in addresses for data in _sample_manufacturer_data(model)]
     for sample in samples:
-        for address in addresses:
-            matches = catalog.detect_model(sample, address=address)
+        for address, data in probes:
+            matches = catalog.detect_model(sample, address=address, manufacturer_data=data)
             if len(matches) > 1:
                 if model["model_key"] in {candidate.model.model_key for candidate in matches}:
                     ambiguity_group = model.get("detection_ambiguity_group")
@@ -280,12 +287,12 @@ def _find_unsupported_model_reachability_error(
     }
 
 def _model_merge_key(model: dict[str, Any]) -> str:
-    """Technical model body; names and detection triggers live under detections."""
+    """Merge only recipes with the same source attribution for their names."""
     return json.dumps(
         {
-            key: value
+            key: sorted(value) if key == "origin_ids" else value
             for key, value in model.items()
-            if key not in {"model_key", "marketing_names", "detections", "origin_ids"}
+            if key not in {"model_key", "marketing_names", "detections"}
         },
         sort_keys=True,
     )

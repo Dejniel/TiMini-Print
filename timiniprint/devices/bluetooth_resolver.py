@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Dict, Iterable, List, Optional, Tuple
 
 from .catalog import PrinterCatalog
@@ -40,7 +40,7 @@ class BluetoothEndpointResolver:
 
     def devices_from_endpoints(self, endpoints: Iterable[BluetoothEndpoint]) -> List[PrinterDevice]:
         """Resolve raw scan endpoints into logical printer devices."""
-        endpoint_list = list(endpoints)
+        endpoint_list = self._share_advertisement_data(endpoints)
         candidates = self._build_endpoint_candidates(endpoint_list)
         grouped = self._group_candidates(candidates)
 
@@ -115,7 +115,7 @@ class BluetoothEndpointResolver:
     ) -> List[ResolvedBluetoothTarget]:
         """Resolve raw scan endpoints into logical Bluetooth transport targets."""
         grouped: Dict[str, Dict[BluetoothEndpointTransport, List[BluetoothEndpoint]]] = {}
-        for endpoint in endpoints:
+        for endpoint in self._share_advertisement_data(endpoints):
             normalized_name = self._raw_endpoint_group_name(endpoint)
             key = normalized_name or endpoint.address.lower()
             bucket = grouped.setdefault(
@@ -211,7 +211,9 @@ class BluetoothEndpointResolver:
     ) -> List[_ResolvedEndpoint]:
         candidates: List[_ResolvedEndpoint] = []
         for endpoint in endpoints:
-            device = self._catalog.detect_device(endpoint.name or "", endpoint.address)
+            device = self._catalog.detect_device(
+                endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
+            )
             if device is None:
                 continue
             model = self._catalog.require_model(device.model_key)
@@ -227,9 +229,31 @@ class BluetoothEndpointResolver:
             )
         return candidates
 
+    @staticmethod
+    def _share_advertisement_data(endpoints: Iterable[BluetoothEndpoint]) -> List[BluetoothEndpoint]:
+        endpoints = list(endpoints)
+        advertised = {
+            DetectionNormalizer.normalize_mac_candidate(endpoint.address): endpoint.manufacturer_data
+            for endpoint in endpoints
+            if endpoint.transport is BluetoothEndpointTransport.BLE
+            and DetectionNormalizer.is_mac_like_address(endpoint.address)
+            and endpoint.manufacturer_data
+        }
+        # Advertisement evidence describes the physical device, including its
+        # Classic endpoint at the same MAC. Never share it merely by name.
+        return [
+            replace(endpoint, manufacturer_data=advertised.get(
+                DetectionNormalizer.normalize_mac_candidate(endpoint.address), (),
+            )) if not endpoint.manufacturer_data and
+            DetectionNormalizer.normalize_mac_candidate(endpoint.address) in advertised else endpoint
+            for endpoint in endpoints
+        ]
+
     def _raw_endpoint_group_name(self, endpoint: BluetoothEndpoint) -> str:
         name = endpoint.name or ""
-        matches = self._catalog.detect_model(name, endpoint.address)
+        matches = self._catalog.detect_model(
+            name, endpoint.address, manufacturer_data=endpoint.manufacturer_data,
+        )
         matched_modes = {match.model.whitespace_mode for match in matches}
         whitespace_mode = (
             matched_modes.pop()
@@ -320,7 +344,8 @@ class BluetoothEndpointResolver:
             for endpoint in endpoints
             if endpoint.transport == BluetoothEndpointTransport.BLE
             and not (endpoint.name or "").strip()
-            and self._catalog.detect_device(endpoint.name or "", endpoint.address) is None
+            and self._catalog.detect_device(endpoint.name or "", endpoint.address,
+                                            manufacturer_data=endpoint.manufacturer_data) is None
         ]
         if len(anonymous_ble) != 1:
             return resolved

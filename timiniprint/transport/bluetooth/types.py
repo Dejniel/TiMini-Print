@@ -22,6 +22,7 @@ class DeviceInfo:
     transport: DeviceTransport = DeviceTransport.CLASSIC
     ble_profile: BleTransportProfile | None = None
     ble_mtu_request: Optional[int] = None
+    manufacturer_data: Tuple[bytes, ...] = ()
 
     def __post_init__(self) -> None:
         if self.ble_mtu_request is not None and self.ble_mtu_request < 23:
@@ -49,6 +50,7 @@ class DeviceInfo:
             transport=self.transport,
             ble_profile=ble_profile,
             ble_mtu_request=ble_mtu_request,
+            manufacturer_data=self.manufacturer_data or other.manufacturer_data,
         )
 
     @staticmethod

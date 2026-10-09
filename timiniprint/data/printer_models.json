@@ -1,169 +1,32 @@
 [
   {
-    "model_key": "yt01_mac59",
-    "profile_key": "v5g_small_203",
-    "protocol_override": {
-      "type": "v5x"
-    },
+    "model_key": "funprint_v5x",
+    "profile_key": "v5x",
     "detections": [
+      {
+        "exact_names": [
+          "MXW01-1",
+          "KERUI",
+          "BH03"
+        ]
+      },
       {
         "exact_names": [
           "YT01",
           "YT02",
-          "MX01",
-          "MX05",
-          "MX06",
-          "MX08",
-          "MX09",
-          "MX10",
-          "MX11",
-          "MX12",
-          "MX13",
-          "MXTP-100",
-          "MXPC-100",
-          "AZ-P2108X",
-          "PD01",
-          "URBANWORXKIDSCAMERA",
-          "CYLOBTPRINTER",
-          "XOPOPPY",
-          "BQ01",
-          "EWTTOET-Z0499",
-          "BQ05",
-          "BQ95B",
-          "BQ95C",
-          "BQ95",
-          "BQ06B",
-          "BQ06",
-          "BQ07",
-          "BQ7A",
-          "BQ7B",
-          "BQ08",
-          "BQ96",
-          "MXW009",
-          "MXW010",
-          "EWTTOET-N3689",
-          "EWTTOET-N3687",
-          "KP-IM606",
-          "GV-MA211",
-          "X6",
-          "K06"
-        ],
-        "mac_suffixes": [
-          "59"
-        ]
-      }
-    ],
-    "origin_ids": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ]
-  },
-  {
-    "model_key": "mx02_mac59",
-    "profile_key": "mx02",
-    "protocol_override": {
-      "type": "v5x"
-    },
-    "detections": [
-      {
-        "exact_names": [
-          "MX02"
-        ],
-        "mac_suffixes": [
-          "59"
-        ]
-      }
-    ],
-    "origin_ids": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ]
-  },
-  {
-    "model_key": "mx03_mac59",
-    "profile_key": "mx03",
-    "protocol_override": {
-      "type": "v5x"
-    },
-    "detections": [
-      {
-        "exact_names": [
-          "MX03"
-        ],
-        "mac_suffixes": [
-          "59"
-        ]
-      }
-    ],
-    "origin_ids": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ]
-  },
-  {
-    "model_key": "mx07_mac59",
-    "profile_key": "mx07",
-    "protocol_override": {
-      "type": "v5x"
-    },
-    "detections": [
-      {
-        "exact_names": [
-          "MX07"
-        ],
-        "mac_suffixes": [
-          "59"
-        ]
-      }
-    ],
-    "origin_ids": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ]
-  },
-  {
-    "model_key": "miniprinter_mac59",
-    "profile_key": "gt02_v5g",
-    "protocol_override": {
-      "type": "v5x"
-    },
-    "detections": [
-      {
-        "exact_names": [
-          "MINIPRINTER",
-          "JL-BR22"
-        ],
-        "mac_suffixes": [
-          "59"
-        ]
-      }
-    ],
-    "origin_ids": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
-    ]
-  },
-  {
-    "model_key": "bq02_mac59",
-    "profile_key": "bq02",
-    "protocol_override": {
-      "type": "v5x"
-    },
-    "detections": [
-      {
-        "exact_names": [
-          "BQ02",
-          "BQ03",
           "BQ17"
         ],
-        "mac_suffixes": [
+        "manufacturer_data_suffixes": [
           "59"
+        ],
+        "manufacturer_data_lengths": [
+          5,
+          7
         ]
       }
     ],
     "origin_ids": [
-      "com.fun.mxw",
-      "com.bleem.liugm"
+      "com.fun.mxw"
     ]
   },
   {
@@ -1507,17 +1370,71 @@
           "X1",
           "X2",
           "MXW01",
-          "MXW01-1",
           "C17",
           "MXW-W5",
-          "AC695X_PRINT",
           "JK01",
           "PORTABLEPRINTER",
           "INSTANTPRINTPLUS",
           "REKA",
-          "HDMDT-00",
-          "KERUI",
-          "BH03"
+          "HDMDT-00"
+        ],
+        "prefixes": [
+          "AC695X_PRINT"
+        ]
+      },
+      {
+        "exact_names": [
+          "MX01",
+          "MX05",
+          "MX06",
+          "MX08",
+          "MX09",
+          "MX10",
+          "MX11",
+          "MX12",
+          "MX13",
+          "MXTP-100",
+          "MXPC-100",
+          "AZ-P2108X",
+          "PD01",
+          "URBANWORXKIDSCAMERA",
+          "CYLOBTPRINTER",
+          "XOPOPPY",
+          "BQ01",
+          "EWTTOET-Z0499",
+          "BQ05",
+          "BQ95B",
+          "BQ95C",
+          "BQ95",
+          "BQ06B",
+          "BQ06",
+          "BQ07",
+          "BQ7A",
+          "BQ7B",
+          "BQ08",
+          "BQ96",
+          "MXW009",
+          "MXW010",
+          "EWTTOET-N3689",
+          "EWTTOET-N3687",
+          "KP-IM606",
+          "GV-MA211",
+          "X6",
+          "K06",
+          "MX02",
+          "MX03",
+          "MX07",
+          "MINIPRINTER",
+          "JL-BR22",
+          "BQ02",
+          "BQ03"
+        ],
+        "manufacturer_data_suffixes": [
+          "59"
+        ],
+        "manufacturer_data_lengths": [
+          5,
+          7
         ]
       }
     ],

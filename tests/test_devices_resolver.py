@@ -170,8 +170,9 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         )
         self.assertEqual(manual.transport_badge, auto.transport_badge)
 
-    def test_printer_config_roundtrip_preserves_mac59_family_switch(self) -> None:
-        auto = self.catalog.detect_device("MX10", "AA:BB:CC:DD:EE:59")
+    def test_printer_config_roundtrip_preserves_broadcast59_family_switch(self) -> None:
+        auto = self.catalog.detect_device("MX10", "AA:BB:CC:DD:EE:59",
+                                          manufacturer_data=(bytes(4) + b"\x59",))
         self.assertIsNotNone(auto)
 
         manual = self.catalog.device_from_printer_config(

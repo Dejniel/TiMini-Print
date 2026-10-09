@@ -17,6 +17,7 @@ from .printer_config import (
     serialize_printer_config,
 )
 from .device import (
+    BluetoothTarget,
     PrinterDevice,
     TransportTarget,
 )
@@ -152,12 +153,14 @@ class PrinterCatalog:
         address: Optional[str],
         *,
         case_sensitive: bool,
+        manufacturer_data: tuple[bytes, ...] = (),
     ) -> tuple[int, int, int, int, int] | None:
         return detection.matched_specificity(
             device_name,
             address,
             case_sensitive=case_sensitive,
             whitespace_mode=model.whitespace_mode,
+            manufacturer_data=manufacturer_data,
         )
 
     @classmethod
@@ -479,6 +482,8 @@ class PrinterCatalog:
         device_name: str,
         address: Optional[str] = None,
         transport_target: TransportTarget | None = None,
+        *,
+        manufacturer_data: tuple[bytes, ...] = (),
     ) -> Optional[PrinterDevice]:
         """Detect a printable ``PrinterDevice`` from a known name and address.
 
@@ -489,7 +494,10 @@ class PrinterCatalog:
         ambiguous result returns ``None`` so callers can ask the user to choose the
         source/model explicitly.
         """
-        matches = self.detect_model(device_name, address)
+        if not manufacturer_data and isinstance(transport_target, BluetoothTarget):
+            endpoint = transport_target.ble_endpoint
+            manufacturer_data = endpoint.manufacturer_data if endpoint else ()
+        matches = self.detect_model(device_name, address, manufacturer_data=manufacturer_data)
         if len(matches) != 1 or not isinstance(matches[0], SupportedModelMatch):
             return None
         return self.device_from_match(
@@ -622,6 +630,8 @@ class PrinterCatalog:
         self,
         device_name: str,
         address: Optional[str] = None,
+        *,
+        manufacturer_data: tuple[bytes, ...] = (),
     ) -> tuple[ModelMatch, ...]:
         for case_sensitive in (True, False):
             supported_matches, supported_specificity = self._best_detection_matches(
@@ -629,12 +639,14 @@ class PrinterCatalog:
                 device_name,
                 address,
                 case_sensitive=case_sensitive,
+                manufacturer_data=manufacturer_data,
             )
             unsupported_matches, unsupported_specificity = self._best_detection_matches(
                 self._unsupported_detection_entries,
                 device_name,
                 address,
                 case_sensitive=case_sensitive,
+                manufacturer_data=manufacturer_data,
             )
             if supported_matches and unsupported_specificity is not None:
                 assert supported_specificity is not None
@@ -679,19 +691,23 @@ class PrinterCatalog:
         *,
         display_name: Optional[str] = None,
         transport_target: TransportTarget | None = None,
+        manufacturer_data: tuple[bytes, ...] = (),
     ) -> tuple[PrinterDevice, ...]:
         """Return printable device candidates for a known detected name.
 
         This keeps supported candidate construction in one place. It may return
         multiple devices when the same advertised name is ambiguous across sources.
         """
+        if not manufacturer_data and isinstance(transport_target, BluetoothTarget):
+            endpoint = transport_target.ble_endpoint
+            manufacturer_data = endpoint.manufacturer_data if endpoint else ()
         return tuple(
             self.device_from_match(
                 match,
                 display_name=(display_name or device_name).strip() or device_name,
                 transport_target=transport_target,
             )
-            for match in self.detect_model(device_name, address)
+            for match in self.detect_model(device_name, address, manufacturer_data=manufacturer_data)
             if isinstance(match, SupportedModelMatch)
         )
 
@@ -704,6 +720,7 @@ class PrinterCatalog:
         address: Optional[str],
         *,
         case_sensitive: bool,
+        manufacturer_data: tuple[bytes, ...] = (),
     ) -> tuple[
         tuple[
             tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection],
@@ -726,6 +743,7 @@ class PrinterCatalog:
                 device_name,
                 address,
                 case_sensitive=case_sensitive,
+                manufacturer_data=manufacturer_data,
             )
             if specificity is None:
                 continue
