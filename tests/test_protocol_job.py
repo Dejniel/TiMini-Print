@@ -201,7 +201,7 @@ class ProtocolJobTests(unittest.TestCase):
         )
 
         self.assertIn(bytes([0x51, 0x78, 0xA2, 0x00, 0x02, 0x00]), data)
-        self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x90, 0x00, 0x11]), data)
+        self.assertIn(bytes([0x51, 0x78, 0xA1, 0x00, 0x03, 0x00, 0x60, 0x00, 0x11]), data)
         self.assertNotIn(bytes([0xA1, 0x00, 0x02, 0x00, 0x30, 0x00]), data)
 
     def test_line_variants_preserve_unaligned_left_padding_and_periodic_speed(self) -> None:
@@ -319,6 +319,38 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertTrue(data.startswith(stop_print))
         self.assertEqual(data.count(speed_10), 1)
 
+    def test_wide_feed_is_signed_and_independent_of_raw_bit_order(self) -> None:
+        from timiniprint.protocol.packet import PrefixedPacketStreamDecoder
+
+        for variant in ("line_eight", "professional"):
+            for mode, height, expected in (
+                (self.types.PaperMode.PLAIN, 1, (0xA1, b"\x60\0\x11")),
+                (self.types.PaperMode.A4_SHEET, 21, (0xA0, b"\x01\0\x11")),
+            ):
+                with self.subTest(variant=variant, mode=mode):
+                    data = self.builders._build_job(
+                        pixels=[0] * (8 * height), width=8, is_text=False,
+                        speed=10, energy=5000, density=None, blackening=3,
+                        lsb_first=False, protocol_family=ProtocolFamily.TINY,
+                        protocol_variant=variant, feed_padding=12, dev_dpi=203,
+                        post_print_feed_count=2, a4_sheet_max_height=20,
+                        image_pipeline=self.tiny_raw, paper_mode=mode,
+                    )
+                    packets = PrefixedPacketStreamDecoder(ProtocolFamily.TINY).feed(data)
+                    feeds = [(p.opcode, p.payload) for p in packets if p.opcode in (0xA0, 0xA1)]
+                    self.assertEqual(feeds, [expected])
+
+    def test_esc_full_sheet_uses_one_length_without_truncating_large_feeds(self) -> None:
+        data = self.builders._build_job(
+            pixels=[0] * (8 * 24), width=8, is_text=False,
+            speed=10, energy=8, density=None, blackening=3,
+            lsb_first=True, protocol_family=ProtocolFamily.TINY_PREFIXED,
+            protocol_variant="esc_star_eight", feed_padding=12, dev_dpi=203,
+            one_length=300, a4_sheet_max_height=24, image_pipeline=self.tiny_raw,
+            paper_mode=self.types.PaperMode.A4_SHEET,
+        )
+        self.assertIn(b"\x1b\x64\xff\x1b\x64\x2d\x12\x51\x78\xa3", data)
+
     def test_esc_star_variant_uses_esc_star_flow(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
@@ -339,11 +371,11 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertTrue(data.startswith(bytes([0x1B, 0x40, 0x12, 0x23, 0x08])))
         self.assertIn(bytes([0x12, 0x51, 0x78, 0xBE, 0x00, 0x01, 0x00, 0x00]), data)
         self.assertIn(bytes([0x1B, 0x2A, 0x21, 0x08, 0x00]), data)
-        self.assertIn(bytes([0x1B, 0x4A, 0x00, 0x0A]), data)
+        self.assertIn(bytes([0x1B, 0x33, 0x00, 0x0A]), data)
         self.assertTrue(data.endswith(bytes([0x00, 0xFF])))
         self.assertIn(bytes([0x1B, 0x64, 0x03, 0x12, 0x51, 0x78, 0xA3]), data)
 
-    def test_esc_star_eight_variant_uses_profile_one_length(self) -> None:
+    def test_esc_star_eight_roll_uses_regular_band_footer(self) -> None:
         data = self.builders._build_job(
             pixels=[1, 0, 1, 0, 1, 0, 1, 0],
             width=8,
@@ -361,7 +393,7 @@ class ProtocolJobTests(unittest.TestCase):
             image_pipeline=self.tiny_raw,
         )
 
-        self.assertIn(bytes([0x1B, 0x64, 0x08, 0x12, 0x51, 0x78, 0xA3]), data)
+        self.assertIn(bytes([0x1B, 0x64, 0x03, 0x12, 0x51, 0x78, 0xA3]), data)
 
     def test_esc_star_eight_a4_sheet_uses_max_height_bands(self) -> None:
         data = self.builders._build_job(

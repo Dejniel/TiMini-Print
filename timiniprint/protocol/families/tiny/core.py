@@ -62,11 +62,11 @@ def _line_eight_tail_feed(request: PrintJobRequest) -> int:
         max_height = request.a4_sheet_max_height
         if max_height is None or max_height <= 0:
             max_height = 3800 if request.dev_dpi == 300 else 2400
-        return max(0, max_height - request.require_raster(PixelFormat.BW1).height)
-    if request.a4xii or not request.lsb_first:
+        return max_height - request.require_raster(PixelFormat.BW1).height
+    if request.a4xii:
         return 100
     dots_per_paper = 72 if request.dev_dpi == 300 else 48
-    return max(0, request.post_print_feed_count + 1) * dots_per_paper
+    return max(0, request.post_print_feed_count) * dots_per_paper
 
 
 def _build_line_eight_job(request: PrintJobRequest) -> bytes:
@@ -133,7 +133,7 @@ def _esc_star_energy_byte(energy: int) -> int:
 def _esc_star_24dot_payload(request: PrintJobRequest) -> bytes:
     return build_esc_star_raster(
         request.require_raster(PixelFormat.BW1),
-        band_trailer=b"\x1b\x4a\x00\x0a",
+        band_trailer=b"\x1b\x33\x00\x0a",
     )
 
 
@@ -144,12 +144,7 @@ def _build_esc_star_job(request: PrintJobRequest, *, eight: bool) -> bytes:
         if max_height is None or max_height <= 0:
             max_height = 3800 if request.dev_dpi == 300 else 2400
         height = request.require_raster(PixelFormat.BW1).height
-        final_feed = max(0, max_height - height) // 24
-    elif eight:
-        if request.one_length > 0:
-            final_feed = request.one_length
-        elif request.feed_padding > 0:
-            final_feed = request.feed_padding
+        final_feed = (max_height - height) // 24 if height < max_height else request.one_length
 
     if final_feed is None:
         final_feed = 4 if request.dev_dpi == 300 else 3
@@ -160,7 +155,10 @@ def _build_esc_star_job(request: PrintJobRequest, *, eight: bool) -> bytes:
     payload += print_mode_cmd(request.is_text, request.protocol_family)
     payload += _esc_star_24dot_payload(request)
     if request.ends_media_page:
-        payload += b"\x1B\x64" + bytes([final_feed & 0xFF])
+        while final_feed > 0:
+            amount = min(final_feed, 255)
+            payload += b"\x1B\x64" + bytes([amount])
+            final_feed -= amount
     payload += dev_state_cmd(request.protocol_family)
     return bytes(payload)
 
