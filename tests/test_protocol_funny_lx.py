@@ -53,7 +53,7 @@ class _FunnyLxSession:
         self.packets.append(bytes(packet))
         self.packet_timeouts.append(timeout)
         reply = self.replies.pop(0)
-        if not match(reply):
+        if not match(reply) and required:
             raise AssertionError(f"reply did not match: {reply.hex()}")
         return reply
 
@@ -175,12 +175,14 @@ class FunnyLxProtocolTests(unittest.TestCase):
                 is_text=False,
             )
 
-    def test_manual_paper_motion_uses_observed_feed_and_no_retract(self) -> None:
+    def test_manual_paper_motion_is_not_bound_to_tb_print_prestep(self) -> None:
         device = PrinterCatalog.load().device_from_model("funny_lx_d")
         protocol = PrinterProtocol(device)
 
-        self.assertEqual(protocol.build_paper_motion("feed").payload, bytes.fromhex("5a 03 81 00 04 00 00 00 00 00 00 00"))
-        self.assertEqual(protocol.build_paper_motion("retract").payload, b"")
+        for action in ("feed", "retract"):
+            self.assertFalse(protocol.supports_paper_motion(action))
+            with self.assertRaises(NotImplementedError):
+                protocol.build_paper_motion(action)
 
 
 class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):

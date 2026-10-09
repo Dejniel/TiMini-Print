@@ -4,14 +4,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ....raster import PixelFormat, RasterBuffer
+from ....raster import PixelFormat
 from ...steps import ProtocolReplyExpectation, ProtocolReplyMatcher, ProtocolStep
 from ..base import PrintJobRequest
 from ..bitmap import pack_bw1_rows
 
 _PRINTHEAD_WIDTH_PX = 384
 _PACKET_DATA_BYTES = 96
-_PACKET_HALF_BYTES = 48
 _DEFAULT_DARKNESS_LEVEL = 4
 _IMAGE_ACCEPT_TIMEOUT_SEC = 10.0
 _PRINT_FOOTER_TIMEOUT_SEC = 10.0
@@ -23,6 +22,22 @@ _SUPPORTED_VARIANTS = frozenset({_DIRECT_VARIANT})
 class FunnyLxCrc:
     low: bytes
     high: bytes
+
+
+@dataclass(frozen=True)
+class FunnyLxStatus:
+    battery: int
+    paper_status: int
+    temperature_status: int
+    voltage_status: int
+    darkness_level: int
+
+
+def decode_status(payload: bytes) -> FunnyLxStatus | None:
+    if len(payload) < 8 or payload[:2] != b"\x5a\x02":
+        return None
+    # Keep raw status values: these fields do not define independent error masks.
+    return FunnyLxStatus(payload[2], payload[3], payload[5], payload[6], payload[7] + 1)
 
 
 def crc16_xmodem(data: bytes) -> int:
@@ -66,7 +81,10 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
     total_packets = (len(content) + _PACKET_DATA_BYTES - 1) // _PACKET_DATA_BYTES
     total = _u16be(total_packets)
     steps: list[ProtocolStep] = []
-    if request.is_first_page:
+    if request.is_first_page and (
+        request.runtime_capabilities is None
+        or request.runtime_capabilities.supports_blackening is not False
+    ):
         steps.append(
             ProtocolStep.send(
                 "darkness",
@@ -76,13 +94,14 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
     steps.append(ProtocolStep.send("print header", b"\x5A\x04" + total + b"\x00\x00"))
     steps.extend(
         ProtocolStep.send(f"image packet {index}", packet)
-        for index, packet in enumerate(_image_packets(content, variant=variant), start=1)
+        for index, packet in enumerate(_image_packets(content), start=1)
     )
     steps.append(
         ProtocolStep.wait(
             "image transfer ready",
             reply_matcher=_image_transfer_ready_matcher(),
             timeout_sec=_IMAGE_ACCEPT_TIMEOUT_SEC,
+            reply_required=True,
         )
     )
     steps.append(
@@ -92,6 +111,7 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
             expect=ProtocolReplyExpectation.NONE,
             timeout_sec=_PRINT_FOOTER_TIMEOUT_SEC,
             reply_matcher=_footer_matcher(total),
+            reply_required=True,
         )
     )
     # Packet retry (`5A 05 <packet-index>`) is handled by FunnyLxRuntimeController
@@ -99,7 +119,7 @@ def build_funny_lx_job(request: PrintJobRequest) -> tuple[ProtocolStep, ...]:
     return tuple(steps)
 
 
-def _image_packets(content: bytes, *, variant: str) -> tuple[bytes, ...]:
+def _image_packets(content: bytes) -> tuple[bytes, ...]:
     packets: list[bytes] = []
     for index, offset in enumerate(range(0, len(content), _PACKET_DATA_BYTES)):
         block = content[offset : offset + _PACKET_DATA_BYTES]

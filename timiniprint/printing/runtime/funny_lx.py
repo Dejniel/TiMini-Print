@@ -4,10 +4,11 @@ import asyncio
 import secrets
 from collections import deque
 from collections.abc import Awaitable, Callable
+from dataclasses import asdict
 
 from ...devices import PrinterDevice
 from ...devices.profiles import DetectionNormalizer
-from ...protocol.families.funny_lx.core import challenge_crc
+from ...protocol.families.funny_lx.core import FunnyLxStatus, challenge_crc, decode_status
 from ...protocol.steps import ProtocolStep, ProtocolStepOperation
 from ...protocol.runtime import RuntimePrintCapabilities
 from ..step_execution import (
@@ -42,6 +43,7 @@ class FunnyLxRuntimeController(RuntimeController):
         self._packet_delay_hint_sec = _DEFAULT_PACKET_DELAY_HINT_SEC
         self._supports_darkness = False
         self._darkness_code: int | None = None
+        self._status: FunnyLxStatus | None = None
 
     async def initialize_connection(
         self,
@@ -187,6 +189,9 @@ class FunnyLxRuntimeController(RuntimeController):
         if darkness_code is None:
             await _execute_step(session, step, timeout=timeout)
             return
+        if not self._supports_darkness:
+            session.report_debug("Funny LX darkness skipped: unsupported by this printer")
+            return
         if self._darkness_code == darkness_code:
             session.report_debug(f"Funny LX darkness already set: level={darkness_code + 1}")
             return
@@ -271,6 +276,11 @@ class FunnyLxRuntimeController(RuntimeController):
             return
 
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
+        status = decode_status(payload)
+        if status is not None:
+            self._status = status
+            session.report_debug(f"Funny LX status: {asdict(status)}")
+            return
         retry_index = _retry_index_from_notification(payload)
         if retry_index is None:
             delay_hint = _delay_hint_from_notification(payload)
@@ -296,6 +306,7 @@ class FunnyLxRuntimeController(RuntimeController):
             "packet_delay_hint_sec": self._packet_delay_hint_sec,
             "supports_darkness": self._supports_darkness,
             "darkness_code": self._darkness_code,
+            "status": asdict(self._status) if self._status is not None else None,
         }
 
 
