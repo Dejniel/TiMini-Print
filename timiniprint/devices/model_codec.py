@@ -21,9 +21,11 @@ def model_from_json(model_type: type[T], payload: object, *, path: str = "$") ->
 
 
 def model_to_json(value: object) -> Any:
-    """Serialize model objects into JSON-shaped data."""
+    """Serialize model objects into JSON-shaped data; encode bytes as hex strings."""
     if isinstance(value, Enum):
         return value.value
+    if isinstance(value, bytes):
+        return value.hex()
     if is_dataclass(value) and not isinstance(value, type):
         return {
             field.name: model_to_json(getattr(value, field.name))
@@ -88,6 +90,13 @@ def _convert_value(target_type: Any, value: object, *, path: str) -> Any:
 
     if target_type is Any:
         return value
+    if target_type is bytes:
+        if not isinstance(value, str):
+            raise ValueError(f"{path} must be a hexadecimal string")
+        try:
+            return bytes.fromhex(value)
+        except ValueError as exc:
+            raise ValueError(f"{path} must be a hexadecimal string") from exc
     if target_type is bool:
         if not isinstance(value, bool):
             raise ValueError(f"{path} must be a boolean")

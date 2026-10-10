@@ -543,6 +543,11 @@ manual_device = catalog.device_from_printer_config(loaded)
 
 Model-based configs keep `model_key` as the fallback, so deleting an override falls back to the catalog model. Raw profile-based configs are possible for diagnostics, but they do not carry model detection metadata.
 
+Bluetooth endpoint `manufacturer_data` is a JSON array of hexadecimal strings,
+including the two-byte company identifier in each raw advertising block.
+Loading the config restores `tuple[bytes, ...]`; a missing field defaults to an
+empty tuple. Other endpoint metadata is preserved unchanged.
+
 ## Debug A Protocol Job
 
 Use the tool version when you need to compare packet structure or image encoding without connecting to hardware.
