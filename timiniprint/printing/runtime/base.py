@@ -109,7 +109,23 @@ class RuntimeController:
     async def after_initialize(self, session: RuntimeSessionApi, *, timeout: float) -> None:
         return None
 
+    async def after_prepare(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+        """Activate the final prepared controller, after validation and attachment.
+
+        Runs in the application loop. Background work started here must be
+        stopped by ``stop()``, which an adapter may call from another loop.
+        """
+        return None
+
     async def stop(self, session: RuntimeSessionApi) -> None:
+        return None
+
+    async def before_disconnect(self, session: RuntimeSessionApi) -> None:
+        """Drain application-loop work before the adapter closes its I/O loop.
+
+        Paired with ``after_prepare()``. This does not replace adapter-owned
+        ``stop()``, which still releases the receiver in its owning loop.
+        """
         return None
 
     async def wait_for_completion(self, session: RuntimeSessionApi, *, timeout: float) -> None:

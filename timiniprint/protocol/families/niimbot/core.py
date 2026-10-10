@@ -29,6 +29,7 @@ class NiimbotRequest(IntEnum):
     PRINT_END = 0xF3
     PRINTER_INFO = 0x40
     PRINTER_STATUS_DATA = 0xA5
+    HEARTBEAT = 0xDC
     SET_DENSITY = 0x21
     SET_LABEL_TYPE = 0x23
 
@@ -36,6 +37,7 @@ class NiimbotRequest(IntEnum):
 class NiimbotResponse(IntEnum):
     NOT_SUPPORTED = 0x00
     CONNECT = 0xC2
+    CONNECTION_STATUS = 0xC4
     PRINT_START = 0x02
     PAGE_START = 0x04
     SET_PAGE_SIZE = 0x14
@@ -46,6 +48,8 @@ class NiimbotResponse(IntEnum):
     PRINT_STATUS = 0xB3
     PRINT_END = 0xF4
     PRINT_ERROR = 0xDB
+    HEARTBEAT = 0xDD
+    HEARTBEAT_V4 = 0xD9
     PRINTER_CHECK_LINE = 0xD3
     PRINTER_INFO_MODEL_ID = 0x48
     PRINTER_STATUS_DATA = 0xB5
@@ -459,6 +463,39 @@ def model_id_query_packet() -> bytes:
 
 def status_data_query_packet() -> bytes:
     return frame(NiimbotRequest.PRINTER_STATUS_DATA)
+
+
+def heartbeat_query(*, protocol_version: int | None, effective_model_id: int | None) -> ProtocolStep:
+    if protocol_version is not None and protocol_version >= 3:
+        packet, reply = frame(NiimbotRequest.HEARTBEAT, b"\x04"), NiimbotResponse.HEARTBEAT_V4
+    elif effective_model_id in (256, 257, 258, 260, 262):
+        # Free/busy is a liveness reply here, not initial connection success.
+        packet, reply = connect_packet(), (NiimbotResponse.CONNECT, NiimbotResponse.CONNECTION_STATUS)
+    else:
+        packet, reply = frame(NiimbotRequest.HEARTBEAT, b"\x01"), NiimbotResponse.HEARTBEAT
+    return ProtocolStep.query(
+        "NIIMBOT heartbeat", packet, expect=ProtocolReplyExpectation.NONE,
+        reply_matcher=response_matcher(reply), include_in_payload=False,
+    )
+
+
+def heartbeat_status_from_reply(raw: bytes | None, *, effective_model_id: int | None) -> dict[str, int]:
+    """Decode documented payload-relative status fields, keeping raw wire values.
+
+    Battery is a level, not necessarily a percentage. These fields are not
+    transport disconnects or latched print errors.
+    """
+    for packet in _safe_parse_packets(raw or b""):
+        if packet.command == NiimbotResponse.HEARTBEAT_V4 and len(packet.data) >= 9:
+            offsets = {"battery_level": 2, "temperature": 3, "cover": 4, "paper": 5,
+                       "paper_rfid": 6, "ribbon_rfid": 7, "ribbon_state": 8}
+        elif (packet.command == NiimbotResponse.HEARTBEAT and len(packet.data) == 13
+              and effective_model_id in (768, 769, 770, 771, 772, 774, 776, 775, 2816, 4096)):
+            offsets = {"cover": 9, "battery_level": 10, "paper": 11, "paper_rfid": 12}
+        else:
+            continue
+        return {name: packet.data[offset] for name, offset in offsets.items()}
+    return {}
 
 
 def connect_result_from_reply(raw: bytes | None) -> NiimbotConnectResult | None:

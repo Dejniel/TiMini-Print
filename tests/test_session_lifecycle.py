@@ -202,7 +202,7 @@ def test_cancelled_classic_query_waits_for_reply_or_timeout_before_cleanup(reply
     asyncio.run(run())
 
 
-@pytest.mark.parametrize('phase', ['initialize', 'after_initialize', 'prepare'])
+@pytest.mark.parametrize('phase', ['initialize', 'after_initialize', 'prepare', 'after_prepare'])
 @pytest.mark.parametrize('stop_fails', [False, True])
 def test_failed_setup_cleans_up_once_and_preserves_original_error(phase, stop_fails):
     class FailingSetup(RuntimeController):
@@ -218,6 +218,11 @@ def test_failed_setup_cleans_up_once_and_preserves_original_error(phase, stop_fa
                 raise ValueError('original setup error')
 
         async def prepare(self, device, session, *, timeout):
+            if phase == 'after_prepare':
+                return PreparedPrinter(device, self)
+            raise ValueError('original setup error')
+
+        async def after_prepare(self, session, *, timeout):
             raise ValueError('original setup error')
 
         async def stop(self, session):

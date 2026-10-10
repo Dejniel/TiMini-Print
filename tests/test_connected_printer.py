@@ -10,7 +10,7 @@ install_crc8_stub()
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.connected import connect_printer
-from timiniprint.printing.runtime.base import PreparedPrinter
+from timiniprint.printing.runtime.base import PreparedPrinter, RuntimeController
 from timiniprint.printing.settings import PrintSettings
 from timiniprint.protocol import ProtocolJob
 from timiniprint.protocol.runtime import RuntimePrintCapabilities
@@ -41,6 +41,18 @@ class _Connector:
 
 
 class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
+    async def test_background_cleanup_failure_does_not_skip_disconnect(self) -> None:
+        class FailingController(RuntimeController):
+            async def before_disconnect(self, session):
+                raise RuntimeError("background cleanup failed")
+
+        device = PrinterCatalog.load().device_from_profile("x6h")
+        connection = _Connection()
+        connected = await connect_printer(device, _Connector(connection), controller=FailingController())
+        with self.assertRaisesRegex(RuntimeError, "background cleanup failed"):
+            await connected.disconnect()
+        self.assertEqual(connection.disconnects, 1)
+
     async def test_connected_printer_sends_jobs_and_paper_motion(self) -> None:
         device = PrinterCatalog.load().device_from_profile("x6h")
         connection = _Connection()

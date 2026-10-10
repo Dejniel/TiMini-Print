@@ -25,9 +25,13 @@ class _Connection:
 class _ResolvingController(RuntimeController):
     def __init__(self, resolved_device) -> None:
         self._resolved_device = resolved_device
+        self.activated = False
 
     async def prepare(self, _device, session, *, timeout):
         return PreparedPrinter(self._resolved_device, self)
+
+    async def after_prepare(self, session, *, timeout):
+        self.activated = True
 
 
 class RuntimePreparationTests(unittest.TestCase):
@@ -95,14 +99,59 @@ class RuntimePreparationTests(unittest.TestCase):
         }
 
         for field_name, resolved in changed_devices.items():
+            controller = _ResolvingController(resolved)
             with self.subTest(field_name=field_name), patch(
                 "timiniprint.printing.runtime.prepare.runtime_controller_for_device",
-                return_value=_ResolvingController(resolved),
+                return_value=controller,
             ):
                 with self.assertRaises(RuntimeError):
                     asyncio.run(
                         prepare_connection_runtime(self.device, _Connection())
                     )
+            self.assertFalse(controller.activated)
+
+    def test_only_final_attached_controller_is_activated(self) -> None:
+        for selection in ("retained", "replacement", "stateless"):
+            with self.subTest(selection=selection):
+                events = []
+
+                class Connection:
+                    attached = None
+
+                    async def attach_runtime_controller(self, controller, *, timeout):
+                        self.attached = controller
+                        events.append(("attach", controller))
+
+                class Controller(RuntimeController):
+                    async def after_prepare(self, session, *, timeout):
+                        assert connection.attached is self
+                        events.append(("activate", self))
+
+                class Bootstrap(Controller):
+                    async def prepare(self, device, session, *, timeout):
+                        events.append(("prepare", self))
+                        return PreparedPrinter(device, selected)
+
+                bootstrap = Bootstrap()
+                selected = bootstrap if selection == "retained" else Controller() if selection == "replacement" else None
+                connection = Connection()
+                asyncio.run(prepare_connection_runtime(self.device, connection, controller=bootstrap))
+                self.assertEqual([controller for event, controller in events if event == "activate"],
+                                 [selected] if selected else [])
+                self.assertEqual(events[:2], [("attach", bootstrap), ("prepare", bootstrap)])
+                if selected is not bootstrap:
+                    self.assertEqual(events[2], ("attach", selected))
+
+    def test_activation_cleanup_failure_preserves_activation_error(self) -> None:
+        class FailingController(RuntimeController):
+            async def after_prepare(self, session, *, timeout):
+                raise ValueError("activation error")
+
+            async def before_disconnect(self, session):
+                raise RuntimeError("cleanup error")
+
+        with self.assertRaisesRegex(ValueError, "activation error"):
+            asyncio.run(prepare_connection_runtime(self.device, _Connection(), controller=FailingController()))
 
 
 if __name__ == "__main__":

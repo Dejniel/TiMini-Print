@@ -215,6 +215,14 @@ NIIMBOT D11 uses the runtime-selected `d11_auto` task. Connect first and use
 `niimbot_d11` profile keep the older task. `PrinterProtocol` alone cannot
 negotiate an unresolved task.
 
+Prepared NIIMBOT sessions start idle heartbeat after configuration, with up to
+500ms for the reply followed by two seconds between exchanges, while the
+application event loop is running. It is suspended for printing, including
+completion waits and continuation pages, and stopped on disconnect. Missing
+heartbeat replies are diagnostic warnings, not a reason to close the link.
+Runtime snapshots include `heartbeat_active`, `heartbeat_missed_replies` and
+`heartbeat_status` (raw DD/D9 status levels, not battery percentages).
+
 ## Known Model Or Serial Target
 
 Use this path when Bluetooth discovery is not involved and you already know the model/profile.

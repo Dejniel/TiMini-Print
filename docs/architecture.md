@@ -147,6 +147,13 @@ stream-fallback paths all use the same scope; transport does not own this state.
 
 `prepare_connection_runtime(...)` selects a runtime controller for the initial `PrinterDevice`, or uses an explicitly supplied bootstrap. Without a controller, the result still contains the final device. With a controller, its `prepare(...)` resolves identity, geometry, capabilities and session state in one operation.
 
+After validating and attaching the final controller, preparation calls its
+`after_prepare(...)` once in the application loop. Session background work
+starts here, not in a provisional bootstrap. `before_disconnect(...)` drains
+that work before transport closes its I/O loop; activation failure uses the
+same cleanup. Adapter-owned `stop(...)` still releases its receiver and must
+also stop background work on controller replacement, including across loops.
+
 Preparation may select another protocol family only with its ready runtime (or no controller for a stateless recipe). It must retain the transport target, SPP/BLE policy, stream settings and BLE MTU request. An active BLE connection must retain its applied GATT profile, exposed by `connection.active_ble_profile`; an SPP/serial connection reports `None`. This is based on the transport that connected, including fallback, not the discovery candidates. Custom connections without that metadata cannot select a different BLE profile. A different active transport setup requires a separate connection, not an in-place mutation of the session.
 
 The adapter owns the lifecycle of an attached controller: it stops the old

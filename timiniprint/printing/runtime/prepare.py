@@ -39,6 +39,15 @@ async def prepare_connection_runtime(
             # Without an adapter-owned controller, preparation owns its lifecycle.
             await controller.stop(session)
         await session.attach_runtime_controller(prepared.runtime_controller, timeout=timeout)
+    if prepared.runtime_controller is not None:
+        try:
+            await prepared.runtime_controller.after_prepare(session, timeout=timeout)
+        except BaseException:
+            try:
+                await prepared.runtime_controller.before_disconnect(session)
+            except Exception as exc:
+                session.report_warning(short="Runtime cleanup failed", detail=str(exc))
+            raise
     return prepared
 
 

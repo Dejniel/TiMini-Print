@@ -16,6 +16,7 @@ from .raster_job import build_raster_page_job as _build_raster_page_job
 from .raster_job import combine_raster_page_jobs as _combine_raster_page_jobs
 from .runtime.base import PreparedPrinter, RuntimeController
 from .runtime.prepare import prepare_connection_runtime
+from .runtime.session import RuntimeConnectionSession
 from .send import send_prepared_job
 from .settings import PrintSettings
 
@@ -223,7 +224,13 @@ class ConnectedPrinter:
 
     async def disconnect(self) -> None:
         """Close the underlying transport connection."""
-        await self._connection.disconnect()
+        try:
+            controller = self._prepared.runtime_controller
+            if controller is not None:
+                session = RuntimeConnectionSession(self._connection, reporter=self._reporter)
+                await controller.before_disconnect(session)
+        finally:
+            await self._connection.disconnect()
 
     async def __aenter__(self) -> "ConnectedPrinter":
         """Return this connected printer for async context-manager use."""

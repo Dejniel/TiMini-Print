@@ -7,10 +7,12 @@ from typing import TYPE_CHECKING, Mapping
 
 from ...protocol.families.niimbot.core import (
     NiimbotConnectResult,
+    NiimbotRequest,
     NiimbotResponse,
     NiimbotReplyDecoder,
     connect_packet,
     connect_result_from_reply,
+    print_end_success_matcher,
     model_id_from_reply,
     model_id_query_packet,
     protocol_version_from_status_data,
@@ -24,6 +26,7 @@ from ...protocol.status import PrinterStatusCode
 from ..errors import PrinterNotReadyError
 from ..step_execution import ProtocolReplyError, execute_protocol_step
 from .base import PreparedPrinter, RuntimeController, RuntimeSessionApi
+from .niimbot_heartbeat import NiimbotHeartbeat
 
 if TYPE_CHECKING:
     from ...devices import PrinterDevice
@@ -58,24 +61,55 @@ class NiimbotRuntimeController(RuntimeController):
         self._page_index = 0
         self._printing = False
         self._error = 0
+        self._heartbeat = NiimbotHeartbeat()
+
+    async def after_prepare(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+        await self._heartbeat.start(
+            session, protocol_version=self._state.protocol_version, effective_model_id=self._state.model_id,
+            job_active=lambda: self._printing, timeout=timeout,
+        )
+
+    async def stop(self, session: RuntimeSessionApi) -> None:
+        await self._heartbeat.stop()
+
+    async def before_disconnect(self, session: RuntimeSessionApi) -> None:
+        await self._heartbeat.stop()
 
     @asynccontextmanager
     async def job_scope(self, session, job, *, timeout):
-        starts = any(step.data[:3] == b"\x55\x55\x01" for step in job.steps)
-        with self._reply_lock:
-            if starts:
-                self._reply_decoder = NiimbotReplyDecoder()
-                self._page_index = 0
-                self._error = 0
-            self._printing = True
-        failed = True
+        async with self._heartbeat.job_scope():
+            starts = any(step.data[:3] == b"\x55\x55\x01" for step in job.steps)
+            with self._reply_lock:
+                if starts:
+                    self._reply_decoder = NiimbotReplyDecoder()
+                    self._page_index = 0
+                    self._error = 0
+                self._printing = True
+            failed = True
+            try:
+                yield
+                failed = False
+            finally:
+                try:
+                    if failed and self._printing:
+                        await self._finish_failed_job(session, timeout=timeout)
+                finally:
+                    if failed or not job.steps or any(step.data[:3] == b"\x55\x55\xf3" for step in job.steps):
+                        with self._reply_lock:
+                            self._printing = False
+
+    async def _finish_failed_job(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+        if not (session.can_query_control_packet() or session.can_send_control_packet_wait_notification()):
+            return
+        step = ProtocolStep.query(
+            "NIIMBOT end failed job", frame(NiimbotRequest.PRINT_END),
+            expect=ProtocolReplyExpectation.NONE, reply_required=True,
+            reply_matcher=print_end_success_matcher(), include_in_payload=False,
+        )
         try:
-            yield
-            failed = False
-        finally:
-            if failed or any(step.data[:3] == b"\x55\x55\xf3" for step in job.steps):
-                with self._reply_lock:
-                    self._printing = False
+            await execute_protocol_step(session, step, timeout=min(timeout, 1.0))
+        except Exception as exc:
+            session.report_warning(short="NIIMBOT ending unconfirmed", detail=str(exc))
 
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
         with self._reply_lock:
@@ -205,6 +239,9 @@ class NiimbotRuntimeController(RuntimeController):
             "model_id": self._state.model_id,
             "protocol_version": self._state.protocol_version,
             "warning_emitted": self._state.warning_emitted,
+            "heartbeat_active": self._heartbeat.active,
+            "heartbeat_missed_replies": self._heartbeat.missed_replies,
+            "heartbeat_status": dict(self._heartbeat.status),
         }
 
     async def _query(
