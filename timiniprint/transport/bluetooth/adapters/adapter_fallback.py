@@ -95,19 +95,25 @@ class _FallbackSocket:
         )
 
     def close(self) -> None:
-        active = self._active
         self._active = None
-        _safe_close(active)
-        if active is not self._primary:
-            _safe_close(self._primary)
-        if active is not self._fallback:
-            _safe_close(self._fallback)
+        error = None
+        for sock in (self._primary, self._fallback):
+            try:
+                sock.close()
+            except Exception as exc:
+                self._reporter.warning(short="BLE backend cleanup failed", detail=str(exc))
+                error = error or exc
+        if error is not None:
+            raise error
 
     def _try_connect(self, sock: SocketLike, backend_name: str, address_channel, address: str) -> Exception | None:
         try:
             sock.connect(address_channel)
         except Exception as exc:
-            _safe_close(sock)
+            try:
+                sock.close()
+            except Exception as cleanup_error:
+                raise exc from cleanup_error
             return exc
         self._active = sock
         self._reporter.debug(
@@ -125,14 +131,3 @@ def _call_if_present(target: SocketLike, name: str, *args) -> None:
     method = getattr(target, name, None)
     if callable(method):
         method(*args)
-
-
-def _safe_close(sock: SocketLike | None) -> None:
-    if sock is None:
-        return
-    close = getattr(sock, "close", None)
-    if callable(close):
-        try:
-            close()
-        except Exception:
-            pass

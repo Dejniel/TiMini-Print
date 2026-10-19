@@ -241,8 +241,8 @@ class _BleakTransportSession:
         for uuid in self._subscribed_notify_uuids:
             try:
                 await stop_notify(uuid)
-            except Exception:
-                pass
+            except Exception as exc:
+                self.report_warning(short="BLE notification shutdown failed", detail=f"{uuid}: {exc}")
         self._subscribed_notify_uuids.clear()
         self.notify_started = False
 

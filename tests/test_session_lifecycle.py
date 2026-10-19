@@ -72,6 +72,7 @@ class _PrinterClient(_Client):
             callback(_NOTIFY, b'ack')
 
     async def disconnect(self):
+        await super().disconnect()
         self.disconnected = True
 
 

@@ -195,6 +195,7 @@ class SppBackend:
             await previous.stop(self._classic_runtime_session)
 
     async def disconnect(self) -> None:
+        """Make the transport unusable; retain its socket for retry if close fails."""
         try:
             await self._stop_classic_runtime_controller()
         finally:
@@ -328,6 +329,8 @@ class SppBackend:
         if self._connected:
             self._reporter.debug(short="Bluetooth", detail="Bluetooth connect skipped: already connected")
             return
+        if self._sock is not None:
+            self._disconnect_blocking()
         if not attempts:
             raise RuntimeError("Bluetooth connection failed (no transport attempts provided)")
         unique_attempts = _unique_attempts(attempts)
@@ -379,6 +382,9 @@ class SppBackend:
                 )
                 return
             except Exception as exc:
+                if self._sock is not None:
+                    # A failed close must not be hidden by opening another socket.
+                    raise
                 errors.append((candidate, exc))
                 self._reporter.debug(
                     short="Bluetooth",
@@ -457,11 +463,11 @@ class SppBackend:
                     reporter=self._reporter,
                     ble_mtu_request=device.ble_mtu_request,
                 )
+                self._sock = sock
                 set_timeout = getattr(sock, "settimeout", None)
                 if callable(set_timeout):
                     set_timeout(_CONNECT_TIMEOUT_SEC)
                 sock.connect((device.address, channel))
-                self._sock = sock
                 self._connected = True
                 self._channel = channel
                 self._transport = device.transport
@@ -480,7 +486,11 @@ class SppBackend:
                     short="Bluetooth",
                     detail=f"RFCOMM channel {channel} failed for {device.address}: {exc}",
                 )
-                _safe_close(sock)
+                try:
+                    self._disconnect_blocking()
+                except Exception as cleanup_error:
+                    self._reporter.warning(short="Connection cleanup failed", detail=str(cleanup_error))
+                    raise exc from cleanup_error
         if last_error and _is_timeout_error(last_error):
             if pair_error:
                 raise RuntimeError(
@@ -499,20 +509,15 @@ class SppBackend:
         raise RuntimeError("Bluetooth connection failed (" + detail + ")")
 
     def _disconnect_blocking(self) -> None:
+        self._connected = False
+        self._channel = None
+        self._transport = None
         self._classic_runtime_session.close_flow()
         self._stop_classic_receive_hub()
         if not self._sock:
-            self._connected = False
-            self._channel = None
-            self._transport = None
             return
-        try:
-            self._sock.close()
-        finally:
-            self._sock = None
-            self._connected = False
-            self._channel = None
-            self._transport = None
+        self._sock.close()
+        self._sock = None
 
     def _attach_runtime_controller_blocking(self, runtime_controller, timeout: float) -> None:
         if not self._sock or not self._connected:
@@ -864,15 +869,6 @@ def _classic_progress_points(chunk_count: int) -> set[int]:
         max(1, (chunk_count * step + 3) // 4)
         for step in (1, 2, 3)
     }
-
-
-def _safe_close(sock: Optional[SocketLike]) -> None:
-    if not sock:
-        return
-    try:
-        sock.close()
-    except Exception:
-        pass
 
 
 def _send_all(sock: SocketLike, data: bytes) -> None:

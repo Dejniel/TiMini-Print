@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from time import monotonic
 
 from ... import reporting
+from .bleak_lifecycle import _BleakLifecycle
 
 DEVICE_INFORMATION_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb"
 DEVICE_INFORMATION_CHARACTERISTICS = {
@@ -18,6 +19,7 @@ DEVICE_INFORMATION_CHARACTERISTICS = {
     "software": "00002a28-0000-1000-8000-00805f9b34fb",
 }
 DEVICE_INFORMATION_TIMEOUT = 2.0
+_PROBE_TIMEOUT = 15.0
 
 
 @dataclass(frozen=True)
@@ -111,12 +113,26 @@ async def read_device_information(
 
 
 async def probe_ble_device_information(address: str) -> BleDeviceInformation:
-    """Connect/read/disconnect without a printer profile or writable endpoint."""
+    """Read without a profile; bound setup to 15 seconds and cleanup separately."""
     from bleak import BleakClient
 
-    client = BleakClient(address, timeout=15.0)
-    try:
+    client = BleakClient(address, timeout=_PROBE_TIMEOUT)
+    lifecycle = _BleakLifecycle()
+
+    async def read():
         await client.connect()
         return await read_device_information(client, address)
+
+    error = None
+    try:
+        return await lifecycle.run(read(), timeout=_PROBE_TIMEOUT, label="device information probe")
+    except BaseException as exc:
+        error = exc
+        raise
     finally:
-        await client.disconnect()
+        try:
+            await lifecycle.disconnect(client)
+        except Exception as cleanup_error:
+            if error is not None:
+                raise error from cleanup_error
+            raise

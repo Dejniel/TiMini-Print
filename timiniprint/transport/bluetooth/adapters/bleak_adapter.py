@@ -15,6 +15,7 @@ from .bleak_adapter_transport import _BleakTransportSession
 from ..constants import IS_MACOS
 from ..types import DeviceInfo, DeviceTransport, SocketLike
 from ..device_information import BleDeviceInformation, read_device_information
+from ..bleak_lifecycle import _BleakLifecycle
 from .... import reporting
 from ....devices.bluetooth_profiles import (
     DEFAULT_BLE_TRANSPORT_PROFILE,
@@ -56,6 +57,7 @@ class _BleakSocket:
         self._ble_mtu_request = ble_mtu_request
         self._reporter = reporter
         self._device_cache = device_cache if device_cache is not None else {}
+        self._lifecycle = _BleakLifecycle(reporter)
         self.device_information: BleDeviceInformation | None = None
         self._write_resolver = _BleWriteEndpointResolver(reporter=self._reporter)
         self._transport = _BleakTransportSession(
@@ -87,6 +89,8 @@ class _BleakSocket:
     def connect(self, address_channel: Tuple[str, int]) -> None:
         """Connect to the BLE device and prepare family-specific endpoints."""
         address, _ = address_channel
+        if self._loop is not None or self._client is not None:
+            self.close()
         self._address = address
         previous_loop = None
 
@@ -98,9 +102,12 @@ class _BleakSocket:
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
             self._loop.run_until_complete(self._connect_async(address))
-        except Exception:
-            self._disconnect_after_failed_connect()
-            self._cleanup_loop()
+        except BaseException as error:
+            try:
+                self.close()
+            except Exception as cleanup_error:
+                self._reporter.warning(short="BLE cleanup failed", detail=str(cleanup_error))
+                raise error from cleanup_error
             raise
         finally:
             try:
@@ -109,18 +116,27 @@ class _BleakSocket:
                 pass
 
     async def _connect_async(self, address: str) -> None:
+        """Bound the complete setup, including discovery and notification startup."""
+        self.device_information = None
+        await self._lifecycle.run(
+            self._open_async(address), timeout=self._timeout, label="connection setup",
+        )
+
+    async def _open_async(self, address: str) -> None:
         """Create the client, connect it and bind writable characteristics."""
         try:
             from bleak import BleakClient
         except ImportError as exc:
             raise _missing_bleak_error() from exc
 
+        self._reporter.debug(short="BLE connect", detail=f"Resolving {address}")
         self._client = BleakClient(
             await self._resolve_client_target(address),
             timeout=self._timeout,
         )
 
         try:
+            self._reporter.debug(short="BLE connect", detail="Connecting and discovering services")
             await self._client.connect()
             self._connected = True
         except Exception as exc:
@@ -138,12 +154,11 @@ class _BleakSocket:
         if self._pairing_hint:
             await self._pair_if_supported()
 
+        self._reporter.debug(short="BLE connect", detail="Reading optional device information")
         self.device_information = await read_device_information(self._client, address)
         self.device_information.log(self._reporter)
         selection = await self._find_write_characteristic()
         if not selection:
-            await self._client.disconnect()
-            self._connected = False
             raise RuntimeError(
                 f"Could not find a writable GATT characteristic on device {address}. "
                 "The device may not support BLE printing, or uses unknown UUIDs."
@@ -151,6 +166,7 @@ class _BleakSocket:
 
         self._transport.apply_write_selection(selection)
         self._transport.configure_endpoints(getattr(self._client, "services", None) or [])
+        self._reporter.debug(short="BLE connect", detail="Starting notifications")
         await self._transport.start_notify_if_available(self._client, self._handle_notification)
         await self._transport.initialize_connection(
             self._client,
@@ -364,18 +380,17 @@ class _BleakSocket:
             raise RuntimeError("BLE pairing failed")
 
     def close(self) -> None:
-        """Close the BLE connection and release the private event loop."""
-        self._disconnect_after_failed_connect()
-        self._cleanup_loop()
-
-    def _disconnect_after_failed_connect(self) -> None:
-        """Best-effort disconnect path shared by connect failures and close()."""
-        if self._loop and self._client:
-            try:
-                self._loop.run_until_complete(self._safe_disconnect_async())
-            except Exception:
-                pass
+        """Close BLE; keep client/loop for retry if bounded cleanup fails."""
         self._connected = False
+        try:
+            if self._loop:
+                self._loop.run_until_complete(self._safe_disconnect_async())
+            elif self._client:
+                raise RuntimeError("Cannot disconnect BLE client without its event loop")
+        finally:
+            # Late completion of cancelled setup must not restore readiness.
+            self._connected = False
+        self._cleanup_loop()
         self._client = None
         self._transport = _BleakTransportSession(
             transport_profile=self._ble_profile,
@@ -385,26 +400,19 @@ class _BleakSocket:
 
     async def _safe_disconnect_async(self) -> None:
         """Stop notifications before disconnecting the bleak client."""
-        if not self._client:
-            return
         self._transport.report_disconnect_diagnostics()
-        try:
-            await self._transport.stop_notify_if_started(self._client)
-        finally:
-            disconnect = getattr(self._client, "disconnect", None)
-            if callable(disconnect):
-                try:
-                    await disconnect()
-                except Exception:
-                    pass
+        await self._lifecycle.disconnect(
+            self._client,
+            before_disconnect=(self._transport.stop_notify_if_started(self._client)
+                               if self._client is not None else None),
+        )
 
     def _cleanup_loop(self) -> None:
         """Dispose the temporary event loop used by the socket wrapper."""
         if self._loop:
-            try:
-                self._loop.close()
-            except Exception:
-                pass
+            if asyncio.all_tasks(self._loop):
+                raise RuntimeError("Cannot close BLE event loop with pending tasks")
+            self._loop.close()
             self._loop = None
 
     def _handle_notification(self, _sender: Any, data: Any) -> None:
@@ -428,7 +436,8 @@ class _BleakBleAdapter(_BleBluetoothAdapter):
             results = []
             for device, advertisement in devices.values():
                 name = advertisement.local_name or device.name or ""
-                self._device_cache[device.address.upper()] = device
+                if not IS_MACOS:
+                    self._device_cache[device.address.upper()] = device
                 results.append(
                     DeviceInfo(
                         name=name,

@@ -76,6 +76,7 @@ class _Svc:
 class _Client:
     def __init__(self, services):
         self.services = services
+        self.is_connected = True
         self.calls = []
         self.notify_callbacks = {}
         self.stop_notify_calls = []
@@ -89,6 +90,10 @@ class _Client:
     async def stop_notify(self, char_uuid):
         self.stop_notify_calls.append(char_uuid)
         self.notify_callbacks.pop(char_uuid, None)
+
+    async def disconnect(self):
+        self.is_connected = False
+        self.notify_callbacks.clear()
 
 
 def _to_namespace(value):
