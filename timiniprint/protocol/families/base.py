@@ -28,6 +28,7 @@ class ProtocolBehavior:
     print_controls: tuple[str, ...] = ()
     print_controls_resolver: Callable[[Optional[str], ImageEncoding], tuple[str, ...]] | None = None
     requires_speed: bool = False
+    contiguous_raster_variants: tuple[str, ...] = ()
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(
             formats=(PixelFormat.BW1,),
@@ -88,6 +89,7 @@ class PrintJobRequest:
     density: int | None = None
     post_print_feed_count: int = 2
     left_padding_pixels: int = 0
+    top_padding_pixels: int = 0
     one_length: int = 0
     a4xii: bool = False
     a4_sheet_max_height: int | None = None

@@ -119,3 +119,31 @@ class RasterSet:
     def from_single(cls, raster: RasterBuffer) -> "RasterSet":
         raster.validate()
         return cls(rasters={raster.pixel_format: raster})
+
+    @classmethod
+    def concatenate_vertical(cls, raster_sets: Sequence["RasterSet"]) -> "RasterSet":
+        items = tuple(raster_sets)
+        if not items:
+            raise ValueError("At least one raster set is required")
+        for item in items:
+            item.validate()
+        formats = tuple(items[0].rasters)
+        if any(set(item.rasters) != set(formats) for item in items[1:]):
+            raise ValueError("Raster sets must contain matching pixel formats")
+        width = items[0].width
+        if any(item.width != width for item in items[1:]):
+            raise ValueError("Raster sets must have matching widths")
+        return cls(
+            rasters={
+                pixel_format: RasterBuffer(
+                    pixels=[
+                        pixel
+                        for item in items
+                        for pixel in item.require(pixel_format).pixels
+                    ],
+                    width=width,
+                    pixel_format=pixel_format,
+                )
+                for pixel_format in formats
+            }
+        )

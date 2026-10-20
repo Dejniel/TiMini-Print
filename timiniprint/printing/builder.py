@@ -6,14 +6,15 @@ from typing import Iterator, Optional, TYPE_CHECKING
 
 from .. import reporting
 from ..protocol.runtime import RuntimePrintCapabilities
-from ..protocol.job import ProtocolJob
-from ..protocol.types import ImagePipelineConfig
+from ..protocol.job import PrinterProtocol, ProtocolJob
+from ..protocol.types import ImagePipelineConfig, PageFlow
+from ..raster import RasterSet
 from ..rendering.converters import PdfRenderer
 from ..rendering.formats import SUPPORTED_DOCUMENT_EXTENSIONS
 from ..rendering.renderer import PrintImageRenderer
 from .debug_markers import apply_debug_row_markers
 from .diagnostics import report_protocol_job_build, report_raster_build
-from .document_renderer import DocumentRenderer, RenderDocument
+from .document_renderer import DocumentRenderer, RenderDocument, RenderedPage
 from .raster_job import build_raster_page_job, combine_raster_page_jobs
 from .settings import PrintSettings
 
@@ -85,7 +86,7 @@ class PrintJobBuilder:
         return job
 
     def iter_page_jobs(self, path: str) -> Iterator[PreparedPageJob]:
-        """Load, rasterize, and yield printable protocol jobs one page at a time."""
+        """Yield page jobs, joining continuous render fragments when required."""
         yield from self._iter_page_jobs(path)
 
     def _iter_page_jobs(self, path: str) -> Iterator[PreparedPageJob]:
@@ -96,6 +97,13 @@ class PrintJobBuilder:
             self.settings,
         )
         page_count = plan.page_count
+        merge_continuous = (
+            page_count > 1
+            and plan.page_flow is PageFlow.CONTINUOUS
+            and PrinterProtocol(self.device).requires_contiguous_raster_for_continuous_pages()
+        )
+        fragments: list[RasterSet] = []
+        first_rendered: RenderedPage | None = None
         for page in plan.pages:
             rendered = self.document_renderer.print_page(
                 plan,
@@ -123,20 +131,35 @@ class PrintJobBuilder:
                 gamma_handle=rendered.gamma_handle,
                 gamma_value=rendered.gamma_value,
             )
+            if merge_continuous:
+                if first_rendered is None:
+                    first_rendered = rendered
+                elif (
+                    rendered.image_pipeline != first_rendered.image_pipeline
+                    or rendered.is_text != first_rendered.is_text
+                ):
+                    raise ValueError(
+                        "Continuous raster fragments must use one image pipeline and content mode"
+                    )
+                fragments.append(raster_set)
+                if page.number < page_count:
+                    continue
+                raster_set = RasterSet.concatenate_vertical(fragments)
+                rendered = first_rendered
             page_job = build_raster_page_job(
                 self.device,
                 raster_set,
                 is_text=rendered.is_text,
                 settings=self.settings,
                 runtime_capabilities=self.runtime_capabilities,
-                page_index=page.number,
-                page_count=page_count,
+                page_index=1 if merge_continuous else page.number,
+                page_count=1 if merge_continuous else page_count,
                 page_flow=plan.page_flow,
                 image_pipeline=rendered.image_pipeline,
                 _paper_layout_applied=True,
             )
             yield PreparedPageJob(
-                page_index=page.number,
+                page_index=1 if merge_continuous else page.number,
                 page_count=page_count,
                 job=page_job,
                 image_pipeline=rendered.image_pipeline,

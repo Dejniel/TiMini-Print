@@ -96,6 +96,7 @@ def _build_request(
     runtime_capabilities: RuntimePrintCapabilities | None = None,
     image_energy: int | None = None,
     back_paper_num: int | None = None,
+    top_padding_pixels: int = 0,
 ) -> PrintJobRequest:
     family = ProtocolFamily.from_value(protocol_family)
     request = PrintJobRequest(
@@ -116,6 +117,7 @@ def _build_request(
         density=density,
         post_print_feed_count=post_print_feed_count,
         left_padding_pixels=left_padding_pixels,
+        top_padding_pixels=top_padding_pixels,
         one_length=one_length,
         a4xii=a4xii,
         a4_sheet_max_height=a4_sheet_max_height,
@@ -436,8 +438,10 @@ def _build_job_model_from_raster_set(
     runtime_capabilities: RuntimePrintCapabilities | None = None,
     image_energy: int | None = None,
     back_paper_num: int | None = None,
+    top_padding_pixels: int = 0,
 ) -> tuple[bytes, tuple[ProtocolStep, ...]]:
     request = _build_request(
+        top_padding_pixels=top_padding_pixels,
         image_energy=image_energy,
         back_paper_num=back_paper_num,
         raster_set=raster_set,

@@ -170,6 +170,7 @@ class PrinterProtocol:
             can_print_label=self.device.profile.can_print_label,
             post_print_feed_count=self.device.profile.post_print_feed_count,
             left_padding_pixels=paper_preset.left_padding_px,
+            top_padding_pixels=paper_preset.top_padding_px,
             one_length=self.device.profile.one_length,
             a4xii=self.device.profile.a4xii,
             a4_sheet_max_height=paper_preset.max_height_px,
@@ -404,6 +405,14 @@ class PrinterProtocol:
             return False
         return bool(job.payload or job.steps)
 
+
+    def requires_contiguous_raster_for_continuous_pages(self) -> bool:
+        """Whether render fragments of one continuous document need joint encoding.
+
+        This does not combine independent physical pages or perform I/O.
+        """
+        behavior = get_protocol_behavior(self.device.protocol_family)
+        return self.device.protocol_variant in behavior.contiguous_raster_variants
 
     @staticmethod
     def _apply_runtime_capabilities(
