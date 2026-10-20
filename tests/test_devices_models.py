@@ -235,19 +235,32 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(
             model.detections[0].exact_names,
             (
-                "V5X",
                 "X1",
                 "X2",
                 "MXW01",
                 "C17",
                 "MXW-W5",
-                "JK01",
                 "PORTABLEPRINTER",
                 "INSTANTPRINTPLUS",
                 "REKA",
                 "HDMDT-00",
             ),
         )
+
+    def test_v5x_source_gates_do_not_expand_funprint_or_invent_names(self) -> None:
+        jk01 = self.catalog.detect_device("JK01")
+        self.assertEqual(jk01.origin_ids, ("com.bleem.liugm",))
+        self.assertEqual(jk01.protocol_family, ProtocolFamily.V5X)
+        bh03 = self.catalog.detect_device("BH03")
+        self.assertEqual(bh03.origin_ids, ("com.fun.mxw",))
+        self.assertEqual(bh03.protocol_variant, "gray_label")
+        for name in ("YT01", "YT02"):
+            device = self.catalog.detect_device(name, manufacturer_data=(bytes.fromhex("0000000059"),))
+            self.assertEqual(device.origin_ids, ("com.bleem.liugm",))
+            self.assertEqual(device.protocol_family, ProtocolFamily.V5X)
+        for name in ("AC695X_PRINT_1234", "V5X"):
+            self.assertEqual(self.catalog.detect_model(name), ())
+        self.assertEqual(self.catalog.device_from_key("v5x").protocol_family, ProtocolFamily.V5X)
 
     def test_unsupported_models_are_detected_without_creating_devices(self) -> None:
         self.assertIsNone(self.catalog.detect_device("P12"))

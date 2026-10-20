@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 import unittest
 
 from timiniprint.devices import PrinterCatalog
@@ -57,6 +58,29 @@ class V5XProtocolTests(unittest.TestCase):
                 self.assertEqual([packet[2] for packet in split.commands], [0xA2, 0xA9])
                 self.assertEqual(split.bulk_payload, raw)
                 self.assertEqual(split.trailing_commands, (V5X_FINALIZE_PACKET,))
+
+    def test_gray_label_mode_is_explicit_and_does_not_change_the_raster(self) -> None:
+        for variant in (None, "gray_label"):
+            protocol = PrinterProtocol(replace(self.protocol.device, protocol_variant=variant))
+            for fmt, pixels, raw in (
+                (PixelFormat.BW1, [1, 0] * 192, b"\x55" * 48),
+                (PixelFormat.GRAY4, [15, 0] * 192, b"\xf0" * 192),
+                (PixelFormat.GRAY8, [0, 255] * 192, b"\x00\xff" * 192),
+            ):
+                for media in (PaperMode.PLAIN, PaperMode.TAG):
+                    with self.subTest(variant=variant, fmt=fmt, media=media):
+                        gray = fmt is not PixelFormat.BW1
+                        job = protocol.build_job(
+                            RasterSet.from_single(RasterBuffer(pixels, 384, fmt)),
+                            is_text=False, paper_mode=media,
+                            image_encoding_override=ImageEncoding.V5X_GRAY if gray else ImageEncoding.V5X_DOT,
+                            pixel_format_override=fmt,
+                        )
+                        split = split_print_stream(job.payload)
+                        mode = (3 if variant == "gray_label" and media is PaperMode.TAG else 2) if gray else int(media is PaperMode.TAG)
+                        self.assertEqual(split.commands[-1][6:10], bytes([1, 0, 0x30, mode]))
+                        self.assertEqual(split.bulk_payload, raw)
+                        self.assertEqual(split.trailing_commands, (V5X_FINALIZE_PACKET,))
 
     def test_control_only_stream_and_malformed_jobs(self) -> None:
         control = make_packet(0xA3, b"\x05\x00", ProtocolFamily.V5X)

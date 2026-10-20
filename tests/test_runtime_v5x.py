@@ -11,7 +11,7 @@ from timiniprint.printing.runtime.v5x import V5XRuntimeController
 from timiniprint.printing import PrinterNotReadyError
 from timiniprint.protocol import PrinterStatusCode
 from timiniprint.printing.send import send_prepared_job
-from timiniprint.protocol import PrinterProtocol, ProtocolJob
+from timiniprint.protocol import ImageEncoding, PaperMode, PrinterProtocol, ProtocolJob
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families.v5x import (
     V5X_FINALIZE_PACKET,
@@ -178,6 +178,28 @@ class V5XRuntimeConstructionTests(unittest.TestCase):
 
 
 class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_gray_label_uses_the_same_gray_temperature_policy_as_plain_paper(self) -> None:
+        device = PrinterCatalog.load().detect_device("BH03")
+        raster = RasterSet.from_single(RasterBuffer([15] * 384, 384, PixelFormat.GRAY4))
+        for media, mode in ((PaperMode.PLAIN, 2), (PaperMode.TAG, 3)):
+            with self.subTest(media=media):
+                job = PrinterProtocol(device).build_job(
+                    raster, is_text=False, blackening=5, paper_mode=media,
+                    image_encoding_override=ImageEncoding.V5X_GRAY,
+                )
+                controller = V5XRuntimeController()
+                controller.debug_update(temperature_c=60, print_head_type="gaoya")
+                session = _PrintSession(controller, make_packet(0xA1, bytes(8), ProtocolFamily.V5X))
+                with patch.multiple(
+                    V5XRuntimeController, _COMPLETION_MAX_S=0.01, _COMPLETION_GRACE_S=0.0,
+                ), patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
+                    await send_prepared_job(PreparedPrinter(device, controller), session, job, timeout=0.01)
+                commands = [packet for kind, packet in session.events if kind == "control"]
+                self.assertEqual(commands[0], make_packet(0xA2, bytes([75]), ProtocolFamily.V5X))
+                self.assertEqual(commands[1][9], mode)
+                self.assertEqual(commands[2], V5X_FINALIZE_PACKET)
+                self.assertIn(("bulk", b"\xff" * 192), session.events)
+
     async def test_completed_job_without_aa_does_not_block_next_print(self) -> None:
         device = PrinterCatalog.load().detect_device("MXW01")
         job = ProtocolJob(

@@ -11,6 +11,7 @@ from ...protocol.families.v5x import (
     V5X_FINALIZE_PACKET,
     V5X_GET_SERIAL_PACKET,
     V5X_GRAY_MODE,
+    V5X_GRAY_LABEL_MODE,
     V5X_NOTIFY_PAUSE_PACKETS,
     V5X_NOTIFY_RESUME_PACKETS,
     V5X_STATUS_POLL_PACKET,
@@ -201,7 +202,7 @@ class V5XRuntimeController(RuntimeController):
             payload = prefixed_packet_payload(packet, ProtocolFamily.V5X)
             if payload is None:
                 continue
-            is_gray = len(payload) == 4 and payload[3] == V5X_GRAY_MODE
+            is_gray = len(payload) == 4 and payload[3] in (V5X_GRAY_MODE, V5X_GRAY_LABEL_MODE)
             break
         coverage_ratio = 0.0
         if split.bulk_payload and not is_gray:

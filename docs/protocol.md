@@ -308,6 +308,11 @@ The key must be one of the paper preset keys supported by the device profile. Th
 
 See [catalog.md](catalog.md) for the data model behind paper presets.
 
+V5X devices with the `gray_label` protocol variant use start mode `03` for
+grayscale on tag media. Plain grayscale keeps mode `02`, and monochrome tags
+keep mode `01`. Select media through the existing paper presets; this variant
+does not change pixel packing or add a separate UI image mode.
+
 ## Available Print Controls
 
 Connect first, then query the resolved device and live capabilities. Do not

@@ -21,14 +21,11 @@
       {
         "exact_names": [
           "MXW01-1",
-          "KERUI",
-          "BH03"
+          "KERUI"
         ]
       },
       {
         "exact_names": [
-          "YT01",
-          "YT02",
           "BQ17"
         ],
         "manufacturer_data_suffixes": [
@@ -42,6 +39,50 @@
     ],
     "origin_ids": [
       "com.fun.mxw"
+    ]
+  },
+  {
+    "model_key": "ibleem_v5x",
+    "profile_key": "v5x",
+    "origin_ids": [
+      "com.bleem.liugm"
+    ],
+    "detections": [
+      {
+        "exact_names": [
+          "JK01"
+        ]
+      },
+      {
+        "exact_names": [
+          "YT01",
+          "YT02"
+        ],
+        "manufacturer_data_suffixes": [
+          "59"
+        ],
+        "manufacturer_data_lengths": [
+          5,
+          7
+        ]
+      }
+    ]
+  },
+  {
+    "model_key": "funprint_v5x_gray_label",
+    "profile_key": "v5x",
+    "protocol_override": {
+      "packets_type": "gray_label"
+    },
+    "origin_ids": [
+      "com.fun.mxw"
+    ],
+    "detections": [
+      {
+        "exact_names": [
+          "BH03"
+        ]
+      }
     ]
   },
   {
@@ -1381,20 +1422,15 @@
     "detections": [
       {
         "exact_names": [
-          "V5X",
           "X1",
           "X2",
           "MXW01",
           "C17",
           "MXW-W5",
-          "JK01",
           "PORTABLEPRINTER",
           "INSTANTPRINTPLUS",
           "REKA",
           "HDMDT-00"
-        ],
-        "prefixes": [
-          "AC695X_PRINT"
         ]
       },
       {

@@ -32,6 +32,7 @@ _MANUAL_MOTION_PAYLOAD = bytes([0x05, 0x00])
 _DOT_MODE = 0x00
 _LABEL_MODE = 0x01
 V5X_GRAY_MODE = 0x02
+V5X_GRAY_LABEL_MODE = 0x03
 # Firmware blackening 1-5 maps to different density bytes for dot and gray
 # jobs; the values are not linear.
 _DOT_DENSITY_BY_LEVEL = (0x58, 0x5A, 0x5D, 0x5F, 0x62)
@@ -155,6 +156,8 @@ def _density_payload(request: PrintJobRequest) -> bytes:
 
 def _start_print_mode(request: PrintJobRequest) -> int:
     if request.image_pipeline.encoding == ImageEncoding.V5X_GRAY:
+        if request.protocol_variant == "gray_label" and request.paper_mode is PaperMode.TAG:
+            return V5X_GRAY_LABEL_MODE
         return V5X_GRAY_MODE
     if request.paper_mode is PaperMode.TAG:
         return _LABEL_MODE
@@ -190,6 +193,7 @@ def build_job(request: PrintJobRequest) -> ProtocolPlan:
 
 BEHAVIOR = ProtocolBehavior(
     print_controls=("blackening",),
+    supported_protocol_variants=("gray_label",),
     supported_paper_modes=(PaperMode.PLAIN, PaperMode.TAG),
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),
