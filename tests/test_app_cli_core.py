@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
+import io
 import unittest
 
 from tests.helpers import build_capture_reporter, install_crc8_stub
@@ -8,6 +10,7 @@ from tests.helpers import build_capture_reporter, install_crc8_stub
 install_crc8_stub()
 
 from timiniprint.app import cli
+from timiniprint import reporting
 
 
 class AppCliCoreTests(unittest.TestCase):
@@ -46,28 +49,30 @@ class AppCliCoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             cli._resolve_text_columns(args)
 
-    def test_build_cli_reporter_verbose(self) -> None:
-        r1 = cli._build_cli_reporter(verbose=False)
-        r2 = cli._build_cli_reporter(verbose=True)
-        sink1 = r1._sinks[0]
-        sink2 = r2._sinks[0]
-        self.assertNotIn("debug", sink1._levels)
-        self.assertIn("debug", sink2._levels)
-
     def test_trace_is_only_enabled_with_repeated_verbose(self) -> None:
-        import contextlib
-        import io
-
-        for flags, expected in (([], False), (["-v"], False), (["-vv"], True)):
+        for flags, threshold in (
+            ([], reporting.ReportLevel.WARNING),
+            (["-v"], reporting.ReportLevel.DEBUG),
+            (["-vv"], reporting.ReportLevel.TRACE),
+            (["-v", "--verbose"], reporting.ReportLevel.TRACE),
+            (["-vvv"], reporting.ReportLevel.TRACE),
+        ):
             with self.subTest(flags=flags):
                 output = io.StringIO()
                 with contextlib.redirect_stderr(output):
                     args = cli.parse_args(flags)
                     reporter = cli._build_cli_reporter(args.verbose)
+                    reporter.status(short="ui progress")
                     reporter.debug(detail="job summary")
                     reporter.trace(detail="private raster")
-                self.assertEqual("private raster" in output.getvalue(), expected)
+                    reporter.warning(short="warning")
+                    reporter.error(short="error")
+                self.assertEqual(reporter.min_level, threshold)
+                self.assertEqual("private raster" in output.getvalue(), threshold == reporting.ReportLevel.TRACE)
                 self.assertEqual("job summary" in output.getvalue(), bool(flags))
+                self.assertNotIn("ui progress", output.getvalue())
+                self.assertIn("Warning: warning", output.getvalue())
+                self.assertIn("Error: error", output.getvalue())
 
     def test_emit_startup_debug_includes_version_and_platform(self) -> None:
         reporter, sink = build_capture_reporter()

@@ -159,7 +159,7 @@ class TiMiniPrintGUI(tk.Tk):
         self.pdf_pages_var = tk.StringVar()
         self.pdf_gap_var = tk.IntVar(value=5)
         self.status_var = tk.StringVar(
-            value=reporting.MessageCatalog.resolve("status", reporting.STATUS_IDLE) or "Idle"
+            value=reporting.MessageCatalog.resolve(reporting.ReportLevel.STATUS, reporting.STATUS_IDLE) or "Idle"
         )
         self.connected_device = None
         self.connected_device_was_manual = False

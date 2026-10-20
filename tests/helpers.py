@@ -19,9 +19,11 @@ class CaptureSink(reporting.ReportSink):
         self.messages.append(message)
 
 
-def build_capture_reporter() -> tuple[reporting.Reporter, CaptureSink]:
+def build_capture_reporter(
+    *, min_level: reporting.ReportLevel = reporting.ReportLevel.DEBUG,
+) -> tuple[reporting.Reporter, CaptureSink]:
     sink = CaptureSink()
-    return reporting.Reporter([sink]), sink
+    return reporting.Reporter([sink], min_level=min_level), sink
 
 
 def reset_registry_cache() -> None:

@@ -1,8 +1,20 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import IntEnum
 import sys
-from typing import Any, Dict, Iterable, Optional, Set
+from typing import Any, Dict, Iterable, Optional
+
+
+class ReportLevel(IntEnum):
+    """Ordered verbosity; use ``name.lower()`` for textual log records."""
+
+    TRACE = 5
+    DEBUG = 10
+    STATUS = 20
+    WARNING = 30
+    ERROR = 40
+
 
 STATUS_IDLE = "idle"
 STATUS_SCAN_START = "scan_start"
@@ -65,17 +77,17 @@ class MessageCatalog:
     }
 
     @classmethod
-    def resolve(cls, level: str, key: Optional[str], **ctx: Any) -> Optional[str]:
+    def resolve(cls, level: ReportLevel, key: Optional[str], **ctx: Any) -> Optional[str]:
         if not key:
             return None
-        if level == "status":
+        if level == ReportLevel.STATUS:
             mapping = cls.STATUS
-        elif level == "warning":
+        elif level == ReportLevel.WARNING:
             mapping = cls.WARNING
-        elif level in {"debug", "trace"}:
-            mapping = {}
-        else:
+        elif level == ReportLevel.ERROR:
             mapping = cls.ERROR
+        else:
+            return None
         template = mapping.get(key)
         if not template:
             return None
@@ -119,7 +131,7 @@ def _format_field_value(value: Any) -> str:
 
 @dataclass(frozen=True)
 class ReportMessage:
-    level: str
+    level: ReportLevel
     key: Optional[str]
     short: str
     detail: Optional[str] = None
@@ -128,36 +140,35 @@ class ReportMessage:
 
 
 class ReportSink:
+    """Receive messages admitted by the reporter's verbosity threshold."""
+
     def emit(self, message: ReportMessage) -> None:
         raise NotImplementedError
 
 
 class StderrSink(ReportSink):
+    """Print diagnostics; progress/status events belong to the UI, not stderr."""
+
     def __init__(
         self,
         *,
         stream=None,
-        levels: Optional[Iterable[str]] = None,
-        prefix_levels: Optional[Iterable[str]] = None,
+        min_level: ReportLevel = ReportLevel.WARNING,
     ) -> None:
         self._stream = stream or sys.stderr
-        self._levels: Set[str] = set(levels or {"warning", "error"})
-        if prefix_levels is None:
-            prefix_levels = {"warning", "error"}
-        self._prefix_levels: Set[str] = set(prefix_levels)
-
-    def set_levels(self, levels: Iterable[str]) -> None:
-        self._levels = set(levels)
+        self.min_level = min_level
 
     def emit(self, message: ReportMessage) -> None:
-        if message.level not in self._levels:
+        if message.level < self.min_level or message.level == ReportLevel.STATUS:
             return
         text = message.detail or message.short
         if not text:
             return
         prefix = ""
-        if message.level in self._prefix_levels:
-            prefix = "Warning: " if message.level == "warning" else "Error: "
+        if message.level == ReportLevel.WARNING:
+            prefix = "Warning: "
+        elif message.level == ReportLevel.ERROR:
+            prefix = "Error: "
         print(f"{prefix}{text}", file=self._stream)
 
 
@@ -167,26 +178,35 @@ class QueueStatusSink(ReportSink):
         self._show_warnings = show_warnings
 
     def emit(self, message: ReportMessage) -> None:
-        if message.level == "status":
+        if message.level == ReportLevel.STATUS:
             if message.short:
                 self._queue.put(("status", message.short))
             return
-        if message.level == "error":
+        if message.level == ReportLevel.ERROR:
             if message.short:
                 self._queue.put(("error", message.short))
             return
-        if message.level == "warning" and self._show_warnings:
+        if message.level == ReportLevel.WARNING and self._show_warnings:
             if message.short:
                 self._queue.put(("status", f"Warning: {message.short}"))
 
 
 class Reporter:
-    def __init__(self, sinks: Iterable[ReportSink], *, catalog: MessageCatalog = MessageCatalog()) -> None:
+    """Dispatch typed messages; raw trace data requires explicit opt-in."""
+
+    def __init__(
+        self,
+        sinks: Iterable[ReportSink],
+        *,
+        min_level: ReportLevel = ReportLevel.DEBUG,
+        catalog: MessageCatalog = MessageCatalog(),
+    ) -> None:
         self._sinks = list(sinks)
         self._catalog = catalog
+        self.min_level = min_level
 
     def status(self, key: Optional[str] = None, *, short: Optional[str] = None, detail: Optional[str] = None, **ctx: Any) -> None:
-        self._emit("status", key, short, detail, None, ctx)
+        self._emit(ReportLevel.STATUS, key, short, detail, None, ctx)
 
     def warning(
         self,
@@ -197,7 +217,7 @@ class Reporter:
         exc: Optional[Exception] = None,
         **ctx: Any,
     ) -> None:
-        self._emit("warning", key, short, detail, exc, ctx)
+        self._emit(ReportLevel.WARNING, key, short, detail, exc, ctx)
 
     def error(
         self,
@@ -208,7 +228,7 @@ class Reporter:
         exc: Optional[Exception] = None,
         **ctx: Any,
     ) -> None:
-        self._emit("error", key, short, detail, exc, ctx)
+        self._emit(ReportLevel.ERROR, key, short, detail, exc, ctx)
 
     def debug(
         self,
@@ -219,7 +239,7 @@ class Reporter:
         exc: Optional[Exception] = None,
         **ctx: Any,
     ) -> None:
-        self._emit("debug", key, short, detail, exc, ctx)
+        self._emit(ReportLevel.DEBUG, key, short, detail, exc, ctx)
 
     def trace(
         self,
@@ -230,18 +250,20 @@ class Reporter:
         exc: Optional[Exception] = None,
         **ctx: Any,
     ) -> None:
-        """Emit raw diagnostics; sinks must opt in to retaining this level."""
-        self._emit("trace", key, short, detail, exc, ctx)
+        """Emit raw diagnostics only when ``min_level`` is ``ReportLevel.TRACE``."""
+        self._emit(ReportLevel.TRACE, key, short, detail, exc, ctx)
 
     def _emit(
         self,
-        level: str,
+        level: ReportLevel,
         key: Optional[str],
         short: Optional[str],
         detail: Optional[str],
         exc: Optional[Exception],
         ctx: Dict[str, Any],
     ) -> None:
+        if level < self.min_level:
+            return
         if detail is None and exc is not None:
             detail = str(exc)
         if short is None:

@@ -122,7 +122,7 @@ def test_gui_reports_attention_instead_of_a_program_or_connection_failure(operat
     error = PrinterNotReadyError("Out of paper", PrinterStatusCode.PAPER_OUT)
     gui._queue_error(operation, exc=error)
     message, = sink.messages
-    assert message.level == "warning"
+    assert message.level == reporting.ReportLevel.WARNING
     assert message.key == reporting.WARNING_PRINTER_NOT_READY
     assert message.context["reasons"] == ("paper_out",)
     assert message.short == "Printer needs attention: Out of paper"

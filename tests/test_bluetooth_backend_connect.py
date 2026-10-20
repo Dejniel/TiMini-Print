@@ -210,7 +210,7 @@ class BluetoothBackendConnectTests(unittest.TestCase):
     def test_classic_payload_preview_is_trace_only(self) -> None:
         from tests.helpers import build_capture_reporter
 
-        reporter, sink = build_capture_reporter()
+        reporter, sink = build_capture_reporter(min_level=reporting.ReportLevel.TRACE)
         backend = SppBackend(reporter=reporter)
         sock = _Socket()
         backend._sock = sock
@@ -219,8 +219,8 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         payload = b"private-raster"
         backend._write_blocking(payload, chunk_size=20, delay_ms=0)
         self.assertEqual(sock.sent, [payload])
-        normal = [message.detail or "" for message in sink.messages if message.level == "debug"]
-        trace = [message.detail or "" for message in sink.messages if message.level == "trace"]
+        normal = [message.detail or "" for message in sink.messages if message.level == reporting.ReportLevel.DEBUG]
+        trace = [message.detail or "" for message in sink.messages if message.level == reporting.ReportLevel.TRACE]
         self.assertTrue(any("bytes=14" in line for line in normal))
         self.assertFalse(any(payload.hex() in line or "head=" in line for line in normal))
         self.assertTrue(any(payload.hex() in line for line in trace))

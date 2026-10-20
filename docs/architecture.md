@@ -85,6 +85,14 @@ Owns actual I/O.
 
 It contains connector interfaces, connection implementations, Bluetooth adapters, and serial transport code. Transport may expose generic send/query/wait primitives. Bluetooth adapters receive a selected BLE profile and apply its GATT endpoints, chunk limits, and pacing; they do not select behavior from a protocol family. Transport must not contain printer-family opcode logic or firmware-state decisions.
 
+### `timiniprint.reporting`
+
+Owns typed diagnostic messages, verbosity thresholds, and output sinks.
+Application code configures the `Reporter`; other layers emit events without
+knowing where they will be displayed or stored. The reporter filters before
+dispatch; sinks handle destination-specific formatting and GUI routing.
+See [diagnostic log levels](protocol.md#diagnostic-log-levels) for the API.
+
 ## Main Objects
 
 ### `PrinterDevice`

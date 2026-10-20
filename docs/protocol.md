@@ -17,14 +17,25 @@ For XEasyLabel HP6-C media and session handling, see [XEasyLabel integration](xe
 
 ### Diagnostic log levels
 
-`reporting.Reporter` emits `status`, `warning`, `error`, `debug` and `trace`
-messages. Sinks choose which levels they retain. Normal diagnostic sinks should
-exclude `trace`; enable it explicitly when investigating wire data.
+`reporting.ReportLevel` defines the ordered levels
+`TRACE < DEBUG < STATUS < WARNING < ERROR`. `ReportMessage.level` is this enum,
+not a string; use `message.level.name.lower()` for a textual log record.
+
+`Reporter(sinks, min_level=ReportLevel.DEBUG)` discards messages below its
+threshold **before invoking any sink**, including custom sinks. Enable raw
+diagnostics explicitly with `min_level=ReportLevel.TRACE`. A sink may further
+restrict output but cannot recover messages the reporter discarded.
+
+`StderrSink(min_level=ReportLevel.WARNING)` defaults to warnings and errors.
+It omits progress/status events at every threshold; `QueueStatusSink` maps those
+events, warnings and errors to the GUI. The default reporter retains all three,
+so normal GUI progress does not depend on enabling debug or trace output.
 
 Transfer summaries retain byte/chunk counts, timings and operation names at
 `debug`. Generic packet previews and input-file paths use `trace`, which may
 contain print content or filenames. Do not automatically attach trace logs to
-support reports. In the CLI, `-v` enables debug and `-vv` also enables trace.
+support reports. The CLI defaults to warnings/errors; `-v` enables debug and
+`-vv` also enables trace, configuring both the reporter and its stderr sink.
 These levels are not a general anonymization mechanism for arbitrary error
 messages or device metadata.
 

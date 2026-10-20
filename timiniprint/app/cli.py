@@ -588,12 +588,13 @@ def paper_motion_serial(args: argparse.Namespace, action: str, reporter: reporti
 
 
 def _build_cli_reporter(verbose: int) -> reporting.Reporter:
-    levels = {"warning", "error"}
-    if verbose:
-        levels.add("debug")
-    if verbose > 1:
-        levels.add("trace")
-    return reporting.Reporter([reporting.StderrSink(levels=levels)])
+    verbosity_levels = (
+        reporting.ReportLevel.WARNING,
+        reporting.ReportLevel.DEBUG,
+        reporting.ReportLevel.TRACE,
+    )
+    level = verbosity_levels[min(verbose, len(verbosity_levels) - 1)]
+    return reporting.Reporter([reporting.StderrSink(min_level=level)], min_level=level)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:

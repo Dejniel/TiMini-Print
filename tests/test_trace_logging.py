@@ -35,9 +35,9 @@ class Connection:
 def logs():
     normal, full = io.StringIO(), io.StringIO()
     reporter = reporting.Reporter([
-        reporting.StderrSink(stream=normal, levels={"status", "debug", "warning", "error"}),
-        reporting.StderrSink(stream=full, levels={"status", "debug", "trace", "warning", "error"}),
-    ])
+        reporting.StderrSink(stream=normal, min_level=reporting.ReportLevel.DEBUG),
+        reporting.StderrSink(stream=full, min_level=reporting.ReportLevel.TRACE),
+    ], min_level=reporting.ReportLevel.TRACE)
     return reporter, normal, full
 
 

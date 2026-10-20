@@ -13,6 +13,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 from tests.helpers import build_capture_reporter
+from timiniprint.reporting import ReportLevel
 from timiniprint.devices.profiles import (
     LevelProfile,
     ModeLevelProfile,
@@ -292,7 +293,7 @@ async def _send_v5x_runtime_payload(
 
 class BleakTransportSessionTests(unittest.TestCase):
     def test_ble_payload_preview_is_trace_only(self) -> None:
-        session, client, sink = self._make_session_with_sink(ProtocolFamily.TINY)
+        session, client, sink = self._make_session_with_sink(ProtocolFamily.TINY, min_level=ReportLevel.TRACE)
         write = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write"])
         session.bindings.write_char = write
         session.bindings.write_selection_strategy = "test"
@@ -300,8 +301,8 @@ class BleakTransportSessionTests(unittest.TestCase):
         payload = b"private-raster"
         asyncio.run(session.send(client, payload, mtu_size=23, timeout=0.1))
         self.assertEqual(b"".join(call[1] for call in client.calls), payload)
-        normal = [message.detail or "" for message in sink.messages if message.level == "debug"]
-        trace = [message.detail or "" for message in sink.messages if message.level == "trace"]
+        normal = [message.detail or "" for message in sink.messages if message.level == ReportLevel.DEBUG]
+        trace = [message.detail or "" for message in sink.messages if message.level == ReportLevel.TRACE]
         self.assertTrue(any("payload=14" in line for line in normal))
         self.assertFalse(any(payload.hex() in line or "head=" in line for line in normal))
         self.assertTrue(any(payload.hex() in line for line in trace))
@@ -318,8 +319,8 @@ class BleakTransportSessionTests(unittest.TestCase):
         client = _Client([])
         return session, client
 
-    def _make_session_with_sink(self, family: ProtocolFamily):
-        reporter, sink = build_capture_reporter()
+    def _make_session_with_sink(self, family: ProtocolFamily, *, min_level=ReportLevel.DEBUG):
+        reporter, sink = build_capture_reporter(min_level=min_level)
         resolver = _BleWriteEndpointResolver(reporter=reporter)
         transport = replace(
             get_ble_transport_profile(family),
@@ -1433,7 +1434,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         debug_details = [
             message.detail or message.short
             for message in sink.messages
-            if message.level == "debug"
+            if message.level == ReportLevel.DEBUG
         ]
         self.assertIn(
             "V5X firmware: version=FW1.0.22, print_head_type=gaoya",
@@ -1482,7 +1483,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(error_packet)
         session.handle_notification(error_packet)
 
-        warnings = [msg for msg in sink.messages if msg.level == "warning"]
+        warnings = [msg for msg in sink.messages if msg.level == ReportLevel.WARNING]
         self.assertEqual(len(warnings), 1)
         self.assertEqual(warnings[0].short, "V5X printer reported an error status")
         self.assertIn("Task=printing", warnings[0].detail)
@@ -1496,7 +1497,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(make_packet(0xB3, bytes([0x01]), ProtocolFamily.V5X))
 
         self.assertTrue(_v5x_state(session).mxw_sign_requested)
-        warnings = [msg for msg in sink.messages if msg.level == "warning"]
+        warnings = [msg for msg in sink.messages if msg.level == ReportLevel.WARNING]
         self.assertEqual(len(warnings), 2)
         self.assertEqual(warnings[0].short, "Invalid V5X signing challenge")
         self.assertEqual(_v5x_state(session).mxw_sign_responses_sent, 0)
@@ -1809,7 +1810,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(error_packet)
         session.handle_notification(error_packet)
 
-        warnings = [msg for msg in sink.messages if msg.level == "warning"]
+        warnings = [msg for msg in sink.messages if msg.level == ReportLevel.WARNING]
         self.assertEqual(len(warnings), 1)
         self.assertEqual(warnings[0].short, "V5C printer reported an overheat state")
         self.assertIn("status=0x04", warnings[0].detail)
@@ -1822,7 +1823,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(packet)
         session.handle_notification(packet)
 
-        warnings = [msg for msg in sink.messages if msg.level == "warning"]
+        warnings = [msg for msg in sink.messages if msg.level == ReportLevel.WARNING]
         self.assertEqual(len(warnings), 1)
         self.assertEqual(warnings[0].short, "V5C printer reported an attention state")
         self.assertIn("status=0x01", warnings[0].detail)
@@ -1844,7 +1845,7 @@ class BleakTransportSessionTests(unittest.TestCase):
         session.handle_notification(packet)
         session.handle_notification(packet)
 
-        warnings = [msg for msg in sink.messages if msg.level == "warning"]
+        warnings = [msg for msg in sink.messages if msg.level == ReportLevel.WARNING]
         self.assertEqual(len(warnings), 1)
         self.assertEqual(warnings[0].short, "V5C printer reported a low-power state")
         self.assertIn("status=0x08", warnings[0].detail)
