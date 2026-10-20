@@ -19,18 +19,16 @@ def app(monkeypatch):
     init_tk = tk.Tk.__init__
 
     def init_hidden_tk(window, *args, **kwargs):
-        init_tk(window, *args, **kwargs)
+        try:
+            init_tk(window, *args, **kwargs)
+        except tk.TclError:
+            pytest.skip("Requires a working Tk display/runtime (use xvfb-run on headless Linux)")
         # Hide before the GUI constructor's first update_idletasks(), not after it.
         window.withdraw()
         window.bind("<Map>", lambda event: mapped_windows.append(window)
                     if event.widget is window else None, add="+")
 
     monkeypatch.setattr(tk.Tk, "__init__", init_hidden_tk)
-    try:
-        root = tk.Tk()
-    except tk.TclError:
-        pytest.skip("Requires a display (run with xvfb-run)")
-    root.destroy()
     monkeypatch.setattr(gui_module, "emit_startup_warnings", lambda: None)
     monkeypatch.setattr(gui_module.TiMiniPrintGUI, "scan", lambda self: None)
     monkeypatch.setattr(gui_module.TiMiniPrintGUI, "_check_for_updates", lambda self: None)

@@ -129,13 +129,12 @@ def test_file_pipeline_rotates_once_and_preserves_physical_band_and_feed(gap):
         assert (2, "0b00") in [(f.command, f.payload.hex()) for f in frames]
 
 
-def test_long_text_is_one_raster_job_without_intermediate_feed():
+def test_long_text_is_one_raster_job_without_intermediate_feed(tmp_path):
     device = PrinterCatalog.load().device_from_model("xeasylabel_hp6_c")
     settings = PrintSettings(feed_padding=0)
-    renderer = DocumentRenderer(text_loader=lambda _: "\n".join(f"line {i}" for i in range(30)))
-    builder = PrintJobBuilder(device, settings, document_renderer=renderer)
-    with patch("timiniprint.printing.builder.os.path.isfile", return_value=True):
-        jobs = list(builder.iter_page_jobs("long.txt"))
+    path = tmp_path / "long.txt"
+    path.write_text("\n".join(f"line {i}" for i in range(30)), encoding="utf-8")
+    jobs = list(PrintJobBuilder(device, settings).iter_page_jobs(str(path)))
     assert len(jobs) == 1
     assert jobs[0].page_count > 1
     controls = [(frame.command, frame.payload.hex()) for frame in iter_yk_frames(jobs[0].job.payload) if frame.command]
