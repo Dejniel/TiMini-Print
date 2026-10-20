@@ -1,5 +1,72 @@
 [
   {
+    "profile_key": "xeasylabel_hp6_c",
+    "size": 1,
+    "one_length": 8,
+    "dev_dpi": 203,
+    "has_id": false,
+    "use_spp": true,
+    "can_print_label": true,
+    "label_value": "1",
+    "back_paper_num": 0,
+    "protocol_default": {
+      "type": "yk_astra_p1",
+      "packets_type": "xeasylabel_hp6_c"
+    },
+    "default_image_pipeline": {
+      "formats": [
+        "bw1"
+      ],
+      "encoding": "yk_astra_p1_raw"
+    },
+    "stream": {
+      "chunk_size": 298,
+      "delay_ms": 20
+    },
+    "post_print_feed_count": 0,
+    "print_defaults": {
+      "speed": {
+        "image": 25,
+        "text": 25
+      },
+      "energy": {
+        "image": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        },
+        "text": {
+          "low": 0,
+          "middle": 0,
+          "high": 0
+        }
+      },
+      "density": {
+        "image": {
+          "low": 5,
+          "middle": 9,
+          "high": 13
+        },
+        "text": {
+          "low": 5,
+          "middle": 9,
+          "high": 13
+        }
+      }
+    },
+    "paper_presets": [
+      "xeasy_96_bm1_plain_15",
+      "xeasy_96_bm1_tag_12x40",
+      "xeasy_96_bm1_tag_cable_12_5x74",
+      "xeasy_96_bm1_tag_15x30",
+      "xeasy_96_bm1_tag_14x22",
+      "xeasy_96_bm1_tag_14x30",
+      "xeasy_96_bm1_tag_14x40",
+      "xeasy_96_bm1_tag_14x40_36",
+      "xeasy_96_bm1_tag_14x50"
+    ]
+  },
+  {
     "profile_key": "15p3",
     "size": 1,
     "one_length": 8,

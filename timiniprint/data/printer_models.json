@@ -1,5 +1,20 @@
 [
   {
+    "model_key": "xeasylabel_hp6_c",
+    "profile_key": "xeasylabel_hp6_c",
+    "detections": [
+      {
+        "exact_names": [
+          "HP6-C"
+        ]
+      }
+    ],
+    "whitespace_mode": "preserve",
+    "origin_ids": [
+      "com.labelprinter.app"
+    ]
+  },
+  {
     "model_key": "funprint_v5x",
     "profile_key": "v5x",
     "detections": [

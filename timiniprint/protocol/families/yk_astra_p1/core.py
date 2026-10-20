@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import struct
+from dataclasses import dataclass, field, replace
 from enum import Enum, IntEnum
 from typing import Mapping
 
@@ -9,6 +10,7 @@ from ...plan import ProtocolPlan
 from ...steps import ProtocolStep
 from ...types import ImageEncoding, ImagePipelineConfig, PaperMode
 from ..base import PrintJobRequest, ProtocolBehavior
+from ..bitmap import pack_bw1_rows, pad_raster
 from ..yk_common import SEQUENCE_MODULUS, pack_yk_frame
 
 
@@ -63,13 +65,33 @@ class AstraP1Feed:
 
 
 @dataclass(frozen=True)
+class AstraP1ImageStart:
+    offset_dots: int = 0
+    height_ratio: float = 1.0
+    later_offset_dots: int | None = None
+
+    def correction(self, height: int, top_padding: int, *, first_page: bool) -> int:
+        offset = self.offset_dots
+        if not first_page and self.later_offset_dots is not None:
+            offset = self.later_offset_dots
+        # The ratio adjusts the starting row; it must not resample the image.
+        ratio = _float32(1.0 - _float32(self.height_ratio))
+        return int(_float32(_float32(_float32(ratio * height) / 2) + offset + top_padding))
+
+
+@dataclass(frozen=True)
 class AstraP1MediaRecipe:
     setup_scope: AstraP1SetupScope
     paper_type: int | None = None
     first_feed: AstraP1Feed | None = None
     pre_raster_feed: AstraP1Feed | None = None
     page_feed: AstraP1Feed | None = None
-    last_feed: AstraP1Feed | None = None
+    last_feeds: tuple[AstraP1Feed, ...] = ()
+    later_feed: AstraP1Feed | None = None
+    non_last_feed: AstraP1Feed | None = None
+    image_start: AstraP1ImageStart | None = None
+    paper_type_scope: AstraP1SetupScope | None = None
+    paper_type_before_setup: bool = False
 
 
 @dataclass(frozen=True)
@@ -81,6 +103,8 @@ class AstraP1VariantRecipe:
     default_paper_mode: PaperMode
     raster_left_padding: int = 0
     stepwise: bool = False
+    sequence_start: int = 0
+    crop_to_head: bool = False
 
     def __post_init__(self) -> None:
         if self.head_width <= 0:
@@ -138,7 +162,7 @@ class AstraP1FamilyRecipe:
         variant: AstraP1VariantRecipe,
         media: AstraP1MediaRecipe,
     ) -> tuple[bytes, ...]:
-        sequence = 0
+        sequence = variant.sequence_start
         packets: list[bytes] = []
 
         def add(command: AstraP1Command, payload: bytes = b"") -> None:
@@ -150,23 +174,46 @@ class AstraP1FamilyRecipe:
             media.setup_scope is AstraP1SetupScope.EVERY_PAGE
             or request.is_first_page
         )
+        configure_paper = media.paper_type is not None and (
+            (media.paper_type_scope or media.setup_scope) is AstraP1SetupScope.EVERY_PAGE
+            or request.is_first_page
+        )
+
+        def add_paper_type() -> None:
+            if configure_paper and media.paper_type is not None:
+                add(AstraP1Command.PAPER_TYPE, bytes((0x01, _uint8(media.paper_type, "paper type"))))
+
+        if media.paper_type_before_setup:
+            add_paper_type()
         if configure:
             speed = variant.speed if request.speed is None else request.speed
             density = 9 if request.density is None else request.density
             add(AstraP1Command.SPEED, bytes((_uint8(speed, "speed"),)))
             add(AstraP1Command.DENSITY, bytes((_uint8(density, "density"),)))
-            if media.paper_type is not None:
-                add(
-                    AstraP1Command.PAPER_TYPE,
-                    bytes((0x01, _uint8(media.paper_type, "paper type"))),
-                )
+        if not media.paper_type_before_setup:
+            add_paper_type()
         if request.is_first_page and media.first_feed is not None:
             add(media.first_feed.command, media.first_feed.payload())
+        if not request.is_first_page and media.later_feed is not None:
+            add(media.later_feed.command, media.later_feed.payload())
         if media.pre_raster_feed is not None:
             add(media.pre_raster_feed.command, media.pre_raster_feed.payload())
 
         data = _pack_raster(raster, variant, request.left_padding_pixels)
         row_bytes = (variant.head_width + 7) // 8
+        if media.image_start is not None:
+            top = request.top_padding_pixels
+            height = raster.height - top
+            if height <= 0:
+                raise ValueError("Astra P1 image needs a row below its top padding")
+            if any(data[:top * row_bytes]):
+                raise ValueError("Astra P1 reserved top padding must be blank")
+            data = data[top * row_bytes:]
+            correction = media.image_start.correction(height, top, first_page=request.is_first_page)
+            if correction > 0:
+                add(AstraP1Command.FEED_FORWARD, AstraP1Feed(AstraP1Command.FEED_FORWARD, correction).payload())
+            elif correction < 0:
+                data = data[min(-correction, height - 1) * row_bytes:]
         slice_bytes = row_bytes * variant.rows_per_slice
         for offset in range(0, len(data), slice_bytes):
             add(AstraP1Command.RASTER, data[offset : offset + slice_bytes])
@@ -176,8 +223,11 @@ class AstraP1FamilyRecipe:
                 media.page_feed.command,
                 media.page_feed.payload(last_page=request.is_last_page),
             )
-        if request.is_last_page and media.last_feed is not None:
-            add(media.last_feed.command, media.last_feed.payload(last_page=True))
+        if request.is_last_page:
+            for feed in media.last_feeds:
+                add(feed.command, feed.payload(last_page=True))
+        if not request.is_last_page and media.non_last_feed is not None:
+            add(media.non_last_feed.command, media.non_last_feed.payload())
         return tuple(packets)
 
     def _variant(self, protocol_variant: str | None) -> AstraP1VariantRecipe:
@@ -211,23 +261,24 @@ def _pack_raster(
 ) -> bytes:
     raster.validate()
     padding = recipe.raster_left_padding + max(0, profile_padding)
-    if padding + raster.width > recipe.head_width:
+    if padding + raster.width > recipe.head_width and not recipe.crop_to_head:
         raise ValueError(
             f"YK Astra P1 raster width {raster.width}px plus {padding}px padding "
             f"exceeds {recipe.head_width}px head"
         )
-    row_bytes = (recipe.head_width + 7) // 8
-    pixels = list(raster.pixels)
-    packed = bytearray()
-    for row in range(raster.height):
-        output = bytearray(row_bytes)
-        source = row * raster.width
-        for column in range(raster.width):
-            if pixels[source + column]:
-                bit = padding + column
-                output[bit >> 3] |= 0x80 >> (bit & 7)
-        packed.extend(output)
-    return bytes(packed)
+    if padding >= recipe.head_width:
+        return bytes(((recipe.head_width + 7) // 8) * raster.height)
+    width = min(raster.width, recipe.head_width - padding)
+    if width < raster.width:
+        raster = RasterBuffer(
+            pixels=[pixel for row in range(raster.height)
+                    for pixel in raster.pixels[row * raster.width:row * raster.width + width]],
+            width=width,
+            pixel_format=raster.pixel_format,
+        )
+    return pack_bw1_rows(pad_raster(
+        raster, left=padding, right=recipe.head_width - padding - raster.width,
+    ))
 
 
 def _uint8(value: int, label: str) -> int:
@@ -236,12 +287,16 @@ def _uint8(value: int, label: str) -> int:
     return value
 
 
+def _float32(value: float) -> float:
+    return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
 _S001_PLAIN = AstraP1MediaRecipe(
     setup_scope=AstraP1SetupScope.FIRST_PAGE,
     paper_type=0,
     first_feed=AstraP1Feed(AstraP1Command.FEED_BACKWARD, 12),
     page_feed=AstraP1Feed(AstraP1Command.FEED_FORWARD, 52),
-    last_feed=AstraP1Feed(AstraP1Command.FEED_FORWARD, 12),
+    last_feeds=(AstraP1Feed(AstraP1Command.FEED_FORWARD, 12),),
 )
 _S001_TAG = AstraP1MediaRecipe(
     setup_scope=AstraP1SetupScope.FIRST_PAGE,
@@ -255,18 +310,7 @@ _S001_TAG = AstraP1MediaRecipe(
         last_page_mode=1,
     ),
 )
-_S001_BLACK_TAG = AstraP1MediaRecipe(
-    setup_scope=AstraP1SetupScope.FIRST_PAGE,
-    paper_type=2,
-    first_feed=AstraP1Feed(AstraP1Command.FEED_SPECIAL, 800, mode=2),
-    pre_raster_feed=AstraP1Feed(AstraP1Command.FEED_FORWARD, 2),
-    page_feed=AstraP1Feed(
-        AstraP1Command.FEED_SPECIAL,
-        800,
-        mode=0,
-        last_page_mode=1,
-    ),
-)
+_S001_BLACK_TAG = replace(_S001_TAG, paper_type=2)
 
 S001_VARIANT = AstraP1VariantRecipe(
     head_width=96,
@@ -281,11 +325,39 @@ S001_VARIANT = AstraP1VariantRecipe(
     },
 )
 
-PUBLIC_RECIPE = AstraP1FamilyRecipe(variants={"s001": S001_VARIANT})
+HP6_VARIANT = AstraP1VariantRecipe(
+    head_width=96,
+    rows_per_slice=24,
+    speed=25,
+    default_paper_mode=PaperMode.PLAIN,
+    stepwise=True,
+    sequence_start=1,
+    crop_to_head=True,
+    mode_recipes={
+        PaperMode.PLAIN: AstraP1MediaRecipe(
+            setup_scope=AstraP1SetupScope.EVERY_PAGE,
+            first_feed=AstraP1Feed(AstraP1Command.FEED_SPECIAL, 32, mode=0x12),
+            last_feeds=(
+                AstraP1Feed(AstraP1Command.FEED_SPECIAL, 32, mode=0x11),
+                AstraP1Feed(AstraP1Command.FEED_FORWARD, 8),
+            ),
+            non_last_feed=AstraP1Feed(AstraP1Command.FEED_FORWARD, 80),
+        ),
+        PaperMode.TAG: AstraP1MediaRecipe(
+            setup_scope=AstraP1SetupScope.EVERY_PAGE,
+            first_feed=AstraP1Feed(AstraP1Command.FEED_SPECIAL, 800, mode=2),
+            image_start=AstraP1ImageStart(-4, 1.030),
+            page_feed=AstraP1Feed(AstraP1Command.FEED_SPECIAL, 800, mode=0, last_page_mode=1),
+        ),
+    },
+)
+
+PUBLIC_RECIPE = AstraP1FamilyRecipe(variants={"s001": S001_VARIANT, "xeasylabel_hp6_c": HP6_VARIANT})
 
 BEHAVIOR = ProtocolBehavior(
     print_controls=("blackening",),
     requires_speed=True,
+    contiguous_raster_variants=("xeasylabel_hp6_c",),
     default_image_pipeline=ImagePipelineConfig(
         formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.YK_ASTRA_P1_RAW,
@@ -304,10 +376,12 @@ __all__ = [
     "AstraP1Command",
     "AstraP1FamilyRecipe",
     "AstraP1Feed",
+    "AstraP1ImageStart",
     "AstraP1MediaRecipe",
     "AstraP1SetupScope",
     "AstraP1VariantRecipe",
     "BEHAVIOR",
+    "HP6_VARIANT",
     "PUBLIC_RECIPE",
     "S001_VARIANT",
 ]

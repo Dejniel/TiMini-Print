@@ -16,6 +16,7 @@ from .v5c import V5CRuntimeController
 from .v5g import V5GRuntimeController
 from .v5x import V5XRuntimeController
 from .yk_astra_p1 import AstraP1RuntimeController
+from .xeasylabel import XEasyLabelRuntimeController
 
 if TYPE_CHECKING:
     from ...devices import PrinterDevice
@@ -52,6 +53,8 @@ def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | 
     if device.protocol_family is ProtocolFamily.PHOMEMO_ESC:
         return PhomemoRuntimeController()
     if device.protocol_family is ProtocolFamily.YK_ASTRA_P1:
+        if device.protocol_variant == "xeasylabel_hp6_c":
+            return XEasyLabelRuntimeController(check_cutter=True)
         return AstraP1RuntimeController(
             paper_query_on_valid=device.protocol_variant == "s001",
         )

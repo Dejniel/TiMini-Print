@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 
@@ -60,11 +61,14 @@ class AstraP1RuntimeController(RuntimeController):
                 ),
             )
             return PreparedPrinter(device, self)
-        reply = await session.query_control_packet(
-            pack_status_query(sequence=self._take_sequence()),
-            timeout=max(1.0, timeout),
-            reply_complete=lambda data: first_status(data) is not None,
-        )
+        try:
+            reply = await session.query_control_packet(
+                pack_status_query(sequence=self._take_sequence()),
+                timeout=max(1.0, timeout),
+                reply_complete=lambda data: first_status(data) is not None,
+            )
+        except (TimeoutError, asyncio.TimeoutError):
+            reply = None
         status = first_status(reply)
         if status is None:
             self._astra_state.status_probe_available = False
@@ -77,7 +81,9 @@ class AstraP1RuntimeController(RuntimeController):
             )
             return PreparedPrinter(device, self)
         self._astra_state.status_probe_available = True
-        self._consume_status(session, status)
+        self._consume_frames(session, iter_yk_frames(reply or b""))
+        status = self._astra_state.last_status
+        assert status is not None
         if self._astra_state.paper_query_on_valid and status.valid_paper:
             await self._query_paper_details(session, timeout=timeout)
         return PreparedPrinter(device, self)
@@ -163,11 +169,15 @@ class AstraP1RuntimeController(RuntimeController):
         *,
         timeout: float,
     ) -> None:
-        reply = await session.query_control_packet(
-            pack_paper_query(sequence=self._take_sequence()),
-            timeout=max(1.0, timeout),
-            reply_complete=lambda data: first_paper_details(data) is not None,
-        )
+        try:
+            reply = await session.query_control_packet(
+                pack_paper_query(sequence=self._take_sequence()),
+                timeout=max(1.0, timeout),
+                reply_complete=lambda data: first_paper_details(data) is not None,
+            )
+        except (TimeoutError, asyncio.TimeoutError):
+            reply = None
+        self._consume_frames(session, iter_yk_frames(reply or b""))
         details = first_paper_details(reply)
         if details is None:
             session.report_warning(
@@ -177,7 +187,6 @@ class AstraP1RuntimeController(RuntimeController):
                 ),
             )
             return
-        self._astra_state.paper_details = details
         session.report_debug(
             "YK Astra P1 paper: "
             f"type={details.paper_type} width={details.width} "
@@ -186,15 +195,21 @@ class AstraP1RuntimeController(RuntimeController):
 
     def _completion_reply(self, data: bytes) -> bool:
         saw_printing = self._astra_state.saw_printing
+        finished = self._astra_state.finished
         for frame in iter_yk_frames(data):
             status = status_from_frame(frame)
-            if status is None or not status.completion_status:
+            if status is None:
                 continue
             if status.is_printing:
-                saw_printing = True
-            elif saw_printing:
-                return True
-        return False
+                finished = False
+                if status.completion_status:
+                    saw_printing = True
+            elif self._status_completes_job(status, saw_printing=saw_printing):
+                finished = True
+        return finished
+
+    def _status_completes_job(self, status: AstraP1Status, *, saw_printing: bool) -> bool:
+        return status.completion_status and saw_printing
 
     def _consume_frames(
         self,
@@ -216,12 +231,16 @@ class AstraP1RuntimeController(RuntimeController):
     ) -> None:
         previous = self._astra_state.last_status
         self._astra_state.last_status = status
-        if status.completion_status:
-            if status.is_printing:
+        if status.is_printing:
+            self._astra_state.finished = False
+            if status.completion_status:
                 self._astra_state.saw_printing = True
-            elif self._astra_state.saw_printing and not self._astra_state.finished:
-                self._astra_state.finished = True
-                self._astra_state.completion_count += 1
+        elif (
+            not self._astra_state.finished
+            and self._status_completes_job(status, saw_printing=self._astra_state.saw_printing)
+        ):
+            self._astra_state.finished = True
+            self._astra_state.completion_count += 1
         if status.errors and (
             previous is None or previous.status_bits != status.status_bits
         ):

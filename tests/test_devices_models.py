@@ -193,6 +193,7 @@ class DevicesModelsTests(unittest.TestCase):
 
     def test_catalog_whitespace_policies_follow_source_apps(self) -> None:
         expected_modes = {
+            "com.labelprinter.app": WhitespaceMode.PRESERVE,
             "com.fun.mxw": WhitespaceMode.REMOVE,
             "com.bleem.liugm": WhitespaceMode.REMOVE,
             "com.project.aimotech.printmaster": WhitespaceMode.REMOVE,

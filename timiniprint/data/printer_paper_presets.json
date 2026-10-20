@@ -1,4 +1,100 @@
 {
+  "xeasy_96_bm1_plain_15": {
+    "label": "15 mm continuous",
+    "paper_mode": "plain",
+    "paper_width_px": 93,
+    "render_width_px": 88,
+    "left_padding_px": 5,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_12x40": {
+    "label": "40 x 12 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 89,
+    "render_width_px": 80,
+    "left_padding_px": 9,
+    "render_height_px": 280,
+    "top_padding_px": 20,
+    "raster_height_px": 300,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_cable_12_5x74": {
+    "label": "74 x 12.5 mm (rotated)",
+    "paper_mode": "tag",
+    "paper_width_px": 91,
+    "render_width_px": 84,
+    "left_padding_px": 7,
+    "render_height_px": 544,
+    "top_padding_px": 24,
+    "raster_height_px": 568,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_15x30": {
+    "label": "30 x 15 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 93,
+    "render_width_px": 88,
+    "left_padding_px": 5,
+    "render_height_px": 208,
+    "top_padding_px": 16,
+    "raster_height_px": 224,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_14x22": {
+    "label": "22 x 14 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 93,
+    "render_width_px": 88,
+    "left_padding_px": 5,
+    "render_height_px": 144,
+    "top_padding_px": 16,
+    "raster_height_px": 160,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_14x30": {
+    "label": "30 x 14 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 93,
+    "render_width_px": 88,
+    "left_padding_px": 5,
+    "render_height_px": 208,
+    "top_padding_px": 16,
+    "raster_height_px": 224,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_14x40": {
+    "label": "40 x 14 mm (88 x 280 dots printable, left 5)",
+    "paper_mode": "tag",
+    "paper_width_px": 93,
+    "render_width_px": 88,
+    "left_padding_px": 5,
+    "render_height_px": 280,
+    "top_padding_px": 20,
+    "raster_height_px": 300,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_14x40_36": {
+    "label": "40 x 14 mm (88 x 288 dots printable, left 5)",
+    "paper_mode": "tag",
+    "paper_width_px": 93,
+    "render_width_px": 88,
+    "left_padding_px": 5,
+    "render_height_px": 288,
+    "top_padding_px": 16,
+    "raster_height_px": 304,
+    "rotation_degrees": 270
+  },
+  "xeasy_96_bm1_tag_14x50": {
+    "label": "50 x 14 mm",
+    "paper_mode": "tag",
+    "paper_width_px": 93,
+    "render_width_px": 88,
+    "left_padding_px": 5,
+    "render_height_px": 360,
+    "top_padding_px": 20,
+    "raster_height_px": 380,
+    "rotation_degrees": 270
+  },
   "toprint_p11_tag": {"label":"Label","paper_mode":"tag","paper_width_px":88,"render_width_px":88},
   "toprint_p11_black_mark": {"label":"Black mark","paper_mode":"black_tag","paper_width_px":88,"render_width_px":88},
   "toprint_yhk_plain": {"label":"Plain roll","paper_mode":"plain","paper_width_px":376,"render_width_px":376},

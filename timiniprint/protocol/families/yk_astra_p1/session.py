@@ -14,12 +14,13 @@ COMPLETION_STATUS_COMMANDS = (0x81, 0xFF)
 @dataclass(frozen=True)
 class AstraP1Status:
     command: int
-    voltage_raw: int
+    voltage_raw: int | None
     status_bits: int
     density: int
     auto_off_time: int
     speed: int
     battery_percent: int | None
+    extended_flags: int | None = None
 
     @property
     def is_printing(self) -> bool:
@@ -47,9 +48,13 @@ class AstraP1Status:
 
     @property
     def paper_loaded(self) -> bool:
-        if self.command == 0xFF:
-            return bool((self.voltage_raw & 0xFFFF) & (1 << 2))
+        if self.extended_flags is not None:
+            return bool(self.extended_flags & (1 << 2))
         return bool(self.status_bits & (1 << 15))
+
+    @property
+    def cutter_ready(self) -> bool:
+        return bool(self.status_bits & 1)
 
     @property
     def completion_status(self) -> bool:
@@ -95,12 +100,13 @@ def status_from_frame(frame: YkFrame) -> AstraP1Status | None:
         return None
     return AstraP1Status(
         command=frame.command,
-        voltage_raw=int.from_bytes(payload[0:2], "little", signed=True),
+        voltage_raw=None if len(payload) == 12 else int.from_bytes(payload[0:2], "little", signed=True),
         status_bits=int.from_bytes(payload[2:4], "little"),
         density=payload[4],
         auto_off_time=payload[5],
         speed=payload[6],
         battery_percent=payload[7] if len(payload) >= 8 else None,
+        extended_flags=int.from_bytes(payload[:2], "little") if len(payload) == 12 else None,
     )
 
 
