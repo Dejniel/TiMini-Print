@@ -29,6 +29,9 @@ class _Connection:
     def report_warning(self, **kwargs):
         pass
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message):
         pass
 
@@ -120,6 +123,7 @@ def test_init_height_query_is_prearmed_and_optional():
             can_send_control_packet_wait_notification=lambda: True,
             send_control_packet_wait_notification=AsyncMock(side_effect=receive),
             report_debug=lambda message: None,
+            report_trace=lambda message: None,
         )
         with patch("timiniprint.printing.runtime.v5c.asyncio.sleep", new=AsyncMock()):
             await controller.initialize_connection(session, mtu_size=23, timeout=0.1)
@@ -137,7 +141,7 @@ def test_height_probe_uses_available_query_api_and_preserves_fallback(missing):
         reply = make_packet(0xA1, b"\x80", "v5c") + make_packet(0xAA, b"\x00\x00\x64\x00", "v5c")
         query = AsyncMock(side_effect=TimeoutError()) if missing else AsyncMock(return_value=reply)
         session = SimpleNamespace(can_query_control_packet=lambda: True, query_control_packet=query,
-                                  report_debug=lambda message: None)
+                                  report_debug=lambda message: None, report_trace=lambda message: None)
         with patch("timiniprint.printing.runtime.v5c.asyncio.sleep", new=AsyncMock()):
             await controller.initialize_connection(session, mtu_size=23, timeout=10)
         assert query.call_args.kwargs["timeout"] == 0.4

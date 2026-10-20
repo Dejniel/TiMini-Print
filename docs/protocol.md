@@ -15,6 +15,21 @@ For XEasyLabel HP6-C media and session handling, see [XEasyLabel integration](xe
 
 ## Mental Model
 
+### Diagnostic log levels
+
+`reporting.Reporter` emits `status`, `warning`, `error`, `debug` and `trace`
+messages. Sinks choose which levels they retain. Normal diagnostic sinks should
+exclude `trace`; enable it explicitly when investigating wire data.
+
+Transfer summaries retain byte/chunk counts, timings and operation names at
+`debug`. Generic packet previews and input-file paths use `trace`, which may
+contain print content or filenames. Do not automatically attach trace logs to
+support reports. In the CLI, `-v` enables debug and `-vv` also enables trace.
+These levels are not a general anonymization mechanism for arbitrary error
+messages or device metadata.
+
+### Printer sessions
+
 `PrinterDevice` describes one printer as TiMini intends to use it: selected profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, and optional transport target.
 
 A connector opens a low-level transport connection for that device. The built-in connectors are:

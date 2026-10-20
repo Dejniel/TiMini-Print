@@ -38,6 +38,9 @@ def test_fragmented_printer_fault_stops_both_send_paths(catalog, family, opcode,
         reply = make_packet(opcode, bytes([status]), family)
 
         class Connection:
+            def report_trace(self, message: str) -> None:
+                pass
+
             def report_debug(self, message): pass
             def report_warning(self, **kwargs): pass
 

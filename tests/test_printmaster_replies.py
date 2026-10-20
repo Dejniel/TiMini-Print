@@ -44,6 +44,9 @@ class _ObservedConnection:
     async def attach_runtime_controller(self, controller, *, timeout):
         self.controller = controller
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message):
         pass
 

@@ -52,7 +52,8 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument("--paper", metavar="KEY", help="Select an exact paper preset key supported by this printer model")
     parser.add_argument("--image-mode", choices=[mode.value for mode in ImageMode],
                         help="Image conversion (default: grayscale when available, otherwise atkinson)")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose debug logs (CLI only)")
+    parser.add_argument("--verbose", "-v", action="count", default=0,
+                        help="Enable debug logs; -vv also includes raw trace data and file paths")
     parser.set_defaults(trim_side_margins=True)
     parser.set_defaults(trim_top_bottom_margins=True)
     mode_group = parser.add_mutually_exclusive_group()
@@ -392,7 +393,7 @@ def export_printer_config(
         out_path,
         catalog.serialize_printer_config(device),
     )
-    reporter.debug(
+    reporter.trace(
         short="Printer config",
         detail=(
             "Exported printer config: "
@@ -586,10 +587,12 @@ def paper_motion_serial(args: argparse.Namespace, action: str, reporter: reporti
     return 0
 
 
-def _build_cli_reporter(verbose: bool) -> reporting.Reporter:
+def _build_cli_reporter(verbose: int) -> reporting.Reporter:
     levels = {"warning", "error"}
     if verbose:
         levels.add("debug")
+    if verbose > 1:
+        levels.add("trace")
     return reporting.Reporter([reporting.StderrSink(levels=levels)])
 
 

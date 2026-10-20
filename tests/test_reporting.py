@@ -11,6 +11,7 @@ class ReportingTests(unittest.TestCase):
     def test_message_catalog_and_summary(self) -> None:
         self.assertEqual(reporting.MessageCatalog.resolve("status", reporting.STATUS_CONNECT_DONE), "Connected")
         self.assertIsNone(reporting.MessageCatalog.resolve("debug", "missing"))
+        self.assertIsNone(reporting.MessageCatalog.resolve("trace", reporting.ERROR_SCAN_FAILED))
         self.assertEqual(reporting.summarize_detail("Ala ma kota. I psa"), "Ala ma kota")
         self.assertTrue(reporting.summarize_detail("x" * 200).endswith("..."))
 

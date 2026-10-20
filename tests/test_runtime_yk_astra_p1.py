@@ -84,6 +84,9 @@ class _AstraSession:
             raise AssertionError("Astra completion matcher rejected a valid transition")
         return self.wait_reply
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message: str) -> None:
         self.debug.append(message)
 

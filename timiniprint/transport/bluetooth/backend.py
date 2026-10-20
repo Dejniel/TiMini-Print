@@ -37,6 +37,9 @@ class _ClassicRuntimeSession:
     def report_debug(self, message: str) -> None:
         self._reporter.debug(short="Runtime", detail=message)
 
+    def report_trace(self, message: str) -> None:
+        self._reporter.trace(short="Runtime", detail=message)
+
     def report_warning(self, *, short: str, detail: str) -> None:
         self._reporter.warning(short=short, detail=detail)
 
@@ -50,8 +53,9 @@ class _ClassicRuntimeSession:
                 self._flow_condition.notify_all()
         if changed:
             label = "Classic flow pause" if paused else "Classic flow resume"
-            detail = "" if not payload else f": {payload.hex()}"
-            self.report_debug(label + detail)
+            self.report_debug(label)
+            if payload:
+                self.report_trace(f"{label}: {payload.hex()}")
 
     def reopen_flow(self) -> None:
         with self._flow_condition:
@@ -727,9 +731,12 @@ class SppBackend:
             short="Bluetooth",
             detail=(
                 f"Classic payload send: bytes={total_bytes} chunk={chunk_size} "
-                f"chunks={chunk_count} delay_ms={delay_ms} "
-                f"head={data[:16].hex()} tail={data[-16:].hex()}"
+                f"chunks={chunk_count} delay_ms={delay_ms}"
             ),
+        )
+        self._reporter.trace(
+            short="Bluetooth",
+            detail=f"Classic payload: bytes={total_bytes} head={data[:16].hex()} tail={data[-16:].hex()}",
         )
         offset = 0
         chunk_index = 0

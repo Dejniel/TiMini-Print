@@ -291,6 +291,21 @@ async def _send_v5x_runtime_payload(
 
 
 class BleakTransportSessionTests(unittest.TestCase):
+    def test_ble_payload_preview_is_trace_only(self) -> None:
+        session, client, sink = self._make_session_with_sink(ProtocolFamily.TINY)
+        write = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write"])
+        session.bindings.write_char = write
+        session.bindings.write_selection_strategy = "test"
+        session.bindings.write_char_uuid = write.uuid
+        payload = b"private-raster"
+        asyncio.run(session.send(client, payload, mtu_size=23, timeout=0.1))
+        self.assertEqual(b"".join(call[1] for call in client.calls), payload)
+        normal = [message.detail or "" for message in sink.messages if message.level == "debug"]
+        trace = [message.detail or "" for message in sink.messages if message.level == "trace"]
+        self.assertTrue(any("payload=14" in line for line in normal))
+        self.assertFalse(any(payload.hex() in line or "head=" in line for line in normal))
+        self.assertTrue(any(payload.hex() in line for line in trace))
+
     def _make_session(self, family: ProtocolFamily) -> tuple[_BleakTransportSession, _Client]:
         reporter, _ = build_capture_reporter()
         resolver = _BleWriteEndpointResolver(reporter=reporter)

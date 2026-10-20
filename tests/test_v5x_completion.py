@@ -30,6 +30,9 @@ class _FakeSession:
     def can_wait_for_notification(self) -> bool:
         return self._can_wait
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message: str) -> None:
         self.debug.append(message)
 

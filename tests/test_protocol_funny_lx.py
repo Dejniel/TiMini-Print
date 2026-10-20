@@ -85,6 +85,9 @@ class _FunnyLxSession:
         if self.on_standard_payload is not None:
             self.on_standard_payload(payload)
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message: str) -> None:
         self.debugs.append(message)
 

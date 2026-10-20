@@ -46,6 +46,9 @@ class EarlyReplySession:
 
     def can_send_standard_payload(self): return True
     def can_query_control_packet(self): return True
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message): pass
     async def send_standard_payload(self, data): pass
 

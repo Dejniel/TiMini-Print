@@ -54,6 +54,21 @@ class AppCliCoreTests(unittest.TestCase):
         self.assertNotIn("debug", sink1._levels)
         self.assertIn("debug", sink2._levels)
 
+    def test_trace_is_only_enabled_with_repeated_verbose(self) -> None:
+        import contextlib
+        import io
+
+        for flags, expected in (([], False), (["-v"], False), (["-vv"], True)):
+            with self.subTest(flags=flags):
+                output = io.StringIO()
+                with contextlib.redirect_stderr(output):
+                    args = cli.parse_args(flags)
+                    reporter = cli._build_cli_reporter(args.verbose)
+                    reporter.debug(detail="job summary")
+                    reporter.trace(detail="private raster")
+                self.assertEqual("private raster" in output.getvalue(), expected)
+                self.assertEqual("job summary" in output.getvalue(), bool(flags))
+
     def test_emit_startup_debug_includes_version_and_platform(self) -> None:
         reporter, sink = build_capture_reporter()
 

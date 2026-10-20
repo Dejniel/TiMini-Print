@@ -46,6 +46,9 @@ class ProbeSession:
             packet, timeout=timeout, reply_complete=match,
         )
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message):
         pass
 

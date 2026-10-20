@@ -45,6 +45,9 @@ class Session:
     def can_send_control_packet_wait_notification(self):
         return self.query_available and self.ble
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message):
         self.debug.append(message)
 

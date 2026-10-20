@@ -21,7 +21,7 @@ class ProtocolReplyError(RuntimeError):
         self.reply = reply
         super().__init__(
             f"Required protocol reply for {step.label!r} was not confirmed: "
-            f"got {bytes_preview(reply)}"
+            f"received_bytes={None if reply is None else len(reply)}"
         )
 
 
@@ -33,7 +33,8 @@ async def execute_protocol_step(
     log_prefix: str = "Protocol",
 ) -> bytes | None:
     if step.operation is ProtocolStepOperation.SEND:
-        session.report_debug(f"{log_prefix} send {step.label}: {packet_summary(step.data)}")
+        session.report_debug(f"{log_prefix} send {step.label}: bytes={len(step.data)}")
+        session.report_trace(f"{log_prefix} send {step.label}: {packet_summary(step.data)}")
         await session.send_standard_payload(step.data)
         return None
     if step.operation is ProtocolStepOperation.WAIT:
@@ -74,7 +75,8 @@ async def _execute_wait_step(
         timeout=wait_timeout,
         required=False,
     )
-    session.report_debug(f"{log_prefix} wait {step.label}: rx={bytes_preview(reply)}")
+    session.report_debug(f"{log_prefix} wait {step.label}: rx_bytes={None if reply is None else len(reply)}")
+    session.report_trace(f"{log_prefix} wait {step.label}: rx={bytes_preview(reply)}")
     return reply
 
 
@@ -137,7 +139,7 @@ async def _query_once(
             reply_complete=reply_complete,
         )
     elif reply_complete is None:
-        session.report_debug(f"{log_prefix} send {step.label}: {packet_summary(step.data)}")
+        session.report_debug(f"{log_prefix} send {step.label}: bytes={len(step.data)}")
         await session.send_standard_payload(step.data)
         reply = None
     else:
@@ -161,6 +163,10 @@ async def _query_once(
         if buffer:
             reply = bytes(buffer)
     session.report_debug(
+        f"{log_prefix} query {step.label}: tx_bytes={len(step.data)} "
+        f"rx_bytes={None if reply is None else len(reply)}"
+    )
+    session.report_trace(
         f"{log_prefix} query {step.label}: "
         f"tx={bytes_preview(step.data)} rx={bytes_preview(reply)}"
     )
@@ -240,7 +246,8 @@ async def execute_protocol_steps(
                     short=f"Protocol {step.label} wait mismatch",
                     detail=(
                         f"Protocol wait {step.label!r} did not receive the expected notification, "
-                        f"got {bytes_preview(reply)}. Continuing, but the printer may reject the job."
+                        f"received_bytes={None if reply is None else len(reply)}. "
+                        "Continuing, but the printer may reject the job."
                     ),
                 )
             continue
@@ -249,7 +256,8 @@ async def execute_protocol_steps(
                 short=f"Protocol {step.label} reply mismatch",
                 detail=(
                     f"Protocol step {step.label!r} expected {step.expect.value}, "
-                    f"got {bytes_preview(reply)}. Continuing, but the printer may reject the job."
+                    f"received_bytes={None if reply is None else len(reply)}. "
+                    "Continuing, but the printer may reject the job."
                 ),
             )
     return True

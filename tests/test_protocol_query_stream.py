@@ -88,7 +88,8 @@ def test_incomplete_or_negative_response_stops_before_raster_and_keeps_reply(fra
     job = ProtocolJob(steps=(step, ProtocolStep.send("raster", b"DATA")))
     with pytest.raises(RuntimeError, match="Required protocol reply") as raised:
         asyncio.run(send_prepared_job(PreparedPrinter(_GenericDevice()), connection, job))
-    assert f"got {b''.join(fragments).hex(' ') if fragments else '<none>'}" in str(raised.value)
+    assert raised.value.reply == (b"".join(fragments) if fragments else None)
+    assert f"received_bytes={len(b''.join(fragments)) if fragments else None}" in str(raised.value)
     assert not connection.standard_payloads
     assert not connection.sent_jobs
 

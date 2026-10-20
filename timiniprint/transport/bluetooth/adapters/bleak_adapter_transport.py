@@ -464,7 +464,7 @@ class _BleakTransportSession:
         finally:
             if not is_control:
                 self._match_notification_waiters(payload)
-        self.report_debug(f"BLE notify: {payload.hex()}")
+        self.report_trace(f"BLE notify: {payload.hex()}")
 
     def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
         self.flow_can_write = not paused
@@ -474,8 +474,9 @@ class _BleakTransportSession:
         else:
             self._flow_resume_count += 1
             label = "flow resume"
-        detail = "" if not payload else f": {payload.hex()}"
-        self.report_debug(label + detail)
+        self.report_debug(label)
+        if payload:
+            self.report_trace(f"{label}: {payload.hex()}")
 
     def _is_control_channel(self, uuid: str) -> bool:
         configured = self._transport_profile.control_notify_char_uuid
@@ -570,6 +571,9 @@ class _BleakTransportSession:
     def report_debug(self, message: str) -> None:
         self._reporter.debug(short="BLE", detail=message)
 
+    def report_trace(self, message: str) -> None:
+        self._reporter.trace(short="BLE", detail=message)
+
     def report_warning(self, *, short: str, detail: str) -> None:
         self._reporter.warning(short=short, detail=detail)
 
@@ -649,7 +653,8 @@ class _BleakTransportSession:
         # passive waits from missing a notification that arrived just before the waiter.
         historical = self._match_notification_history(match)
         if historical is not None:
-            self.report_debug(f"notification matched recent {label}: {historical.hex()}")
+            self.report_debug(f"notification matched recent {label}")
+            self.report_trace(f"notification matched recent {label}: {historical.hex()}")
             return historical
         waiter = self._register_notification_waiter(label, match)
         try:
@@ -813,9 +818,8 @@ class _BleakTransportSession:
             if matched:
                 waiter.future.set_result(payload)
                 self._remove_notification_waiter(waiter)
-                self.report_debug(
-                    f"notification matched {waiter.label}: {payload.hex()}"
-                )
+                self.report_debug(f"notification matched {waiter.label}")
+                self.report_trace(f"notification matched {waiter.label}: {payload.hex()}")
 
     def _remove_notification_waiter(self, waiter: _NotificationWaiter) -> None:
         try:

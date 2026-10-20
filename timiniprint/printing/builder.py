@@ -172,9 +172,11 @@ class PrintJobBuilder:
         )
 
     def _validate_input_path(self, path: str) -> None:
+        if self._reporter is not None:
+            self._reporter.trace(short="Document", detail=reporting.format_kv("Input file", path=path))
         ext = os.path.splitext(path)[1].lower()
         supported = SUPPORTED_DOCUMENT_EXTENSIONS
         if ext not in supported:
             raise ValueError("Supported formats: " + ", ".join(sorted(supported)))
         if not os.path.isfile(path):
-            raise FileNotFoundError(f"File not found: {path}")
+            raise FileNotFoundError("Input file not found")

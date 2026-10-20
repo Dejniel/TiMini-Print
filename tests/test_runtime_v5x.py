@@ -102,6 +102,9 @@ class _Session:
     async def wait_for_notification(self, *args, **kwargs):
         raise AssertionError("pre-armed V5X acknowledgements should already be recorded")
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message: str) -> None:
         self.debug.append(message)
 

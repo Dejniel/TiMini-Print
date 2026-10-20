@@ -96,8 +96,13 @@ def report_ble_write_plan(
             chunks=chunk_count,
             reserve=reserve,
             delay_ms=delay_ms,
-            head=payload_head.hex(),
-            tail=payload_tail.hex(),
+        ),
+    )
+    reporter.trace(
+        short="BLE",
+        detail=reporting.format_kv(
+            "write payload", bytes=payload_bytes,
+            head=payload_head.hex(), tail=payload_tail.hex(),
         ),
     )
 

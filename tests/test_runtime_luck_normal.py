@@ -35,6 +35,9 @@ class _Session:
         self.debug_messages: list[str] = []
         self.warnings: list[tuple[str, str]] = []
 
+    def report_trace(self, message: str) -> None:
+        pass
+
     def report_debug(self, message: str) -> None:
         self.debug_messages.append(message)
 
@@ -78,6 +81,9 @@ class _ConnectionReporter:
 
     def debug(self, *, short=None, detail=None, **_kwargs) -> None:
         _ = short, detail
+
+    def trace(self, **_kwargs) -> None:
+        pass
 
     def warning(self, *, short=None, detail=None, **_kwargs) -> None:
         self.warnings.append((short or "", detail or ""))

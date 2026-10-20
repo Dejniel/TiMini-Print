@@ -151,6 +151,9 @@ class _Reporter:
     def __init__(self):
         self.debugs = []
 
+    def trace(self, **_kwargs):
+        pass
+
     def debug(self, *, short=None, detail=None, **_kwargs):
         self.debugs.append((short, detail))
 
@@ -204,6 +207,24 @@ class _BleScanAdapter:
 
 
 class BluetoothBackendConnectTests(unittest.TestCase):
+    def test_classic_payload_preview_is_trace_only(self) -> None:
+        from tests.helpers import build_capture_reporter
+
+        reporter, sink = build_capture_reporter()
+        backend = SppBackend(reporter=reporter)
+        sock = _Socket()
+        backend._sock = sock
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        payload = b"private-raster"
+        backend._write_blocking(payload, chunk_size=20, delay_ms=0)
+        self.assertEqual(sock.sent, [payload])
+        normal = [message.detail or "" for message in sink.messages if message.level == "debug"]
+        trace = [message.detail or "" for message in sink.messages if message.level == "trace"]
+        self.assertTrue(any("bytes=14" in line for line in normal))
+        self.assertFalse(any(payload.hex() in line or "head=" in line for line in normal))
+        self.assertTrue(any(payload.hex() in line for line in trace))
+
     def setUp(self) -> None:
         # These tests control recv() chunks with fake sockets. OS readiness is
         # covered separately by ClassicReceiveHub's real-socket tests.
@@ -431,8 +452,8 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(sock.sent, [b"ab", b"cd", b"ef"])
         details = [detail for _short, detail in reporter.debugs]
-        self.assertIn("Classic flow pause: 7061757365", details)
-        self.assertIn("Classic flow resume: 726573756d65", details)
+        self.assertIn("Classic flow pause", details)
+        self.assertIn("Classic flow resume", details)
 
     def test_write_blocking_classic_stops_between_chunks(self) -> None:
         backend = SppBackend(

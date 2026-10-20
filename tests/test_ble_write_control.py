@@ -70,7 +70,9 @@ def test_write_hook_runs_once_per_physical_chunk_on_every_path(path, fail):
             elif path == "steps":
                 async def write(data):
                     await session.send(client, data, mtu_size=23, timeout=1)
-                steps_session = SimpleNamespace(send_standard_payload=write, report_debug=lambda _: None)
+                steps_session = SimpleNamespace(
+                    send_standard_payload=write, report_debug=lambda _: None, report_trace=lambda _: None,
+                )
                 await execute_protocol_step(
                     steps_session, ProtocolStep.send("page", b"12345"), timeout=1,
                 )

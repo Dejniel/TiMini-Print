@@ -17,6 +17,9 @@ class _Reporter:
         self.debugs: list[tuple[str, str]] = []
         self.warnings: list[tuple[str, str]] = []
 
+    def trace(self, **_kwargs) -> None:
+        pass
+
     def debug(self, *, short=None, detail=None, **_kwargs) -> None:
         self.debugs.append((short or "", detail or ""))
 
