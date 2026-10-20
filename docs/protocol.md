@@ -39,6 +39,17 @@ support reports. The CLI defaults to warnings/errors; `-v` enables debug and
 These levels are not a general anonymization mechanism for arbitrary error
 messages or device metadata.
 
+`DocumentRenderer` exposes file read/decode failures as
+`rendering.DocumentReadError`, whose text contains a document kind and failure
+category, not the source filename or native decoder message. Original errors
+are emitted through its optional `reporter` at trace level; native exception
+chains are suppressed in the public failure. `PrintJobBuilder` passes its
+reporter when constructing the default renderer. An injected renderer keeps
+its own reporter configuration. Validation errors and programming errors are
+not converted into read failures. Platform loaders/decoders should raise
+`OSError` for I/O failures or `DocumentReadError(kind, cause)` chained from
+their native decode error.
+
 ### Printer sessions
 
 `PrinterDevice` describes one printer as TiMini intends to use it: selected profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, and optional transport target.

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Callable, Optional
+from typing import Callable, Iterator, Optional
 
 from PIL import Image, ImageOps
 
+from .. import reporting
 from ..devices.device import PrinterDevice
 from ..protocol import ImagePipelineConfig, PageFlow
 from ..protocol.runtime import RuntimePrintCapabilities
@@ -15,6 +17,7 @@ from ..rendering.converters.base import ImageLoader, PageSource
 from ..rendering.converters.image import ImageConverter
 from ..rendering.converters.pdf import PdfConverter, PdfRenderer
 from ..rendering.converters.text import TextConverter
+from ..rendering.errors import DocumentReadError
 from ..rendering.formats import document_kind, mm_to_px
 from ..rendering.renderer import PrintImageRenderer
 from .paper import ResolvedPaper, _plan_paper_layout, resolve_paper
@@ -89,6 +92,7 @@ class DocumentRenderer:
         text_font_resolver: TextFontResolver | None = None,
         text_loader: TextLoader | None = None,
         text_page_height_to_width: float | None = None,
+        reporter: reporting.Reporter | None = None,
     ) -> None:
         self.image_loader = image_loader
         self.pdf_renderer = pdf_renderer
@@ -96,6 +100,7 @@ class DocumentRenderer:
         self.text_font_resolver = text_font_resolver or (lambda key: key)
         self.text_loader = text_loader or _load_text
         self.text_page_height_to_width = text_page_height_to_width
+        self._reporter = reporter
 
     def plan_text(
         self,
@@ -122,26 +127,27 @@ class DocumentRenderer:
                 source_page_count=1,
                 page_flow=PageFlow.PAGED,
             )
-        planned_document = (
-            _text_document(self._text_content(document))
-            if kind == "text"
-            else document
-        )
-        with self._open_source(planned_document, kind, device, settings) as source:
-            return DocumentPlan(
-                document=planned_document,
-                kind=kind,
-                pages=tuple(
-                    DocumentPage(
-                        index,
-                        source_index=source.source_index(index),
-                        label=str((source.source_index(index) or index) + 1),
-                    )
-                    for index in range(source.page_count)
-                ),
-                source_page_count=source.source_page_count,
-                page_flow=PageFlow.CONTINUOUS if kind == "text" else PageFlow.PAGED,
+        with self._reading_document(kind):
+            planned_document = (
+                _text_document(self._text_content(document))
+                if kind == "text"
+                else document
             )
+            with self._open_source(planned_document, kind, device, settings) as source:
+                return DocumentPlan(
+                    document=planned_document,
+                    kind=kind,
+                    pages=tuple(
+                        DocumentPage(
+                            index,
+                            source_index=source.source_index(index),
+                            label=str((source.source_index(index) or index) + 1),
+                        )
+                        for index in range(source.page_count)
+                    ),
+                    source_page_count=source.source_page_count,
+                    page_flow=PageFlow.CONTINUOUS if kind == "text" else PageFlow.PAGED,
+                )
 
     def preview_page(
         self,
@@ -187,36 +193,37 @@ class DocumentRenderer:
         width = max(1, int(target_width))
         height = None if target_height is None else max(1, int(target_height))
         kind = self._document_kind(document)
-        if kind == "image":
-            if page_index != 0:
-                raise IndexError(f"Document page out of range: {page_index + 1}")
-            source = ImageConverter(
-                image_loader=self.image_loader,
-                trim_side_margins=False,
-                trim_top_bottom_margins=False,
-            ).open(document.source, width)
-        elif kind == "pdf":
-            source = PdfConverter(
-                trim_side_margins=False,
-                trim_top_bottom_margins=False,
-                render_dpi=144,
-                pdf_renderer=self.pdf_renderer,
-            ).open(document.source, width)
-        elif kind == "text":
-            source = TextConverter(
-                font_path=self.text_font_resolver(None),
-                page_height_to_width=(
-                    None if height is None else height / width
-                ),
-            ).open_text(self._text_content(document), width)
-        else:
-            raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
+        with self._reading_document(kind):
+            if kind == "image":
+                if page_index != 0:
+                    raise IndexError(f"Document page out of range: {page_index + 1}")
+                source = ImageConverter(
+                    image_loader=self.image_loader,
+                    trim_side_margins=False,
+                    trim_top_bottom_margins=False,
+                ).open(document.source, width)
+            elif kind == "pdf":
+                source = PdfConverter(
+                    trim_side_margins=False,
+                    trim_top_bottom_margins=False,
+                    render_dpi=144,
+                    pdf_renderer=self.pdf_renderer,
+                ).open(document.source, width)
+            elif kind == "text":
+                source = TextConverter(
+                    font_path=self.text_font_resolver(None),
+                    page_height_to_width=(
+                        None if height is None else height / width
+                    ),
+                ).open_text(self._text_content(document), width)
+            else:
+                raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
 
-        with source:
-            if page_index >= source.page_count:
-                raise IndexError(f"Document page out of range: {page_index + 1}")
-            image = source.page(page_index).image.copy()
-            page_count = source.source_page_count
+            with source:
+                if page_index >= source.page_count:
+                    raise IndexError(f"Document page out of range: {page_index + 1}")
+                image = source.page(page_index).image.copy()
+                page_count = source.source_page_count
         if height is not None and image.height > height:
             image.thumbnail((width, height), Image.Resampling.LANCZOS)
         return PreviewPage(
@@ -268,7 +275,7 @@ class DocumentRenderer:
         settings: PrintSettings,
     ) -> Page:
         paper = resolve_paper(device, settings)
-        with self._open_source(plan.document, plan.kind, device, settings) as source:
+        with self._reading_document(plan.kind), self._open_source(plan.document, plan.kind, device, settings) as source:
             if page.index < 0 or page.index >= source.page_count:
                 raise IndexError(f"Document page out of range: {page.number}")
             return self._apply_paper_layout(source.page(page.index), paper)
@@ -355,6 +362,16 @@ class DocumentRenderer:
                 rotation_degrees=rotation_degrees,
             ).open(document.source, width)
         raise ValueError("Supported file formats: png, jpg, jpeg, gif, bmp, webp, pdf, txt")
+
+    @contextmanager
+    def _reading_document(self, kind: str | None) -> Iterator[None]:
+        try:
+            yield
+        except (OSError, DocumentReadError) as exc:
+            if self._reporter is not None:
+                self._reporter.trace(short="Document read failed", exc=exc.__cause__ or exc)
+            error = exc if isinstance(exc, DocumentReadError) else DocumentReadError(kind, exc)
+            raise error from None
 
     def _render_options(
         self,

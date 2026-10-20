@@ -56,6 +56,7 @@ class PrintJobBuilder:
         self.document_renderer = document_renderer or DocumentRenderer(
             pdf_renderer=pdf_renderer,
             image_renderer=image_renderer,
+            reporter=reporter,
         )
 
     def build_from_file(self, path: str) -> ProtocolJob:
@@ -63,7 +64,9 @@ class PrintJobBuilder:
 
         Preserves ordered page steps and their completion policy. Missing files
         raise ``FileNotFoundError``; unsupported extensions and invalid settings
-        or geometry raise ``ValueError``. Decoder/runtime-data errors propagate.
+        or geometry raise ``ValueError``. Document read/decode failures raise
+        ``rendering.DocumentReadError`` without source names; native details are
+        available through trace. Other runtime-data errors propagate.
         Use ``iter_page_jobs()`` when the caller needs to consume jobs incrementally.
         """
         page_count = 0

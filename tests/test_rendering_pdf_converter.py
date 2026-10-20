@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import types
 import unittest
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -85,9 +86,9 @@ class RenderingPdfConverterTests(unittest.TestCase):
     def test_load_pdf_pages_with_mocked_pypdfium2(self) -> None:
         fake = types.ModuleType("pypdfium2")
         fake.PdfDocument = _FakePdfDocument
-        sys.modules["pypdfium2"] = fake
-        c = PdfConverter(page_selection="1", page_gap_px=3)
-        pages = c.load("dummy.pdf", width=8)
+        with patch.dict(sys.modules, {"pypdfium2": fake}):
+            c = PdfConverter(page_selection="1", page_gap_px=3)
+            pages = c.load("dummy.pdf", width=8)
         self.assertEqual(len(pages), 1)
         self.assertEqual(pages[0].image.width, 8)
         self.assertFalse(pages[0].is_text)
@@ -137,10 +138,10 @@ class RenderingPdfConverterTests(unittest.TestCase):
                 self._pages = []
                 self.closed = False
         fake.PdfDocument = _EmptyDoc
-        sys.modules["pypdfium2"] = fake
-        c = PdfConverter()
-        with self.assertRaises(RuntimeError):
-            c.load("dummy.pdf", width=8)
+        with patch.dict(sys.modules, {"pypdfium2": fake}):
+            c = PdfConverter()
+            with self.assertRaises(RuntimeError):
+                c.load("dummy.pdf", width=8)
 
 
 if __name__ == "__main__":

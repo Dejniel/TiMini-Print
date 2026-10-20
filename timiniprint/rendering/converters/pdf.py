@@ -4,6 +4,7 @@ from typing import List, Optional, Protocol, Sequence
 
 from PIL import Image
 
+from ..errors import DocumentReadError
 from .base import Page, PageSource, RasterConverter
 
 DEFAULT_RENDER_DPI = 200
@@ -26,7 +27,10 @@ class Pypdfium2PdfRenderer:
     def open(self, path: str) -> PdfDocument:
         import pypdfium2 as pdfium
 
-        return Pypdfium2PdfDocument(pdfium.PdfDocument(path))
+        try:
+            return Pypdfium2PdfDocument(pdfium.PdfDocument(path))
+        except (OSError, pdfium.PdfiumError) as exc:
+            raise DocumentReadError("PDF", exc) from exc
 
 
 class Pypdfium2PdfDocument:
@@ -38,11 +42,16 @@ class Pypdfium2PdfDocument:
         return len(self._document)
 
     def render_page(self, index: int, scale: float) -> Image.Image:
-        page = self._get_page(index)
+        import pypdfium2 as pdfium
+
         try:
-            return self._render_page_to_pil(page, scale)
-        finally:
-            self._close_page(page)
+            page = self._get_page(index)
+            try:
+                return self._render_page_to_pil(page, scale)
+            finally:
+                self._close_page(page)
+        except (OSError, pdfium.PdfiumError) as exc:
+            raise DocumentReadError("PDF", exc) from exc
 
     def close(self) -> None:
         close = getattr(self._document, "close", None)

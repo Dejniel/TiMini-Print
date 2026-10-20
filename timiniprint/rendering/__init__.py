@@ -9,6 +9,7 @@ if not hasattr(Image.Image, "get_flattened_data"):
     Image.Image.get_flattened_data = _get_flattened_data
 
 
+from .errors import DocumentReadError
 from .formats import (
     IMAGE_EXTENSIONS,
     PDF_EXTENSIONS,
@@ -20,6 +21,7 @@ from .formats import (
 )
 
 __all__ = [
+    "DocumentReadError",
     "IMAGE_EXTENSIONS",
     "PDF_EXTENSIONS",
     "SUPPORTED_DOCUMENT_EXTENSIONS",

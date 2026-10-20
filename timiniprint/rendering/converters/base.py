@@ -5,6 +5,8 @@ from typing import Callable, Iterable, Iterator, List
 
 from PIL import Image, ImageOps
 
+from ..errors import DocumentReadError
+
 ImageLoader = Callable[[str], Image.Image]
 
 
@@ -96,9 +98,12 @@ class RasterConverter(PageConverter):
 
     @staticmethod
     def load_image(path: str) -> Image.Image:
-        with Image.open(path) as img:
-            img = ImageOps.exif_transpose(img)
-            return img.copy()
+        try:
+            with Image.open(path) as img:
+                img = ImageOps.exif_transpose(img)
+                return img.copy()
+        except (OSError, ValueError, SyntaxError, Image.DecompressionBombError) as exc:
+            raise DocumentReadError("image", exc) from exc
 
     @staticmethod
     def _normalize_image(img: Image.Image) -> Image.Image:
