@@ -11,6 +11,7 @@ The normal path is:
 
 For package boundaries, read [architecture.md](architecture.md). For profile/model JSON data, read [catalog.md](catalog.md).
 For ToPrint media, encodings and passive status handling, see [ToPrint integration](toprint.md).
+For XEasyLabel HP6-C media and session handling, see [XEasyLabel integration](xeasylabel.md).
 
 ## Mental Model
 
@@ -359,7 +360,7 @@ builder = PrintJobBuilder(device, settings=PrintSettings(blackening=4))
 job = builder.build_from_file("example.png")
 ```
 
-Use `iter_page_jobs(...)` when memory matters and you want one page at a time.
+Use `iter_page_jobs(...)` to process independent document pages incrementally.
 
 ```python
 for page in builder.iter_page_jobs("document.pdf"):
@@ -392,7 +393,21 @@ job = PrinterProtocol(device).build_job(
 
 `PrinterProtocol` is stateless packet building. It does not connect to hardware and does not create runtime controllers.
 
-When an integration splits one continuous raster document into several calls, pass `page_index`, `page_count`, and `page_flow=PageFlow.CONTINUOUS` for every chunk. The default is `PageFlow.PAGED`, so existing one-page raster calls remain self-contained.
+Pass pixels in their intended orientation, with rendering-side paper layout
+already applied. `PrinterProtocol.build_job()` does not apply the preset's
+source rotation or rendering-side top/trailing padding. For padding and mirroring, prefer
+`timiniprint.printing.raster_job.build_raster_page_job(device, raster_set,
+is_text=False, settings=settings)`. This helper applies the selected preset's
+layout, but does not rotate, rescale or dither the supplied pixels.
+
+Before splitting a continuous raster into several jobs, check
+`PrinterProtocol(device).requires_contiguous_raster_for_continuous_pages()`.
+If true, join compatible content fragments with `RasterSet.concatenate_vertical(...)`
+before applying paper layout and building one job. `PrintJobBuilder` already
+handles continuous text without requiring the caller to join its render chunks.
+Otherwise, pass `page_index`, `page_count`, and `page_flow=PageFlow.CONTINUOUS`
+for every chunk. The default `PageFlow.PAGED` treats pages as independent;
+do not join independent PDF pages into one raster.
 
 ### Phomemo Sessions
 
