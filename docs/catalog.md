@@ -202,6 +202,7 @@ A `PaperPreset` contains:
 - `render_width_px`: width rendered by file/raster pipeline before protocol padding/centering
 - optional `render_height_px`: fixed content area height; taller pages are scaled to fit and text pagination uses this height
 - optional `raster_height_px`: exact final raster height; shorter output is padded with white rows at the trailing edge
+- optional `raster_width_px`: exact final raster width, independent of the protocol paper width; content is centered and oversized raw rasters are rejected, not cropped
 - optional `left_padding_px`: protocol-side left padding
 - optional `top_padding_px`: leading blank raster rows reserved before rendered content
 - optional `mirror_horizontal`: mirror the complete paper raster before protocol encoding

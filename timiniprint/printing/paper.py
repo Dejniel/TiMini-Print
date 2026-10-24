@@ -21,6 +21,7 @@ class ResolvedPaper:
     top_padding_px: int = 0
     max_height_px: int | None = None
     raster_height_px: int | None = None
+    raster_width_px: int | None = None
     mirror_horizontal: bool = False
     rotation_degrees: int = 0
     dither_mode: DitherMode | None = None
@@ -62,6 +63,7 @@ def resolve_paper(device: PrinterDevice, settings: PrintSettings) -> ResolvedPap
         top_padding_px=preset.top_padding_px,
         max_height_px=preset.max_height_px,
         raster_height_px=preset.raster_height_px,
+        raster_width_px=preset.raster_width_px,
         mirror_horizontal=preset.mirror_horizontal,
         rotation_degrees=preset.rotation_degrees,
         dither_mode=preset.dither_mode,
@@ -121,7 +123,12 @@ def _plan_paper_layout(
             f"{paper.top_padding_px}px exceeds paper raster height "
             f"{paper.raster_height_px}px"
         )
-    final_width = max(content_width, minimum_width)
+    if paper.raster_width_px is not None and content_width > paper.raster_width_px:
+        raise ValueError(
+            f"{content_label} width {content_width}px exceeds paper raster width "
+            f"{paper.raster_width_px}px"
+        )
+    final_width = paper.raster_width_px or max(content_width, minimum_width)
     left_padding = (final_width - content_width) // 2
     right_padding = final_width - content_width - left_padding
     reserved_height = max(content_height, content_box_height or content_height)

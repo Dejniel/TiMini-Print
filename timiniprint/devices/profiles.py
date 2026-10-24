@@ -179,6 +179,8 @@ class PaperPreset:
     a content-height target. ``raster_height_px`` reserves a total raster height,
     including top padding; ``max_height_px`` is a recipe-specific sheet limit.
     Neither height is a generic command to calibrate physical label pitch.
+    ``raster_width_px`` optionally fixes the final raster width independently
+    of the protocol-side paper width. Content must fit; it is never cropped.
 
     ``paper_mode`` selects the medium/recipe, not density or width. Preset
     construction validates basic geometry, not every model's raster constraints.
@@ -196,6 +198,7 @@ class PaperPreset:
     top_padding_px: int = 0
     max_height_px: Optional[int] = None
     raster_height_px: Optional[int] = None
+    raster_width_px: Optional[int] = None
     mirror_horizontal: bool = False
     rotation_degrees: int = 0
     dither_mode: Optional[DitherMode] = None
@@ -218,6 +221,7 @@ class PaperPreset:
             "top_padding_px",
             "max_height_px",
             "raster_height_px",
+            "raster_width_px",
         ):
             value = getattr(self, field_name)
             if value is not None and value < 0:
@@ -230,6 +234,10 @@ class PaperPreset:
             raise ValueError(f"paper preset {self.key} render_height_px must be greater than zero")
         if self.raster_height_px == 0:
             raise ValueError(f"paper preset {self.key} raster_height_px must be greater than zero")
+        if self.raster_width_px is not None and self.raster_width_px < self.render_width_px:
+            raise ValueError(
+                f"paper preset {self.key} raster_width_px must not be smaller than render_width_px"
+            )
         if self.render_height_scale <= 0:
             raise ValueError(
                 f"paper preset {self.key} render_height_scale must be greater than zero"
