@@ -16,7 +16,6 @@ from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig
 from .base import PrintJobRequest, ProtocolBehavior
-from .v5_common import build_lzo_band_frames
 
 # These A6 payloads are the fixed "lattice" envelopes used before and after
 # a V5G print job.
@@ -29,8 +28,6 @@ _POST_IMAGE_FEED_SPEED = 0x19
 _DENSITY_PAYLOAD_PREFIX = 0x01
 _DENSITY_MIN = 1
 _DENSITY_MAX = 200
-# Gray jobs are sent in 20-row compressed bands.
-_GRAY_BAND_ROWS = 20
 # 384-dot V5G row packets are 56 bytes. Eight rows per BLE write keeps the
 # transport out of the old 20-byte fallback path without changing payloads.
 V5G_CONNECT_QUERY_PACKET = bytes.fromhex("5178A30001000000FF")
@@ -80,19 +77,6 @@ def _dot_frames(request: PrintJobRequest) -> bytes:
     return bytes(job)
 
 
-def _gray_frames(request: PrintJobRequest) -> bytes:
-    raster = request.default_raster
-    if raster.pixel_format not in (PixelFormat.GRAY4, PixelFormat.GRAY8):
-        raise ValueError("V5G gray jobs require GRAY4 or GRAY8 raster data")
-
-    return build_lzo_band_frames(
-        raster,
-        opcode=0xCF,
-        rows_per_band=_GRAY_BAND_ROWS,
-        protocol_family=request.protocol_family,
-    )
-
-
 def _build_payload(request: PrintJobRequest) -> bytes:
     job = bytearray()
     if request.density is not None:
@@ -105,10 +89,7 @@ def _build_payload(request: PrintJobRequest) -> bytes:
     if request.starts_media_page:
         job += feed_paper_cmd(_PRE_IMAGE_FEED_SPEED, request.protocol_family)
 
-    if request.image_pipeline.encoding == ImageEncoding.V5G_GRAY:
-        job += _gray_frames(request)
-    else:
-        job += _dot_frames(request)
+    job += _dot_frames(request)
     if request.ends_media_page:
         job += feed_paper_cmd(_POST_IMAGE_FEED_SPEED, request.protocol_family)
         for _ in range(max(0, request.post_print_feed_count)):
@@ -128,12 +109,11 @@ def build_job(request: PrintJobRequest) -> ProtocolPlan:
 BEHAVIOR = ProtocolBehavior(
     print_controls=("blackening",),
     default_image_pipeline=ImagePipelineConfig(
-        formats=(PixelFormat.BW1, PixelFormat.GRAY4, PixelFormat.GRAY8),
+        formats=(PixelFormat.BW1,),
         encoding=ImageEncoding.V5G_DOT,
     ),
     image_encoding_support={
         ImageEncoding.V5G_DOT: (PixelFormat.BW1,),
-        ImageEncoding.V5G_GRAY: (PixelFormat.GRAY4, PixelFormat.GRAY8),
     },
     job_builder=build_job,
 )

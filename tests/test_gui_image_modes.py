@@ -80,3 +80,19 @@ def test_negative_gray_capability_replaces_unavailable_explicit_selection(app):
     app._refresh_image_options()
     assert app.image_mode_var.get() == "Atkinson"
     assert "Grayscale" not in app.image_mode_combo["values"]
+
+
+def test_mx06_selector_defaults_to_atkinson_and_keeps_other_dithering_choices(app):
+    connect(app, "v5x")
+    app.image_mode_var.set("Grayscale")
+    app._on_image_mode_selected()
+    connect(app, "mx05")
+    assert app.image_mode_var.get() == "Atkinson"
+    assert tuple(app.image_mode_combo["values"]) == (
+        "Atkinson", "Floyd–Steinberg", "Bayer 4×4", "Bayer 8×8", "Threshold",
+    )
+    assert str(app.image_mode_combo["state"]) == "readonly"
+    app.image_mode_var.set("Floyd–Steinberg")
+    app._on_image_mode_selected()
+    app._refresh_paper_controls()
+    assert app.image_mode_var.get() == "Floyd–Steinberg"

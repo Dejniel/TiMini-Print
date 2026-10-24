@@ -349,6 +349,10 @@ High-level printing uses a single `PrintSettings.image_mode`:
 The GUI presents these in one **Dithering** list without an Automatic entry.
 Grayscale does not run a monochrome dither algorithm.
 
+The ordinary V5G recipe supports monochrome `A2` rows and defaults to Atkinson.
+Grayscale `CF` blocks require a different recipe and are not offered by this
+implementation. This does not change grayscale support in V5X or V5C.
+
 ```python
 from timiniprint.printing.settings import ImageMode, PrintSettings
 
@@ -611,7 +615,7 @@ Use the tool version when you need to compare packet structure or image encoding
 
 ```bash
 python3 tools/debug_protocol_job.py --model mx10 --text "test" --out job.json
-python3 tools/debug_protocol_job.py --runtime-preset mx06 --text "test" --image-encoding v5g_gray --out job.json
+python3 tools/debug_protocol_job.py --runtime-preset mx06 --text "test" --image-encoding v5g_dot --out job.json
 ```
 
 `--profile` and `--runtime-preset` intentionally use internal catalog keys. Prefer `--model` or `--printer-config` unless you are debugging catalog internals.

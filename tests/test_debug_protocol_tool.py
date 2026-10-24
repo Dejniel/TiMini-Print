@@ -34,7 +34,7 @@ class DebugProtocolToolTests(unittest.TestCase):
                         "--text",
                         "hello",
                         "--image-encoding",
-                        "v5g_gray",
+                        "v5g_dot",
                         "--darkness",
                         "5",
                     ]
@@ -44,7 +44,7 @@ class DebugProtocolToolTests(unittest.TestCase):
             build_job.assert_called_once()
             self.assertEqual(
                 build_job.call_args.kwargs["image_encoding_override"],
-                ImageEncoding.V5G_GRAY,
+                ImageEncoding.V5G_DOT,
             )
             with open(dump_path, encoding="utf-8") as handle:
                 payload = json.load(handle)
@@ -54,9 +54,9 @@ class DebugProtocolToolTests(unittest.TestCase):
             self.assertEqual(payload["device"]["profile_runtime_preset_key"], "mx06")
             self.assertEqual(payload["device"]["protocol_family"], "v5g")
             self.assertEqual(payload["settings"]["darkness"], 5)
-            self.assertEqual(payload["settings"]["image_encoding_override"], "v5g_gray")
-            self.assertEqual(payload["job"]["effective_image_pipeline"]["encoding"], "v5g_gray")
-            self.assertEqual(payload["job"]["effective_image_pipeline"]["formats"][0], "gray4")
+            self.assertEqual(payload["settings"]["image_encoding_override"], "v5g_dot")
+            self.assertEqual(payload["job"]["effective_image_pipeline"]["encoding"], "v5g_dot")
+            self.assertEqual(payload["job"]["effective_image_pipeline"]["formats"][0], "bw1")
             self.assertEqual(payload["transport"]["standard_chunk_cap"], 56 * 8)
             self.assertEqual(payload["job"]["payload_bytes"], len(packet))
             self.assertFalse(payload["job"]["wait_for_completion"])

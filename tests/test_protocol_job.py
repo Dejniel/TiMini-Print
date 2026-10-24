@@ -82,11 +82,7 @@ class ProtocolJobTests(unittest.TestCase):
             encoding=cls.types.ImageEncoding.DCK_DEFAULT,
         )
         cls.v5g_dot = cls.types.ImagePipelineConfig(
-            formats=(
-                cls.raster.PixelFormat.BW1,
-                cls.raster.PixelFormat.GRAY4,
-                cls.raster.PixelFormat.GRAY8,
-            ),
+            formats=(cls.raster.PixelFormat.BW1,),
             encoding=cls.types.ImageEncoding.V5G_DOT,
         )
         cls.v5g_gray = cls.types.ImagePipelineConfig(
@@ -1663,7 +1659,7 @@ class ProtocolJobTests(unittest.TestCase):
         self.assertFalse(first.wait_for_completion)
         self.assertTrue(last.wait_for_completion)
 
-    def test_build_v5g_gray_job_uses_density_and_compressed_frame(self) -> None:
+    def test_build_v5g_gray_job_is_rejected_by_the_ordinary_recipe(self) -> None:
         raster_set = self._raster_set(
             self._bw_raster([1, 0, 1, 0, 1, 0, 1, 0] * 2),
             self.raster.RasterBuffer(
@@ -1673,11 +1669,8 @@ class ProtocolJobTests(unittest.TestCase):
             ),
         )
 
-        with patch(
-            "timiniprint.protocol.families.v5_common.compress_lzo1x_1",
-            return_value=bytes.fromhex("AABB"),
-        ):
-            data = self.builders._build_job_from_raster_set(
+        with self.assertRaisesRegex(ValueError, "v5g.*v5g_gray"):
+            self.builders._build_job_from_raster_set(
                 raster_set=raster_set,
                 is_text=False,
                 speed=None,
@@ -1691,33 +1684,6 @@ class ProtocolJobTests(unittest.TestCase):
                 post_print_feed_count=3,
                 image_pipeline=self.v5g_gray,
             )
-
-        density_packet = self.commands.make_packet(
-            0xF2,
-            encode_density_payload(200),
-            ProtocolFamily.V5G,
-        )
-        self.assertIn(density_packet, data)
-        self.assertLess(
-            data.index(density_packet),
-            data.index(self.commands.make_packet(0xA3, bytes([0x00]), ProtocolFamily.V5G)),
-        )
-        self.assertIn(
-            self.commands.make_packet(0xCF, bytes.fromhex("08000200AABB"), ProtocolFamily.V5G),
-            data,
-        )
-        self.assertEqual(
-            data.count(self.commands.make_packet(0xBD, bytes([0x0A]), ProtocolFamily.V5G)),
-            1,
-        )
-        self.assertEqual(
-            data.count(self.commands.make_packet(0xBD, bytes([0x19]), ProtocolFamily.V5G)),
-            1,
-        )
-        self.assertGreaterEqual(
-            data.count(self.commands.make_packet(0xA1, bytes([0x30, 0x00]), ProtocolFamily.V5G)),
-            3,
-        )
 
 
 if __name__ == "__main__":

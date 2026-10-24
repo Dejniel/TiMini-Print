@@ -12,6 +12,7 @@ from timiniprint.printing.raster_job import build_raster_job
 from timiniprint.printing.settings import ImageMode, PrintSettings
 from timiniprint.protocol import ImageEncoding, PrinterProtocol, ProtocolFamily
 from timiniprint.protocol.families import get_protocol_definition
+from timiniprint.protocol.packet import PrefixedPacketStreamDecoder
 from timiniprint.protocol.runtime import RuntimePrintCapabilities
 from timiniprint.raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
 
@@ -19,6 +20,46 @@ from timiniprint.raster import DitherMode, PixelFormat, RasterBuffer, RasterSet
 @pytest.fixture(scope="module")
 def catalog():
     return PrinterCatalog.load()
+
+
+@pytest.mark.parametrize("name", ["MX05", "MX06"])
+def test_mx05_mx06_default_to_dithered_monochrome_not_bq_gray(catalog, name):
+    device = catalog.detect_device(name, "AA:BB:CC:DD:EE:58")
+    assert device.model_key == "mx05"
+    assert device.protocol_family is ProtocolFamily.V5G
+    assert device.profile_key == "v5g_small_203"
+    settings = PrintSettings(trim_side_margins=False, trim_top_bottom_margins=False)
+    assert settings.available_image_modes(device) == tuple(ImageMode)[1:]
+    renderer = DocumentRenderer(image_loader=lambda _: Image.new("RGB", (384, 8), (100, 100, 100)))
+    plan = renderer.plan_document(RenderDocument("photo.png"), device, settings)
+    page = renderer.print_page(plan, plan.pages[0], device, settings)
+    assert page.image_pipeline.default_format is PixelFormat.BW1
+    assert page.image_pipeline.encoding is ImageEncoding.V5G_DOT
+    assert page.dither_mode is DitherMode.ATKINSON
+    raster = page.raster_set.require(PixelFormat.BW1)
+    assert 0 < sum(raster.pixels) < len(raster.pixels)
+    job = PrinterProtocol(device).build_job(
+        page.raster_set, is_text=False, image_pipeline=page.image_pipeline
+    )
+    opcodes = [
+        frame.opcode
+        for frame in PrefixedPacketStreamDecoder(ProtocolFamily.V5G).feed(job.payload)
+    ]
+    assert opcodes.count(0xA2) == raster.height
+    assert 0xCF not in opcodes
+
+
+@pytest.mark.parametrize("profile", ["bq02", "mx02", "mx03", "mx07", "gt02_v5g", "v5g_small_203"])
+def test_ordinary_v5g_recipe_does_not_advertise_or_accept_gray(catalog, profile):
+    device = catalog.device_from_profile(profile)
+    protocol = PrinterProtocol(device)
+    assert protocol.supported_pixel_formats() == (PixelFormat.BW1,)
+    assert device.image_pipeline.formats == (PixelFormat.BW1,)
+    assert PrintSettings().resolve_image_pipeline(device).encoding is ImageEncoding.V5G_DOT
+    with pytest.raises(ValueError, match="grayscale"):
+        PrintSettings(image_mode=ImageMode.GRAYSCALE).resolve_image_pipeline(device)
+    with pytest.raises(ValueError, match="v5g_gray"):
+        protocol.resolve_image_pipeline(image_encoding_override=ImageEncoding.V5G_GRAY)
 
 
 @pytest.mark.parametrize("profile", ["v5x", "v5c"])

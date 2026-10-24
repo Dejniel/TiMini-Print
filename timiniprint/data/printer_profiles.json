@@ -1972,9 +1972,7 @@
     },
     "default_image_pipeline": {
       "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
+        "bw1"
       ],
       "encoding": "v5g_dot"
     },
@@ -3928,9 +3926,7 @@
     },
     "default_image_pipeline": {
       "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
+        "bw1"
       ],
       "encoding": "v5g_dot"
     },
@@ -3973,9 +3969,7 @@
     },
     "default_image_pipeline": {
       "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
+        "bw1"
       ],
       "encoding": "v5g_dot"
     },
@@ -4018,9 +4012,7 @@
     },
     "default_image_pipeline": {
       "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
+        "bw1"
       ],
       "encoding": "v5g_dot"
     },
@@ -4932,9 +4924,7 @@
     },
     "default_image_pipeline": {
       "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
+        "bw1"
       ],
       "encoding": "v5g_dot"
     },
@@ -4989,9 +4979,7 @@
     },
     "default_image_pipeline": {
       "formats": [
-        "bw1",
-        "gray4",
-        "gray8"
+        "bw1"
       ],
       "encoding": "v5g_dot"
     },
