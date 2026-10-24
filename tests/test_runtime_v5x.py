@@ -364,7 +364,8 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(session.events[1], ("sleep", 0.2))
         self.assertEqual(session.events[2][1][2], 0xA9)
 
-    async def test_next_page_waits_for_fresh_aa_and_survives_controller_adoption(self) -> None:
+    async def test_next_page_does_not_wait_for_aa(self) -> None:
+        """The MXW-W5 emits no 0xaa, so page 2 must not wait for one."""
         controller = V5XRuntimeController()
         session = _Session(controller)
         original_send = session.send_control_packet
@@ -376,21 +377,13 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         session.send_control_packet = no_ready
         step = ProtocolStep.send("page", _page_payload())
         with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
+            # _Session.wait_for_notification raises, so any 0xaa wait would fail here.
             await controller.send_protocol_steps(session, (step,), timeout=0.1)
-            self.assertFalse(any(kind == "wait" for kind, _ in session.events))
-            next_controller = controller
-            session.controller = next_controller
-            task = asyncio.create_task(next_controller.send_protocol_steps(session, (step,), timeout=0.1))
-            await asyncio.sleep(0)
-            self.assertFalse(task.done())
-            self.assertEqual(len(session.events), 4)
-            next_controller.handle_notification(session, V5X_NOTIFY_START_READY)
-            await task
+            await controller.send_protocol_steps(session, (step,), timeout=0.1)
         self.assertEqual([kind for kind, _ in session.events], ["control", "control", "bulk", "control", "control", "bulk", "control"])
 
-    async def test_next_page_allows_physical_print_time_beyond_command_timeout(self) -> None:
+    async def test_late_aa_notification_does_not_break_the_job(self) -> None:
         controller = V5XRuntimeController()
-        controller._COMPLETION_MAX_S = 0.2
         session = _Session(controller)
         send = session.send_control_packet
         ready_tasks = []
@@ -412,9 +405,9 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         await asyncio.gather(*ready_tasks)
         self.assertEqual(sum(kind == "bulk" for kind, _ in session.events), 2)
 
-    async def test_missing_next_page_ready_stops_before_the_next_page(self) -> None:
+    async def test_silent_printer_still_sends_the_next_page(self) -> None:
+        """No 0xaa and no status stream: page 2 must still go out."""
         controller = V5XRuntimeController()
-        controller._COMPLETION_MAX_S = 0.01
         session = _Session(controller)
         send = session.send_control_packet
         async def no_ready(packet, *, timeout):
@@ -425,10 +418,72 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
         session.send_control_packet = no_ready
         step = ProtocolStep.send("page", _page_payload())
         with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
-            with self.assertRaisesRegex(TimeoutError, "start ready 0xaa"):
-                await controller.send_protocol_steps(session, (step, step), timeout=0.001)
-        self.assertEqual(sum(kind == "bulk" for kind, _ in session.events), 1)
+            await controller.send_protocol_steps(session, (step, step), timeout=0.001)
+        self.assertEqual(sum(kind == "bulk" for kind, _ in session.events), 2)
+        # The second page's finalizer re-arms the flag; nothing waits on it.
         self.assertTrue(controller.debug_snapshot()["await_start_ready"])
+
+    async def test_busy_start_reply_is_retried_until_the_page_is_taken(self) -> None:
+        """0xa9 answered 0x01 means busy: retry the start command, not the raster."""
+        controller = V5XRuntimeController()
+        controller._BUSY_RETRY_MAX = 4
+        controller._BUSY_RETRY_DELAY_S = 0.0
+        session = _Session(controller)
+        send = session.send_control_packet
+        busy_replies = 2
+        a9_sends = 0
+
+        async def busy_then_free(packet, *, timeout):
+            nonlocal busy_replies, a9_sends
+            if packet[2] == 0xA9:
+                a9_sends += 1
+                session.events.append(("control", packet))
+                if busy_replies:
+                    busy_replies -= 1
+                    reply = make_packet(0xA9, b"\x01", ProtocolFamily.V5X)
+                else:
+                    reply = bytes.fromhex("2221a90001000000")
+                session.last_reply = reply
+                controller.handle_notification(session, reply)
+                return True
+            return await send(packet, timeout=timeout)
+
+        session.send_control_packet = busy_then_free
+        step = ProtocolStep.send("page", _page_payload())
+        with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
+            await controller.send_protocol_steps(session, (step, step), timeout=0.1)
+
+        # Page 1 needs three attempts (two busy, then accepted); page 2 one.
+        self.assertEqual(a9_sends, 4)
+        # The raster is written once per page: retries must not duplicate it.
+        self.assertEqual(sum(kind == "bulk" for kind, _ in session.events), 2)
+
+    async def test_start_reply_beyond_the_retry_budget_still_reports_not_ready(self) -> None:
+        """A printer that only ever answers 0x01 must fail instead of hanging."""
+        controller = V5XRuntimeController()
+        controller._BUSY_RETRY_MAX = 3
+        controller._BUSY_RETRY_DELAY_S = 0.0
+        session = _Session(controller)
+        send = session.send_control_packet
+
+        async def always_busy(packet, *, timeout):
+            if packet[2] == 0xA9:
+                session.events.append(("control", packet))
+                reply = make_packet(0xA9, b"\x01", ProtocolFamily.V5X)
+                session.last_reply = reply
+                controller.handle_notification(session, reply)
+                return True
+            return await send(packet, timeout=timeout)
+
+        session.send_control_packet = always_busy
+        step = ProtocolStep.send("page", _page_payload())
+        with patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
+            with self.assertRaisesRegex(PrinterNotReadyError, "start print was rejected"):
+                await controller.send_protocol_steps(session, (step, step), timeout=0.1)
+        self.assertEqual(
+            sum(1 for kind, p in session.events if kind == "control" and p[2] == 0xA9),
+            3,
+        )
 
     async def test_missing_or_unreadable_connect_info_never_reports_ready(self) -> None:
         replies = (

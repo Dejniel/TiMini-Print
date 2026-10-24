@@ -71,6 +71,15 @@ class V5XRuntimeController(RuntimeController):
     _COMPLETION_QUIET_S: float = 3.0
     _COMPLETION_GRACE_S: float = 3.0
     _COMPLETION_MAX_S: float = 60.0
+    # The MXW-W5 never emits 0xaa between pages and sends no idle 0xa1 while it
+    # is busy, so waiting on a notification cannot work. The 0xa9 answer is the
+    # usable signal: 0x00 means the start command was accepted, 0x01 means the
+    # printer is still busy with the previous page. The raster has not been
+    # written yet, so re-sending the start command cannot double-print anything.
+    # Observed on firmware 1.9.3.1.2: 7-8 busy replies at 0.4 s intervals
+    # (~3 s) before the page is accepted, so the budget keeps a wide margin.
+    _BUSY_RETRY_MAX: int = 40
+    _BUSY_RETRY_DELAY_S: float = 0.4
 
     def __init__(self) -> None:
         self._state = _V5XSessionState()
@@ -155,20 +164,34 @@ class V5XRuntimeController(RuntimeController):
                 session,
                 packet,
                 context,
-                timeout=timeout,
                 density_updated=density_changed,
             )
             ack_opcode = self._arm_command_ack(session, packet)
             try:
                 if ack_opcode is not None:
-                    reply = await session.send_control_packet_wait_notification(
-                        packet,
-                        label="V5X command ack 0xa9",
-                        match=lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xA9,
-                        timeout=timeout,
-                        required=True,
-                    )
-                    self._state.last_a9_status = self._extract_status_byte(session, reply or b"")
+                    # 0xa9 answered with 0x01 means the printer is still busy
+                    # with the previous page, not that this page was refused.
+                    # Re-send just the start command until it takes the page;
+                    # the raster itself has not been written yet.
+                    status: Optional[int] = None
+                    for attempt in range(self._BUSY_RETRY_MAX):
+                        reply = await session.send_control_packet_wait_notification(
+                            packet,
+                            label="V5X command ack 0xa9",
+                            match=lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xA9,
+                            timeout=timeout,
+                            required=True,
+                        )
+                        status = self._extract_status_byte(session, reply or b"")
+                        if status != 0x01:
+                            break
+                        if attempt + 1 < self._BUSY_RETRY_MAX:
+                            session.report_debug(
+                                f"0xa9 busy (0x01); waiting before page retry "
+                                f"{attempt + 2}/{self._BUSY_RETRY_MAX}"
+                            )
+                            await asyncio.sleep(self._BUSY_RETRY_DELAY_S)
+                    self._state.last_a9_status = status
                     self._validate_command_ack(ack_opcode)
                 else:
                     sent = await session.send_control_packet(packet, timeout=timeout)
@@ -244,12 +267,16 @@ class V5XRuntimeController(RuntimeController):
         packet: bytes,
         context: V5XJobContext,
         *,
-        timeout: float,
         density_updated: bool,
     ) -> None:
         opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5X)
-        if opcode in (0xA2, 0xA9):
-            await self._wait_for_start_ready(session, timeout)
+        if opcode in (0xA2, 0xA9) and self._state.await_start_ready:
+            # This firmware sends no 0xaa between pages and no idle 0xa1 while
+            # it is busy, so there is nothing to wait for here. The busy retry
+            # in _send_split_job is what paces the pages.
+            session.report_debug("skipping V5X next-page readiness wait")
+            self._state.await_start_ready = False
+            self._state.start_ready_seen = False
         if opcode == 0xA9:
             delay_ms = start_delay_ms(
                 context,
@@ -340,21 +367,6 @@ class V5XRuntimeController(RuntimeController):
         elif opcode == 0xB3:
             self._schedule_sign_response(session, payload)
 
-    async def _wait_for_start_ready(self, session, timeout: float) -> None:
-        if not self._state.await_start_ready:
-            return
-        try:
-            if not self._state.start_ready_seen and self._state.start_ready_event is not None:
-                session.report_debug("waiting for V5X next-page readiness: 0xaa")
-                await asyncio.wait_for(
-                    self._state.start_ready_event.wait(),
-                    timeout=max(timeout, self._COMPLETION_MAX_S),
-                )
-        except asyncio.TimeoutError:
-            raise TimeoutError("Timed out waiting for V5X start ready 0xaa") from None
-        self._state.await_start_ready = False
-        self._state.start_ready_seen = False
-
     async def _wait_for_connect_info(self, session, timeout: float) -> None:
         if not self._state.await_connect_info or self._state.connect_info_received:
             return
@@ -442,6 +454,9 @@ class V5XRuntimeController(RuntimeController):
         status = self._state.last_a9_status
         if status is None:
             raise RuntimeError("V5X start print response did not include a status byte")
+        # 0x00 means the start command was accepted; 0x01 means the printer is
+        # still busy with the previous page and is handled by the retry loop in
+        # _send_split_job. Anything else is a real rejection.
         if status != 0x00:
             raise PrinterNotReadyError(
                 f"V5X start print was rejected (status=0x{status:02x})",
