@@ -260,9 +260,15 @@ class BluetoothDiscovery:
                 failures=len(failure_list),
             ),
         )
-        for endpoint in endpoint_list:
+        diagnostic_endpoints = [
+            endpoint
+            for item in self._resolver.transport_targets_from_endpoints(self._endpoints_from_scan(endpoint_list))
+            for endpoint in (item.transport_target.classic_endpoint, item.transport_target.ble_endpoint)
+            if endpoint is not None
+        ]
+        for endpoint in diagnostic_endpoints:
             detected = resolved_by_endpoint.get((endpoint.transport.value, endpoint.address.lower()))
-            if (detected is not None and endpoint.transport == DeviceTransport.BLE
+            if (detected is not None and endpoint.transport == BluetoothEndpointTransport.BLE
                     and not (endpoint.name or "").strip()
                     and detected.transport_target.classic_endpoint is not None):
                 self._reporter.debug(
@@ -295,7 +301,10 @@ class BluetoothDiscovery:
                 ]
                 if len(supported) > 1:
                     reason = "ambiguous_supported_model"
-                    candidates = ",".join(match.model.model_key for match in supported)
+                    candidates = ",".join(match.model.model_key for match in matches)
+                elif supported and unsupported:
+                    reason = "ambiguous_model"
+                    candidates = ",".join(match.model.model_key for match in matches)
                 elif unsupported:
                     reason = "known_unsupported_model"
                     candidates = ",".join(match.model.model_key for match in unsupported)

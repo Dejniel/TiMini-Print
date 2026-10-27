@@ -140,6 +140,33 @@ def test_display_choices_keep_source_and_advertisement_context_for_every_endpoin
 
 
 @pytest.mark.parametrize("blocking", [False, True])
+@pytest.mark.parametrize("same_mac", [False, True])
+def test_scan_logs_use_the_same_advertisement_evidence_as_detection(
+    cross_source_advertisement_catalog, blocking, same_mac,
+):
+    reporter, sink = build_capture_reporter()
+    discovery = BluetoothDiscovery(cross_source_advertisement_catalog, reporter)
+    endpoints = [
+        DeviceInfo("Shared", "AA:BB:CC:DD:EE:01", transport=DeviceTransport.CLASSIC),
+        DeviceInfo("Shared", "AA:BB:CC:DD:EE:01" if same_mac else "AA:BB:CC:DD:EE:02",
+                   transport=DeviceTransport.BLE, manufacturer_data=(bytes(4) + b"\x59",)),
+    ]
+    scan = "scan_with_failures_blocking" if blocking else "scan_with_failures"
+    with patch(f"timiniprint.transport.bluetooth.discovery.SppBackend.{scan}", return_value=(endpoints, [])):
+        result = discovery.scan_report_blocking() if blocking else asyncio.run(discovery.scan_report())
+    assert len(result.devices) == (0 if same_mac else 1)
+    ignored = [m.detail for m in sink.messages if m.detail.startswith("Discovery ignored")]
+    assert len(ignored) == (2 if same_mac else 1)
+    for log in ignored:
+        assert "reason=ambiguous_supported_model" in log
+        assert "ordinary" in log and "advertised" in log
+    matched = [m.detail for m in sink.messages if m.detail.startswith("Discovery matched")]
+    assert len(matched) == (0 if same_mac else 1)
+    if matched:
+        assert "model=ordinary" in matched[0]
+
+
+@pytest.mark.parametrize("blocking", [False, True])
 def test_scan_logs_resolved_profile_for_both_endpoints(blocking):
     reporter, sink = build_capture_reporter()
     discovery = BluetoothDiscovery(PrinterCatalog.load(), reporter)
@@ -167,24 +194,30 @@ def diagnostic_catalog():
     origins = ("test",)
     return PrinterCatalog(base.profiles, [
         SupportedPrinterModel(model_key="known", profile_key="v5x", origin_ids=origins,
-                              detections=(ModelDetection(exact_names=("Known", "Ambiguous")),)),
+                              detections=(ModelDetection(exact_names=("Known", "Ambiguous", "Mixed", "MultiMixed")),)),
         SupportedPrinterModel(model_key="other", profile_key="v5g_small_203", origin_ids=origins,
-                              detections=(ModelDetection(exact_names=("Ambiguous",)),)),
+                              detections=(ModelDetection(exact_names=("Ambiguous", "MultiMixed")),)),
     ], [UnsupportedPrinterModel(model_key="missing", origin_ids=origins,
-                                detections=(ModelDetection(exact_names=("Missing",)),))],
-       {"test": "Test source"})
+                                detections=(ModelDetection(exact_names=("Missing",)),)),
+        UnsupportedPrinterModel(model_key="foreign_missing", origin_ids=("foreign",),
+                                detections=(ModelDetection(exact_names=("Mixed", "MultiMixed")),))],
+       {"test": "Test source", "foreign": "Other source"})
 
 
 @pytest.mark.parametrize("name, reason", [("Unknown", "no_supported_model"),
                                           ("Missing", "known_unsupported_model"),
-                                          ("Ambiguous", "ambiguous_supported_model")])
-def test_scan_logs_why_unresolved_endpoints_were_ignored(diagnostic_catalog, name, reason):
+                                          ("Ambiguous", "ambiguous_supported_model"),
+                                          ("Mixed", "ambiguous_model"),
+                                          ("MultiMixed", "ambiguous_supported_model")])
+@pytest.mark.parametrize("blocking", [False, True])
+def test_scan_logs_why_unresolved_endpoints_were_ignored(diagnostic_catalog, name, reason, blocking):
     reporter, sink = build_capture_reporter()
     discovery = BluetoothDiscovery(diagnostic_catalog, reporter)
     endpoint = DeviceInfo(name, "AA:BB:CC:DD:EE:00", transport=DeviceTransport.BLE)
-    with patch("timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures_blocking",
-               return_value=([endpoint], [])):
-        result = discovery.scan_report_blocking(include_classic=False)
+    scan = "scan_with_failures_blocking" if blocking else "scan_with_failures"
+    with patch(f"timiniprint.transport.bluetooth.discovery.SppBackend.{scan}", return_value=([endpoint], [])):
+        result = (discovery.scan_report_blocking(include_classic=False) if blocking
+                  else asyncio.run(discovery.scan_report(include_classic=False)))
     assert not result.devices
     logs = [message.detail for message in sink.messages if message.detail.startswith("Discovery ignored")]
     assert len(logs) == 1
@@ -193,6 +226,10 @@ def test_scan_logs_why_unresolved_endpoints_were_ignored(diagnostic_catalog, nam
         assert "known" in logs[0] and "other" in logs[0]
     elif name == "Missing":
         assert "candidates=missing" in logs[0]
+    elif name == "Mixed":
+        assert "known" in logs[0] and "foreign_missing" in logs[0]
+    elif name == "MultiMixed":
+        assert all(key in logs[0] for key in ("known", "other", "foreign_missing"))
 
 
 def test_scan_logs_attached_anonymous_ble_with_the_resolved_profile(diagnostic_catalog):
