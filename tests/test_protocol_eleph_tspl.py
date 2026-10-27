@@ -4,6 +4,8 @@ import unittest
 
 from PIL import Image
 
+from tests.helpers import catalog_for_sources
+
 from timiniprint.devices import BluetoothTransportPolicy, PrinterCatalog
 from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from timiniprint.printing.document_renderer import DocumentRenderer, RenderDocument
@@ -88,7 +90,7 @@ class ElephTsplProtocolTests(unittest.TestCase):
                          "00002af0-0000-1000-8000-00805f9b34fb")
 
     def test_eleph_p1_prefers_classic_and_keeps_ble_fallback(self) -> None:
-        policy = BluetoothTransportPolicy(PrinterCatalog.load())
+        policy = BluetoothTransportPolicy(catalog_for_sources("com.sandu.JxPrinter"))
         for name in ("P1_A57F", "P1_F30E"):
             with self.subTest(name=name):
                 endpoints = [

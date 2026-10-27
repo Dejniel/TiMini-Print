@@ -156,34 +156,23 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
     samples = _sample_names(model)
     addresses = _sample_addresses(model)
     blocking: dict[str, Any] | None = None
-    model_origins = set(model.get("origin_ids", []))
     probes = [(address, data) for address in addresses for data in _sample_manufacturer_data(model)]
     for sample in samples:
         for address, data in probes:
             matches = catalog.detect_model(sample, address=address, manufacturer_data=data)
             if len(matches) > 1:
                 if model["model_key"] in {candidate.model.model_key for candidate in matches}:
+                    matched_origins = next(candidate.origin_ids for candidate in matches
+                                           if candidate.model.model_key == model["model_key"])
                     ambiguity_group = model.get("detection_ambiguity_group")
-                    if ambiguity_group and all(
-                        candidate.model.detection_ambiguity_group == ambiguity_group
-                        for candidate in matches
-                    ):
-                        return None
-                    if not model_origins:
-                        return {
-                            "kind": "ambiguous_model",
-                            "model_key": model["model_key"],
-                            "sample_name": sample,
-                            "sample_address": address,
-                            "candidate_model_keys": [
-                                candidate.model.model_key for candidate in matches
-                            ],
-                        }
                     for candidate in matches:
-                        candidate_origins = set(candidate.model.origin_ids)
+                        candidate_origins = set(candidate.origin_ids)
+                        if (ambiguity_group
+                                and candidate.model.detection_ambiguity_group == ambiguity_group):
+                            continue
                         if (
                             candidate.model.model_key != model["model_key"]
-                            and model_origins.intersection(candidate_origins)
+                            and set(matched_origins).intersection(candidate_origins)
                         ):
                             return {
                                 "kind": "ambiguous_model",
@@ -235,14 +224,15 @@ def _find_unsupported_model_reachability_error(
             matches = catalog.detect_model(sample, address=address, manufacturer_data=data)
             if len(matches) > 1:
                 if model["model_key"] in {candidate.model.model_key for candidate in matches}:
+                    matched_origins = next(candidate.origin_ids for candidate in matches
+                                           if candidate.model.model_key == model["model_key"])
                     ambiguity_group = model.get("detection_ambiguity_group")
-                    if ambiguity_group and all(
-                        candidate.model.detection_ambiguity_group == ambiguity_group
-                        for candidate in matches
-                    ):
-                        return None
                     for candidate in matches:
-                        if not isinstance(candidate, SupportedModelMatch):
+                        if (ambiguity_group
+                                and candidate.model.detection_ambiguity_group == ambiguity_group):
+                            continue
+                        if (not isinstance(candidate, SupportedModelMatch)
+                                or not set(matched_origins).intersection(candidate.origin_ids)):
                             continue
                         return {
                             "kind": "unsupported_model_matches_supported_model",

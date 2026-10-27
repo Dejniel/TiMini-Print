@@ -4,7 +4,7 @@ import json
 import unittest
 from pathlib import Path
 
-from tests.helpers import reset_registry_cache
+from tests.helpers import catalog_for_sources, reset_registry_cache
 from timiniprint.devices import (
     ModelMatch,
     PrinterCatalog,
@@ -255,7 +255,8 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(bh03.origin_ids, ("com.fun.mxw",))
         self.assertEqual(bh03.protocol_variant, "gray_label")
         for name in ("YT01", "YT02"):
-            device = self.catalog.detect_device(name, manufacturer_data=(bytes.fromhex("0000000059"),))
+            candidates = self.catalog.detection_devices(name, manufacturer_data=(bytes.fromhex("0000000059"),))
+            device = next(device for device in candidates if device.protocol_family is ProtocolFamily.V5X)
             self.assertEqual(device.origin_ids, ("com.bleem.liugm",))
             self.assertEqual(device.protocol_family, ProtocolFamily.V5X)
         for name in ("AC695X_PRINT_1234", "V5X"):
@@ -263,24 +264,12 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(self.catalog.device_from_key("v5x").protocol_family, ProtocolFamily.V5X)
 
     def test_unsupported_models_are_detected_without_creating_devices(self) -> None:
+        self.catalog = catalog_for_sources("com.project.aimotech.printmaster")
+        matches = self.catalog.detect_model("P12")
+        self.assertEqual(_model_keys(matches), {"unsupported_printmaster_p12_series"})
         self.assertIsNone(self.catalog.detect_device("P12"))
-
-        self.assertEqual(
-            _model_keys(self.catalog.detect_model("P12")),
-            {
-                "unsupported_phomemo_p12_family_p12",
-                "unsupported_printmaster_p12_series",
-            },
-        )
-        self.assertIsNone(self.catalog.detect_unsupported_model("P12"))
-
-        match = _single_match(self.catalog.detect_model("P12-ABCD"))
-        unsupported = self.catalog.detect_unsupported_model("P12-ABCD")
-
-        self.assertIsInstance(match, UnsupportedModelMatch)
-        self.assertIsNotNone(unsupported)
-        assert unsupported is not None
-        self.assertEqual(unsupported.model_key, "unsupported_phomemo_p12_family_p12")
+        unsupported = self.catalog.detect_unsupported_model("P12")
+        self.assertEqual(unsupported.model_key, "unsupported_printmaster_p12_series")
         self.assertIn("P12", unsupported.names)
 
     def test_unsupported_models_keep_source_origins_and_detection_triggers(self) -> None:
@@ -305,8 +294,8 @@ class DevicesModelsTests(unittest.TestCase):
                     )
 
     def test_unsupported_case_variants_can_stay_source_distinct(self) -> None:
-        niimbot_d11s = _single_match(self.catalog.detect_model("D11S"))
-        luck_d11s = _single_match(self.catalog.detect_model("D11s_1234"))
+        niimbot_d11s = _single_match(catalog_for_sources("com.gengcon.android.jccloudprinter").detect_model("D11S"))
+        luck_d11s = _single_match(catalog_for_sources("com.dingdang.newprint").detect_model("D11s_1234"))
 
         self.assertIsInstance(niimbot_d11s, SupportedModelMatch)
         self.assertIsInstance(luck_d11s, UnsupportedModelMatch)
@@ -318,6 +307,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(luck_d11s.model.origin_ids, ("com.dingdang.newprint",))
 
     def test_detect_model_returns_supported_match_for_printable_models(self) -> None:
+        self.catalog = catalog_for_sources('com.frogtosea.tinyPrint')
         match = _single_match(self.catalog.detect_model("X6H-1234"))
 
         self.assertIsInstance(match, SupportedModelMatch)
@@ -365,28 +355,16 @@ class DevicesModelsTests(unittest.TestCase):
             ("Tiny Print", "ToPrint", "Eleph-label", "Print Master", "InstaPrint"),
         )
 
-    def test_tinyprint_short_tokens_do_not_steal_other_sources(self) -> None:
-        expectations = {
-            "D11S": "niimbot_d11s",
-            "P1_1234": "eleph_tspl_p1",
-            "X1": "v5x",
-            "X6": "yt01_v5g",
-        }
-
-        for name, model_key in expectations.items():
+    def test_tinyprint_short_tokens_keep_other_source_candidates(self) -> None:
+        expectations = {'D11S': {'pocket_printer', 'niimbot_d11s'}, 'P1_1234': {'toprint_tspl_p1', 'eleph_tspl_p1', 'pocket_printer'}, 'X1': {'v5x', 'x1'}, 'X6': {'yt01_v5g', 'x6'}, 'P12': {'toprint_tspl_p1', 'pocket_printer', 'unsupported_printmaster_p12_series'}}
+        for name, expected in expectations.items():
             with self.subTest(name=name):
-                match = _single_match(self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58"))
-                self.assertEqual(match.model.model_key, model_key)
-
-        self.assertEqual(
-            _model_keys(self.catalog.detect_model("P12", "AA:BB:CC:DD:EE:58")),
-            {
-                "unsupported_phomemo_p12_family_p12",
-                "unsupported_printmaster_p12_series",
-            },
-        )
+                matches = self.catalog.detect_model(name, "AA:BB:CC:DD:EE:58")
+                self.assertEqual(_model_keys(matches), expected)
+                self.assertIsNone(self.catalog.detect_device(name, "AA:BB:CC:DD:EE:58"))
 
     def test_tinyprint_model_no_prefixes_match_source_behavior(self) -> None:
+        self.catalog = catalog_for_sources('com.frogtosea.tinyPrint')
         expectations = {
             "U1": "u1",
             "U1-1234": "u1",
@@ -409,6 +387,7 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertEqual(_model_keys(matches), expected.get(name, set()))
 
     def test_tinyprint_overlapping_model_no_uses_most_specific_detection(self) -> None:
+        self.catalog = catalog_for_sources('com.frogtosea.tinyPrint')
         expectations = {
             "X8-1234": ("x8", "X8"),
             "X8-L-1234": ("pr89", "X8-L"),
@@ -424,6 +403,7 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertIn(detection_name, match.detection.names)
 
     def test_tinyprint_recent_source_aliases_detect_to_source_profiles(self) -> None:
+        self.catalog = catalog_for_sources('com.frogtosea.tinyPrint')
         expectations = {
             "S5A-1234": ("seznikneo", "cp01"),
             "P20 max-1234": ("seznikneo", "cp01"),
@@ -455,13 +435,14 @@ class DevicesModelsTests(unittest.TestCase):
                 self.assertEqual(device.model_key, model_key)
                 self.assertEqual(device.profile_key, profile_key)
 
+        self.catalog = PrinterCatalog.load()
         self.assertIsNone(self.catalog.detect_device("LP100"))
         self.assertEqual(
             _model_keys(self.catalog.detect_model("LP100")),
-            {"lp100", "unsupported_lp100_family_lp100"},
+            {"lp100", "unsupported_lp100_family_lp100", "toprint_tspl_p1"},
         )
         self.assertEqual(
-            self.catalog.detect_device("LP100-1234").model_key,
+            next(device.model_key for device in self.catalog.detection_devices("LP100-1234") if device.model_key == "lp100"),
             "lp100",
         )
 
@@ -982,40 +963,29 @@ class DevicesModelsTests(unittest.TestCase):
         )
 
     def test_origin_ids_keep_conflicting_names_explicit(self) -> None:
-        tiny_p1 = self.catalog.detect_model("P1-")
-        eleph_p1 = next(m for m in self.catalog.detect_model("P1_") if m.model.model_key == "eleph_tspl_p1")
-        toprint_p1 = self.catalog.detect_model("P1")
-        dck_d1 = _single_match(self.catalog.detect_model("C21"))
-        exact_dck_d1 = _single_match(self.catalog.detect_model("D1"))
-        tiny_d1 = _single_match(self.catalog.detect_model("D1-1234"))
-
-        self.assertEqual(_model_keys(tiny_p1), {"pocket_printer", "toprint_tspl_p1"})
-        self.assertIsInstance(eleph_p1, SupportedModelMatch)
-        self.assertEqual(_model_keys(toprint_p1), {"pocket_printer", "toprint_tspl_p1"})
-        self.assertIsInstance(dck_d1, UnsupportedModelMatch)
-        self.assertIsInstance(exact_dck_d1, UnsupportedModelMatch)
-        self.assertIsInstance(tiny_d1, SupportedModelMatch)
-        self.assertEqual(exact_dck_d1.model.model_key, "unsupported_dck_c21")
-        self.assertEqual(tiny_d1.model.model_key, "pocket_printer")
-        self.assertEqual(
-            {
-                match.model.origin_ids[0]
-                for match in tiny_p1
-            },
-            {"com.frogtosea.tinyPrint", "com.fyhd.toprint"},
-        )
-        self.assertEqual(eleph_p1.model.origin_ids[0], "com.sandu.JxPrinter")
-        self.assertEqual(
-            {
-                match.model.origin_ids[0]
-                for match in toprint_p1
-            },
-            {"com.frogtosea.tinyPrint", "com.fyhd.toprint"},
-        )
-        self.assertEqual(dck_d1.model.origin_ids[0], "com.fun.mxw")
-        self.assertEqual(dck_d1.model.origin_ids[1], "com.bleem.liugm")
+        for name, expected in (("P1", {'toprint_tspl_p1', 'pocket_printer'}), ("P1-", {'toprint_tspl_p1', 'pocket_printer'}),
+                               ("P1_", {'toprint_tspl_p1', 'eleph_tspl_p1', 'pocket_printer'})):
+            with self.subTest(name=name):
+                matches = self.catalog.detect_model(name)
+                self.assertEqual(_model_keys(matches), expected)
+                self.assertIsNone(self.catalog.detect_device(name))
+                for match in matches:
+                    self.assertTrue(match.origin_ids)
+                    self.assertTrue(set(match.origin_ids).issubset(match.model.origin_ids))
+        d1 = self.catalog.detect_model("D1")
+        self.assertEqual(_model_keys(d1), {'pocket_printer', "unsupported_dck_c21"})
+        self.assertIsNone(self.catalog.detect_device("D1"))
+        dck = next(match for match in d1 if isinstance(match, UnsupportedModelMatch))
+        self.assertEqual(dck.origin_ids, ("com.fun.mxw", "com.bleem.liugm"))
+        suffix = self.catalog.detect_device("D1-1234")
+        self.assertEqual(suffix.model_key, 'pocket_printer')
+        eleph = next(device for device in self.catalog.detection_devices("P1_")
+                     if device.model_key == "eleph_tspl_p1")
+        self.assertEqual(eleph.origin_ids, ("com.sandu.JxPrinter",))
+        self.assertEqual(eleph.protocol_family, ProtocolFamily.ELEPH_TSPL)
 
     def test_niimbot_d110_matches_source_separator_forms(self) -> None:
+        self.catalog = catalog_for_sources('com.gengcon.android.jccloudprinter')
         for name in ("D110", "D110-ABCD", "D110_1234", "D110__1234", "D110--1234"):
             with self.subTest(name=name):
                 device = self.catalog.detect_device(name)
@@ -1033,9 +1003,8 @@ class DevicesModelsTests(unittest.TestCase):
         gt08 = self.catalog.detect_model("GT08")
         gw08 = self.catalog.detect_model("GW08")
 
-        p3 = _single_match(p3)
-        self.assertIsInstance(p3, UnsupportedModelMatch)
-        self.assertEqual(p3.model.model_key, "unsupported_toprint_p3")
+        self.assertEqual(p3, ())
+        self.assertIn("P3", self.catalog.require_unsupported_model("unsupported_toprint_p3").names)
 
         self.assertEqual(
             _model_keys(gt08),
@@ -1163,7 +1132,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(m120.model_key, "printmaster_m120")
         self.assertEqual(
             _model_keys(self.catalog.detect_model("M220")),
-            {"unsupported_printmaster_m200_series"},
+            {"unsupported_printmaster_m200_series", "m2"},
         )
         self.assertFalse(any(
             match.model.model_key.startswith("phomemo_")
@@ -1172,11 +1141,11 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(
             _model_keys(self.catalog.detect_model("P12")),
             {
-                "unsupported_phomemo_p12_family_p12",
-                "unsupported_printmaster_p12_series",
+                "pocket_printer", "toprint_tspl_p1", "unsupported_printmaster_p12_series",
             },
         )
 
+        self.catalog = catalog_for_sources("com.project.aimotech.printmaster")
         printmaster_supported_expectations = {
             "M108": "printmaster_m110",
             "Q045-ABC": "printmaster_m110",
@@ -1226,8 +1195,9 @@ class DevicesModelsTests(unittest.TestCase):
             )
 
     def test_funny_print_td11308_exact_conflict_keeps_source_detection(self) -> None:
+        self.catalog = catalog_for_sources('com.lailaixiong.funnyprint')
         match = _single_match(self.catalog.detect_model("TD-11308"))
-        suffix_match = _single_match(self.catalog.detect_model("TD-11308-1234"))
+        suffix_match = _single_match(catalog_for_sources("com.frogtosea.tinyPrint").detect_model("TD-11308-1234"))
         funny_model = self.catalog.require_unsupported_model("unsupported_funny_lx_type1")
         funny_td = next(
             detection
@@ -1488,22 +1458,23 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_COMPRESSED)
 
     def test_exact_name_rules_cover_x6_without_shadowing_x6h(self) -> None:
-        x6 = self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:58")
-        x6_mac59 = self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:59", manufacturer_data=(bytes(4) + b"\x59",))
-        x6h = self.catalog.detect_device("X6H-1234", "AA:BB:CC:DD:EE:59")
-
-        self.assertIsNotNone(x6)
-        self.assertIsNotNone(x6_mac59)
-        self.assertIsNotNone(x6h)
-        self.assertEqual(x6.profile_key, "v5g_small_203")
-        self.assertEqual(x6.protocol_family, ProtocolFamily.V5G)
-        self.assertEqual(x6_mac59.profile_key, "v5x")
-        self.assertEqual(x6_mac59.protocol_family, ProtocolFamily.V5X)
+        self.assertEqual(_model_keys(self.catalog.detect_model("X6", "AA:BB:CC:DD:EE:58")), {'yt01_v5g', 'x6'})
+        self.assertIsNone(self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:58"))
+        advertisement = (bytes.fromhex("0000000059"),)
+        candidates = self.catalog.detection_devices("X6", "AA:BB:CC:DD:EE:59", manufacturer_data=advertisement)
+        self.assertEqual({device.model_key for device in candidates}, {'v5x', 'x6'})
+        self.assertIsNone(self.catalog.detect_device("X6", "AA:BB:CC:DD:EE:59", manufacturer_data=advertisement))
+        v5x = next(device for device in candidates if device.model_key == "v5x")
+        self.assertEqual(v5x.profile_key, "v5x")
+        self.assertEqual(v5x.protocol_family, ProtocolFamily.V5X)
+        x6h = next(device for device in self.catalog.detection_devices("X6H-1234", "AA:BB:CC:DD:EE:59")
+                   if device.model_key == 'ewtto_et_z0504')
         self.assertEqual(x6h.profile_key, "x6h")
         self.assertEqual(x6h.protocol_family, ProtocolFamily.TINY)
 
     def test_v5x_exact_name_rules_do_not_shadow_other_x_series_profiles(self) -> None:
-        x1 = self.catalog.detect_device("X1")
+        x1 = next(device for device in self.catalog.detection_devices("X1") if device.model_key == "v5x")
+        self.assertIsNone(self.catalog.detect_device("X1"))
         x2 = self.catalog.detect_device("X2")
         x103h = self.catalog.detect_device("X103H")
         x2h = self.catalog.detect_device("X2H")
@@ -1522,6 +1493,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(x2h.protocol_family, ProtocolFamily.TINY)
 
     def test_case_sensitive_direct_rules_keep_mixed_case_profiles_distinct(self) -> None:
+        self.catalog = catalog_for_sources('com.frogtosea.tinyPrint')
         expected = {
             "SC03H-ABCD": "fc02",
             "SC03h-ABCD": "d1",
@@ -1573,6 +1545,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(resolved.protocol_family, ProtocolFamily.TINY)
 
     def test_ai01_resolves_to_v5x_family(self) -> None:
+        self.catalog = catalog_for_sources('com.bleem.liugm')
         ai01 = self.catalog.detect_device("AI01")
 
         self.assertIsNotNone(ai01)
@@ -1580,6 +1553,7 @@ class DevicesModelsTests(unittest.TestCase):
         self.assertEqual(ai01.protocol_family, ProtocolFamily.V5X)
 
     def test_luck_normal_rules_resolve_the_source_backed_models(self) -> None:
+        self.catalog = catalog_for_sources('com.dingdang.newprint')
         expected = {
             "PPA2_1234": ("luck_a2", ProtocolFamily.LUCK_NORMAL, None, 384),
             "PPA2H_1234": ("luck_a2h", ProtocolFamily.LUCK_NORMAL, None, 576),
@@ -1646,6 +1620,7 @@ class DevicesModelsTests(unittest.TestCase):
                 else:
                     self.assertEqual(resolved.image_pipeline.encoding, ImageEncoding.LUCK_NORMAL_RAW)
 
+        self.catalog = PrinterCatalog.load()
         for name in ("D80-1234", "D80_1234"):
             with self.subTest(name=name):
                 self.assertIsNone(self.catalog.detect_device(name))
@@ -1797,9 +1772,8 @@ class DevicesModelsTests(unittest.TestCase):
 
         for name, profile_key in expected.items():
             with self.subTest(name=name):
-                resolved = self.catalog.detect_device(name, "AA:BB:CC:DD:EE:58")
-                self.assertIsNotNone(resolved)
-                self.assertEqual(resolved.profile_key, profile_key)
+                choices = self.catalog.detection_devices(name, "AA:BB:CC:DD:EE:58")
+                self.assertIn(profile_key, {device.profile_key for device in choices})
 
     def test_fun_print_mx06_derived_names_use_runtime_density_defaults(self) -> None:
         for name in ("MXTP-100", "CYLO BT PRINTER", "EWTTO ET-Z0499"):

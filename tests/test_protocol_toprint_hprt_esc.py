@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import unittest
 
+from tests.helpers import catalog_for_sources
+
 from timiniprint.devices import PrinterCatalog
-from timiniprint.devices.profiles import UnsupportedModelMatch
 from timiniprint.protocol import PageFlow, PaperMode, PrinterProtocol
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.types import ImageEncoding
@@ -97,12 +98,17 @@ class ToPrintHprtEscProtocolTests(unittest.TestCase):
 
     def test_catalog_detects_toprint_zl1_without_stealing_old_p_series(self) -> None:
         catalog = PrinterCatalog.load()
+        toprint = catalog_for_sources("com.fyhd.toprint")
 
         for name in ("P11", "P11_F30E"):
             with self.subTest(name=name):
-                detected = catalog.detect_device(name)
+                self.assertIsNone(catalog.detect_device(name))
+                self.assertEqual(
+                    {match.model.model_key for match in catalog.detect_model(name)},
+                    {"toprint_hprt_esc_p11", "pocket_printer"},
+                )
+                detected = toprint.detect_device(name)
                 self.assertIsNotNone(detected)
-                assert detected is not None
                 self.assertEqual(detected.profile_key, "toprint_hprt_esc_p11")
                 self.assertEqual(detected.protocol_family, ProtocolFamily.TOPRINT_HPRT_ESC)
                 self.assertEqual(detected.protocol_variant, "zl1")
@@ -110,26 +116,24 @@ class ToPrintHprtEscProtocolTests(unittest.TestCase):
 
         for name in ("YHK", "YHK_F30E", "YHK2"):
             with self.subTest(name=name):
-                matches = catalog.detect_model(name)
                 self.assertEqual(
-                    {candidate.model.model_key for candidate in matches},
+                    {match.model.model_key for match in catalog.detect_model(name)},
                     {"toprint_hprt_esc_yhk", "instaprint_ctp500_coreprint"},
                 )
                 self.assertIsNone(catalog.detect_device(name))
 
         for name in ("P2", "P2-1234", "P2_F30E", "P5", "P5-1234", "P5_F30E"):
             with self.subTest(name=name):
-                matches = catalog.detect_model(name)
                 self.assertIn(
                     "toprint_hprt_esc_zl1",
-                    {candidate.model.model_key for candidate in matches},
+                    {match.model.model_key for match in catalog.detect_model(name)},
                 )
                 self.assertIsNone(catalog.detect_device(name))
 
-        p3 = catalog.detect_model("P3")[0]
-        self.assertIsInstance(p3, UnsupportedModelMatch)
-        assert isinstance(p3, UnsupportedModelMatch)
-        self.assertEqual(p3.model.model_key, "unsupported_toprint_p3")
+        for name in ("P3", "P3_1234", "P3-1234", "P3S"):
+            with self.subTest(name=name):
+                self.assertEqual(toprint.detect_model(name), ())
+        self.assertEqual(catalog.require_unsupported_model("unsupported_toprint_p3").detections, ())
 
     def test_zl1_paper_motion_uses_toprint_hprt_esc_motion_commands(self) -> None:
         device = PrinterCatalog.load().device_from_profile("toprint_hprt_esc_zl1")

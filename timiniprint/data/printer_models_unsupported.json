@@ -3,8 +3,9 @@
     "model_key": "unsupported_phomemo_printmaster_redirect",
     "whitespace_mode": "trim",
     "origin_ids": ["com.quyin.phomemo"],
-    "detections": [{"prefixes": ["M110", "M120", "M220"]}],
-    "notes": "These Phomemo name prefixes redirect to Print Master, not to a Phomemo printer recipe. Confirmed exact models use their Print Master entries; an arbitrary suffix does not identify a supported variant."
+    "detections": [],
+    "notes": "Phomemo redirects these names to Print Master before connecting; they are not alternative Phomemo recipes or automatic detection candidates.",
+    "marketing_names": ["M110","M120","M220","P12","P12 Pro","A30","M200","M250","M221","M260","D30","D35","D50","Q30","Q30S"]
   },
   {
     "model_key": "unsupported_toprint_p3",
@@ -12,15 +13,9 @@
     "origin_ids": [
       "com.fyhd.toprint"
     ],
-    "detections": [
-      {
-        "prefixes": [
-          "P3"
-        ],
-        "name_pattern": "(?s:(?-i:P3.*))"
-      }
-    ],
-    "notes": "P3 alone is not admitted by ToPrint discovery; its post-connect ESC condition does not establish a standalone print route."
+    "detections": [],
+    "notes": "P3 alone is not admitted by ToPrint discovery; its post-connect ESC condition does not establish a standalone print route.",
+    "marketing_names": ["P3"]
   },
   {
     "model_key": "unsupported_toprint_gt08",
@@ -102,61 +97,6 @@
     ]
   },
   {
-    "model_key": "unsupported_phomemo_p12_family_p12",
-    "profile_key_prediction": "p12",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "P12"
-        ],
-        "prefixes": [
-          "P12"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_p12_family_p12_pro",
-    "profile_key_prediction": "p12",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "P12 Pro"
-        ],
-        "prefixes": [
-          "P12 Pro",
-          "P12PRO"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_p12_family_a30",
-    "profile_key_prediction": "p12",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "A30"
-        ],
-        "prefixes": [
-          "A30"
-        ]
-      }
-    ]
-  },
-  {
     "model_key": "unsupported_phomemo_m03_family_m03",
     "profile_key_prediction": "m03",
     "whitespace_mode": "trim",
@@ -167,78 +107,6 @@
       {
         "exact_names": [
           "M03"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_m03_family_m200",
-    "profile_key_prediction": "m03",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "M200"
-        ],
-        "prefixes": [
-          "M200"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_m03_family_m250",
-    "profile_key_prediction": "m03",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "M250"
-        ],
-        "prefixes": [
-          "M250"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_m03_family_m221",
-    "profile_key_prediction": "m03",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "M221"
-        ],
-        "prefixes": [
-          "M221"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_m03_family_m260",
-    "profile_key_prediction": "m03",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "M260"
-        ],
-        "prefixes": [
-          "M260"
         ]
       }
     ]
@@ -269,96 +137,6 @@
       {
         "exact_names": [
           "M04AS"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_d_family_d30",
-    "profile_key_prediction": "d30",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "D30"
-        ],
-        "prefixes": [
-          "D30"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_d_family_d35",
-    "profile_key_prediction": "d30",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "D35"
-        ],
-        "prefixes": [
-          "D35"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_d_family_d50",
-    "profile_key_prediction": "d30",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "D50"
-        ],
-        "prefixes": [
-          "D50"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_d_family_q30",
-    "profile_key_prediction": "d30",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "Q30"
-        ],
-        "prefixes": [
-          "Q30"
-        ]
-      }
-    ]
-  },
-  {
-    "model_key": "unsupported_phomemo_d_family_q30s",
-    "profile_key_prediction": "d30",
-    "whitespace_mode": "trim",
-    "origin_ids": [
-      "com.quyin.phomemo"
-    ],
-    "detections": [
-      {
-        "exact_names": [
-          "Q30S"
-        ],
-        "prefixes": [
-          "Q30S"
         ]
       }
     ]
@@ -1969,22 +1747,8 @@
     "origin_ids": [
       "com.project.aimotech.printmaster"
     ],
-    "detections": [
-      {
-        "exact_names": [
-          "M110C",
-          "M110SA",
-          "111",
-          "A42"
-        ],
-        "prefixes": [
-          "Q199",
-          "Q450",
-          "Q467",
-          "Q522"
-        ]
-      }
-    ]
+    "detections": [{"exact_names": ["M110C", "M110SA", "A42"], "prefixes": ["Q199", "Q450", "Q467", "Q522"]}],
+    "marketing_names": ["111"]
   },
   {
     "model_key": "unsupported_printmaster_m120_series",

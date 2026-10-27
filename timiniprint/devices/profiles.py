@@ -769,15 +769,21 @@ class UnsupportedPrinterModel(PrinterModel):
 
 @dataclass(frozen=True)
 class SupportedModelMatch:
+    """A catalog recipe and the sources for which it matched this endpoint."""
+
     model: SupportedPrinterModel
     profile: PrinterProfile
     detection: ModelDetection
+    origin_ids: Tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class UnsupportedModelMatch:
+    """An unsupported catalog entry matched within these sources."""
+
     model: UnsupportedPrinterModel
     detection: ModelDetection
+    origin_ids: Tuple[str, ...]
 
 
 ModelMatch = Union[SupportedModelMatch, UnsupportedModelMatch]

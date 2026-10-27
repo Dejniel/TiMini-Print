@@ -74,10 +74,14 @@ class PrinterCatalog:
             model.model_key: model for model in self._unsupported_models
         }
         self._origin_names = dict(origin_names or {})
-        self._supported_detection_entries = self._sorted_detection_entries(self._models)
-        self._unsupported_detection_entries = self._sorted_detection_entries(
+        self._supported_detections_by_origin = self._detection_entries_by_origin(self._models)
+        self._unsupported_detections_by_origin = self._detection_entries_by_origin(
             self._unsupported_models
         )
+        self._detection_origins = tuple(dict.fromkeys((
+            *self._supported_detections_by_origin,
+            *self._unsupported_detections_by_origin,
+        )))
         self._validate_speed_requirements()
         self._validate_paper_presets()
         self._validate_model_keys()
@@ -164,20 +168,24 @@ class PrinterCatalog:
         )
 
     @classmethod
-    def _sorted_detection_entries(
+    def _detection_entries_by_origin(
         cls,
         models: Iterable[SupportedPrinterModel] | Iterable[UnsupportedPrinterModel],
-    ) -> list[tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection]]:
+    ) -> dict[str, list[tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection]]]:
         entries = [
             (model, detection)
             for model in models
             for detection in model.detections
         ]
-        return sorted(
+        by_origin: dict[str, list[tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection]]] = {}
+        for model, detection in sorted(
             entries,
             key=lambda entry: cls._rule_specificity(entry[1]),
             reverse=True,
-        )
+        ):
+            for origin_id in model.origin_ids:
+                by_origin.setdefault(origin_id, []).append((model, detection))
+        return by_origin
 
     @staticmethod
     def _index_models_by_public_name(
@@ -488,15 +496,14 @@ class PrinterCatalog:
         """Detect a printable ``PrinterDevice`` from a known name and address.
 
         This is catalog-level detection only; it does not scan hardware.
-        More specific unsupported metadata can prevent a broad supported prefix
-        from stealing an unrelated model. At equal specificity, supported normally
+        Within one source, specific unsupported metadata can prevent a broad
+        supported prefix from stealing another model. At equal specificity, supported normally
         wins; an explicit shared ambiguity group keeps both candidates. Any
         ambiguous result returns ``None`` so callers can ask the user to choose the
         source/model explicitly.
         """
         if not manufacturer_data and isinstance(transport_target, BluetoothTarget):
-            endpoint = transport_target.ble_endpoint
-            manufacturer_data = endpoint.manufacturer_data if endpoint else ()
+            manufacturer_data = transport_target.manufacturer_data
         matches = self.detect_model(device_name, address, manufacturer_data=manufacturer_data)
         if len(matches) != 1 or not isinstance(matches[0], SupportedModelMatch):
             return None
@@ -524,7 +531,7 @@ class PrinterCatalog:
             image_pipeline=self._select_image_pipeline(profile, model),
             runtime_settings=self._runtime_settings_for_model(model, profile),
             model_key=model.model_key,
-            origin_ids=model.origin_ids,
+            origin_ids=match.origin_ids,
             transport_target=transport_target,
         )
 
@@ -633,46 +640,45 @@ class PrinterCatalog:
         *,
         manufacturer_data: tuple[bytes, ...] = (),
     ) -> tuple[ModelMatch, ...]:
-        for case_sensitive in (True, False):
-            supported_matches, supported_specificity = self._best_detection_matches(
-                self._supported_detection_entries,
-                device_name,
-                address,
-                case_sensitive=case_sensitive,
-                manufacturer_data=manufacturer_data,
-            )
-            unsupported_matches, unsupported_specificity = self._best_detection_matches(
-                self._unsupported_detection_entries,
-                device_name,
-                address,
-                case_sensitive=case_sensitive,
-                manufacturer_data=manufacturer_data,
-            )
-            if supported_matches and unsupported_specificity is not None:
-                assert supported_specificity is not None
-                if self._has_shared_ambiguity_group(
-                    (*supported_matches, *unsupported_matches)
-                ):
-                    return tuple(
-                        self._model_match(model, detection)
-                        for model, detection in (*supported_matches, *unsupported_matches)
-                    )
-                if unsupported_specificity > supported_specificity:
-                    return tuple(
-                        self._model_match(model, detection)
-                        for model, detection in unsupported_matches
-                    )
-            if supported_matches:
-                return tuple(
-                    self._model_match(model, detection)
-                    for model, detection in supported_matches
+        """Keep each source's best matches, without ranking unrelated sources."""
+        matches: dict[
+            str,
+            tuple[SupportedPrinterModel | UnsupportedPrinterModel, ModelDetection, list[str]],
+        ] = {}
+        for origin_id in self._detection_origins:
+            for case_sensitive in (True, False):
+                supported_matches, supported_specificity = self._best_detection_matches(
+                    self._supported_detections_by_origin.get(origin_id, ()),
+                    device_name,
+                    address,
+                    case_sensitive=case_sensitive,
+                    manufacturer_data=manufacturer_data,
                 )
-            if unsupported_matches:
-                return tuple(
-                    self._model_match(model, detection)
-                    for model, detection in unsupported_matches
+                unsupported_matches, unsupported_specificity = self._best_detection_matches(
+                    self._unsupported_detections_by_origin.get(origin_id, ()),
+                    device_name,
+                    address,
+                    case_sensitive=case_sensitive,
+                    manufacturer_data=manufacturer_data,
                 )
-        return ()
+                selected = supported_matches or unsupported_matches
+                if supported_matches and unsupported_matches:
+                    assert supported_specificity is not None and unsupported_specificity is not None
+                    if self._has_shared_ambiguity_group((*supported_matches, *unsupported_matches)):
+                        selected = (*supported_matches, *unsupported_matches)
+                    elif unsupported_specificity > supported_specificity:
+                        selected = unsupported_matches
+                if selected:
+                    for model, detection in selected:
+                        _, _, origins = matches.setdefault(model.model_key, (model, detection, []))
+                        origins.append(origin_id)
+                    break
+        return tuple(
+            self._model_match(model, detection, origin_ids=tuple(
+                origin for origin in model.origin_ids if origin in origins
+            ))
+            for model, detection, origins in matches.values()
+        )
 
     @staticmethod
     def _has_shared_ambiguity_group(
@@ -699,8 +705,7 @@ class PrinterCatalog:
         multiple devices when the same advertised name is ambiguous across sources.
         """
         if not manufacturer_data and isinstance(transport_target, BluetoothTarget):
-            endpoint = transport_target.ble_endpoint
-            manufacturer_data = endpoint.manufacturer_data if endpoint else ()
+            manufacturer_data = transport_target.manufacturer_data
         return tuple(
             self.device_from_match(
                 match,
@@ -768,6 +773,8 @@ class PrinterCatalog:
         self,
         model: SupportedPrinterModel | UnsupportedPrinterModel,
         detection: ModelDetection,
+        *,
+        origin_ids: tuple[str, ...],
     ) -> SupportedModelMatch | UnsupportedModelMatch:
         if isinstance(model, SupportedPrinterModel):
             profile = self._profile_by_key.get(model.profile_key)
@@ -775,9 +782,11 @@ class PrinterCatalog:
                 raise ValueError(
                     f"Printer model {model.model_key} references unknown profile {model.profile_key}"
                 )
-            return SupportedModelMatch(model=model, profile=profile, detection=detection)
+            return SupportedModelMatch(
+                model=model, profile=profile, detection=detection, origin_ids=origin_ids,
+            )
         assert isinstance(model, UnsupportedPrinterModel)
-        return UnsupportedModelMatch(model=model, detection=detection)
+        return UnsupportedModelMatch(model=model, detection=detection, origin_ids=origin_ids)
 
     def detect_unsupported_model(
         self,

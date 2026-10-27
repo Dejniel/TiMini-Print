@@ -53,6 +53,17 @@ class BluetoothTarget:
             return False
         return None
 
+    @property
+    def manufacturer_data(self) -> Tuple[bytes, ...]:
+        """Stored advertisement evidence, preferring the BLE endpoint.
+
+        A Classic peer may retain evidence shared during discovery.
+        """
+        for endpoint in (self.ble_endpoint, self.classic_endpoint):
+            if endpoint is not None and endpoint.manufacturer_data:
+                return endpoint.manufacturer_data
+        return ()
+
     def ordered_endpoints(self, *, prefer_spp: bool) -> list[BluetoothEndpoint]:
         """Return endpoints in the preferred connection order for this device."""
         ordered = []

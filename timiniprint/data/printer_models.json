@@ -2204,17 +2204,7 @@
     "protocol_override": {
       "packets_type": "p1"
     },
-    "detections": [
-      {
-        "prefixes": [
-          "P1"
-        ],
-        "substrings": [
-          "P1"
-        ],
-        "name_pattern": "(?s:(?-i:(?!.*(?:LE|P11|P2|P3|P5|YHK)).*(?:P1).*))"
-      }
-    ],
+    "detections": [{"substrings":["P1"],"name_pattern":"(?s:(?-i:(?!.*(?:LE|P11|P2|P3|P5|YHK)).*(?:P1).*))"}],
     "whitespace_mode": "preserve",
     "origin_ids": [
       "com.fyhd.toprint"
@@ -2226,19 +2216,7 @@
     "protocol_override": {
       "packets_type": "zl1"
     },
-    "detections": [
-      {
-        "prefixes": [
-          "P2",
-          "P5"
-        ],
-        "substrings": [
-          "P2",
-          "P5"
-        ],
-        "name_pattern": "(?s:(?-i:(?!.*(?:LE)).*(?:P2|P5).*))"
-      }
-    ],
+    "detections": [{"substrings":["P2","P5"],"name_pattern":"(?s:(?-i:(?!.*(?:LE)).*(?:P2|P5).*))"}],
     "whitespace_mode": "preserve",
     "origin_ids": [
       "com.fyhd.toprint"
@@ -2489,35 +2467,7 @@
       "CTP-500"
     ],
     "profile_key": "instaprint_ctp500",
-    "detections": [
-      {
-        "exact_names": [
-          "CorePrint",
-          "Teal Printer",
-          "Purple Printer",
-          "B Pink Printer",
-          "Cherry Printer",
-          "Floral Printer",
-          "Check Printer",
-          "Smiley Printer",
-          "Stone Printer",
-          "P Pink Printer"
-        ],
-        "prefixes": [
-          "CorePrint",
-          "Teal Printer",
-          "Purple Printer",
-          "B Pink Printer",
-          "Cherry Printer",
-          "Floral Printer",
-          "Check Printer",
-          "Smiley Printer",
-          "Stone Printer",
-          "P Pink Printer",
-          "YHK"
-        ]
-      }
-    ],
+    "detections": [{"prefixes":["CorePrint","Teal Printer","Purple Printer","B Pink Printer","Cherry Printer","Floral Printer","Check Printer","Smiley Printer","Stone Printer","P Pink Printer","YHK"]}],
     "whitespace_mode": "preserve",
     "origin_ids": [
       "com.bes.print.insta"
@@ -2604,17 +2554,7 @@
     "protocol_override": {
       "packets_type": "zl1"
     },
-    "detections": [
-      {
-        "prefixes": [
-          "P11"
-        ],
-        "substrings": [
-          "P11"
-        ],
-        "name_pattern": "(?s:(?-i:(?!.*(?:LE)).*(?:P11).*))"
-      }
-    ],
+    "detections": [{"substrings":["P11"],"name_pattern":"(?s:(?-i:(?!.*(?:LE)).*(?:P11).*))"}],
     "whitespace_mode": "preserve",
     "origin_ids": [
       "com.fyhd.toprint"
@@ -2626,17 +2566,7 @@
     "protocol_override": {
       "packets_type": "zl1"
     },
-    "detections": [
-      {
-        "prefixes": [
-          "YHK"
-        ],
-        "substrings": [
-          "YHK"
-        ],
-        "name_pattern": "(?s:(?-i:(?!.*(?:LE)).*(?:YHK).*))"
-      }
-    ],
+    "detections": [{"substrings":["YHK"],"name_pattern":"(?s:(?-i:(?!.*(?:LE)).*(?:YHK).*))"}],
     "whitespace_mode": "preserve",
     "origin_ids": [
       "com.fyhd.toprint"

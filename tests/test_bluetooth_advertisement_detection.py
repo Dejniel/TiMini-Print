@@ -80,6 +80,65 @@ def test_classic_and_ble_same_mac_share_evidence_without_duplicate_profiles():
     assert {device.protocol_family for device in other_devices} == {ProtocolFamily.V5G, ProtocolFamily.V5X}
 
 
+@pytest.fixture
+def cross_source_advertisement_catalog():
+    base = PrinterCatalog.load()
+    return PrinterCatalog(base.profiles, [
+        SupportedPrinterModel(
+            model_key="ordinary", profile_key="v5g_small_203", origin_ids=("app.a", "app.b"),
+            detections=(ModelDetection(exact_names=("Shared",)),),
+        ),
+        SupportedPrinterModel(
+            model_key="advertised", profile_key="v5x", origin_ids=("app.b",),
+            detections=(ModelDetection(exact_names=("Shared",), manufacturer_data_lengths=(5,),
+                                       manufacturer_data_suffixes=("59",)),),
+        ),
+    ])
+
+
+@pytest.mark.parametrize("layout", ["classic", "ble", "both", "multiple_ble"])
+def test_display_choices_keep_source_and_advertisement_context_for_every_endpoint(
+    cross_source_advertisement_catalog, layout,
+):
+    catalog = cross_source_advertisement_catalog
+    address = "AA:BB:CC:DD:EE:01"
+    advertisement = (bytes(4) + b"\x59",)
+    endpoints = []
+    if layout != "ble":
+        endpoints.append(BluetoothEndpoint("Shared", address,
+            manufacturer_data=advertisement if layout == "classic" else ()))
+    if layout != "classic":
+        endpoints.append(BluetoothEndpoint("Shared", address, transport=BluetoothEndpointTransport.BLE,
+                                          manufacturer_data=advertisement))
+    if layout == "multiple_ble":
+        endpoints.append(BluetoothEndpoint("Shared", "AA:BB:CC:DD:EE:02",
+                                          transport=BluetoothEndpointTransport.BLE))
+
+    resolver = BluetoothEndpointResolver(catalog)
+    automatic = resolver.devices_from_endpoints(endpoints)
+    assert all(device.address != address for device in automatic)
+    displayed = resolver.devices_for_display(automatic, endpoints)
+    expected_badges = ("[classic]", "[ble]") if layout == "multiple_ble" else (
+        "[classic+ble]" if layout == "both" else f"[{layout}]",
+    )
+    for badge in expected_badges:
+        choices = [device for device in displayed if device.address == address and device.transport_badge == badge]
+        assert {device.model_key: device.origin_ids for device in choices} == {
+            "ordinary": ("app.a",), "advertised": ("app.b",),
+        }
+        assert {device.protocol_family for device in choices} == {ProtocolFamily.V5G, ProtocolFamily.V5X}
+        for device in choices:
+            assert device.transport_target.manufacturer_data == advertisement
+    if layout == "multiple_ble":
+        other = [device for device in displayed if device.address != address]
+        assert len(other) == 1
+        assert other[0].model_key == "ordinary"
+        assert other[0].origin_ids == ("app.a", "app.b")
+        assert other[0].transport_target.manufacturer_data == ()
+    else:
+        assert len(displayed) == 2
+
+
 @pytest.mark.parametrize("blocking", [False, True])
 def test_scan_logs_resolved_profile_for_both_endpoints(blocking):
     reporter, sink = build_capture_reporter()

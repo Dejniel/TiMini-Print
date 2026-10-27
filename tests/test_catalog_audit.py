@@ -202,7 +202,7 @@ class CatalogAuditTests(unittest.TestCase):
             unsupported_path.write_text(json.dumps([{
                 "model_key": "unknown_suffix",
                 "detections": [{"prefixes": ["ABC"]}],
-                "origin_ids": ["com.example.unknown"],
+                "origin_ids": ["com.example.known"],
             }]), encoding="utf-8")
             report = self.tool.generate_report(
                 profile_path=profile_path, model_path=model_path,
@@ -212,7 +212,7 @@ class CatalogAuditTests(unittest.TestCase):
             # A genuinely shadowed unsupported exact name remains an error.
             unsupported_path.write_text(json.dumps([{
                 "model_key": "shadowed", "detections": [{"exact_names": ["ABC"]}],
-                "origin_ids": ["com.example.unknown"],
+                "origin_ids": ["com.example.known"],
             }]), encoding="utf-8")
             report = self.tool.generate_report(
                 profile_path=profile_path, model_path=model_path,
@@ -305,6 +305,54 @@ class CatalogAuditTests(unittest.TestCase):
 
         self.assertEqual(report["errors"], [])
 
+    def test_catalog_audit_keeps_source_local_conflicts_separate(self) -> None:
+        cases = (
+            (
+                [
+                    {"model_key": "broad", "profile_key": "base", "origin_ids": ["app.a"],
+                     "detections": [{"prefixes": ["FOO"]}]},
+                    {"model_key": "precise", "profile_key": "base", "origin_ids": ["app.b"],
+                     "detections": [{"prefixes": ["FOOB"]}]},
+                ],
+                [{"model_key": "unsupported", "origin_ids": ["app.c"],
+                  "detections": [{"prefixes": ["FOOBAR"]}]}],
+            ),
+            (
+                [
+                    {"model_key": "shared", "profile_key": "base", "origin_ids": ["app.a", "app.b"],
+                     "detections": [{"prefixes": ["FOO"]}]},
+                    {"model_key": "precise", "profile_key": "base", "origin_ids": ["app.a"],
+                     "detections": [{"exact_names": ["FOO"]}]},
+                ],
+                [],
+            ),
+            (
+                [
+                    {"model_key": "known", "profile_key": "base", "origin_ids": ["app.a"],
+                     "detections": [{"prefixes": ["FOO"]}], "detection_ambiguity_group": "foo"},
+                    {"model_key": "independent", "profile_key": "base", "origin_ids": ["app.b"],
+                     "detections": [{"prefixes": ["FOO"]}]},
+                ],
+                [{"model_key": "unsupported", "origin_ids": ["app.a"],
+                  "detections": [{"prefixes": ["FOO"]}], "detection_ambiguity_group": "foo"}],
+            ),
+        )
+        for models, unsupported in cases:
+            with self.subTest(models=[model["model_key"] for model in models]):
+                with tempfile.TemporaryDirectory() as tmp:
+                    profile_path = Path(tmp) / "profiles.json"
+                    model_path = Path(tmp) / "models.json"
+                    unsupported_path = Path(tmp) / "unsupported.json"
+                    profile_path.write_text(json.dumps([_profile_payload("base")]), encoding="utf-8")
+                    model_path.write_text(json.dumps(models), encoding="utf-8")
+                    unsupported_path.write_text(json.dumps(unsupported), encoding="utf-8")
+                    report = self.tool.generate_report(
+                        profile_path=profile_path,
+                        model_path=model_path,
+                        unsupported_model_path=unsupported_path,
+                    )
+                self.assertEqual(report["errors"], [])
+
     def test_catalog_audit_detects_unsupported_model_that_is_already_supported(self) -> None:
         profiles = [_profile_payload("base")]
         models = [
@@ -320,7 +368,7 @@ class CatalogAuditTests(unittest.TestCase):
             {
                 "model_key": "unsupported",
                 "detections": [{"prefixes": ["FOO"]}],
-                "origin_ids": ["com.example.unsupported"],
+                "origin_ids": ["com.example.supported"],
             },
         ]
 

@@ -149,6 +149,11 @@ of byte strings), or pass `manufacturer_data=...` to catalog detection.
 Bleak discovery preserves it automatically. Mobile adapters must forward the
 same raw data; if absent, manufacturer-constrained rules do not match.
 
+When a `BluetoothTarget` is supplied, `detect_device()` and `detection_devices()`
+use its stored advertisement evidence: BLE first, then evidence retained on a
+Classic peer. A nonempty `manufacturer_data` argument takes precedence. The
+target does not infer or manufacture advertisement bytes.
+
 `name_pattern` is an additional condition when literal triggers are present;
 by itself it is a name trigger and needs an explicit `marketing_names` alias.
 Patterns and manufacturer bytes are not public model names.
@@ -159,7 +164,28 @@ removes only leading and trailing whitespace, and `preserve` compares the raw
 name. Discovery keeps the raw name for matching; presentation may trim its own
 copy after a model has been selected.
 
-Matching is sorted by specificity. Longer and more constrained rules win over broader rules. Supported matches win over unsupported matches at equal specificity. If multiple supported models tie, automatic `detect_device(...)` returns `None` so the caller can ask the user to choose a model/source explicitly.
+Matching is resolved independently for each source (`origin_id`: an app, SDK,
+or documentation source). Within that source, longer and more constrained
+rules win over broader rules. Case-sensitive matching is preferred, with
+case-folded fallback only when that source has no case-sensitive match.
+Supported matches normally win over unsupported matches at equal specificity
+within the same source.
+
+The catalog combines source-local results and deduplicates model keys. A
+longer prefix, exact spelling or unsupported entry from one source cannot
+remove another source's matching recipe. `detect_device(...)` returns a device
+only when the combined result is exactly one supported model; otherwise the
+caller asks the user to choose the source/model explicitly.
+
+`match.model.origin_ids` describes the catalog model's source associations;
+`match.origin_ids` contains only the sources for which this endpoint matched.
+Devices made from matches retain this narrower source context. Exported
+printer configs preserve it in `device.origin_ids`; omitting that optional
+field uses the catalog model's source metadata.
+
+Names that an app rejects or redirects elsewhere are not alternative print
+recipes. Such catalog notes may remain as manual-only entries without
+`detections`, rather than creating false automatic source candidates.
 
 Raw trigger spelling is preserved for the public catalog. Private matching copies apply the model's `whitespace_mode`. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
 
