@@ -1,6 +1,7 @@
 from .bluetooth_resolver import BluetoothEndpointResolver, ResolvedBluetoothTarget
 from .bluetooth_profiles import (
     BleBulkWriteProfile,
+    BleGattLayout,
     BleTransportProfile,
     get_ble_transport_profile,
 )
@@ -32,6 +33,7 @@ __all__ = [
     "BluetoothEndpoint",
     "BluetoothEndpointResolver",
     "BleBulkWriteProfile",
+    "BleGattLayout",
     "BleTransportProfile",
     "BluetoothConnectionAttempt",
     "BluetoothConnectionPlan",
