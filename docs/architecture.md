@@ -180,6 +180,11 @@ selection. The transport selects endpoints by GATT metadata, never by opcodes.
 On receipt, runtime observers update session state before pending reply
 predicates run; this allows passive waits to depend on parsed runtime state.
 
+An optional ordered `BleTransportProfile.gatt_layouts` list binds write, reply
+and optional control characteristics within one service. The first complete
+layout wins; partial layouts are not combined and do not use generic fallback.
+Connectors consuming this metadata must apply the same complete-layout rule.
+
 ## Detecting Versus Discovering
 
 Catalog detection and Bluetooth discovery are different concerns.
