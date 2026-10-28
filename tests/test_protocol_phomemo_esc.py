@@ -255,10 +255,10 @@ class PhomemoEscProtocolTests(unittest.TestCase):
     def test_t02_detection_does_not_steal_other_02_models(self) -> None:
         catalog = PrinterCatalog.load()
 
-        self.assertIsNone(catalog.detect_device("T02"))
+        self.assertEqual(catalog.detect_device("T02").model_key, "phomemo_t02")
         self.assertEqual(
             {match.model.model_key for match in catalog.detect_model("T02")},
-            {"phomemo_t02", "unsupported_funny_lx_type1"},
+            {"phomemo_t02"},
         )
 
         for name in ("T02E", "C02E"):
@@ -280,8 +280,7 @@ class PhomemoEscProtocolTests(unittest.TestCase):
         printmaster = catalog_for_sources("com.project.aimotech.printmaster")
         for name, key in (("M110", "printmaster_m110"), ("M120", "printmaster_m120")):
             self.assertEqual(printmaster.detect_device(name).model_key, key)
-        self.assertIsNone(catalog.detect_device("M220"))
-        for name in ("M110-ABCD", "M120ABCD", "M220-ABCD"):
+        for name in ("M110-ABCD", "M120ABCD", "M220", "M220-ABCD"):
             self.assertFalse(any(
                 "com.quyin.phomemo" in match.origin_ids for match in catalog.detect_model(name)
             ))

@@ -11,9 +11,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import (
-    DetectionNormalizer,
-    SupportedPrinterModel,
-    UnsupportedModelMatch,
+    PrinterModel,
 )
 
 README_PATH = REPO_ROOT / "README.md"
@@ -37,15 +35,11 @@ def _dedupe_names(names: list[str]) -> list[str]:
     return ordered
 
 
-def _render_model_names(models: list[SupportedPrinterModel]) -> str:
+def _render_model_names(models: list[PrinterModel]) -> str:
     groups_by_key: dict[str, list[str]] = {}
     for model in models:
         names = _dedupe_names(list(model.names))
         if not names:
-            continue
-        prediction = getattr(model, "profile_key_prediction", None)
-        if prediction:
-            groups_by_key.setdefault(f"prediction:{prediction}", []).extend(names)
             continue
         groups_by_key.setdefault(names[0], []).extend(names)
     singles: list[str] = []
@@ -71,7 +65,7 @@ def _render_model_names(models: list[SupportedPrinterModel]) -> str:
     return "\n\n".join(chunks)
 
 
-def render_supported_models_block(models: list[SupportedPrinterModel] | None = None) -> str:
+def render_supported_models_block(models: list[PrinterModel] | None = None) -> str:
     catalog = PrinterCatalog.load()
     return _render_model_names(catalog.models if models is None else models)
 
@@ -97,33 +91,9 @@ def render_readme(readme_text: str | None = None) -> str:
 def validate_catalog_models() -> list[str]:
     catalog = PrinterCatalog.load()
     errors: list[str] = []
-    supported_origins_by_name: dict[str, set[str]] = {}
-    for model in catalog.models:
-        for name in model.names:
-            supported_origins_by_name.setdefault(DetectionNormalizer.fold_name(name), set()).update(
-                model.origin_ids
-            )
     for model in catalog.models:
         if not model.names:
             errors.append(f"Supported model {model.model_key} has no names")
-    for model in catalog.unsupported_models:
-        if not model.names:
-            errors.append(f"Unsupported model {model.model_key} has no names")
-        for name in model.names:
-            normalized_name = DetectionNormalizer.fold_name(name)
-            supported_origins = supported_origins_by_name.get(normalized_name)
-            if (
-                supported_origins
-                and set(model.origin_ids).issubset(supported_origins)
-                and not any(
-                    isinstance(match, UnsupportedModelMatch)
-                    and match.model.model_key == model.model_key
-                    for match in catalog.detect_model(name)
-                )
-            ):
-                errors.append(
-                    f"Unsupported model {model.model_key} display name {name!r} is already supported"
-                )
     return errors
 
 

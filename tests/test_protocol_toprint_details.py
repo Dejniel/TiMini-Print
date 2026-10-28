@@ -132,11 +132,8 @@ def test_p11_never_enters_p1_tspl_rule(catalog):
 def test_p3_gt08_gw08_do_not_claim_a_recovered_toprint_recipe(catalog):
     assert catalog.get_model("toprint_tspl_gt08") is None
     for token in ("P3", "GT08", "GW08"):
-        unsupported = catalog.require_unsupported_model("unsupported_toprint_" + token.lower())
-        assert unsupported.origin_ids == ("com.fyhd.toprint",)
-        assert unsupported.notes
-        assert all(not (m.model.origin_ids == ("com.fyhd.toprint",) and hasattr(m, "profile"))
-                   for m in catalog.detect_model(token))
+        assert all("com.fyhd.toprint" not in match.origin_ids
+                   for match in catalog.detect_model(token))
 
 
 def test_p1_does_not_advertise_unestablished_manual_motion(catalog):

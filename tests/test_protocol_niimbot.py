@@ -264,11 +264,5 @@ class NiimbotProtocolTests(unittest.TestCase):
                     "d11_v1" if name.startswith("D11S") else "d11_auto",
                 )
 
-    def test_catalog_does_not_treat_d110_m_as_d110(self) -> None:
-        detected = self.catalog.detect_device("D110_M")
-
-        self.assertIsNone(detected)
-
-
 if __name__ == "__main__":
     unittest.main()

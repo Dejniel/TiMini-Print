@@ -39,13 +39,10 @@ def catalog_for_sources(*origin_ids: str) -> PrinterCatalog:
         replace(model, origin_ids=tuple(origin for origin in model.origin_ids if origin in sources))
         for model in catalog.models if sources.intersection(model.origin_ids)
     ]
-    unsupported = [
-        replace(model, origin_ids=tuple(origin for origin in model.origin_ids if origin in sources))
-        for model in catalog.unsupported_models if sources.intersection(model.origin_ids)
-    ]
-    origins = {origin for model in models + unsupported for origin in model.origin_ids}
-    return PrinterCatalog(catalog.profiles, models, unsupported,
-                          {origin: catalog.origin_names((origin,))[0] for origin in origins})
+    origins = {origin for model in models for origin in model.origin_ids}
+    return PrinterCatalog(catalog.profiles, models, origin_names={
+        origin: catalog.origin_names((origin,))[0] for origin in origins
+    })
 
 
 def reset_adapter_cache() -> None:

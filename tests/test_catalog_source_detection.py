@@ -5,16 +5,16 @@ import json
 import pytest
 
 from tests.test_devices_models import _profile_payload
-from timiniprint.devices import BluetoothEndpoint, BluetoothTarget, PrinterCatalog
+from timiniprint.devices import BluetoothEndpoint, BluetoothTarget, ModelMatch, PrinterCatalog
 from timiniprint.devices.device import BluetoothEndpointTransport
 from timiniprint.devices.model_codec import model_from_json
 from timiniprint.devices.profiles import (
-    ModelDetection, PrinterProfile, SupportedPrinterModel, UnsupportedPrinterModel,
+    ModelDetection, PrinterProfile, PrinterModel,
 )
 
 
 def supported(key, source, detection, **kwargs):
-    return SupportedPrinterModel(
+    return PrinterModel(
         model_key=key, profile_key="demo", detections=(detection,),
         origin_ids=(source,) if isinstance(source, str) else source, **kwargs,
     )
@@ -23,8 +23,7 @@ def supported(key, source, detection, **kwargs):
 def catalog_with(*models):
     return PrinterCatalog(
         [model_from_json(PrinterProfile, _profile_payload())],
-        [model for model in models if isinstance(model, SupportedPrinterModel)],
-        [model for model in models if isinstance(model, UnsupportedPrinterModel)],
+        models,
     )
 
 
@@ -70,6 +69,19 @@ def test_equal_specificity_within_one_source_remains_ambiguous():
     assert catalog.detect_device("aaa") is None
 
 
+def test_matches_are_printable_models_with_resolved_profiles():
+    model = supported("known", "app.a", ModelDetection(exact_names=("Known",)))
+    catalog = catalog_with(model)
+    assert catalog.detect_model("Unknown") == ()
+    assert catalog.detect_device("Unknown") is None
+    match, = catalog.detect_model("Known")
+    assert isinstance(match, ModelMatch)
+    assert match.model is model
+    assert match.profile is catalog.require_profile(model.profile_key)
+    assert match.origin_ids == ("app.a",)
+    assert catalog.device_from_match(match) == catalog.detect_device("Known")
+
+
 @pytest.mark.parametrize("same_source", [False, True])
 def test_case_fallback_is_scoped_to_the_source(same_source):
     catalog = catalog_with(
@@ -86,57 +98,6 @@ def test_raw_case_pattern_is_not_overridden_by_source_case_fallback():
         supported("strict", "app.b", ModelDetection(prefixes=("AA",), name_pattern="(?-i:AA.*)")),
     )
     assert catalog.detect_device("aaa").model_key == "literal"
-
-
-@pytest.mark.parametrize("same_source", [False, True])
-@pytest.mark.parametrize("unsupported_detection", [
-    ModelDetection(prefixes=("aa",)), ModelDetection(exact_names=("aaa",)),
-])
-def test_unsupported_rule_only_overrides_a_broader_rule_in_its_own_source(same_source, unsupported_detection):
-    catalog = catalog_with(
-        supported("known", "app.a", ModelDetection(prefixes=("a",))),
-        UnsupportedPrinterModel(
-            model_key="unknown", origin_ids=("app.a" if same_source else "app.b",),
-            detections=(unsupported_detection,),
-        ),
-    )
-    assert {match.model.model_key for match in catalog.detect_model("aaa")} == (
-        {"unknown"} if same_source else {"known", "unknown"}
-    )
-    assert catalog.detect_device("aaa") is None
-    assert {device.model_key for device in catalog.detection_devices("aaa")} == (
-        set() if same_source else {"known"}
-    )
-    assert (catalog.detect_unsupported_model("aaa") is not None) is same_source
-
-
-@pytest.mark.parametrize("same_source", [False, True])
-def test_supported_exact_match_does_not_hide_another_sources_unsupported_model(same_source):
-    catalog = catalog_with(
-        supported("known", "app.a", ModelDetection(exact_names=("aaa",))),
-        UnsupportedPrinterModel(
-            model_key="unknown", origin_ids=("app.a" if same_source else "app.b",),
-            detections=(ModelDetection(prefixes=("a",)),),
-        ),
-    )
-    assert {match.model.model_key for match in catalog.detect_model("aaa")} == (
-        {"known"} if same_source else {"known", "unknown"}
-    )
-
-
-@pytest.mark.parametrize("ambiguity_group", [None, "known_conflict"])
-def test_same_source_supported_priority_and_explicit_ambiguity_are_preserved(ambiguity_group):
-    detection = ModelDetection(exact_names=("aaa",))
-    catalog = catalog_with(
-        supported("known", "app.a", detection, detection_ambiguity_group=ambiguity_group),
-        UnsupportedPrinterModel(
-            model_key="unknown", origin_ids=("app.a",), detections=(detection,),
-            detection_ambiguity_group=ambiguity_group,
-        ),
-    )
-    assert {match.model.model_key for match in catalog.detect_model("aaa")} == (
-        {"known", "unknown"} if ambiguity_group else {"known"}
-    )
 
 
 def test_multi_source_model_can_win_one_source_and_is_returned_only_once():

@@ -361,7 +361,7 @@ class TiMiniPrintGUI(tk.Tk):
         ttk.Label(status_frame, text="Status:").pack(side="left")
         self.show_unknown_check = ttk.Checkbutton(
             status_frame,
-            text="Show unsupported",
+            text="Show unknown",
             variable=self.show_unknown_devices_var,
             command=self._on_show_unknown_devices_changed,
         )

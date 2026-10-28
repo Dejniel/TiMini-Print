@@ -8,7 +8,7 @@ import pytest
 
 from timiniprint.devices import BluetoothEndpointResolver, PrinterCatalog
 from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
-from timiniprint.devices.profiles import ModelDetection, SupportedPrinterModel, UnsupportedPrinterModel
+from timiniprint.devices.profiles import ModelDetection, PrinterModel
 from timiniprint.protocol import ProtocolFamily
 from timiniprint.transport.bluetooth.adapters.bleak_adapter import _BleakBleAdapter
 from timiniprint.transport.bluetooth.discovery import BluetoothDiscovery
@@ -84,11 +84,11 @@ def test_classic_and_ble_same_mac_share_evidence_without_duplicate_profiles():
 def cross_source_advertisement_catalog():
     base = PrinterCatalog.load()
     return PrinterCatalog(base.profiles, [
-        SupportedPrinterModel(
+        PrinterModel(
             model_key="ordinary", profile_key="v5g_small_203", origin_ids=("app.a", "app.b"),
             detections=(ModelDetection(exact_names=("Shared",)),),
         ),
-        SupportedPrinterModel(
+        PrinterModel(
             model_key="advertised", profile_key="v5x", origin_ids=("app.b",),
             detections=(ModelDetection(exact_names=("Shared",), manufacturer_data_lengths=(5,),
                                        manufacturer_data_suffixes=("59",)),),
@@ -158,7 +158,7 @@ def test_scan_logs_use_the_same_advertisement_evidence_as_detection(
     ignored = [m.detail for m in sink.messages if m.detail.startswith("Discovery ignored")]
     assert len(ignored) == (2 if same_mac else 1)
     for log in ignored:
-        assert "reason=ambiguous_supported_model" in log
+        assert "reason=ambiguous_model" in log
         assert "ordinary" in log and "advertised" in log
     matched = [m.detail for m in sink.messages if m.detail.startswith("Discovery matched")]
     assert len(matched) == (0 if same_mac else 1)
@@ -193,22 +193,15 @@ def diagnostic_catalog():
     base = PrinterCatalog.load()
     origins = ("test",)
     return PrinterCatalog(base.profiles, [
-        SupportedPrinterModel(model_key="known", profile_key="v5x", origin_ids=origins,
-                              detections=(ModelDetection(exact_names=("Known", "Ambiguous", "Mixed", "MultiMixed")),)),
-        SupportedPrinterModel(model_key="other", profile_key="v5g_small_203", origin_ids=origins,
-                              detections=(ModelDetection(exact_names=("Ambiguous", "MultiMixed")),)),
-    ], [UnsupportedPrinterModel(model_key="missing", origin_ids=origins,
-                                detections=(ModelDetection(exact_names=("Missing",)),)),
-        UnsupportedPrinterModel(model_key="foreign_missing", origin_ids=("foreign",),
-                                detections=(ModelDetection(exact_names=("Mixed", "MultiMixed")),))],
-       {"test": "Test source", "foreign": "Other source"})
+        PrinterModel(model_key="known", profile_key="v5x", origin_ids=origins,
+                              detections=(ModelDetection(exact_names=("Known", "Ambiguous")),)),
+        PrinterModel(model_key="other", profile_key="v5g_small_203", origin_ids=origins,
+                              detections=(ModelDetection(exact_names=("Ambiguous",)),)),
+    ], origin_names={"test": "Test source"})
 
 
 @pytest.mark.parametrize("name, reason", [("Unknown", "no_supported_model"),
-                                          ("Missing", "known_unsupported_model"),
-                                          ("Ambiguous", "ambiguous_supported_model"),
-                                          ("Mixed", "ambiguous_model"),
-                                          ("MultiMixed", "ambiguous_supported_model")])
+                                          ("Ambiguous", "ambiguous_model")])
 @pytest.mark.parametrize("blocking", [False, True])
 def test_scan_logs_why_unresolved_endpoints_were_ignored(diagnostic_catalog, name, reason, blocking):
     reporter, sink = build_capture_reporter()
@@ -224,12 +217,11 @@ def test_scan_logs_why_unresolved_endpoints_were_ignored(diagnostic_catalog, nam
     assert f"reason={reason}" in logs[0]
     if name == "Ambiguous":
         assert "known" in logs[0] and "other" in logs[0]
-    elif name == "Missing":
-        assert "candidates=missing" in logs[0]
-    elif name == "Mixed":
-        assert "known" in logs[0] and "foreign_missing" in logs[0]
-    elif name == "MultiMixed":
-        assert all(key in logs[0] for key in ("known", "other", "foreign_missing"))
+    else:
+        manual = discovery.manual_targets_for_display(result)
+        assert len(manual) == 1
+        assert manual[0].display_name == name
+        assert manual[0].transport_target.ble_endpoint.address == endpoint.address
 
 
 def test_scan_logs_attached_anonymous_ble_with_the_resolved_profile(diagnostic_catalog):

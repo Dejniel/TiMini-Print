@@ -7,7 +7,6 @@ This document explains the JSON catalog used to turn printer names and user choi
 Catalog data lives in `timiniprint/data`:
 
 - `printer_models.json`: supported printer models and their detection rules
-- `printer_models_unsupported.json`: known-but-not-implemented models
 - `printer_profiles.json`: shared printable parameter recipes
 - `printer_paper_presets.json`: reusable paper/render geometry presets
 - `origins.json`: stable source ID to human-readable source name mapping
@@ -38,21 +37,18 @@ or ambiguous identity raises `ValueError`; it never selects the first row.
 Identity aliases do not automatically appear in the public model list. Add
 them to `marketing_names` too when they are useful public selection names.
 
-## Unsupported Models
-
-Unsupported model entries use the same base identity/detection shape as supported models, but they do not reference an implemented `PrinterProfile`.
-
-Use unsupported entries to:
-
-- recognize future support candidates in scans and reports
-- prevent a broad supported prefix from stealing an unrelated known model
-- group README future-support names
-
-`profile_key_prediction`, when present, is a future extraction/grouping hint. It is not an implemented profile key and must not route hardware to a protocol.
+Every catalog entry is a printable `PrinterModel` with a required `profile_key`.
+`detect_model(...)` returns a tuple of `ModelMatch` objects containing the model,
+resolved profile, matching detection rule and contextual `origin_ids`. An empty
+tuple means no recipe matched; multiple matches require explicit selection.
+There is no separate catalog or matching result for known unsupported names.
+Unknown Bluetooth endpoints remain available for manual selection/reporting.
+Removing unsupported metadata does not add a driver: existing supported prefixes
+and substrings can now match names previously annotated by that metadata.
 
 ## Sources
 
-Every supported and unsupported catalog model must have a non-empty `origin_ids`
+Every catalog model must have a non-empty `origin_ids`
 list. A source may be an application, an SDK, or manufacturer documentation;
 it does not have to be an Android app. IDs are opaque, stable strings. Existing
 Android package names remain valid IDs, without implying a package-name format
@@ -75,6 +71,14 @@ display-name registry show their source IDs directly.
 
 ### API migration
 
+Use `PrinterModel` instead of `SupportedPrinterModel`, and `ModelMatch` instead
+of `SupportedModelMatch`. The unsupported model/match types, catalog accessors,
+constructor argument and `load(unsupported_model_path=...)` are removed, without
+compatibility aliases. Construct custom catalogs as
+`PrinterCatalog(profiles, models, origin_names=...)`; optional paper/source paths
+in `load()` are keyword-only. Existing printable printer configs need no changes.
+Consumers that imported the removed types must be updated before using this core.
+
 Integrators must rename `origin_app_packages` to `origin_ids` and
 `PrinterCatalog.origin_app_names(...)` to `PrinterCatalog.origin_names(...)`.
 The constructor's mapping argument is also `origin_names`; `load()` accepts
@@ -89,9 +93,6 @@ Automatic detection uses flat detection objects. A manual-only model may use
 `"detections": []` with non-empty model-level `marketing_names`: it appears in
 the catalogue and can be selected by name or model key, but never matches a
 Bluetooth advertisement.
-
-An unsupported entry may likewise list marketing names without detection
-rules; it remains non-printable and does not match Bluetooth advertisements.
 
 A detection may also carry `marketing_names` when an alias belongs specifically
 to that rule:
@@ -168,13 +169,11 @@ Matching is resolved independently for each source (`origin_id`: an app, SDK,
 or documentation source). Within that source, longer and more constrained
 rules win over broader rules. Case-sensitive matching is preferred, with
 case-folded fallback only when that source has no case-sensitive match.
-Supported matches normally win over unsupported matches at equal specificity
-within the same source.
 
 The catalog combines source-local results and deduplicates model keys. A
-longer prefix, exact spelling or unsupported entry from one source cannot
+longer prefix or exact spelling from one source cannot
 remove another source's matching recipe. `detect_device(...)` returns a device
-only when the combined result is exactly one supported model; otherwise the
+only when the combined result is exactly one model; otherwise the
 caller asks the user to choose the source/model explicitly.
 
 `match.model.origin_ids` describes the catalog model's source associations;
@@ -184,8 +183,9 @@ printer configs preserve it in `device.origin_ids`; omitting that optional
 field uses the catalog model's source metadata.
 
 Names that an app rejects or redirects elsewhere are not alternative print
-recipes. Such catalog notes may remain as manual-only entries without
-`detections`, rather than creating false automatic source candidates.
+recipes. Keep unresolved assignments in documentation, not as non-printable
+catalog entries. `detection_ambiguity_group` may document an expected tie between
+printable models for the audit; it does not change runtime matching priority.
 
 Raw trigger spelling is preserved for the public catalog. Private matching copies apply the model's `whitespace_mode`. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
 
@@ -262,7 +262,9 @@ If `model_key` is present, deleting an override falls back to the current catalo
 
 ## README Rendering
 
-README model lists are generated from the same public-name union used by manual catalog lookup. Supported and unsupported lists should not duplicate separate presentation-only source files. Grouping should be derived from model entries, `profile_key`, or `profile_key_prediction` depending on whether the model is implemented.
+README model lists are generated from the same public-name union used by manual
+catalog lookup. Grouping comes from printable model entries, without a second
+presentation-only inventory or a list of unimplemented names.
 
 ## Audit Rules
 
@@ -271,7 +273,6 @@ Catalog changes should be checked by tests or `tools/catalog_audit.py` when they
 - duplicate model keys
 - detection conflicts
 - missing source IDs or names
-- unsupported/support overlap
 - profile references
 - paper preset references
 - README model inventory output

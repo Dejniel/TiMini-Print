@@ -191,7 +191,7 @@ Catalog detection and Bluetooth discovery are different concerns.
 
 `PrinterCatalog.detect_device(...)` does not scan hardware. It maps a known name/address to a printable `PrinterDevice` when the catalog match is unambiguous.
 
-`BluetoothDiscovery` scans hardware, asks `BluetoothEndpointResolver` to merge raw endpoints, then returns `PrinterDevice` objects for devices that can be printed automatically. UI/CLI scan views may use display helpers to include ambiguous or unsupported manual candidates.
+`BluetoothDiscovery` scans hardware, asks `BluetoothEndpointResolver` to merge raw endpoints, then returns `PrinterDevice` objects for devices that can be printed automatically. UI/CLI scan views may use display helpers to include ambiguous model choices and unknown endpoints for manual selection.
 
 Transport owns scanning mechanics. Devices own turning raw endpoints into logical printers.
 

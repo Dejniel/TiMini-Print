@@ -11,8 +11,6 @@ from ...devices import (
     PrinterCatalog,
     PrinterDevice,
     ResolvedBluetoothTarget,
-    SupportedModelMatch,
-    UnsupportedModelMatch,
 )
 from ...devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from .backend import SppBackend
@@ -289,28 +287,12 @@ class BluetoothDiscovery:
                 matches = self._catalog.detect_model(
                     endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
                 )
-                supported = [
-                    match
-                    for match in matches
-                    if isinstance(match, SupportedModelMatch)
-                ]
-                unsupported = [
-                    match
-                    for match in matches
-                    if isinstance(match, UnsupportedModelMatch)
-                ]
-                if len(supported) > 1:
-                    reason = "ambiguous_supported_model"
-                    candidates = ",".join(match.model.model_key for match in matches)
-                elif supported and unsupported:
+                if len(matches) > 1:
                     reason = "ambiguous_model"
                     candidates = ",".join(match.model.model_key for match in matches)
-                elif unsupported:
-                    reason = "known_unsupported_model"
-                    candidates = ",".join(match.model.model_key for match in unsupported)
-                elif supported:
+                elif matches:
                     reason = "unresolved_endpoint"
-                    candidates = supported[0].model.model_key
+                    candidates = matches[0].model.model_key
                 else:
                     reason = "no_supported_model"
                     candidates = ""

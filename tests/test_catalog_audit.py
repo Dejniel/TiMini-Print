@@ -134,25 +134,6 @@ class CatalogAuditTests(unittest.TestCase):
             report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
         self.assertEqual(report["errors"], [])
 
-    def test_named_unsupported_entry_without_bluetooth_rules_is_not_unreachable(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            profile_path = Path(tmp) / "profiles.json"
-            model_path = Path(tmp) / "models.json"
-            unsupported_path = Path(tmp) / "unsupported.json"
-            profile_path.write_text("[]", encoding="utf-8")
-            model_path.write_text("[]", encoding="utf-8")
-            unsupported_path.write_text(json.dumps([{
-                "model_key": "named_only",
-                "marketing_names": ["Named only"],
-                "detections": [],
-                "origin_ids": ["com.example.manual"],
-            }]), encoding="utf-8")
-            report = self.tool.generate_report(
-                profile_path=profile_path, model_path=model_path,
-                unsupported_model_path=unsupported_path,
-            )
-        self.assertEqual(report["errors"], [])
-
     def test_mergeable_models_preserve_name_to_source_associations(self) -> None:
         profiles = [_profile_payload("base")]
         models = [
@@ -187,39 +168,6 @@ class CatalogAuditTests(unittest.TestCase):
 
         errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_body"]
         self.assertEqual(errors, [{"kind": "mergeable_model_body", "model_keys": ["first", "second"]}])
-
-    def test_exact_supported_name_can_override_an_unsupported_prefix(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            profile_path, model_path, unsupported_path = (
-                Path(tmp) / name for name in ("profiles.json", "models.json", "unsupported.json")
-            )
-            profile_path.write_text(json.dumps([_profile_payload("base")]), encoding="utf-8")
-            model_path.write_text(json.dumps([{
-                "model_key": "known", "profile_key": "base",
-                "detections": [{"exact_names": ["ABC"]}],
-                "origin_ids": ["com.example.known"],
-            }]), encoding="utf-8")
-            unsupported_path.write_text(json.dumps([{
-                "model_key": "unknown_suffix",
-                "detections": [{"prefixes": ["ABC"]}],
-                "origin_ids": ["com.example.known"],
-            }]), encoding="utf-8")
-            report = self.tool.generate_report(
-                profile_path=profile_path, model_path=model_path,
-                unsupported_model_path=unsupported_path,
-            )
-            self.assertEqual(report["errors"], [])
-            # A genuinely shadowed unsupported exact name remains an error.
-            unsupported_path.write_text(json.dumps([{
-                "model_key": "shadowed", "detections": [{"exact_names": ["ABC"]}],
-                "origin_ids": ["com.example.known"],
-            }]), encoding="utf-8")
-            report = self.tool.generate_report(
-                profile_path=profile_path, model_path=model_path,
-                unsupported_model_path=unsupported_path,
-            )
-            self.assertTrue(any(error["kind"] == "unsupported_model_matches_supported_model"
-                                for error in report["errors"]))
 
     def test_catalog_audit_detects_mergeable_detection_objects(self) -> None:
         profiles = [_profile_payload("base")]
@@ -307,93 +255,31 @@ class CatalogAuditTests(unittest.TestCase):
 
     def test_catalog_audit_keeps_source_local_conflicts_separate(self) -> None:
         cases = (
-            (
-                [
-                    {"model_key": "broad", "profile_key": "base", "origin_ids": ["app.a"],
-                     "detections": [{"prefixes": ["FOO"]}]},
-                    {"model_key": "precise", "profile_key": "base", "origin_ids": ["app.b"],
-                     "detections": [{"prefixes": ["FOOB"]}]},
-                ],
-                [{"model_key": "unsupported", "origin_ids": ["app.c"],
-                  "detections": [{"prefixes": ["FOOBAR"]}]}],
-            ),
-            (
-                [
-                    {"model_key": "shared", "profile_key": "base", "origin_ids": ["app.a", "app.b"],
-                     "detections": [{"prefixes": ["FOO"]}]},
-                    {"model_key": "precise", "profile_key": "base", "origin_ids": ["app.a"],
-                     "detections": [{"exact_names": ["FOO"]}]},
-                ],
-                [],
-            ),
-            (
-                [
-                    {"model_key": "known", "profile_key": "base", "origin_ids": ["app.a"],
-                     "detections": [{"prefixes": ["FOO"]}], "detection_ambiguity_group": "foo"},
-                    {"model_key": "independent", "profile_key": "base", "origin_ids": ["app.b"],
-                     "detections": [{"prefixes": ["FOO"]}]},
-                ],
-                [{"model_key": "unsupported", "origin_ids": ["app.a"],
-                  "detections": [{"prefixes": ["FOO"]}], "detection_ambiguity_group": "foo"}],
-            ),
+            [
+                {"model_key": "broad", "profile_key": "base", "origin_ids": ["app.a"],
+                 "detections": [{"prefixes": ["FOO"]}]},
+                {"model_key": "precise", "profile_key": "base", "origin_ids": ["app.b"],
+                 "detections": [{"prefixes": ["FOOB"]}]},
+            ],
+            [
+                {"model_key": "shared", "profile_key": "base", "origin_ids": ["app.a", "app.b"],
+                 "detections": [{"prefixes": ["FOO"]}]},
+                {"model_key": "precise", "profile_key": "base", "origin_ids": ["app.a"],
+                 "detections": [{"exact_names": ["FOO"]}]},
+            ],
         )
-        for models, unsupported in cases:
+        for models in cases:
             with self.subTest(models=[model["model_key"] for model in models]):
                 with tempfile.TemporaryDirectory() as tmp:
                     profile_path = Path(tmp) / "profiles.json"
                     model_path = Path(tmp) / "models.json"
-                    unsupported_path = Path(tmp) / "unsupported.json"
                     profile_path.write_text(json.dumps([_profile_payload("base")]), encoding="utf-8")
                     model_path.write_text(json.dumps(models), encoding="utf-8")
-                    unsupported_path.write_text(json.dumps(unsupported), encoding="utf-8")
                     report = self.tool.generate_report(
                         profile_path=profile_path,
                         model_path=model_path,
-                        unsupported_model_path=unsupported_path,
                     )
                 self.assertEqual(report["errors"], [])
-
-    def test_catalog_audit_detects_unsupported_model_that_is_already_supported(self) -> None:
-        profiles = [_profile_payload("base")]
-        models = [
-            {
-                "model_key": "supported",
-                "detections": [{"prefixes": ["FOO"]}],
-                "profile_key": "base",
-                "protocol_override": {"type": "tiny"},
-                "origin_ids": ["com.example.supported"],
-            },
-        ]
-        unsupported_models = [
-            {
-                "model_key": "unsupported",
-                "detections": [{"prefixes": ["FOO"]}],
-                "origin_ids": ["com.example.supported"],
-            },
-        ]
-
-        with tempfile.TemporaryDirectory() as tmp:
-            profile_path = Path(tmp) / "profiles.json"
-            model_path = Path(tmp) / "models.json"
-            unsupported_model_path = Path(tmp) / "unsupported.json"
-            profile_path.write_text(json.dumps(profiles), encoding="utf-8")
-            model_path.write_text(json.dumps(models), encoding="utf-8")
-            unsupported_model_path.write_text(json.dumps(unsupported_models), encoding="utf-8")
-
-            report = self.tool.generate_report(
-                profile_path=profile_path,
-                model_path=model_path,
-                unsupported_model_path=unsupported_model_path,
-            )
-
-        errors = [
-            error
-            for error in report["errors"]
-            if error["kind"] == "unsupported_model_matches_supported_model"
-        ]
-        self.assertEqual(len(errors), 1)
-        self.assertEqual(errors[0]["model_key"], "unsupported")
-
 
 if __name__ == "__main__":
     unittest.main()

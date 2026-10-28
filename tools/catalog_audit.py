@@ -15,10 +15,7 @@ from timiniprint.devices import PrinterCatalog  # noqa: E402
 from timiniprint.devices.model_codec import model_from_json  # noqa: E402
 from timiniprint.devices.profiles import (  # noqa: E402
     PrinterProfile,
-    SupportedModelMatch,
-    SupportedPrinterModel,
-    UnsupportedModelMatch,
-    UnsupportedPrinterModel,
+    PrinterModel,
 )
 
 
@@ -186,7 +183,7 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
                     return None
                 continue
             match = matches[0] if matches else None
-            if not isinstance(match, SupportedModelMatch):
+            if match is None:
                 continue
             if match.model.model_key == model["model_key"]:
                 return None
@@ -209,73 +206,6 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
         "sample_addresses": addresses,
     }
 
-def _find_unsupported_model_reachability_error(
-    catalog: PrinterCatalog,
-    model: dict[str, Any],
-) -> dict[str, Any] | None:
-    if not model.get("detections"):
-        return None
-    samples = _sample_names(model)
-    addresses = _sample_addresses(model)
-    blocking: dict[str, Any] | None = None
-    probes = [(address, data) for address in addresses for data in _sample_manufacturer_data(model)]
-    for sample in samples:
-        for address, data in probes:
-            matches = catalog.detect_model(sample, address=address, manufacturer_data=data)
-            if len(matches) > 1:
-                if model["model_key"] in {candidate.model.model_key for candidate in matches}:
-                    matched_origins = next(candidate.origin_ids for candidate in matches
-                                           if candidate.model.model_key == model["model_key"])
-                    ambiguity_group = model.get("detection_ambiguity_group")
-                    for candidate in matches:
-                        if (ambiguity_group
-                                and candidate.model.detection_ambiguity_group == ambiguity_group):
-                            continue
-                        if (not isinstance(candidate, SupportedModelMatch)
-                                or not set(matched_origins).intersection(candidate.origin_ids)):
-                            continue
-                        return {
-                            "kind": "unsupported_model_matches_supported_model",
-                            "model_key": model["model_key"],
-                            "sample_name": sample,
-                            "sample_address": address,
-                            "supported_model_key": candidate.model.model_key,
-                            "supported_profile_key": candidate.profile.profile_key,
-                        }
-                    return None
-                continue
-            match = matches[0] if matches else None
-            if isinstance(match, SupportedModelMatch):
-                # A known exact name may override an unsupported prefix while
-                # suffixed names still reach that prefix. Check all samples.
-                blocking = {
-                    "kind": "unsupported_model_matches_supported_model",
-                    "model_key": model["model_key"],
-                    "sample_name": sample,
-                    "sample_address": address,
-                    "supported_model_key": match.model.model_key,
-                    "supported_profile_key": match.profile.profile_key,
-                }
-                continue
-            if not isinstance(match, UnsupportedModelMatch):
-                continue
-            if match.model.model_key == model["model_key"]:
-                return None
-            if blocking is None:
-                blocking = {
-                    "kind": "shadowed_unsupported_model",
-                    "model_key": model["model_key"],
-                    "sample_name": sample,
-                    "sample_address": address,
-                    "blocked_by_model_key": match.model.model_key,
-                }
-    return blocking or {
-        "kind": "unreachable_unsupported_model",
-        "model_key": model["model_key"],
-        "sample_names": samples[:5],
-        "sample_addresses": addresses,
-    }
-
 def _model_merge_key(model: dict[str, Any]) -> str:
     """Merge only recipes with the same source attribution for their names."""
     return json.dumps(
@@ -291,37 +221,25 @@ def _model_merge_key(model: dict[str, Any]) -> str:
 def generate_report(
     profile_path: Path | None = None,
     model_path: Path | None = None,
-    unsupported_model_path: Path | None = None,
 ) -> dict[str, Any]:
     default_profile_path = REPO_ROOT / "timiniprint/data/printer_profiles.json"
     default_model_path = REPO_ROOT / "timiniprint/data/printer_models.json"
-    default_unsupported_model_path = REPO_ROOT / "timiniprint/data/printer_models_unsupported.json"
     profile_path = profile_path or default_profile_path
     model_path = model_path or default_model_path
-    if unsupported_model_path is None and profile_path == default_profile_path and model_path == default_model_path:
-        unsupported_model_path = default_unsupported_model_path
     profiles_raw = json.loads(profile_path.read_text(encoding="utf-8"))
     models_raw = json.loads(model_path.read_text(encoding="utf-8"))
-    unsupported_models_raw = (
-        []
-        if unsupported_model_path is None
-        else json.loads(unsupported_model_path.read_text(encoding="utf-8"))
-    )
     if (
         profile_path == default_profile_path
         and model_path == default_model_path
-        and unsupported_model_path == default_unsupported_model_path
     ):
         catalog = PrinterCatalog.load(
             profile_path=profile_path,
             model_path=model_path,
-            unsupported_model_path=unsupported_model_path,
         )
     else:
         catalog = PrinterCatalog(
             [model_from_json(PrinterProfile, entry) for entry in profiles_raw],
-            [model_from_json(SupportedPrinterModel, entry) for entry in models_raw],
-            [model_from_json(UnsupportedPrinterModel, entry) for entry in unsupported_models_raw],
+            [model_from_json(PrinterModel, entry) for entry in models_raw],
         )
 
     referenced_profiles = {model["profile_key"] for model in models_raw}
@@ -330,7 +248,7 @@ def generate_report(
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
 
-    for model in [*models_raw, *unsupported_models_raw]:
+    for model in models_raw:
         errors.extend(_mergeable_detection_objects(model))
 
     for model in models_raw:
@@ -354,54 +272,6 @@ def generate_report(
                             }
                         )
 
-    for model in unsupported_models_raw:
-        profile_key_prediction = model.get("profile_key_prediction")
-        if profile_key_prediction is not None and (
-            not isinstance(profile_key_prediction, str)
-            or not profile_key_prediction
-            or profile_key_prediction != profile_key_prediction.lower()
-            or " " in profile_key_prediction
-            or "Print Master" in profile_key_prediction
-            or any(
-                not (char.islower() or char.isdigit() or char == "_")
-                for char in profile_key_prediction
-            )
-        ):
-            errors.append(
-                {
-                    "kind": "bad_unsupported_profile_key_prediction",
-                    "model_key": model["model_key"],
-                    "profile_key_prediction": profile_key_prediction,
-                }
-            )
-        if profile_key_prediction in all_profiles:
-            errors.append(
-                {
-                    "kind": "unsupported_profile_key_prediction_matches_existing_profile",
-                    "model_key": model["model_key"],
-                    "profile_key_prediction": profile_key_prediction,
-                }
-            )
-        for detection in model.get("detections", []):
-            for field in (
-                "prefixes",
-                "exact_names",
-                "substrings",
-                "suffixes",
-                "excluded_prefixes",
-            ):
-                for trigger in detection.get(field, []):
-                    if trigger != trigger.strip():
-                        errors.append(
-                            {
-                                "kind": "unsupported_trigger_whitespace",
-                                "model_key": model["model_key"],
-                                "marketing_names": detection.get("marketing_names", []),
-                                "field": field,
-                                "trigger": trigger,
-                            }
-                        )
-
     for model in models_raw:
         if model["profile_key"] not in all_profiles:
             errors.append(
@@ -414,11 +284,6 @@ def generate_report(
 
     for model in models_raw:
         reachability_error = _find_model_reachability_error(catalog, model)
-        if reachability_error is not None:
-            errors.append(reachability_error)
-
-    for model in unsupported_models_raw:
-        reachability_error = _find_unsupported_model_reachability_error(catalog, model)
         if reachability_error is not None:
             errors.append(reachability_error)
 
@@ -467,24 +332,10 @@ def generate_report(
                 }
             )
 
-    duplicate_unsupported_models: dict[str, list[str]] = defaultdict(list)
-    for model in unsupported_models_raw:
-        canonical_body = json.dumps({k: v for k, v in model.items() if k != "model_key"}, sort_keys=True)
-        duplicate_unsupported_models[canonical_body].append(model["model_key"])
-    for keys in sorted(duplicate_unsupported_models.values()):
-        if len(keys) > 1:
-            errors.append(
-                {
-                    "kind": "duplicate_unsupported_model_body",
-                    "model_keys": keys,
-                }
-            )
-
     return {
         "summary": {
             "profiles": len(catalog.profiles),
             "models": len(catalog.models),
-            "unsupported_models": len(catalog.unsupported_models),
             "error_count": len(errors),
             "warning_count": len(warnings),
         },
@@ -506,7 +357,6 @@ def main() -> int:
         "Catalog audit: "
         f"{report['summary']['profiles']} profiles, "
         f"{report['summary']['models']} models, "
-        f"{report['summary']['unsupported_models']} unsupported models, "
         f"{report['summary']['error_count']} errors, "
         f"{report['summary']['warning_count']} warnings"
     )

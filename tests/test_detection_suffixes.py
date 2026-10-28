@@ -28,7 +28,7 @@ def test_suffix_or_and_case_folding():
 
 
 def test_suffix_model_json_roundtrip_and_whitespace_validation():
-    data = dict(model_key="unit", origin_ids=["test"], whitespace_mode="preserve",
+    data = dict(model_key="unit", profile_key="demo", origin_ids=["test"], whitespace_mode="preserve",
                 detections=[dict(prefixes=["Unit"], suffixes=[" "], all_of=True)])
     model = model_from_json(PrinterModel, data)
     assert model_from_json(PrinterModel, model_to_json(model)) == model

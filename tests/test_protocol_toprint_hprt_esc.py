@@ -133,7 +133,6 @@ class ToPrintHprtEscProtocolTests(unittest.TestCase):
         for name in ("P3", "P3_1234", "P3-1234", "P3S"):
             with self.subTest(name=name):
                 self.assertEqual(toprint.detect_model(name), ())
-        self.assertEqual(catalog.require_unsupported_model("unsupported_toprint_p3").detections, ())
 
     def test_zl1_paper_motion_uses_toprint_hprt_esc_motion_commands(self) -> None:
         device = PrinterCatalog.load().device_from_profile("toprint_hprt_esc_zl1")
