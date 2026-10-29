@@ -10,7 +10,7 @@ from timiniprint.devices.bluetooth_profiles import BleTransportProfile
 from timiniprint.printing.runtime.base import RuntimeController
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_transport import _BleakTransportSession
-from timiniprint.transport.bluetooth.classic_receive import ClassicReceiveHub
+from timiniprint.transport._stream_receive import StreamReceiveHub
 
 
 def characteristic(uuid, *properties):
@@ -121,7 +121,7 @@ class ClassicReplyObservationTests(unittest.TestCase):
     def test_listener_updates_state_before_passive_reply_predicate(self):
         reader, writer = socket.socketpair()
         seen = []
-        hub = ClassicReceiveHub(reader, listener=seen.append)
+        hub = StreamReceiveHub(reader, listener=seen.append)
         try:
             waiter = hub.register_passive(lambda data: bool(seen) and data == b"ready")
             hub.start()

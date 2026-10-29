@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import importlib
+import queue
+import threading
 import time
+from concurrent.futures import Future, TimeoutError as FutureTimeoutError
 from typing import Dict, Iterable, List, Optional
 
 from ..constants import SPP_UUID
 from ..types import DeviceInfo, DeviceTransport
 
 _SPP_UUID_16 = 0x1101
+_RUN_LOOP_POLL_SEC = 0.01
+_CLOSE_TIMEOUT_SEC = 2.0
 
 
 def _missing_iobluetooth_message() -> str:
@@ -288,17 +293,50 @@ def _rfcomm_write(channel, data: bytes) -> None:
 
 
 def _rfcomm_close(channel) -> None:
-    try:
-        channel.closeChannel()
-    except Exception:
-        pass
+    status = channel.closeChannel()
+    if not _status_ok(status):
+        raise RuntimeError(f"RFCOMM close failed (status: {status})")
 
 
 def _close_device_connection(device) -> None:
-    try:
-        device.closeConnection()
-    except Exception:
-        pass
+    status = device.closeConnection()
+    if not _status_ok(status):
+        raise RuntimeError(f"Bluetooth device close failed (status: {status})")
+
+
+_rfcomm_delegate_class = None
+_delegate_class_lock = threading.Lock()
+
+
+def _new_rfcomm_delegate(on_data, on_error):
+    # Importing IOBluetooth installs the pointer/length metadata for this
+    # informal protocol. Copy its borrowed byte buffer inside the callback.
+    global _rfcomm_delegate_class
+    with _delegate_class_lock:
+        if _rfcomm_delegate_class is None:
+            _, iobluetooth = _iobluetooth_imports()
+
+            class TiMiniRFCOMMDelegate(iobluetooth.NSObject):
+                def rfcommChannelData_data_length_(self, channel, data, length):
+                    try:
+                        self.on_data(bytes(data[:length]))
+                    except Exception as exc:
+                        self.on_error(exc)
+
+                def rfcommChannelClosed_(self, channel):
+                    self.on_error(ConnectionError("Bluetooth RFCOMM peer closed the channel"))
+
+            _rfcomm_delegate_class = TiMiniRFCOMMDelegate
+    delegate = _rfcomm_delegate_class.alloc().init()
+    delegate.on_data = on_data
+    delegate.on_error = on_error
+    return delegate
+
+
+def _poll_rfcomm_run_loop() -> None:
+    from CoreFoundation import CFRunLoopRunInMode, kCFRunLoopDefaultMode
+
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, _RUN_LOOP_POLL_SEC, True)
 
 
 class _MacClassicSocket:
@@ -307,33 +345,137 @@ class _MacClassicSocket:
         self._timeout: Optional[float] = None
         self._device = None
         self._channel = None
+        self._delegate = None
+        self._thread = None
+        self._commands = queue.Queue()
+        self._stopping = threading.Event()
+        self._worker_error = None
+
+    def _start_thread(self) -> None:
+        self._commands = queue.Queue()
+        self._stopping.clear()
+        self._worker_error = None
+        self._thread = threading.Thread(target=self._worker, name="timiniprint-macos-spp", daemon=True)
+        self._thread.start()
+
+    def _worker(self) -> None:
+        try:
+            objc, _ = _iobluetooth_imports()
+            while not self._stopping.is_set():
+                with objc.autorelease_pool():
+                    try:
+                        operation, future, cleanup = self._commands.get(timeout=_RUN_LOOP_POLL_SEC)
+                    except queue.Empty:
+                        pass
+                    else:
+                        try:
+                            if self._worker_error is not None and not cleanup:
+                                raise RuntimeError("macOS Bluetooth run loop failed") from self._worker_error
+                            future.set_result(operation())
+                        except BaseException as exc:
+                            future.set_exception(exc)
+                    if self._worker_error is None:
+                        try:
+                            # RFCOMM delegates need a live run loop between writes.
+                            _poll_rfcomm_run_loop()
+                        except Exception as exc:
+                            # Keep the native owner alive for cleanup/retry, but
+                            # do not accept more device I/O after a loop fault.
+                            self._worker_error = exc
+                            if self._delegate is not None:
+                                self._delegate.on_error(exc)
+        except BaseException as exc:
+            self._worker_error = exc
+            if self._delegate is not None:
+                self._delegate.on_error(exc)
+
+    def _run(self, operation, *, cleanup: bool = False):
+        if self._thread is None or not self._thread.is_alive():
+            raise RuntimeError("macOS Bluetooth run loop is not running")
+        if self._worker_error is not None and not cleanup:
+            raise RuntimeError("macOS Bluetooth run loop failed") from self._worker_error
+        future = Future()
+        self._commands.put((operation, future, cleanup))
+        while not future.done():
+            try:
+                return future.result(timeout=0.1)
+            except FutureTimeoutError:
+                if future.done():
+                    raise
+                if not self._thread.is_alive():
+                    raise RuntimeError("macOS Bluetooth run loop stopped unexpectedly") from self._worker_error
+        return future.result()
 
     def settimeout(self, timeout: float) -> None:
         self._timeout = timeout
 
+    def gettimeout(self) -> Optional[float]:
+        return self._timeout
+
     def connect(self, target) -> None:
+        self.close()
+        self._start_thread()
+        self._run(lambda: self._connect_native(target))
+
+    def _connect_native(self, target) -> None:
         address, channel_id = target
         timeout = self._timeout if self._timeout is not None else 5.0
         # Ensure stale channel/device handles never leak across reconnects.
-        self.close()
         device = self._backend.get_device(address, allow_discovery=True, timeout=timeout)
         if device is None:
             raise RuntimeError(f"Bluetooth device not found: {address}")
         self._device = device
-        try:
-            self._channel = _open_rfcomm_channel(device, int(channel_id))
-        except Exception:
-            _close_device_connection(device)
-            self._device = None
-            self._channel = None
-            raise
+        self._channel = _open_rfcomm_channel(device, int(channel_id))
 
     def sendall(self, data: bytes) -> None:
+        self._run(lambda: self._send_native(bytes(data)))
+
+    def _send_native(self, data: bytes) -> None:
         if self._channel is None:
             raise RuntimeError("Not connected to a Bluetooth RFCOMM channel")
         _rfcomm_write(self._channel, data)
 
+    def start_receive(self, on_data, on_error) -> None:
+        def start():
+            if self._channel is None:
+                raise RuntimeError("Not connected to a Bluetooth RFCOMM channel")
+            if self._delegate is not None:
+                raise RuntimeError("RFCOMM receiver already installed")
+            self._delegate = _new_rfcomm_delegate(on_data, on_error)
+            status = self._channel.setDelegate_(self._delegate)
+            if not _status_ok(status):
+                raise RuntimeError(f"RFCOMM delegate installation failed (status: {status})")
+
+        self._run(start)
+
+    def stop_receive(self) -> None:
+        if self._thread is not None:
+            self._run(self._stop_receive_native, cleanup=True)
+
+    def _stop_receive_native(self) -> None:
+        if self._delegate is not None:
+            status = self._channel.setDelegate_(None)
+            if not _status_ok(status):
+                raise RuntimeError(f"RFCOMM delegate removal failed (status: {status})")
+            self._delegate = None
+
     def close(self) -> None:
+        if self._thread is None:
+            return
+        if not self._thread.is_alive():
+            if self._channel is not None or self._device is not None:
+                raise RuntimeError("macOS run loop stopped with live Bluetooth resources") from self._worker_error
+            self._thread = None
+            return
+        self._run(self._close_native, cleanup=True)
+        self._stopping.set()
+        self._thread.join(timeout=_CLOSE_TIMEOUT_SEC)
+        if self._thread.is_alive():
+            raise RuntimeError("macOS Bluetooth run loop did not stop")
+        self._thread = None
+
+    def _close_native(self) -> None:
+        self._stop_receive_native()
         if self._channel is not None:
             _rfcomm_close(self._channel)
             self._channel = None

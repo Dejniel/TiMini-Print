@@ -7,7 +7,8 @@ from collections.abc import Callable
 from typing import List, Optional, Tuple
 
 from .adapters import _get_ble_adapter, _get_classic_adapter
-from .classic_receive import ClassicReceiveHub
+from .._stream_receive import StreamReceiveHub
+from .._stream_session import StreamRuntimeSession, run_blocking
 from .constants import IS_MACOS, IS_WINDOWS, RFCOMM_CHANNELS
 from .types import DeviceInfo, DeviceTransport, ScanFailure, SocketLike
 from .device_information import BleDeviceInformation
@@ -19,72 +20,6 @@ _CONNECT_TIMEOUT_SEC = 12.0
 _CLASSIC_FLOW_RESUME_TIMEOUT_SEC = 600.0
 
 
-class _ClassicRuntimeSession:
-    """Notification-side runtime adapter without protocol knowledge."""
-
-    def __init__(
-        self,
-        reporter: reporting.Reporter,
-        *,
-        flow_resume_timeout_s: float = _CLASSIC_FLOW_RESUME_TIMEOUT_SEC,
-    ) -> None:
-        self._reporter = reporter
-        self._flow_resume_timeout_s = max(0.0, float(flow_resume_timeout_s))
-        self._flow_condition = threading.Condition()
-        self._flow_paused = False
-        self._flow_closed = False
-
-    def report_debug(self, message: str) -> None:
-        self._reporter.debug(short="Runtime", detail=message)
-
-    def report_trace(self, message: str) -> None:
-        self._reporter.trace(short="Runtime", detail=message)
-
-    def report_warning(self, *, short: str, detail: str) -> None:
-        self._reporter.warning(short=short, detail=detail)
-
-    def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
-        with self._flow_condition:
-            if self._flow_closed:
-                return
-            changed = self._flow_paused != paused
-            self._flow_paused = paused
-            if not paused:
-                self._flow_condition.notify_all()
-        if changed:
-            label = "Classic flow pause" if paused else "Classic flow resume"
-            self.report_debug(label)
-            if payload:
-                self.report_trace(f"{label}: {payload.hex()}")
-
-    def reopen_flow(self) -> None:
-        with self._flow_condition:
-            self._flow_paused = False
-            self._flow_closed = False
-            self._flow_condition.notify_all()
-
-    def close_flow(self) -> None:
-        with self._flow_condition:
-            self._flow_paused = False
-            self._flow_closed = True
-            self._flow_condition.notify_all()
-
-    def wait_for_flow(self) -> None:
-        deadline = time.monotonic() + self._flow_resume_timeout_s
-        with self._flow_condition:
-            while self._flow_paused and not self._flow_closed:
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    raise TimeoutError(
-                        "Timed out waiting for Classic Bluetooth flow-control resume"
-                    )
-                self._flow_condition.wait(timeout=remaining)
-            if self._flow_closed:
-                raise RuntimeError(
-                    "Classic Bluetooth disconnected while waiting for flow-control resume"
-                )
-
-
 class SppBackend:
     def __init__(
         self,
@@ -94,15 +29,16 @@ class SppBackend:
     ) -> None:
         self._sock: Optional[SocketLike] = None
         self._lock = threading.Lock()
-        self._classic_query_lock = threading.Lock()
+        self._classic_receive_lock = threading.Lock()
         self._connected = False
         self._channel: Optional[int] = None
         self._transport: Optional[DeviceTransport] = None
         self._reporter = reporter
-        self._classic_receive_hub: ClassicReceiveHub | None = None
+        self._classic_receive_hub: StreamReceiveHub | None = None
         self._classic_runtime_controller = None
-        self._classic_runtime_session = _ClassicRuntimeSession(
+        self._classic_runtime_session = StreamRuntimeSession(
             reporter,
+            label="Classic Bluetooth",
             flow_resume_timeout_s=classic_flow_resume_timeout_s,
         )
 
@@ -147,7 +83,7 @@ class SppBackend:
         pairing_hint: Optional[bool] = None,
     ) -> None:
         try:
-            await self._run_blocking(self._connect_attempts_blocking, attempts, pairing_hint)
+            await run_blocking(self._connect_attempts_blocking, attempts, pairing_hint)
         except BaseException:
             try:
                 await self.disconnect()
@@ -160,41 +96,20 @@ class SppBackend:
 
     @property
     def transport(self) -> DeviceTransport | None:
-        """Transport which actually connected, including the outcome of fallback."""
-        return self._transport
+        """Active transport, including fallback; None once the link is unusable."""
+        return self._transport if self._connected else None
 
     @property
     def device_information(self) -> BleDeviceInformation | None:
         """Latest metadata from the actual BLE socket; never from Classic/SPP."""
-        if self._transport is DeviceTransport.BLE:
+        if self.transport is DeviceTransport.BLE:
             return getattr(self._sock, "device_information", None)
         return None
-
-    async def _run_blocking(self, operation, *args):
-        """Do not abandon live socket I/O when its asyncio caller is cancelled.
-
-        An executor future cannot stop its worker. Let the current operation
-        finish (or reach its transport timeout) before allowing cleanup to
-        close the socket/event loop. Repeated cancellation must not skip this.
-        """
-        pending = asyncio.get_running_loop().run_in_executor(None, operation, *args)
-        try:
-            return await asyncio.shield(pending)
-        except asyncio.CancelledError:
-            while not pending.done():
-                try:
-                    await asyncio.shield(pending)
-                except asyncio.CancelledError:
-                    continue
-                except Exception:
-                    break
-            if not pending.cancelled():
-                pending.exception()  # Retrieve errors without replacing caller cancellation.
-            raise
 
     async def _stop_classic_runtime_controller(self) -> None:
         previous = self._classic_runtime_controller
         self._classic_runtime_controller = None
+        self._classic_runtime_session.detach()
         if previous is not None:
             await previous.stop(self._classic_runtime_session)
 
@@ -203,14 +118,18 @@ class SppBackend:
         try:
             await self._stop_classic_runtime_controller()
         finally:
-            await self._run_blocking(self._disconnect_blocking)
+            await run_blocking(self._disconnect_blocking, cleanup=True)
 
     async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
         if self._transport == DeviceTransport.CLASSIC:
             if runtime_controller is self._classic_runtime_controller:
                 return
             await self._stop_classic_runtime_controller()
-        await self._run_blocking(
+            if runtime_controller is not None:
+                self._classic_runtime_session.bind(
+                    asyncio.get_running_loop(), self.send_control_packet, self.can_send_control_packet,
+                )
+        await run_blocking(
             self._attach_runtime_controller_blocking,
             runtime_controller,
             timeout,
@@ -235,14 +154,14 @@ class SppBackend:
         return self._can_send_control_packet_wait_notification_blocking()
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
-        return await self._run_blocking(
+        return await run_blocking(
             self._send_control_packet_blocking,
             packet,
             timeout,
         )
 
     async def send_bulk_payload(self, data: bytes, *, timeout: float = 1.0) -> bool:
-        return await self._run_blocking(
+        return await run_blocking(
             self._send_bulk_payload_blocking,
             data,
             timeout,
@@ -255,7 +174,7 @@ class SppBackend:
         timeout: float = 1.0,
         reply_complete: Callable[[bytes], bool] | None = None,
     ) -> bytes | None:
-        return await self._run_blocking(
+        return await run_blocking(
             self._query_control_packet_blocking,
             packet,
             timeout,
@@ -270,7 +189,7 @@ class SppBackend:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        return await self._run_blocking(
+        return await run_blocking(
             self._wait_for_notification_blocking,
             label,
             match,
@@ -286,7 +205,7 @@ class SppBackend:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        return await self._run_blocking(
+        return await run_blocking(
             self._wait_for_reply_blocking,
             label,
             match,
@@ -303,7 +222,7 @@ class SppBackend:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
-        return await self._run_blocking(
+        return await run_blocking(
             self._send_control_packet_wait_notification_blocking,
             packet,
             label,
@@ -318,7 +237,7 @@ class SppBackend:
         chunk_size: int,
         delay_ms: int,
     ) -> None:
-        await self._run_blocking(
+        await run_blocking(
             self._write_blocking,
             data,
             chunk_size,
@@ -513,15 +432,26 @@ class SppBackend:
         raise RuntimeError("Bluetooth connection failed (" + detail + ")")
 
     def _disconnect_blocking(self) -> None:
+        closing_classic = self._transport is DeviceTransport.CLASSIC
         self._connected = False
         self._channel = None
-        self._transport = None
         self._classic_runtime_session.close_flow()
         self._stop_classic_receive_hub()
         if not self._sock:
+            self._transport = None
             return
-        self._sock.close()
-        self._sock = None
+        # Wake paused writers first, then finish the current Classic write
+        # before disposing its native output stream. BLE owns its own lifecycle
+        # and must not wait behind this lock while stopping notifications.
+        if closing_classic:
+            with self._lock:
+                if self._sock is not None:
+                    self._sock.close()
+                    self._sock = None
+        else:
+            self._sock.close()
+            self._sock = None
+        self._transport = None
 
     def _attach_runtime_controller_blocking(self, runtime_controller, timeout: float) -> None:
         if not self._sock or not self._connected:
@@ -567,7 +497,7 @@ class SppBackend:
             if callable(can_query_control_packet):
                 return bool(can_query_control_packet())
             return False
-        return True
+        return StreamReceiveHub.supports(self._sock)
 
     def _can_wait_for_notification_blocking(self) -> bool:
         if not self._sock or not self._connected or self._transport != DeviceTransport.BLE:
@@ -582,7 +512,7 @@ class SppBackend:
             return False
         if self._transport == DeviceTransport.BLE:
             return self._can_wait_for_notification_blocking()
-        return callable(getattr(self._sock, "recv", None))
+        return StreamReceiveHub.supports(self._sock)
 
     def _can_send_control_packet_wait_notification_blocking(self) -> bool:
         if not self._sock or not self._connected or self._transport != DeviceTransport.BLE:
@@ -593,6 +523,7 @@ class SppBackend:
         return False
 
     def _send_control_packet_blocking(self, packet: bytes, timeout: float) -> bool:
+        sock = self._sock
         if not self._sock or not self._connected:
             return False
         if self._transport == DeviceTransport.BLE:
@@ -600,8 +531,19 @@ class SppBackend:
             if callable(send_control_packet):
                 return bool(send_control_packet(packet, timeout=timeout))
             return False
-        with self._lock:
-            return _send_control_packet(self._sock, packet, timeout=timeout)
+        return self._send_classic_control(sock, packet, timeout)
+
+    def _send_classic_control(self, sock: SocketLike, packet: bytes, timeout: float) -> bool:
+        deadline = time.monotonic() + max(0.0, timeout)
+        if not self._lock.acquire(timeout=max(0.0, timeout)):
+            raise TimeoutError("Timed out waiting to write Classic control packet")
+        try:
+            if sock is not self._sock or not self._connected:
+                raise ConnectionError("Classic Bluetooth connection changed before control write")
+            self._classic_runtime_session.check_error()
+            return _send_control_packet(sock, packet, timeout=max(0.0, deadline - time.monotonic()))
+        finally:
+            self._lock.release()
 
     def _send_bulk_payload_blocking(self, data: bytes, timeout: float) -> bool:
         if not self._sock or not self._connected or self._transport != DeviceTransport.BLE:
@@ -618,6 +560,7 @@ class SppBackend:
         timeout: float,
         reply_complete: Callable[[bytes], bool] | None = None,
     ) -> bytes | None:
+        sock = self._sock
         if not self._sock or not self._connected:
             return None
         if self._transport == DeviceTransport.BLE:
@@ -631,13 +574,11 @@ class SppBackend:
                     reply_complete=reply_complete,
                 )
             return None
-        with self._classic_query_lock:
-            hub = self._ensure_classic_receive_hub()
-            waiter = hub.register(hub.mark(), reply_complete)
-            with self._lock:
-                _send_all(self._sock, packet)
-            hub.start()
-            return hub.wait(waiter, timeout=timeout)
+        hub = self._ensure_classic_receive_hub()
+        return hub.query(
+            packet, lambda data, budget: self._send_classic_control(sock, data, budget),
+            timeout=timeout, reply_complete=reply_complete,
+        )
 
     def _wait_for_notification_blocking(
         self,
@@ -680,14 +621,12 @@ class SppBackend:
                 timeout,
                 required,
             )
-        if not callable(getattr(self._sock, "recv", None)):
+        if not StreamReceiveHub.supports(self._sock):
             if required:
                 raise RuntimeError("Protocol reply wait unavailable")
             return None
         hub = self._ensure_classic_receive_hub()
-        waiter = hub.register_passive(match)
-        hub.start()
-        return hub.wait(waiter, timeout=timeout, claim_passive=True)
+        return hub.wait_for_reply(label, match, timeout=timeout, required=required)
 
     def _send_control_packet_wait_notification_blocking(
         self,
@@ -716,11 +655,14 @@ class SppBackend:
             )
 
     def _write_blocking(self, data: bytes, chunk_size: int, delay_ms: int) -> None:
+        sock = self._sock
         if not self._sock or not self._connected:
             raise RuntimeError("Not connected to a Bluetooth device")
         if self._transport == DeviceTransport.BLE:
             with self._lock:
-                _send_all(self._sock, data)
+                if sock is not self._sock or not self._connected:
+                    raise ConnectionError("Bluetooth connection changed before payload write")
+                _send_all(sock, data)
                 return
         delay = max(0.0, delay_ms / 1000.0)
         total_bytes = len(data)
@@ -744,9 +686,9 @@ class SppBackend:
             chunk = data[offset : offset + chunk_size]
             self._classic_runtime_session.wait_for_flow()
             with self._lock:
-                if not self._sock or not self._connected:
-                    raise RuntimeError("Not connected to a Bluetooth device")
-                _send_all(self._sock, chunk)
+                if sock is not self._sock or not self._connected:
+                    raise ConnectionError("Bluetooth connection changed before payload write")
+                _send_all(sock, chunk)
             offset += len(chunk)
             chunk_index += 1
             if chunk_index in progress_points:
@@ -769,38 +711,30 @@ class SppBackend:
             ),
         )
 
-    def _ensure_classic_receive_hub(self) -> ClassicReceiveHub:
-        if not self._sock or not self._connected or self._transport != DeviceTransport.CLASSIC:
-            raise RuntimeError("Classic Bluetooth receive hub unavailable")
-        if self._classic_receive_hub is None:
-            self._classic_receive_hub = ClassicReceiveHub(
-                self._sock,
-                listener=(
-                    self._handle_classic_payload
-                    if self._classic_runtime_controller is not None
-                    else None
-                ),
-            )
-        return self._classic_receive_hub
+    def _ensure_classic_receive_hub(self) -> StreamReceiveHub:
+        with self._classic_receive_lock:
+            if not self._sock or not self._connected or self._transport != DeviceTransport.CLASSIC:
+                raise RuntimeError("Classic Bluetooth receive hub unavailable")
+            if self._classic_receive_hub is None:
+                self._classic_receive_hub = StreamReceiveHub(
+                    self._sock, listener=self._handle_classic_payload,
+                    on_error=self._classic_runtime_session.abort,
+                )
+            return self._classic_receive_hub
 
     def _stop_classic_receive_hub(self) -> None:
-        hub = self._classic_receive_hub
-        self._classic_receive_hub = None
-        self._classic_runtime_controller = None
-        if hub is not None:
-            hub.stop()
+        with self._classic_receive_lock:
+            hub = self._classic_receive_hub
+            if hub is not None:
+                hub.stop()
+            self._classic_receive_hub = None
+            self._classic_runtime_controller = None
 
     def _handle_classic_payload(self, payload: bytes) -> None:
         controller = self._classic_runtime_controller
         if controller is None:
             return
-        try:
-            controller.handle_notification(self._classic_runtime_session, payload)
-        except Exception as exc:
-            self._reporter.debug(
-                short="Bluetooth",
-                detail=f"Classic runtime notification handler failed: {exc}",
-            )
+        self._classic_runtime_session.dispatch(lambda: self._classic_runtime_controller, payload)
 
 
 def _scan_blocking(
@@ -899,13 +833,24 @@ def _send_all(sock: SocketLike, data: bytes) -> None:
 
 
 def _send_control_packet(sock: SocketLike, packet: bytes, *, timeout: float) -> bool:
-    _ = timeout
-    _send_all(sock, packet)
+    if timeout <= 0:
+        raise TimeoutError("Control write expired before sending")
+    get_timeout = getattr(sock, "gettimeout", None)
+    set_timeout = getattr(sock, "settimeout", None)
+    if callable(get_timeout) and callable(set_timeout):
+        previous = get_timeout()
+        try:
+            set_timeout(timeout)
+            _send_all(sock, packet)
+        finally:
+            set_timeout(previous)
+    else:
+        _send_all(sock, packet)
     return True
 
 
 def _is_timeout_error(exc: Exception) -> bool:
-    if isinstance(exc, TimeoutError):
+    if isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
         return True
     if isinstance(exc, OSError):
         if exc.errno in {60, 110, 10060}:
