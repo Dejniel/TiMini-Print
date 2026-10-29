@@ -73,11 +73,10 @@ def _fast_controller() -> V5XRuntimeController:
 
 
 class V5XWaitForCompletionTests(unittest.IsolatedAsyncioTestCase):
-    async def test_completion_clears_next_page_readiness_on_every_exit_path(self) -> None:
+    async def test_aa_notifications_do_not_replace_completion_on_any_exit_path(self) -> None:
         for result in ("idle", "quiet", "cap", "unavailable"):
             with self.subTest(result=result):
                 controller = _fast_controller()
-                controller.debug_update(await_start_ready=True)
                 session = _FakeSession(
                     [_a1_frame(0)] if result == "idle" else [None],
                     can_wait=result != "unavailable",
@@ -90,12 +89,12 @@ class V5XWaitForCompletionTests(unittest.IsolatedAsyncioTestCase):
 
                 await controller.wait_for_completion(session, timeout=0.01)
 
-                self.assertFalse(controller.debug_snapshot()["await_start_ready"])
-                self.assertFalse(controller.debug_snapshot()["start_ready_seen"])
+                self.assertEqual(session.waits, 1 if result in ("idle", "quiet") else 0)
+                snapshot = controller.debug_snapshot()
                 controller.handle_notification(
                     session, make_packet(0xAA, b"\x00", ProtocolFamily.V5X)
                 )
-                self.assertFalse(controller.debug_snapshot()["start_ready_seen"])
+                self.assertEqual(controller.debug_snapshot(), snapshot)
 
     async def test_returns_on_idle_status_frame(self) -> None:
         controller = _fast_controller()
@@ -150,17 +149,28 @@ class _StandardPayloadConnection(_SendOnlyConnection):
 
 
 class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
-    async def test_payload_job_completion_clears_v5x_readiness(self) -> None:
+    async def test_payload_job_still_performs_passive_v5x_completion(self) -> None:
+        class Connection(_SendOnlyConnection):
+            def __init__(self):
+                super().__init__()
+                self.waits = []
+
+            def can_wait_for_notification(self):
+                return True
+
+            async def wait_for_notification(self, label, match, *, timeout, required):
+                self.waits.append(label)
+                reply = _a1_frame(0)
+                return reply if match(reply) else None
+
         controller = _fast_controller()
-        controller.debug_update(await_start_ready=True, start_ready_seen=True)
-        connection = _SendOnlyConnection()
+        connection = Connection()
         job = ProtocolJob(payload=b"data", wait_for_completion=True)
 
         await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job)
 
         self.assertEqual(connection.sent, [job])
-        self.assertFalse(controller.debug_snapshot()["await_start_ready"])
-        self.assertFalse(controller.debug_snapshot()["start_ready_seen"])
+        self.assertEqual(connection.waits, ["V5X print completion 0xa1"])
 
     async def test_send_prepared_job_invokes_wait_for_completion(self) -> None:
         spy = _SpyController()
