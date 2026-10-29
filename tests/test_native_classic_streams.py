@@ -432,7 +432,9 @@ class NativeClassicStreamTests(unittest.IsolatedAsyncioTestCase):
                 previous = sock.gettimeout()
                 native.on_write = reply
                 self.assertEqual(await connection.query_control_packet(b"query", timeout=0.3, reply_complete=bool), b"ok")
-                self.assertTrue(0 < budgets[0] <= 0.3)
+                self.assertGreater(budgets[0], 0)
+                # Subtracting monotonic deadlines can round above the input budget.
+                self.assertLessEqual(budgets[0], 0.3 + 1e-6)
                 self.assertEqual(sock.gettimeout(), previous)
 
     async def test_query_expires_while_the_native_writer_is_busy(self):
