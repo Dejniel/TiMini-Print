@@ -1644,7 +1644,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         asyncio.run(run())
 
         self.assertEqual(_v5x_state(session).pending_command_ack_opcodes, [])
-        self.assertFalse(_v5x_state(session).await_start_ready)
 
     def test_v5x_nonzero_a9_status_fails_immediately(self) -> None:
         session, client = self._make_session(ProtocolFamily.V5X)

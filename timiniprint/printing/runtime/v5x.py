@@ -8,7 +8,6 @@ from typing import Optional
 from ...protocol.family import ProtocolFamily
 from ...protocol.families.v5x import (
     V5X_CONNECT_INIT_PACKET,
-    V5X_FINALIZE_PACKET,
     V5X_GET_SERIAL_PACKET,
     V5X_GRAY_MODE,
     V5X_GRAY_LABEL_MODE,
@@ -55,9 +54,6 @@ class _V5XSessionState:
     pending_status_poll: asyncio.Task | None = None
     pending_command_acks: set[int] = field(default_factory=set)
     seen_command_acks: set[int] = field(default_factory=set)
-    await_start_ready: bool = False
-    start_ready_seen: bool = False
-    start_ready_event: asyncio.Event | None = None
     await_connect_info: bool = False
 
 
@@ -71,6 +67,10 @@ class V5XRuntimeController(RuntimeController):
     _COMPLETION_QUIET_S: float = 3.0
     _COMPLETION_GRACE_S: float = 3.0
     _COMPLETION_MAX_S: float = 60.0
+    # Bound the complete acceptance window, including replies and backoff.
+    # This is separate from an individual command timeout or final completion.
+    _START_ACCEPT_TIMEOUT_S: float = 60.0
+    _BUSY_RETRY_DELAY_S: float = 0.4
 
     def __init__(self) -> None:
         self._state = _V5XSessionState()
@@ -98,8 +98,6 @@ class V5XRuntimeController(RuntimeController):
             "mxw_sign_responses_sent": self._state.mxw_sign_responses_sent,
             "pending_command_ack_opcodes": sorted(self._state.pending_command_acks),
             "seen_command_ack_opcodes": sorted(self._state.seen_command_acks),
-            "await_start_ready": self._state.await_start_ready,
-            "start_ready_seen": self._state.start_ready_seen,
             "await_connect_info": self._state.await_connect_info,
         }
 
@@ -155,20 +153,38 @@ class V5XRuntimeController(RuntimeController):
                 session,
                 packet,
                 context,
-                timeout=timeout,
                 density_updated=density_changed,
             )
             ack_opcode = self._arm_command_ack(session, packet)
             try:
                 if ack_opcode is not None:
-                    reply = await session.send_control_packet_wait_notification(
-                        packet,
-                        label="V5X command ack 0xa9",
-                        match=lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xA9,
-                        timeout=timeout,
-                        required=True,
-                    )
-                    self._state.last_a9_status = self._extract_status_byte(session, reply or b"")
+                    # 0xa9 answered with 0x01 means the printer is still busy
+                    # with the previous page, not that this page was refused.
+                    # Re-send just the start command until it takes the page;
+                    # the raster itself has not been written yet.
+                    deadline = time.monotonic() + self._START_ACCEPT_TIMEOUT_S
+                    while True:
+                        remaining = deadline - time.monotonic()
+                        if remaining <= 0:
+                            raise PrinterNotReadyError(
+                                "Timed out waiting for V5X printer to accept the page",
+                                PrinterStatusCode.NOT_READY,
+                            )
+                        reply = await session.send_control_packet_wait_notification(
+                            packet,
+                            label="V5X command ack 0xa9",
+                            match=lambda payload: prefixed_packet_opcode(payload, ProtocolFamily.V5X) == 0xA9,
+                            timeout=min(timeout, remaining),
+                            required=True,
+                        )
+                        status = self._extract_status_byte(session, reply or b"")
+                        self._state.last_a9_status = status
+                        if status != 0x01:
+                            break
+                        remaining = deadline - time.monotonic()
+                        if remaining > 0:
+                            session.report_debug("0xa9 busy (0x01); retrying page start")
+                            await asyncio.sleep(min(self._BUSY_RETRY_DELAY_S, remaining))
                     self._validate_command_ack(ack_opcode)
                 else:
                     sent = await session.send_control_packet(packet, timeout=timeout)
@@ -186,10 +202,6 @@ class V5XRuntimeController(RuntimeController):
                 raise RuntimeError("V5X bulk payload send unavailable")
 
         for packet in split.trailing_commands:
-            if packet == V5X_FINALIZE_PACKET:
-                self._state.await_start_ready = True
-                self._state.start_ready_seen = False
-                self._state.start_ready_event = asyncio.Event()
             sent = await session.send_control_packet(packet, timeout=timeout)
             if not sent:
                 raise RuntimeError("V5X trailing control packet send unavailable")
@@ -244,12 +256,9 @@ class V5XRuntimeController(RuntimeController):
         packet: bytes,
         context: V5XJobContext,
         *,
-        timeout: float,
         density_updated: bool,
     ) -> None:
         opcode = prefixed_packet_opcode(packet, ProtocolFamily.V5X)
-        if opcode in (0xA2, 0xA9):
-            await self._wait_for_start_ready(session, timeout)
         if opcode == 0xA9:
             delay_ms = start_delay_ms(
                 context,
@@ -269,12 +278,6 @@ class V5XRuntimeController(RuntimeController):
         return opcode
 
     async def wait_for_completion(self, session, *, timeout: float) -> None:
-        # AA gates the next page of an unfinished job, not a separate print.
-        # All pages have been sent when this completion hook runs.
-        self._state.await_start_ready = False
-        self._state.start_ready_seen = False
-        self._state.start_ready_event = None
-
         # Hold the BLE link after the job is sent until the printer finishes. The
         # MXW01 streams 0xA1 status frames while printing; treat the job as done
         # when it reports idle (task_state=0) or after a quiet window with no
@@ -323,8 +326,6 @@ class V5XRuntimeController(RuntimeController):
             self._mark_status_poll_ack(session)
         elif opcode == 0xA6:
             self._schedule_get_serial(session)
-        elif opcode == 0xAA:
-            self._mark_start_ready(session)
         elif opcode == 0xA9:
             status = self._extract_status_byte(session, payload)
             self._state.last_a9_status = status
@@ -339,21 +340,6 @@ class V5XRuntimeController(RuntimeController):
             self._schedule_status_poll(session)
         elif opcode == 0xB3:
             self._schedule_sign_response(session, payload)
-
-    async def _wait_for_start_ready(self, session, timeout: float) -> None:
-        if not self._state.await_start_ready:
-            return
-        try:
-            if not self._state.start_ready_seen and self._state.start_ready_event is not None:
-                session.report_debug("waiting for V5X next-page readiness: 0xaa")
-                await asyncio.wait_for(
-                    self._state.start_ready_event.wait(),
-                    timeout=max(timeout, self._COMPLETION_MAX_S),
-                )
-        except asyncio.TimeoutError:
-            raise TimeoutError("Timed out waiting for V5X start ready 0xaa") from None
-        self._state.await_start_ready = False
-        self._state.start_ready_seen = False
 
     async def _wait_for_connect_info(self, session, timeout: float) -> None:
         if not self._state.await_connect_info or self._state.connect_info_received:
@@ -377,14 +363,6 @@ class V5XRuntimeController(RuntimeController):
     def _clear_command_ack_state(self, opcode: int) -> None:
         self._state.pending_command_acks.discard(opcode)
         self._state.seen_command_acks.discard(opcode)
-
-    def _mark_start_ready(self, session) -> None:
-        if not self._state.await_start_ready:
-            return
-        self._state.start_ready_seen = True
-        if self._state.start_ready_event is not None:
-            self._state.start_ready_event.set()
-        session.report_debug("start ready: 0xaa")
 
     def _mark_connect_info(self, session) -> None:
         if not self._state.await_connect_info:
@@ -442,6 +420,7 @@ class V5XRuntimeController(RuntimeController):
         status = self._state.last_a9_status
         if status is None:
             raise RuntimeError("V5X start print response did not include a status byte")
+        # Busy (0x01) is handled by the page-start retry loop before validation.
         if status != 0x00:
             raise PrinterNotReadyError(
                 f"V5X start print was rejected (status=0x{status:02x})",
