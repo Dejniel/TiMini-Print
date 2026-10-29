@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 from ..protocol.family import ProtocolFamily
 from ..protocol.types import ImageEncoding, ImagePipelineConfig, PaperMode
@@ -692,12 +692,18 @@ class ModelDetection:
 
 @dataclass(frozen=True)
 class PrinterModel:
+    """A printable catalog model, its source attribution and profile overrides."""
+
     model_key: str
     detections: Tuple[ModelDetection, ...]
     origin_ids: Tuple[str, ...]
+    profile_key: str
     whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE
     marketing_names: Tuple[str, ...] = ()
-    detection_ambiguity_group: Optional[str] = None
+    identity_names: Tuple[str, ...] = ()
+    protocol_override: Optional[ProtocolOverride] = None
+    image_pipeline: Optional[ImagePipelineConfig] = None
+    profile_runtime_preset_key: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.model_key:
@@ -727,13 +733,10 @@ class PrinterModel:
             raise ValueError(
                 f"Printer model {self.model_key} requires detections or marketing names"
             )
-        if self.detection_ambiguity_group is not None:
-            group = self.detection_ambiguity_group.strip()
-            if not group:
-                raise ValueError(
-                    f"Printer model {self.model_key} has blank detection_ambiguity_group"
-                )
-            object.__setattr__(self, "detection_ambiguity_group", group)
+        if any(not name or name != name.strip() for name in self.identity_names):
+            raise ValueError(f"Printer model {self.model_key} requires non-blank, trimmed identity names")
+        if not self.profile_key:
+            raise ValueError(f"Printer model {self.model_key} requires profile_key")
 
     @property
     def names(self) -> Tuple[str, ...]:
@@ -746,41 +749,13 @@ class PrinterModel:
 
 
 @dataclass(frozen=True)
-class SupportedPrinterModel(PrinterModel):
-    identity_names: Tuple[str, ...] = ()
-    profile_key: str = ""
-    protocol_override: Optional[ProtocolOverride] = None
-    image_pipeline: Optional[ImagePipelineConfig] = None
-    profile_runtime_preset_key: Optional[str] = None
+class ModelMatch:
+    """A catalog recipe and the sources for which it matched this endpoint."""
 
-    def __post_init__(self) -> None:
-        super().__post_init__()
-        if any(not name or name != name.strip() for name in self.identity_names):
-            raise ValueError(f"Printer model {self.model_key} requires non-blank, trimmed identity names")
-        if not self.profile_key:
-            raise ValueError(f"Printer model {self.model_key} requires profile_key")
-
-
-@dataclass(frozen=True)
-class UnsupportedPrinterModel(PrinterModel):
-    profile_key_prediction: Optional[str] = None
-    notes: Optional[str] = None
-
-
-@dataclass(frozen=True)
-class SupportedModelMatch:
-    model: SupportedPrinterModel
+    model: PrinterModel
     profile: PrinterProfile
     detection: ModelDetection
-
-
-@dataclass(frozen=True)
-class UnsupportedModelMatch:
-    model: UnsupportedPrinterModel
-    detection: ModelDetection
-
-
-ModelMatch = Union[SupportedModelMatch, UnsupportedModelMatch]
+    origin_ids: Tuple[str, ...]
 
 
 __all__ = [
@@ -801,8 +776,4 @@ __all__ = [
     "RuntimeSettings",
     "SpeedProfile",
     "StreamProfile",
-    "SupportedPrinterModel",
-    "SupportedModelMatch",
-    "UnsupportedPrinterModel",
-    "UnsupportedModelMatch",
 ]

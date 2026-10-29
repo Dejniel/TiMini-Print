@@ -6,18 +6,18 @@ import pytest
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.device import SerialTarget
-from timiniprint.devices.profiles import ModelDetection, RuntimeCapabilities, RuntimeSettings, SupportedPrinterModel
+from timiniprint.devices.profiles import ModelDetection, RuntimeCapabilities, RuntimeSettings, PrinterModel
 
 
 def catalog(*, ambiguous=False):
     profile = PrinterCatalog.load().require_profile("x6h")
     models = [
-        SupportedPrinterModel(
+        PrinterModel(
             model_key="first", profile_key="x6h", origin_ids=("source.a",),
             detections=(ModelDetection(exact_names=("BT-one",)),),
             identity_names=("internal-one", "wire-alias"),
         ),
-        SupportedPrinterModel(
+        PrinterModel(
             model_key="second", profile_key="x6h", origin_ids=("source.a" if ambiguous else "source.b",),
             detections=(ModelDetection(exact_names=("BT-two",)),),
             identity_names=("wire-alias",),

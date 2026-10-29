@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
 
 from .... import reporting
-from ....devices.bluetooth_profiles import BleBulkWriteProfile, BleTransportProfile
+from ....devices.bluetooth_profiles import BleBulkWriteProfile, BleGattLayout, BleTransportProfile
 from .bleak_adapter_diagnostics import (
     BleWriteCounters,
     BleWriteProgress,
@@ -37,6 +37,8 @@ class _BleakBindings:
     bulk_write_char_uuid: str = ""
     notify_char_uuid: str = ""
     additional_notify_char_uuids: tuple[str, ...] = ()
+    gatt_layout: BleGattLayout | None = None
+    gatt_service: Any = None
 
 
 @dataclass
@@ -60,7 +62,7 @@ class _BleakTransportSession:
         self._reporter = reporter
         self.bindings = _BleakBindings()
         self.notify_started = False
-        self._subscribed_notify_uuids: list[str] = []
+        self._notify_subscriptions: dict[str, Any] = {}
         self._flow_can_write = True
         self._flow_resume_event: asyncio.Event | None = None
         self._flow_resume_event_loop: asyncio.AbstractEventLoop | None = None
@@ -96,6 +98,8 @@ class _BleakTransportSession:
             self._flow_resume_event.clear()
 
     def apply_write_selection(self, selection: _WriteSelection) -> None:
+        self.bindings.gatt_layout = selection.layout
+        self.bindings.gatt_service = selection.service
         self.bindings.write_char = selection.char
         self.bindings.write_selection_strategy = selection.strategy
         self.bindings.write_response_preference = selection.response_preference
@@ -111,6 +115,16 @@ class _BleakTransportSession:
     def configure_endpoints(self, services: Iterable[object]) -> None:
         services = tuple(services)
         transport = self._transport_profile
+
+        layout = self.bindings.gatt_layout
+        if transport.gatt_layouts:
+            if layout is None:
+                selection = self._write_resolver.resolve(services, gatt_layouts=transport.gatt_layouts)
+                if selection is None:
+                    raise RuntimeError("No complete configured GATT layout was found")
+                self.apply_write_selection(selection)
+                layout = selection.layout
+            services = (self.bindings.gatt_service,)
 
         self.bindings.bulk_write_char = None
         self.bindings.bulk_write_char_uuid = ""
@@ -134,8 +148,10 @@ class _BleakTransportSession:
         self.bindings.notify_char = None
         self.bindings.notify_char_uuid = ""
         self.bindings.additional_notify_char_uuids = ()
-        service_notify = self._service_notify_characteristics(services, transport.notify_service_uuids)
-        if transport.notify_service_uuids:
+        service_notify = () if layout else self._service_notify_characteristics(services, transport.notify_service_uuids)
+        if layout:
+            self.bindings.notify_char = self._find_characteristic_by_uuid(services, layout.notify_char_uuid)
+        elif transport.notify_service_uuids:
             self.bindings.notify_char = service_notify[0] if service_notify else None
             self.bindings.additional_notify_char_uuids = tuple(str(char.uuid).lower() for char in service_notify[1:])
         elif transport.notify_char_uuid:
@@ -152,6 +168,10 @@ class _BleakTransportSession:
         )
         if transport.control_notify_char_uuid:
             control = self._find_characteristic_by_uuid(services, transport.control_notify_char_uuid)
+            if layout and not {"notify", "indicate"}.intersection(
+                self._write_resolver._normalize_properties(getattr(control, "properties", ())),
+            ):
+                control = None
             if control is not None:
                 uuid = _BleWriteEndpointResolver._normalize_uuid(control.uuid)
                 if uuid != self.bindings.notify_char_uuid and uuid not in self.bindings.additional_notify_char_uuids:
@@ -221,14 +241,17 @@ class _BleakTransportSession:
             for uuid in filter(None, uuids):
                 def channel_callback(_sender, data, *, _uuid=uuid):
                     callback(_uuid, data)
-                await start_notify(uuid, channel_callback)
-                self._subscribed_notify_uuids.append(uuid)
+                target = self._find_characteristic_by_uuid(
+                    (self.bindings.gatt_service,), uuid,
+                ) if self.bindings.gatt_layout else uuid
+                await start_notify(target, channel_callback)
+                self._notify_subscriptions[uuid] = target
                 self.notify_started = True
         except Exception:
             await self.stop_notify_if_started(client)
             raise
         if self.notify_started:
-            self.report_debug(f"subscribed to notify characteristics {self._subscribed_notify_uuids}")
+            self.report_debug(f"subscribed to notify characteristics {list(self._notify_subscriptions)}")
 
     async def stop_notify_if_started(self, client: Any) -> None:
         await self.attach_runtime_controller(None, mtu_size=0, timeout=0)
@@ -238,12 +261,12 @@ class _BleakTransportSession:
         stop_notify = getattr(client, "stop_notify", None)
         if not callable(stop_notify):
             return
-        for uuid in self._subscribed_notify_uuids:
+        for uuid, target in tuple(self._notify_subscriptions.items()):
             try:
-                await stop_notify(uuid)
+                await stop_notify(target)
             except Exception as exc:
                 self.report_warning(short="BLE notification shutdown failed", detail=f"{uuid}: {exc}")
-        self._subscribed_notify_uuids.clear()
+        self._notify_subscriptions.clear()
         self.notify_started = False
 
     async def initialize_connection(
@@ -483,7 +506,7 @@ class _BleakTransportSession:
         return bool(configured) and uuid == _BleWriteEndpointResolver._normalize_uuid(configured)
 
     def can_observe_control_notifications(self) -> bool:
-        return any(self._is_control_channel(uuid) for uuid in self._subscribed_notify_uuids)
+        return any(self._is_control_channel(uuid) for uuid in self._notify_subscriptions)
 
     @staticmethod
     def _find_characteristic_by_uuid(

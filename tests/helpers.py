@@ -4,6 +4,7 @@ import json
 import importlib
 import sys
 import types
+from dataclasses import replace
 from pathlib import Path
 from typing import List
 
@@ -28,6 +29,20 @@ def build_capture_reporter(
 
 def reset_registry_cache() -> None:
     PrinterCatalog._cache = {}
+
+
+def catalog_for_sources(*origin_ids: str) -> PrinterCatalog:
+    """Test a source's recipes independently; collision tests use the full catalog."""
+    catalog = PrinterCatalog.load()
+    sources = set(origin_ids)
+    models = [
+        replace(model, origin_ids=tuple(origin for origin in model.origin_ids if origin in sources))
+        for model in catalog.models if sources.intersection(model.origin_ids)
+    ]
+    origins = {origin for model in models for origin in model.origin_ids}
+    return PrinterCatalog(catalog.profiles, models, origin_names={
+        origin: catalog.origin_names((origin,))[0] for origin in origins
+    })
 
 
 def reset_adapter_cache() -> None:

@@ -11,8 +11,6 @@ from ...devices import (
     PrinterCatalog,
     PrinterDevice,
     ResolvedBluetoothTarget,
-    SupportedModelMatch,
-    UnsupportedModelMatch,
 )
 from ...devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from .backend import SppBackend
@@ -260,9 +258,15 @@ class BluetoothDiscovery:
                 failures=len(failure_list),
             ),
         )
-        for endpoint in endpoint_list:
+        diagnostic_endpoints = [
+            endpoint
+            for item in self._resolver.transport_targets_from_endpoints(self._endpoints_from_scan(endpoint_list))
+            for endpoint in (item.transport_target.classic_endpoint, item.transport_target.ble_endpoint)
+            if endpoint is not None
+        ]
+        for endpoint in diagnostic_endpoints:
             detected = resolved_by_endpoint.get((endpoint.transport.value, endpoint.address.lower()))
-            if (detected is not None and endpoint.transport == DeviceTransport.BLE
+            if (detected is not None and endpoint.transport == BluetoothEndpointTransport.BLE
                     and not (endpoint.name or "").strip()
                     and detected.transport_target.classic_endpoint is not None):
                 self._reporter.debug(
@@ -283,25 +287,12 @@ class BluetoothDiscovery:
                 matches = self._catalog.detect_model(
                     endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
                 )
-                supported = [
-                    match
-                    for match in matches
-                    if isinstance(match, SupportedModelMatch)
-                ]
-                unsupported = [
-                    match
-                    for match in matches
-                    if isinstance(match, UnsupportedModelMatch)
-                ]
-                if len(supported) > 1:
-                    reason = "ambiguous_supported_model"
-                    candidates = ",".join(match.model.model_key for match in supported)
-                elif unsupported:
-                    reason = "known_unsupported_model"
-                    candidates = ",".join(match.model.model_key for match in unsupported)
-                elif supported:
+                if len(matches) > 1:
+                    reason = "ambiguous_model"
+                    candidates = ",".join(match.model.model_key for match in matches)
+                elif matches:
                     reason = "unresolved_endpoint"
-                    candidates = supported[0].model.model_key
+                    candidates = matches[0].model.model_key
                 else:
                     reason = "no_supported_model"
                     candidates = ""

@@ -1,6 +1,7 @@
 from .bluetooth_resolver import BluetoothEndpointResolver, ResolvedBluetoothTarget
 from .bluetooth_profiles import (
     BleBulkWriteProfile,
+    BleGattLayout,
     BleTransportProfile,
     get_ble_transport_profile,
 )
@@ -21,10 +22,6 @@ from .profiles import (
     RuntimePreset,
     RuntimeCapabilities,
     RuntimeSettings,
-    SupportedModelMatch,
-    SupportedPrinterModel,
-    UnsupportedModelMatch,
-    UnsupportedPrinterModel,
     WhitespaceMode,
 )
 
@@ -32,6 +29,7 @@ __all__ = [
     "BluetoothEndpoint",
     "BluetoothEndpointResolver",
     "BleBulkWriteProfile",
+    "BleGattLayout",
     "BleTransportProfile",
     "BluetoothConnectionAttempt",
     "BluetoothConnectionPlan",
@@ -49,11 +47,7 @@ __all__ = [
     "RuntimeSettings",
     "ResolvedBluetoothTarget",
     "SerialTarget",
-    "SupportedModelMatch",
-    "SupportedPrinterModel",
     "TransportTarget",
-    "UnsupportedModelMatch",
-    "UnsupportedPrinterModel",
     "WhitespaceMode",
     "bluetooth_connection_plan",
     "get_ble_transport_profile",

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import re
+import threading
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from typing import Awaitable, Dict, List, Optional, Tuple, TypeVar
 
 from ..constants import SPP_UUID
@@ -9,6 +11,7 @@ from ..types import DeviceInfo, DeviceTransport
 
 T = TypeVar("T")
 ScanResult = Tuple[List[DeviceInfo], Dict[str, str]]
+_CLOSE_TIMEOUT_SEC = 2.0
 
 
 def _winrt_missing_message() -> str:
@@ -23,10 +26,11 @@ def _winrt_imports():
         from winsdk.windows.devices.bluetooth.rfcomm import RfcommDeviceService, RfcommServiceId
         from winsdk.windows.devices.enumeration import DeviceInformation, DeviceInformationKind
         from winsdk.windows.networking.sockets import StreamSocket
-        from winsdk.windows.storage.streams import DataWriter
+        from winsdk.windows.storage.streams import DataReader, DataWriter, InputStreamOptions
     except Exception as exc:
         raise RuntimeError(_winrt_missing_message()) from exc
-    return DeviceInformation, DeviceInformationKind, RfcommDeviceService, RfcommServiceId, StreamSocket, DataWriter
+    return (DeviceInformation, DeviceInformationKind, RfcommDeviceService,
+            RfcommServiceId, StreamSocket, DataWriter, DataReader, InputStreamOptions)
 
 
 def _run_winrt(coro: Awaitable[T]) -> T:
@@ -87,7 +91,7 @@ async def _pair_device_info_async(info) -> None:
 
 
 async def _pair_winrt_async(address: str, service_id: Optional[str]) -> None:
-    DeviceInformation, _, _, _, _, _ = _winrt_imports()
+    DeviceInformation, *_ = _winrt_imports()
     last_error = None
 
     if service_id:
@@ -123,7 +127,7 @@ async def _pair_winrt_async(address: str, service_id: Optional[str]) -> None:
 
 
 async def _scan_winrt_async(timeout: float) -> ScanResult:
-    DeviceInformation, DeviceInformationKind, RfcommDeviceService, RfcommServiceId, _, _ = _winrt_imports()
+    DeviceInformation, DeviceInformationKind, RfcommDeviceService, RfcommServiceId, *_ = _winrt_imports()
     selector = str(RfcommDeviceService.get_device_selector(RfcommServiceId.from_uuid(SPP_UUID)))
 
     async def find_all():
@@ -174,45 +178,144 @@ class _WinRtSocket:
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._socket = None
         self._writer = None
+        self._reader = None
+        self._read_task = None
+        self._thread = None
+        self._timeout = 12.0
+
+    def settimeout(self, timeout: float) -> None:
+        self._timeout = timeout
+
+    def gettimeout(self) -> float:
+        return self._timeout
+
+    def _start_loop(self) -> None:
+        self._loop = asyncio.new_event_loop()
+        ready = threading.Event()
+
+        def run() -> None:
+            asyncio.set_event_loop(self._loop)
+            ready.set()
+            try:
+                self._loop.run_forever()
+            finally:
+                self._loop.close()
+
+        self._thread = threading.Thread(target=run, name="timiniprint-winrt-spp", daemon=True)
+        try:
+            self._thread.start()
+        except BaseException:
+            self._loop.close()
+            self._loop = None
+            self._thread = None
+            raise
+        ready.wait()
 
     def _run(self, coro: Awaitable[T]) -> T:
-        if self._loop is None:
-            self._loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self._loop)
-        return self._loop.run_until_complete(coro)
+        if self._loop is None or self._loop.is_closed() or not self._thread.is_alive():
+            coro.close()
+            raise RuntimeError("WinRT Bluetooth event loop is not running")
+        pending = asyncio.run_coroutine_threadsafe(coro, self._loop)
+        while not pending.done():
+            try:
+                return pending.result(timeout=0.1)
+            except FutureTimeoutError:
+                if pending.done():
+                    raise
+                if not self._thread.is_alive():
+                    raise RuntimeError("WinRT Bluetooth event loop stopped unexpectedly")
+        return pending.result()
 
     def connect(self, target) -> None:
+        self.close()
+        self._start_loop()
         address, _channel = target
-        service = self._run(self._backend._resolve_service_async(address))
+        self._run(asyncio.wait_for(self._connect_async(address), timeout=self._timeout))
+
+    async def _connect_async(self, address: str) -> None:
+        service = await self._backend._resolve_service_async(address, timeout=self._timeout)
         if not service:
             raise RuntimeError("Bluetooth SPP service not found for device")
-        _, _, _, _, StreamSocket, DataWriter = _winrt_imports()
+        _, _, _, _, StreamSocket, DataWriter, DataReader, InputStreamOptions = _winrt_imports()
         self._socket = StreamSocket()
-        self._run(self._socket.connect_async(service.connection_host_name, service.connection_service_name))
+        await self._socket.connect_async(service.connection_host_name, service.connection_service_name)
         self._writer = DataWriter(self._socket.output_stream)
+        self._reader = DataReader(self._socket.input_stream)
+        self._reader.input_stream_options = InputStreamOptions.PARTIAL
 
     def sendall(self, data: bytes) -> None:
+        self._run(asyncio.wait_for(self._send_async(bytes(data)), timeout=self._timeout))
+
+    async def _send_async(self, data: bytes) -> None:
         if not self._writer:
             raise RuntimeError("Not connected to a Bluetooth SPP device")
         self._writer.write_bytes(bytearray(data))
-        self._run(self._writer.store_async())
-        self._run(self._writer.flush_async())
+        await self._writer.store_async()
+        await self._writer.flush_async()
+
+    def start_receive(self, on_data, on_error) -> None:
+        self._run(self._start_receive_async(on_data, on_error))
+
+    async def _start_receive_async(self, on_data, on_error) -> None:
+        if self._reader is None:
+            raise RuntimeError("Not connected to a Bluetooth SPP device")
+        if self._read_task is not None:
+            raise RuntimeError("WinRT SPP receiver already installed")
+        self._read_task = asyncio.create_task(self._receive_async(on_data, on_error))
+
+    async def _receive_async(self, on_data, on_error) -> None:
+        try:
+            while True:
+                count = await self._reader.load_async(4096)
+                if count == 0:
+                    raise ConnectionError("Bluetooth SPP peer closed its input stream")
+                data = bytearray(count)
+                self._reader.read_bytes(data)
+                on_data(bytes(data))
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            on_error(exc)
+
+    def stop_receive(self) -> None:
+        if self._read_task is not None:
+            self._run(self._stop_receive_async())
+
+    async def _stop_receive_async(self) -> None:
+        if self._read_task is not None:
+            self._read_task.cancel()
+            done, _ = await asyncio.wait((self._read_task,), timeout=_CLOSE_TIMEOUT_SEC)
+            if not done:
+                raise TimeoutError("WinRT SPP input did not stop")
+            try:
+                await self._read_task
+            except asyncio.CancelledError:
+                pass
+            self._read_task = None
 
     def close(self) -> None:
-        if self._writer:
-            close_writer = getattr(self._writer, "close", None)
-            if callable(close_writer):
-                close_writer()
-            self._writer = None
-        if self._socket:
-            close_socket = getattr(self._socket, "close", None)
-            if callable(close_socket):
-                close_socket()
-            self._socket = None
-        if self._loop:
-            asyncio.set_event_loop(None)
-            self._loop.close()
+        if self._loop is not None:
+            if not self._thread.is_alive():
+                if any(resource is not None for resource in (self._reader, self._writer, self._socket)):
+                    raise RuntimeError("WinRT event loop stopped with live Bluetooth resources")
+                self._loop = None
+                self._thread = None
+                return
+            self._run(self._close_async())
+            self._loop.call_soon_threadsafe(self._loop.stop)
+            self._thread.join(timeout=_CLOSE_TIMEOUT_SEC)
+            if self._thread.is_alive():
+                raise RuntimeError("WinRT Bluetooth event loop did not stop")
             self._loop = None
+            self._thread = None
+
+    async def _close_async(self) -> None:
+        await self._stop_receive_async()
+        for field in ("_reader", "_writer", "_socket"):
+            resource = getattr(self, field)
+            if resource is not None:
+                resource.close()
+                setattr(self, field, None)
 
 
 class _WinRtClassicBackend:
@@ -250,5 +353,5 @@ class _WinRtClassicBackend:
             service_id = self._service_by_address.get(address)
         if not service_id:
             return None
-        _, _, RfcommDeviceService, _, _, _ = _winrt_imports()
+        _, _, RfcommDeviceService, *_ = _winrt_imports()
         return await RfcommDeviceService.from_id_async(service_id)

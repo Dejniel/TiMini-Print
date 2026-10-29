@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import unittest
 
-from timiniprint.devices import PrinterCatalog
+from tests.helpers import catalog_for_sources
+
 from timiniprint.printing.runtime.factory import runtime_controller_for_device
 from timiniprint.printing.runtime.niimbot import NiimbotRuntimeController
 from timiniprint.protocol import PrinterProtocol
@@ -57,6 +58,10 @@ class ProbeSession:
 
 
 class NiimbotRuntimeTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.catalog = catalog_for_sources("com.gengcon.android.jccloudprinter")
+
     def test_probe_derives_version_from_connect_before_status(self):
         versions = (
             (1, b"\x03\x00", 0),
@@ -95,7 +100,7 @@ class NiimbotRuntimeTests(unittest.TestCase):
             notification_only=notification_only,
         )
         controller = NiimbotRuntimeController()
-        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().detect_device("D11"), session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(self.catalog.detect_device("D11"), session, timeout=0.1))
         snapshot = controller.debug_snapshot()
         assert snapshot["connect_result"] == connect_result
         assert snapshot["protocol_version"] == expected
@@ -126,12 +131,12 @@ class NiimbotRuntimeTests(unittest.TestCase):
             model_id_query_packet(): frame(NiimbotResponse.PRINTER_INFO_MODEL_ID, b"\x02\x00"),
         })
         controller = NiimbotRuntimeController()
-        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().detect_device("D11"), session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(self.catalog.detect_device("D11"), session, timeout=0.1))
         session.replies[connect_packet()] = (
             frame(NiimbotResponse.CONNECT, reply) if reply is not None else None
         )
         session.queries.clear()
-        prepared = asyncio.run(controller.prepare(PrinterCatalog.load().detect_device("D11"), session, timeout=0.1))
+        prepared = asyncio.run(controller.prepare(self.catalog.detect_device("D11"), session, timeout=0.1))
         assert controller.debug_snapshot()["protocol_version"] is None
         assert controller.debug_snapshot()["model_id"] is None
         assert session.queries == [connect_packet()]
@@ -144,7 +149,7 @@ class NiimbotRuntimeTests(unittest.TestCase):
                     self._check_d11_task(name, connect_result)
 
     def _check_d11_task(self, name, connect_result):
-        device = PrinterCatalog.load().detect_device(name)
+        device = self.catalog.detect_device(name)
         assert device is not None
         controller = runtime_controller_for_device(device)
         assert controller is not None
@@ -178,7 +183,7 @@ class NiimbotRuntimeTests(unittest.TestCase):
         assert ("page index" in labels) == (expected == "d11_v1")
 
     def test_d11_auto_requires_runtime_before_job_building(self):
-        device = PrinterCatalog.load().detect_device("D11")
+        device = self.catalog.detect_device("D11")
         assert device is not None
         raster = RasterSet.from_single(
             RasterBuffer(pixels=[0] * 96, width=96, pixel_format=PixelFormat.BW1),

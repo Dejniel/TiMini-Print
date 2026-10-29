@@ -207,6 +207,7 @@ class _BleakSocket:
             self._client.services,
             preferred_service_uuid=transport.preferred_service_uuid,
             preferred_write_char_uuid=transport.preferred_write_char_uuid,
+            gatt_layouts=transport.gatt_layouts,
         )
 
     def send(self, data: bytes) -> int:

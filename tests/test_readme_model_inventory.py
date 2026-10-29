@@ -2,15 +2,11 @@ from __future__ import annotations
 
 import re
 import unittest
-from unittest.mock import patch
 
 from timiniprint.devices import PrinterCatalog
 from timiniprint.devices.profiles import (
     ModelDetection,
-    SupportedModelMatch,
-    SupportedPrinterModel,
-    UnsupportedModelMatch,
-    UnsupportedPrinterModel,
+    PrinterModel,
 )
 from tools.render_readme_models import (
     render_supported_models_block,
@@ -49,56 +45,9 @@ def _supported_readme_name_matches_model(
     }
 
 
-def _unsupported_detection_matches_model(
-    catalog: PrinterCatalog,
-    model,
-    trigger: str,
-    *,
-    is_prefix: bool,
-) -> bool:
-    candidates = (f"{trigger}ABCD", trigger) if is_prefix else (trigger,)
-    model_origins = set(model.origin_ids)
-    for candidate in candidates:
-        for match in catalog.detect_model(candidate):
-            if isinstance(match, UnsupportedModelMatch) and match.model.model_key == model.model_key:
-                return True
-            if (
-                isinstance(match, SupportedModelMatch)
-                and model_origins
-                and model_origins.isdisjoint(match.model.origin_ids)
-            ):
-                return True
-    return False
-
-
 class ReadmeModelInventoryTests(unittest.TestCase):
     def test_catalog_models_validate_for_readme_rendering(self) -> None:
         self.assertEqual(validate_catalog_models(), [])
-
-    def test_case_distinct_unsupported_name_is_not_a_catalog_collision(self) -> None:
-        profile = PrinterCatalog.load().require_profile("v5x")
-        supported = SupportedPrinterModel(
-            model_key="case_supported",
-            profile_key=profile.profile_key,
-            origin_ids=("com.fun.mxw",),
-            detections=(ModelDetection(exact_names=("MODEL X",)),),
-        )
-        unsupported = UnsupportedPrinterModel(
-            model_key="case_unsupported",
-            origin_ids=("com.fun.mxw",),
-            detections=(ModelDetection(exact_names=("Model X",)),),
-        )
-        catalog = PrinterCatalog(
-            (profile,), (supported,), (unsupported,),
-            origin_names={"com.fun.mxw": "Test app"},
-        )
-
-        self.assertEqual(
-            catalog.detect_model("Model X")[0].model.model_key,
-            "case_unsupported",
-        )
-        with patch("tools.render_readme_models.PrinterCatalog.load", return_value=catalog):
-            self.assertEqual(validate_catalog_models(), [])
 
     def test_readme_names_match_catalog_detection_contract(self) -> None:
         catalog = PrinterCatalog.load()
@@ -109,23 +58,6 @@ class ReadmeModelInventoryTests(unittest.TestCase):
                     self.assertTrue(
                         _supported_readme_name_matches_model(catalog, name, model.model_key)
                     )
-
-        for model in catalog.unsupported_models:
-            for detection in model.detections:
-                for prefix in detection.prefixes:
-                    with self.subTest(model=model.model_key, status="unsupported", prefix=prefix):
-                        self.assertTrue(
-                            _unsupported_detection_matches_model(
-                                catalog, model, prefix, is_prefix=True
-                            )
-                        )
-                for exact_name in detection.exact_names:
-                    with self.subTest(model=model.model_key, status="unsupported", exact=exact_name):
-                        self.assertTrue(
-                            _unsupported_detection_matches_model(
-                                catalog, model, exact_name, is_prefix=False
-                            )
-                        )
 
     def test_supported_block_renders_non_empty_content(self) -> None:
         supported = render_supported_models_block()
@@ -152,7 +84,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         self.assertIsNone(re.search(r"(?<![A-Z0-9_-])P100S(?![A-Z0-9_-])", supported))
 
     def test_marketing_name_renders_as_primary_clone_group_name(self) -> None:
-        model = SupportedPrinterModel(
+        model = PrinterModel(
             model_key="demo",
             profile_key="demo",
             origin_ids=("vendor.manual",),
@@ -168,7 +100,7 @@ class ReadmeModelInventoryTests(unittest.TestCase):
         )
 
     def test_single_detection_marketing_name_renders_as_clone_alias(self) -> None:
-        model = SupportedPrinterModel(
+        model = PrinterModel(
             model_key="demo",
             profile_key="demo",
             origin_ids=("vendor.manual",),

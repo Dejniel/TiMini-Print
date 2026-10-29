@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import unittest
 
+from tests.helpers import catalog_for_sources
+
 from timiniprint.devices import PrinterCatalog
 from timiniprint.protocol import PrinterProtocol, ProtocolStepOperation
 from timiniprint.protocol.families.niimbot.core import (
@@ -14,6 +16,10 @@ from timiniprint.raster import PixelFormat, RasterBuffer, RasterSet
 
 
 class NiimbotProtocolTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.catalog = catalog_for_sources("com.gengcon.android.jccloudprinter")
+
     def test_frame_matches_niimbot_xor_packet_shape(self) -> None:
         self.assertEqual(
             frame(NiimbotRequest.CONNECT),
@@ -236,7 +242,7 @@ class NiimbotProtocolTests(unittest.TestCase):
         )
 
     def test_catalog_detects_d110_as_niimbot(self) -> None:
-        detected = PrinterCatalog.load().detect_device("D110-1234")
+        detected = self.catalog.detect_device("D110-1234")
 
         self.assertIsNotNone(detected)
         assert detected is not None
@@ -247,7 +253,7 @@ class NiimbotProtocolTests(unittest.TestCase):
     def test_catalog_detects_d11_as_niimbot(self) -> None:
         for name in ("D11", "D11-1234", "D11_1234", "D11S", "D11S-1234", "D11S_1234"):
             with self.subTest(name=name):
-                detected = PrinterCatalog.load().detect_device(name)
+                detected = self.catalog.detect_device(name)
 
                 self.assertIsNotNone(detected)
                 assert detected is not None
@@ -257,12 +263,6 @@ class NiimbotProtocolTests(unittest.TestCase):
                     detected.protocol_variant,
                     "d11_v1" if name.startswith("D11S") else "d11_auto",
                 )
-
-    def test_catalog_does_not_treat_d110_m_as_d110(self) -> None:
-        detected = PrinterCatalog.load().detect_device("D110_M")
-
-        self.assertIsNone(detected)
-
 
 if __name__ == "__main__":
     unittest.main()

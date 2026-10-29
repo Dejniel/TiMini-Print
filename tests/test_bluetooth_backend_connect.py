@@ -227,9 +227,9 @@ class BluetoothBackendConnectTests(unittest.TestCase):
 
     def setUp(self) -> None:
         # These tests control recv() chunks with fake sockets. OS readiness is
-        # covered separately by ClassicReceiveHub's real-socket tests.
+        # covered separately by StreamReceiveHub's real-socket tests.
         selector_patch = patch(
-            "timiniprint.transport.bluetooth.classic_receive.selectors"
+            "timiniprint.transport._stream_receive.selectors"
         )
         selector_module = selector_patch.start()
         self.addCleanup(selector_patch.stop)
@@ -452,8 +452,8 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertEqual(sock.sent, [b"ab", b"cd", b"ef"])
         details = [detail for _short, detail in reporter.debugs]
-        self.assertIn("Classic flow pause", details)
-        self.assertIn("Classic flow resume", details)
+        self.assertIn("Classic Bluetooth flow pause", details)
+        self.assertIn("Classic Bluetooth flow resume", details)
 
     def test_write_blocking_classic_stops_between_chunks(self) -> None:
         backend = SppBackend(
@@ -680,11 +680,88 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         self.assertEqual(sock.sent, [b"Q1", b"Q2"])
         self.assertEqual(replies, {"first": b"R1", "second": b"R2"})
 
+    def test_prepared_classic_query_does_not_write_to_a_replacement_socket(self) -> None:
+        backend = SppBackend()
+        old, replacement = _QuerySocket([]), _QuerySocket([])
+        backend._sock = old
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        self.addCleanup(backend._stop_classic_receive_hub)
+
+        def replace_before_send(packet, send, **kwargs):
+            backend._sock = replacement
+            return send(packet, kwargs["timeout"])
+
+        with patch("timiniprint.transport.bluetooth.backend.StreamReceiveHub.query", side_effect=replace_before_send):
+            with self.assertRaisesRegex(ConnectionError, "connection changed"):
+                backend._query_control_packet_blocking(b"old query", 1.0)
+        self.assertEqual(old.sent, [])
+        self.assertEqual(replacement.sent, [])
+
+    def test_concurrent_first_receive_operations_share_one_inbox(self) -> None:
+        from timiniprint.transport._stream_receive import StreamReceiveHub
+
+        backend = SppBackend()
+        backend._sock = _QuerySocket([])
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        self.addCleanup(backend._stop_classic_receive_hub)
+        constructing, release = threading.Event(), threading.Event()
+        hubs, errors = [], []
+
+        def construct(*args, **kwargs):
+            constructing.set()
+            release.wait(1)
+            return StreamReceiveHub(*args, **kwargs)
+
+        def receive():
+            try:
+                hubs.append(backend._ensure_classic_receive_hub())
+            except Exception as exc:
+                errors.append(exc)
+
+        workers = [threading.Thread(target=receive, daemon=True) for _ in range(2)]
+        with patch("timiniprint.transport.bluetooth.backend.StreamReceiveHub", side_effect=construct) as factory:
+            workers[0].start()
+            try:
+                self.assertTrue(constructing.wait(1))
+                workers[1].start()
+                threading.Event().wait(0.03)
+            finally:
+                release.set()
+                for worker in workers:
+                    if worker.ident is not None:
+                        worker.join(1)
+            self.assertEqual(factory.call_count, 1)
+        self.assertEqual(errors, [])
+        self.assertEqual(len(hubs), 2)
+        self.assertIs(hubs[0], hubs[1])
+
+    def test_classic_payload_never_continues_on_a_replacement_socket(self) -> None:
+        backend = SppBackend()
+        replacement = _Socket()
+
+        class OldSocket(_Socket):
+            def sendall(self, data):
+                super().sendall(data)
+                backend._sock = replacement
+
+        old = OldSocket()
+        backend._sock = old
+        backend._connected = True
+        backend._transport = DeviceTransport.CLASSIC
+        with self.assertRaisesRegex(ConnectionError, "connection changed"):
+            backend._write_blocking(b"abcd", chunk_size=2, delay_ms=0)
+        self.assertEqual(old.sent, [b"ab"])
+        self.assertEqual(replacement.sent, [])
+
     def test_can_query_control_packet_distinguishes_classic_and_ble(self) -> None:
         backend = SppBackend(reporter=reporting.DUMMY_REPORTER)
         backend._sock = _Socket()
         backend._connected = True
         backend._transport = DeviceTransport.CLASSIC
+        self.assertFalse(backend.can_query_control_packet())
+        backend._sock = _QuerySocket([])
         self.assertTrue(backend.can_query_control_packet())
 
         backend._transport = DeviceTransport.BLE

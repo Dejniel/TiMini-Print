@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional, Tuple
 
 from ..protocol.family import ProtocolFamily
 
@@ -14,6 +15,15 @@ class BleBulkWriteProfile:
 
 
 @dataclass(frozen=True)
+class BleGattLayout:
+    """One complete write/reply binding within a single GATT service."""
+
+    service_uuid: str
+    write_char_uuid: str
+    notify_char_uuid: str
+
+
+@dataclass(frozen=True)
 class BleTransportProfile:
     standard_chunk_cap: int = 20
     standard_write_delay_ms: int = 50
@@ -23,14 +33,16 @@ class BleTransportProfile:
     # A separate runtime flow-control channel, not a printer reply stream.
     control_notify_char_uuid: str = ""
     # Subscribe every notify/indicate characteristic in these services.
-    notify_service_uuids: tuple[str, ...] = ()
+    notify_service_uuids: Tuple[str, ...] = ()
     prefer_generic_notify: bool = False
     flow_controlled_standard_write: bool = False
-    flow_resume_timeout_s: float | None = None
-    bulk_write: BleBulkWriteProfile | None = None
+    flow_resume_timeout_s: Optional[float] = None
+    bulk_write: Optional[BleBulkWriteProfile] = None
     # Some BLE writers need a smaller application chunk than the reported ATT
     # payload for write-without-response transfers.
     write_without_response_payload_reserve: int = 0
+    # Ordered alternatives; never combine characteristics from two layouts.
+    gatt_layouts: Tuple[BleGattLayout, ...] = ()
 
 
 _FALLBACK_PROFILE = BleTransportProfile()

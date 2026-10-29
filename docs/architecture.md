@@ -171,6 +171,26 @@ state. Executor-backed I/O must finish before closing the socket and its loop,
 including after caller cancellation. These are transport lifecycle rules, not
 printer-family policy.
 
+Classic Bluetooth (Linux sockets, Windows WinRT and macOS IOBluetooth) and
+serial connections use one shared stream reply inbox. Socket/serial sources
+have one bounded reader; native callback sources feed that same inbox without
+an extra reader or protocol parser. Runtime observers run in their application
+loop before reply predicates and own pause/resume decisions. Only the generic
+writer gate is shared with transport. Active queries share one transaction
+slot and timeout budget; passive waits do not reserve it or re-evaluate an
+already accepted reply. A failed receiver wakes queries and paused writers,
+and further writes retain that original failure. Operations cannot continue
+on a replacement connection after a reconnect.
+Notification callbacks record recoverable printer conditions in runtime
+state. Callback exceptions are terminal stream failures, not a paper-out
+notification mechanism.
+
+macOS RFCOMM operations and delegate callbacks share a dedicated native run
+loop; WinRT reads and writes share a live asyncio loop. A macOS polling fault
+leaves its owner thread available for cleanup, not further device I/O.
+Closing stops reception before disposing native resources. Receive errors
+wake pending queries, and failed cleanup remains visible and retryable.
+
 GATT write response is not a printer protocol ACK. If a family needs ACKs, status, or completion waits, model that as protocol steps and runtime controller behavior, not as transport adapter policy.
 
 BLE profiles may opt into `notify_service_uuids`: the adapter subscribes to all
@@ -180,13 +200,18 @@ selection. The transport selects endpoints by GATT metadata, never by opcodes.
 On receipt, runtime observers update session state before pending reply
 predicates run; this allows passive waits to depend on parsed runtime state.
 
+An optional ordered `BleTransportProfile.gatt_layouts` list binds write, reply
+and optional control characteristics within one service. The first complete
+layout wins; partial layouts are not combined and do not use generic fallback.
+Connectors consuming this metadata must apply the same complete-layout rule.
+
 ## Detecting Versus Discovering
 
 Catalog detection and Bluetooth discovery are different concerns.
 
 `PrinterCatalog.detect_device(...)` does not scan hardware. It maps a known name/address to a printable `PrinterDevice` when the catalog match is unambiguous.
 
-`BluetoothDiscovery` scans hardware, asks `BluetoothEndpointResolver` to merge raw endpoints, then returns `PrinterDevice` objects for devices that can be printed automatically. UI/CLI scan views may use display helpers to include ambiguous or unsupported manual candidates.
+`BluetoothDiscovery` scans hardware, asks `BluetoothEndpointResolver` to merge raw endpoints, then returns `PrinterDevice` objects for devices that can be printed automatically. UI/CLI scan views may use display helpers to include ambiguous model choices and unknown endpoints for manual selection.
 
 Transport owns scanning mechanics. Devices own turning raw endpoints into logical printers.
 

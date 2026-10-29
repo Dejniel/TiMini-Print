@@ -65,6 +65,7 @@ def serialize_printer_config(
         "runtime_overrides": model_to_json(_runtime_overrides_from_settings(device.runtime_settings)),
         "device": {
             "display_name": device.display_name,
+            "origin_ids": list(device.origin_ids),
             "transport_target": _serialize_transport_target(device.transport_target),
         },
     }
@@ -97,13 +98,21 @@ def parse_printer_config(
         require_preset=require_runtime_preset,
     )
     device_entry = _require_mapping(printer_config.get("device") or {}, "Printer config device")
+    origin_ids = device_entry.get("origin_ids", base_device.origin_ids)
+    if not isinstance(origin_ids, (list, tuple)) or any(
+        not isinstance(value, str) or not value or value != value.strip()
+        for value in origin_ids
+    ):
+        raise RuntimeError("Printer config device.origin_ids must be a list of nonblank source IDs")
+    if printer_config.get("model_key") and not set(origin_ids).issubset(base_device.origin_ids):
+        raise RuntimeError("Printer config device.origin_ids must belong to the selected model")
     return PrinterConfigParts(
         profile=profile,
         runtime_settings=runtime_settings,
         display_name=str(device_entry.get("display_name") or profile.profile_key),
         transport_target=_parse_transport_target(device_entry.get("transport_target")),
         model_key=None if printer_config.get("model_key") in (None, "") else base_device.model_key,
-        origin_ids=base_device.origin_ids,
+        origin_ids=tuple(dict.fromkeys(origin_ids)),
     )
 
 

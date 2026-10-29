@@ -7,29 +7,34 @@ from timiniprint.devices.bluetooth_resolver import BluetoothEndpointResolver
 from timiniprint.devices.device import BluetoothEndpoint, BluetoothEndpointTransport
 from timiniprint.devices.model_codec import model_from_json, model_to_json
 from timiniprint.devices.profiles import (
-    ModelDetection, SupportedPrinterModel, UnsupportedPrinterModel,
+    ModelDetection, PrinterModel,
 )
 
 
-@pytest.mark.parametrize("model_type", [SupportedPrinterModel, UnsupportedPrinterModel])
-def test_catalog_models_require_sources(model_type):
-    payload = {"model_key": "demo", "detections": [], "marketing_names": ["Demo"]}
+def test_catalog_model_requires_a_printable_profile():
+    payload = {"model_key": "demo", "detections": [], "marketing_names": ["Demo"],
+               "origin_ids": ["vendor.manual"]}
+    with pytest.raises(ValueError, match="profile_key.*required"):
+        model_from_json(PrinterModel, payload)
+    with pytest.raises(ValueError, match="requires profile_key"):
+        model_from_json(PrinterModel, dict(payload, profile_key=""))
+
+
+def test_catalog_models_require_sources():
+    payload = {"model_key": "demo", "profile_key": "demo", "detections": [], "marketing_names": ["Demo"]}
     with pytest.raises(ValueError, match="origin_ids.*required"):
-        model_from_json(model_type, payload)
+        model_from_json(PrinterModel, payload)
     for invalid in ([], [""], [" "], [" vendor"], ["vendor "]):
         with pytest.raises(ValueError, match="origin IDs"):
-            model_from_json(model_type, dict(payload, origin_ids=invalid))
+            model_from_json(PrinterModel, dict(payload, origin_ids=invalid))
 
 
-@pytest.mark.parametrize("model_type", [SupportedPrinterModel, UnsupportedPrinterModel])
-def test_source_ids_are_opaque_and_roundtrip(model_type):
-    payload = {"model_key": "demo", "detections": [], "marketing_names": ["Demo"],
+def test_source_ids_are_opaque_and_roundtrip():
+    payload = {"model_key": "demo", "profile_key": "demo", "detections": [], "marketing_names": ["Demo"],
                "origin_ids": ["com.example.app", "vendor-sdk", "vendor.manual"]}
-    if model_type is SupportedPrinterModel:
-        payload["profile_key"] = "demo"
-    model = model_from_json(model_type, payload)
+    model = model_from_json(PrinterModel, payload)
     assert model.origin_ids == tuple(payload["origin_ids"])
-    assert model_from_json(model_type, model_to_json(model)) == model
+    assert model_from_json(PrinterModel, model_to_json(model)) == model
 
 
 @pytest.fixture
@@ -77,16 +82,11 @@ def test_scan_choices_keep_both_source_labels(source_catalog):
     }
 
 
-def test_registered_sources_must_cover_supported_and_unsupported_models(source_catalog):
+def test_registered_sources_must_cover_catalog_models(source_catalog):
     profile = source_catalog.device_from_model("manual_model").profile
     model = source_catalog.require_model("manual_model")
     with pytest.raises(ValueError, match="missing IDs: vendor.manual"):
         PrinterCatalog([profile], [model], origin_names={"another-source": "Other"})
-    unsupported = UnsupportedPrinterModel(
-        model_key="unknown", detections=(), marketing_names=("Unknown",), origin_ids=("unknown-source",),
-    )
-    with pytest.raises(ValueError, match="missing IDs: unknown-source"):
-        PrinterCatalog([profile], [model], [unsupported], origin_names={"vendor.manual": "Manual"})
     # Custom catalogs may omit the label registry and show their source IDs directly.
     catalog = PrinterCatalog([profile], [model])
     assert catalog.origin_names(model.origin_ids) == ("vendor.manual",)

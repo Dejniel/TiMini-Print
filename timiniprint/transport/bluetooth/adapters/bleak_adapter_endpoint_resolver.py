@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Sequence, Set, Tuple
 
 from .... import reporting
+from ....devices.bluetooth_profiles import BleGattLayout
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,8 @@ class _WriteSelection:
     response_preference: bool
     service_uuid: str
     char_uuid: str
+    layout: BleGattLayout | None = None
+    service: Any = None
 
 
 class _BleWriteEndpointResolver:
@@ -67,7 +70,10 @@ class _BleWriteEndpointResolver:
         *,
         preferred_service_uuid: str = "",
         preferred_write_char_uuid: str = "",
+        gatt_layouts: Sequence[BleGattLayout] = (),
     ) -> Optional[_WriteSelection]:
+        if gatt_layouts:
+            return self._resolve_layout(services, gatt_layouts)
         candidates = self._collect_candidates(
             services,
             preferred_service_uuid=preferred_service_uuid,
@@ -75,6 +81,34 @@ class _BleWriteEndpointResolver:
         )
         self._log_candidates(candidates)
         return self._select_candidate(candidates)
+
+    @classmethod
+    def _resolve_layout(
+        cls, services: Iterable[object], layouts: Sequence[BleGattLayout],
+    ) -> Optional[_WriteSelection]:
+        services = tuple(services)
+        for layout in layouts:
+            for service in services:
+                service_uuid = cls._normalize_uuid(getattr(service, "uuid", ""))
+                if service_uuid != cls._normalize_uuid(layout.service_uuid):
+                    continue
+                chars = {
+                    cls._normalize_uuid(getattr(char, "uuid", "")): char
+                    for char in getattr(service, "characteristics", ())
+                }
+                write = chars.get(cls._normalize_uuid(layout.write_char_uuid))
+                notify = chars.get(cls._normalize_uuid(layout.notify_char_uuid))
+                write_props = cls._normalize_properties(getattr(write, "properties", ()))
+                notify_props = cls._normalize_properties(getattr(notify, "properties", ()))
+                if not {"write", "write-without-response"}.intersection(write_props):
+                    continue
+                if not {"notify", "indicate"}.intersection(notify_props):
+                    continue
+                return _WriteSelection(
+                    write, "preferred_uuid", "write-without-response" not in write_props,
+                    service_uuid, cls._normalize_uuid(layout.write_char_uuid), layout, service,
+                )
+        return None
 
     @classmethod
     def resolve_response_mode(
