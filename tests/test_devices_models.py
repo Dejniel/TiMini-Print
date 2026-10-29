@@ -134,6 +134,12 @@ def _model_keys(matches: tuple[ModelMatch, ...]) -> set[str]:
 
 
 class DevicesModelsTests(unittest.TestCase):
+    def test_model_schema_rejects_obsolete_ambiguity_exemptions(self) -> None:
+        payload = _model_payload()
+        payload["detection_ambiguity_group"] = "legacy"
+        with self.assertRaisesRegex(ValueError, "unknown PrinterModel field.*detection_ambiguity_group"):
+            model_from_json(PrinterModel, payload)
+
     def test_manual_only_model_roundtrips_and_never_matches_bluetooth(self) -> None:
         profile = model_from_json(PrinterProfile, _profile_payload())
         payload = {

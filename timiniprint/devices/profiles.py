@@ -700,7 +700,6 @@ class PrinterModel:
     profile_key: str
     whitespace_mode: WhitespaceMode = WhitespaceMode.REMOVE
     marketing_names: Tuple[str, ...] = ()
-    detection_ambiguity_group: Optional[str] = None
     identity_names: Tuple[str, ...] = ()
     protocol_override: Optional[ProtocolOverride] = None
     image_pipeline: Optional[ImagePipelineConfig] = None
@@ -734,13 +733,6 @@ class PrinterModel:
             raise ValueError(
                 f"Printer model {self.model_key} requires detections or marketing names"
             )
-        if self.detection_ambiguity_group is not None:
-            group = self.detection_ambiguity_group.strip()
-            if not group:
-                raise ValueError(
-                    f"Printer model {self.model_key} has blank detection_ambiguity_group"
-                )
-            object.__setattr__(self, "detection_ambiguity_group", group)
         if any(not name or name != name.strip() for name in self.identity_names):
             raise ValueError(f"Printer model {self.model_key} requires non-blank, trimmed identity names")
         if not self.profile_key:

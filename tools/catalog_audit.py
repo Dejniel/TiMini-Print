@@ -161,12 +161,8 @@ def _find_model_reachability_error(catalog: PrinterCatalog, model: dict[str, Any
                 if model["model_key"] in {candidate.model.model_key for candidate in matches}:
                     matched_origins = next(candidate.origin_ids for candidate in matches
                                            if candidate.model.model_key == model["model_key"])
-                    ambiguity_group = model.get("detection_ambiguity_group")
                     for candidate in matches:
                         candidate_origins = set(candidate.origin_ids)
-                        if (ambiguity_group
-                                and candidate.model.detection_ambiguity_group == ambiguity_group):
-                            continue
                         if (
                             candidate.model.model_key != model["model_key"]
                             and set(matched_origins).intersection(candidate_origins)
@@ -325,7 +321,7 @@ def generate_report(
             )
     for keys in sorted(mergeable_models.values()):
         if len(keys) > 1:
-            errors.append(
+            warnings.append(
                 {
                     "kind": "mergeable_model_body",
                     "model_keys": keys,

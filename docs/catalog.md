@@ -79,6 +79,9 @@ compatibility aliases. Construct custom catalogs as
 in `load()` are keyword-only. Existing printable printer configs need no changes.
 Consumers that imported the removed types must be updated before using this core.
 
+The obsolete `detection_ambiguity_group` field is also removed. It no longer
+controlled runtime detection and no built-in same-source tie required it.
+
 Integrators must rename `origin_app_packages` to `origin_ids` and
 `PrinterCatalog.origin_app_names(...)` to `PrinterCatalog.origin_names(...)`.
 The constructor's mapping argument is also `origin_names`; `load()` accepts
@@ -184,8 +187,8 @@ field uses the catalog model's source metadata.
 
 Names that an app rejects or redirects elsewhere are not alternative print
 recipes. Keep unresolved assignments in documentation, not as non-printable
-catalog entries. `detection_ambiguity_group` may document an expected tie between
-printable models for the audit; it does not change runtime matching priority.
+catalog entries. Same-source ties are reported by the audit; matching has no
+per-model ambiguity exemptions.
 
 Raw trigger spelling is preserved for the public catalog. Private matching copies apply the model's `whitespace_mode`. Case-sensitive matching is preferred; fallback case-folded matching exists for platform scan quirks and should not be used as an excuse for sloppy data.
 
@@ -267,6 +270,10 @@ catalog lookup. Grouping comes from printable model entries, without a second
 presentation-only inventory or a list of unimplemented names.
 
 ## Audit Rules
+
+Identical model/profile bodies are errors. Distinct models may intentionally
+share a recipe, so `mergeable_model_body` is only an advisory warning. It must
+not force removal of public model keys or invent distinctions in model data.
 
 Catalog changes should be checked by tests or `tools/catalog_audit.py` when they affect:
 

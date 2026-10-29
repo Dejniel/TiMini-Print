@@ -69,12 +69,12 @@ class CatalogAuditTests(unittest.TestCase):
         duplicate_errors = [
             error
             for error in report["errors"]
-            if error["kind"] in {"duplicate_profile_body", "duplicate_model_body", "mergeable_model_body"}
+            if error["kind"] in {"duplicate_profile_body", "duplicate_model_body"}
         ]
         duplicate_warnings = [
             warning
             for warning in report["warnings"]
-            if warning["kind"] in {"duplicate_profile_body", "duplicate_model_body", "mergeable_model_body"}
+            if warning["kind"] in {"duplicate_profile_body", "duplicate_model_body"}
         ]
 
         self.assertEqual(duplicate_errors, [])
@@ -161,13 +161,15 @@ class CatalogAuditTests(unittest.TestCase):
 
             report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
 
-            self.assertFalse(any(error["kind"] == "mergeable_model_body" for error in report["errors"]))
+            self.assertEqual(report["warnings"], [])
             models[1]["origin_ids"] = models[0]["origin_ids"]
             model_path.write_text(json.dumps(models), encoding="utf-8")
             report = self.tool.generate_report(profile_path=profile_path, model_path=model_path)
 
-        errors = [error for error in report["errors"] if error["kind"] == "mergeable_model_body"]
-        self.assertEqual(errors, [{"kind": "mergeable_model_body", "model_keys": ["first", "second"]}])
+        self.assertEqual(report["errors"], [])
+        self.assertEqual(report["warnings"], [
+            {"kind": "mergeable_model_body", "model_keys": ["first", "second"]},
+        ])
 
     def test_catalog_audit_detects_mergeable_detection_objects(self) -> None:
         profiles = [_profile_payload("base")]
@@ -214,44 +216,6 @@ class CatalogAuditTests(unittest.TestCase):
                 }
             ],
         )
-
-    def test_catalog_audit_allows_declared_detection_ambiguity_group(self) -> None:
-        profiles = [
-            _profile_payload("first_profile"),
-            _profile_payload("second_profile"),
-        ]
-        profiles[1]["one_length"] = 9
-        models = [
-            {
-                "model_key": "first",
-                "detections": [{"exact_names": ["FOO"]}],
-                "profile_key": "first_profile",
-                "protocol_override": {"type": "tiny"},
-                "origin_ids": ["com.example.source"],
-                "detection_ambiguity_group": "foo_protocol",
-            },
-            {
-                "model_key": "second",
-                "detections": [{"exact_names": ["FOO"]}],
-                "profile_key": "second_profile",
-                "protocol_override": {"type": "tiny"},
-                "origin_ids": ["com.example.source"],
-                "detection_ambiguity_group": "foo_protocol",
-            },
-        ]
-
-        with tempfile.TemporaryDirectory() as tmp:
-            profile_path = Path(tmp) / "profiles.json"
-            model_path = Path(tmp) / "models.json"
-            profile_path.write_text(json.dumps(profiles), encoding="utf-8")
-            model_path.write_text(json.dumps(models), encoding="utf-8")
-
-            report = self.tool.generate_report(
-                profile_path=profile_path,
-                model_path=model_path,
-            )
-
-        self.assertEqual(report["errors"], [])
 
     def test_catalog_audit_keeps_source_local_conflicts_separate(self) -> None:
         cases = (
