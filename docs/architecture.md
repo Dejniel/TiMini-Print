@@ -171,6 +171,26 @@ state. Executor-backed I/O must finish before closing the socket and its loop,
 including after caller cancellation. These are transport lifecycle rules, not
 printer-family policy.
 
+Classic Bluetooth (Linux sockets, Windows WinRT and macOS IOBluetooth) and
+serial connections use one shared stream reply inbox. Socket/serial sources
+have one bounded reader; native callback sources feed that same inbox without
+an extra reader or protocol parser. Runtime observers run in their application
+loop before reply predicates and own pause/resume decisions. Only the generic
+writer gate is shared with transport. Active queries share one transaction
+slot and timeout budget; passive waits do not reserve it or re-evaluate an
+already accepted reply. A failed receiver wakes queries and paused writers,
+and further writes retain that original failure. Operations cannot continue
+on a replacement connection after a reconnect.
+Notification callbacks record recoverable printer conditions in runtime
+state. Callback exceptions are terminal stream failures, not a paper-out
+notification mechanism.
+
+macOS RFCOMM operations and delegate callbacks share a dedicated native run
+loop; WinRT reads and writes share a live asyncio loop. A macOS polling fault
+leaves its owner thread available for cleanup, not further device I/O.
+Closing stops reception before disposing native resources. Receive errors
+wake pending queries, and failed cleanup remains visible and retryable.
+
 GATT write response is not a printer protocol ACK. If a family needs ACKs, status, or completion waits, model that as protocol steps and runtime controller behavior, not as transport adapter policy.
 
 BLE profiles may opt into `notify_service_uuids`: the adapter subscribes to all
