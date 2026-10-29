@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
+from timiniprint.protocol import ProtocolJob
 from timiniprint.protocol.family import ProtocolFamily
 from timiniprint.protocol.families.v5c import V5C_QUERY_STATUS_PACKET
 from timiniprint.protocol.packet import make_packet
@@ -18,6 +21,9 @@ class _Session:
 
     def can_send_standard_payload(self) -> bool:
         return self.can_send
+
+    def can_observe_replies(self) -> bool:
+        return True
 
     async def send_standard_payload(self, data: bytes) -> None:
         if data == self.fail_on:
@@ -48,7 +54,52 @@ class _Session:
         self.warnings.append((short, detail))
 
 
+class V5CRuntimeConstructionTests(unittest.TestCase):
+    def test_controller_construction_does_not_require_an_event_loop(self) -> None:
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            controller = executor.submit(V5CRuntimeController).result(timeout=1)
+        self.assertIsNone(controller.debug_snapshot()["status_code"])
+
+    def test_completion_uses_the_current_jobs_event_loop(self) -> None:
+        controller = V5CRuntimeController()
+        session = _Session()
+
+        async def print_job():
+            async with controller.job_scope(session, ProtocolJob(payload=b"PRINT"), timeout=0.1):
+                waiter = asyncio.create_task(controller.wait_for_completion(session, timeout=0.1))
+                try:
+                    await asyncio.sleep(0)
+                    await asyncio.sleep(0)
+                    self.assertFalse(waiter.done())
+                    controller.handle_notification(session, make_packet(0xA1, b"\x00", ProtocolFamily.V5C))
+                    await asyncio.wait_for(waiter, timeout=1)
+                finally:
+                    waiter.cancel()
+                    await asyncio.gather(waiter, return_exceptions=True)
+
+        asyncio.run(print_job())
+        asyncio.run(print_job())
+
+
 class V5CRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
+    async def test_completion_wait_outside_a_job_is_rejected(self) -> None:
+        controller = V5CRuntimeController()
+        with self.assertRaisesRegex(RuntimeError, "requires an active print job"):
+            await controller.wait_for_completion(_Session(), timeout=0.1)
+
+    async def test_cancelled_job_releases_its_completion_state(self) -> None:
+        controller = V5CRuntimeController()
+        session = _Session()
+        job = ProtocolJob(payload=b"PRINT")
+        with self.assertRaises(asyncio.CancelledError):
+            async with controller.job_scope(session, job, timeout=0.1):
+                raise asyncio.CancelledError()
+        with self.assertRaisesRegex(RuntimeError, "requires an active print job"):
+            await controller.wait_for_completion(session, timeout=0.1)
+        async with controller.job_scope(session, job, timeout=0.1):
+            controller.handle_notification(session, make_packet(0xA1, b"\x00", ProtocolFamily.V5C))
+            await asyncio.wait_for(controller.wait_for_completion(session, timeout=0.1), timeout=1)
+
     async def test_sends_plan_as_continuous_stream_and_accepts_idle_status(self) -> None:
         controller = V5CRuntimeController()
         session = _Session()

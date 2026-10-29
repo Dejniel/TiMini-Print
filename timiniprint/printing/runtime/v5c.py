@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 from ...protocol.family import ProtocolFamily
@@ -28,7 +28,7 @@ class _V5CSessionState:
     is_charging: bool = False
     print_complete_seen: bool = False
     printing: bool = False
-    completion: asyncio.Event = field(default_factory=asyncio.Event)
+    completion: asyncio.Event | None = None
     fatal_error: PrinterNotReadyError | None = None
     max_print_height: Optional[int] = None
     device_serial: str = ""
@@ -95,7 +95,7 @@ class V5CRuntimeController(RuntimeController):
     @asynccontextmanager
     async def job_scope(self, session, job, *, timeout: float):
         self._raise_printer_error()
-        self._state.completion.clear()
+        self._state.completion = asyncio.Event()
         self._state.print_complete_seen = False
         self._state.printing = True
         try:
@@ -103,6 +103,7 @@ class V5CRuntimeController(RuntimeController):
             self._raise_printer_error()
         finally:
             self._state.printing = False
+            self._state.completion = None
 
     async def before_write(self, session, *, size: int, timeout: float) -> None:
         if self._state.printing:
@@ -110,6 +111,9 @@ class V5CRuntimeController(RuntimeController):
 
     async def wait_for_completion(self, session, *, timeout: float) -> None:
         self._raise_printer_error()
+        completion = self._state.completion
+        if completion is None:
+            raise RuntimeError("V5C completion wait requires an active print job")
         if not session.can_observe_replies():
             session.report_warning(
                 short="V5C completion unavailable",
@@ -117,7 +121,7 @@ class V5CRuntimeController(RuntimeController):
             )
             return
         try:
-            await asyncio.wait_for(self._state.completion.wait(), timeout=max(60.0, timeout))
+            await asyncio.wait_for(completion.wait(), timeout=max(60.0, timeout))
         except asyncio.TimeoutError:
             raise TimeoutError("Timed out waiting for V5C print completion") from None
         self._raise_printer_error()
@@ -164,7 +168,7 @@ class V5CRuntimeController(RuntimeController):
             self._state.print_complete_seen = False
         elif status == 0x00:
             self._state.print_complete_seen = True
-            if self._state.printing:
+            if self._state.completion is not None:
                 self._state.completion.set()
         self._handle_status(session, status)
 
@@ -206,7 +210,7 @@ class V5CRuntimeController(RuntimeController):
             short = "V5C printer reported an error status"
             reason = PrinterStatusCode.PRINTER_ERROR
         self._state.fatal_error = PrinterNotReadyError(f"{short}: status=0x{status:02x}", reason)
-        if self._state.printing:
+        if self._state.completion is not None:
             self._state.completion.set()
         session.report_warning(short=short, detail=f"status=0x{status:02x} ({self._state.status_name}).")
 
