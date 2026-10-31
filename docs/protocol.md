@@ -628,6 +628,15 @@ manual_device = catalog.device_from_printer_config(loaded)
 
 Model-based configs keep `model_key` as the fallback, so deleting an override falls back to the catalog model. Raw profile-based configs are possible for diagnostics, but they do not carry model detection metadata.
 
+All exports use schema `timiniprint/printer-config/v3`. An unlisted profile is
+embedded as editable `profile` data, without a `model_key` or catalog lookup on
+restoration. V3 distinguishes automatic `left_padding_px: null` from an explicit
+left origin (`0`); v1/v2 imports migrate legacy placement at the config boundary.
+Configs also preserve an optional
+`device.preparation_recipe`: a runtime policy ID, not a live controller or
+cached session. The runtime factory must implement that policy; unsupported
+IDs fail before connection instead of falling back to another preparation.
+
 Bluetooth endpoint `manufacturer_data` is a JSON array of hexadecimal strings,
 including the two-byte company identifier in each raw advertising block.
 Loading the config restores `tuple[bytes, ...]`; a missing field defaults to an

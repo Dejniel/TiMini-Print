@@ -19,7 +19,9 @@ from .profiles import (
     RuntimeSettings,
 )
 
-PRINTER_CONFIG_SCHEMA = "timiniprint/printer-config/v1"
+PRINTER_CONFIG_SCHEMA = "timiniprint/printer-config/v3"
+PRINTER_CONFIG_SCHEMA_V1 = "timiniprint/printer-config/v1"
+PRINTER_CONFIG_SCHEMA_V2 = "timiniprint/printer-config/v2"
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,7 @@ class PrinterConfigParts:
     transport_target: Optional[TransportTarget]
     model_key: Optional[str] = None
     origin_ids: Tuple[str, ...] = ()
+    preparation_recipe: Optional[str] = None
 
 
 def runtime_settings_from_parts(
@@ -57,6 +60,7 @@ def serialize_printer_config(
     device: PrinterDevice,
     *,
     model_key: Optional[str] = None,
+    standalone: bool = False,
 ) -> dict[str, Any]:
     payload = {
         "schema": PRINTER_CONFIG_SCHEMA,
@@ -71,6 +75,13 @@ def serialize_printer_config(
     }
     if model_key is not None:
         payload["model_key"] = model_key
+    if standalone:
+        if model_key is not None:
+            raise ValueError("A standalone printer config cannot select a catalog model")
+        payload["profile"] = _profile_payload_for_device(device)
+        payload["profile_overrides"] = {}
+    if device.preparation_recipe is not None:
+        payload["device"]["preparation_recipe"] = device.preparation_recipe
     return payload
 
 
@@ -82,10 +93,26 @@ def parse_printer_config(
     require_runtime_preset: Callable[[PrinterProfile, str], RuntimePreset],
 ) -> PrinterConfigParts:
     schema = str(printer_config.get("schema") or "")
-    if schema != PRINTER_CONFIG_SCHEMA:
+    if schema not in (PRINTER_CONFIG_SCHEMA, PRINTER_CONFIG_SCHEMA_V1, PRINTER_CONFIG_SCHEMA_V2):
         raise RuntimeError(f"Unsupported printer config schema '{schema or '<missing>'}'")
+    device_entry = _require_mapping(printer_config.get("device") or {}, "Printer config device")
+    if schema == PRINTER_CONFIG_SCHEMA_V1 and ("profile" in printer_config or "preparation_recipe" in device_entry):
+        raise ValueError("Standalone profiles and preparation_recipe require printer-config/v2 or later")
 
-    base_device = _base_device_from_printer_config(
+    base_device = None
+    if schema != PRINTER_CONFIG_SCHEMA:
+        if "profile" in printer_config:
+            raw_profile = _require_mapping(printer_config["profile"], "Printer config profile")
+            protocol = _require_mapping(raw_profile.get("protocol_default") or {}, "Protocol default")
+            fallback_family, fallback_variant = protocol.get("type"), protocol.get("packets_type")
+        else:
+            base_device = _base_device_from_printer_config(
+                printer_config, require_profile=require_profile, require_model_device=require_model_device,
+            )
+            fallback_family = base_device.protocol_family
+            fallback_variant = base_device.protocol_variant
+        printer_config = _migrate_legacy_layout(printer_config, fallback_family, fallback_variant)
+    base_device = base_device or _base_device_from_printer_config(
         printer_config,
         require_profile=require_profile,
         require_model_device=require_model_device,
@@ -97,7 +124,6 @@ def parse_printer_config(
         profile=profile,
         require_preset=require_runtime_preset,
     )
-    device_entry = _require_mapping(printer_config.get("device") or {}, "Printer config device")
     origin_ids = device_entry.get("origin_ids", base_device.origin_ids)
     if not isinstance(origin_ids, (list, tuple)) or any(
         not isinstance(value, str) or not value or value != value.strip()
@@ -106,6 +132,11 @@ def parse_printer_config(
         raise RuntimeError("Printer config device.origin_ids must be a list of nonblank source IDs")
     if printer_config.get("model_key") and not set(origin_ids).issubset(base_device.origin_ids):
         raise RuntimeError("Printer config device.origin_ids must belong to the selected model")
+    preparation_recipe = model_from_json(
+        Optional[str], device_entry.get("preparation_recipe"), path="$.device.preparation_recipe",
+    )
+    if preparation_recipe is not None and (not preparation_recipe or preparation_recipe != preparation_recipe.strip()):
+        raise ValueError("$.device.preparation_recipe must be a nonblank recipe ID")
     return PrinterConfigParts(
         profile=profile,
         runtime_settings=runtime_settings,
@@ -113,7 +144,61 @@ def parse_printer_config(
         transport_target=_parse_transport_target(device_entry.get("transport_target")),
         model_key=None if printer_config.get("model_key") in (None, "") else base_device.model_key,
         origin_ids=tuple(dict.fromkeys(origin_ids)),
+        preparation_recipe=preparation_recipe,
     )
+
+
+def _migrate_legacy_layout(
+    config: Mapping[str, object], fallback_family: object, fallback_variant: str | None,
+) -> dict[str, object]:
+    """Translate v1/v2 placement once at import, never in the rendering path."""
+    from ..protocol.families import get_protocol_behavior
+
+    migrated = dict(config)
+    overrides = _require_mapping(config.get("profile_overrides") or {}, "Printer config profile_overrides")
+    protocol = _require_mapping(overrides.get("protocol_default") or {}, "Protocol default")
+    family = protocol.get("type", fallback_family)
+    handles_origin = get_protocol_behavior(family).handles_raster_x_offset_for(
+        protocol.get("packets_type", fallback_variant),
+    )
+    for name in ("profile", "profile_overrides"):
+        section = config.get(name)
+        if not isinstance(section, Mapping) or "paper_presets" not in section:
+            continue
+        papers = section["paper_presets"]
+        if not isinstance(papers, (list, tuple)):
+            raise ValueError("Printer config paper_presets must be an array")
+        converted = []
+        for entry in papers:
+            paper = dict(_require_mapping(entry, "Paper preset"))
+            alignment = paper.pop("horizontal_alignment", None)
+            if alignment not in (None, "left", "center"):
+                raise ValueError("Invalid legacy horizontal alignment")
+            origin = paper.get("left_padding_px", 0)
+            if origin is not None and (type(origin) is not int or origin < 0):
+                raise ValueError("Invalid legacy left_padding_px")
+            row = paper.get("raster_width_px")
+            if row is not None and (type(row) is not int or row <= 0):
+                raise ValueError("Invalid legacy raster_width_px")
+            if origin:
+                if handles_origin:
+                    if row is not None:
+                        paper["raster_width_px"] = row + origin
+                else:
+                    # Older layouts used a nonzero offset to suppress generic
+                    # centering even in families that never consumed the offset.
+                    paper["raster_width_px"] = row or paper.get("render_width_px")
+                    origin = 0
+            elif alignment == "left":
+                if paper.get("raster_width_px") is None:
+                    paper["raster_width_px"] = paper.get("paper_width_px")
+            else:
+                origin = None
+            paper["left_padding_px"] = origin
+            converted.append(paper)
+        migrated[name] = {**section, "paper_presets": converted}
+    migrated["schema"] = PRINTER_CONFIG_SCHEMA
+    return migrated
 
 
 def _profile_overrides_for_device(device: PrinterDevice) -> dict[str, Any]:
@@ -139,6 +224,15 @@ def _base_device_from_printer_config(
     require_profile: Callable[[str], PrinterProfile],
     require_model_device: Callable[[str], PrinterDevice],
 ) -> PrinterDevice:
+    if "profile" in printer_config:
+        if printer_config.get("model_key"):
+            raise ValueError("A standalone printer config cannot select a catalog model")
+        profile = model_from_json(PrinterProfile, printer_config["profile"], path="$.profile")
+        key = printer_config.get("profile_key", profile.profile_key)
+        if key != profile.profile_key:
+            raise ValueError("Printer config profile_key does not match the inline profile")
+        return PrinterDevice(profile.profile_key, profile, profile.protocol_default.type,
+                             profile.protocol_default.packets_type, profile.default_image_pipeline)
     model_key = None if printer_config.get("model_key") in (None, "") else str(printer_config["model_key"])
     if model_key is not None:
         base_device = require_model_device(model_key)
@@ -282,6 +376,8 @@ def _deep_merge_json(
 
 __all__ = [
     "PRINTER_CONFIG_SCHEMA",
+    "PRINTER_CONFIG_SCHEMA_V1",
+    "PRINTER_CONFIG_SCHEMA_V2",
     "PrinterConfigParts",
     "parse_printer_config",
     "runtime_settings_from_parts",

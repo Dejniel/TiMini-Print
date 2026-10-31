@@ -230,7 +230,7 @@ class AppCliFlowsTests(unittest.TestCase):
 
             self.assertEqual(code, 0)
             exported = cli._load_printer_config(out_path)
-            self.assertEqual(exported["schema"], "timiniprint/printer-config/v1")
+            self.assertEqual(exported["schema"], "timiniprint/printer-config/v3")
             self.assertEqual(exported["model_key"], "luck_a2")
             self.assertEqual(exported["profile_key"], "luck_a2")
             overrides = exported["profile_overrides"]

@@ -189,6 +189,7 @@ def print_controls(variant, encoding):
 
 
 BEHAVIOR = ProtocolBehavior(
+    handles_raster_x_offset=True,
     print_controls_resolver=print_controls,
     requires_speed=True,
     supported_protocol_variants=(

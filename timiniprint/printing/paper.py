@@ -17,7 +17,7 @@ class ResolvedPaper:
     paper_width_px: int
     render_width_px: int
     render_height_px: int | None = None
-    left_padding_px: int = 0
+    left_padding_px: int | None = None
     top_padding_px: int = 0
     max_height_px: int | None = None
     raster_height_px: int | None = None
@@ -106,6 +106,7 @@ def _plan_paper_layout(
     content_width: int,
     content_height: int,
     minimum_width: int,
+    content_box_width: int | None = None,
     content_box_height: int | None = None,
     content_label: str = "Content",
 ) -> _PaperLayoutPlan:
@@ -123,13 +124,17 @@ def _plan_paper_layout(
             f"{paper.top_padding_px}px exceeds paper raster height "
             f"{paper.raster_height_px}px"
         )
-    if paper.raster_width_px is not None and content_width > paper.raster_width_px:
+    origin = paper.left_padding_px or 0
+    if paper.raster_width_px is not None and content_width + origin > paper.raster_width_px:
         raise ValueError(
             f"{content_label} width {content_width}px exceeds paper raster width "
             f"{paper.raster_width_px}px"
         )
-    final_width = paper.raster_width_px or max(content_width, minimum_width)
-    left_padding = (final_width - content_width) // 2
+    # The encoder applies the explicit origin exactly once, as pixels or a
+    # native coordinate. This plan describes the body before that origin.
+    final_width = (paper.raster_width_px or max(content_width + origin, minimum_width)) - origin
+    left_padding = ((final_width - content_width) // 2 if paper.left_padding_px is None
+                    else max(0, ((content_box_width or content_width) - content_width) // 2))
     right_padding = final_width - content_width - left_padding
     reserved_height = max(content_height, content_box_height or content_height)
     final_height = (
@@ -153,7 +158,8 @@ def apply_paper_layout_to_raster_set(raster_set: RasterSet, paper: ResolvedPaper
         content_width=raster_set.width,
         content_height=raster_set.height,
         minimum_width=(
-            raster_set.width if paper.left_padding_px else paper.paper_width_px
+            raster_set.width + paper.left_padding_px
+            if paper.left_padding_px is not None else paper.paper_width_px
         ),
         content_label="Raster",
     )

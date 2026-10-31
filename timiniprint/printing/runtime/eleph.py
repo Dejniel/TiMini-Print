@@ -73,7 +73,7 @@ class ElephRuntimeController(RuntimeController):
             if width > info.width:
                 raise ValueError("Selected Eleph paper exceeds the reported printable width")
             papers.append(replace(paper, paper_width_px=width,
-                                  render_width_px=width - paper.left_padding_px))
+                                  render_width_px=width - (paper.left_padding_px or 0)))
         density = LevelProfile(info.density, info.density, info.density)
         profile = replace(
             device.profile,

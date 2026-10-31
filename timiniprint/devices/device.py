@@ -112,6 +112,8 @@ class PrinterDevice:
     transport_target: Optional[TransportTarget] = None
     model_key: str = ""
     origin_ids: Tuple[str, ...] = ()
+    # Serializable runtime preparation policy; None uses the ordinary factory.
+    preparation_recipe: Optional[str] = None
 
     @property
     def name(self) -> str:
@@ -219,6 +221,7 @@ class PrinterDevice:
             selected,
             display_name=connected_device.display_name,
             transport_target=connected_device.transport_target,
+            preparation_recipe=connected_device.preparation_recipe,
             profile=replace(
                 selected.profile,
                 use_spp=connected_device.profile.use_spp,

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from ..raster import PixelFormat, RasterBuffer, RasterSet
 from .commands import (
     blackening_cmd,
@@ -11,6 +13,7 @@ from .commands import (
 )
 from .encoding import build_line_packets
 from .families import PrintJobRequest, get_protocol_behavior
+from .families.bitmap import left_pad_raster_set
 from .family import ProtocolFamily
 from .plan import ProtocolPlan
 from .runtime import RuntimePrintCapabilities
@@ -22,6 +25,9 @@ def _build_family_job(request: PrintJobRequest) -> ProtocolPlan | None:
     behavior = get_protocol_behavior(request.protocol_family)
     if behavior.job_builder is None:
         return None
+    if request.left_padding_pixels and not behavior.handles_raster_x_offset_for(request.protocol_variant):
+        request = replace(request, raster_set=left_pad_raster_set(
+            request.raster_set, request.left_padding_pixels), left_padding_pixels=0)
     return behavior.job_builder(request)
 
 

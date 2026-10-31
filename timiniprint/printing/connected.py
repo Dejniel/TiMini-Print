@@ -16,6 +16,7 @@ from .raster_job import build_raster_page_job as _build_raster_page_job
 from .raster_job import combine_raster_page_jobs as _combine_raster_page_jobs
 from .runtime.base import PreparedPrinter, RuntimeController
 from .runtime.prepare import prepare_connection_runtime
+from .runtime.factory import runtime_controller_for_device
 from .runtime.session import RuntimeConnectionSession
 from .send import send_prepared_job
 from .settings import PrintSettings
@@ -256,11 +257,17 @@ async def connect_printer(
     connection establishment uses the connector's own policy. Preparation may
     refine the device's geometry, presets, variant or family before returning.
     An explicit ``controller`` must be a fresh bootstrap for this connection;
-    omit it to use the catalog-selected runtime.
+    omit it to use the device's runtime policy. A configured
+    ``preparation_recipe`` is validated before opening and cannot be replaced
+    by an explicit controller. Each connection gets fresh runtime state.
 
     On preparation failure or cancellation, close the connection and re-raise
     the original error. On success, the caller owns cleanup (use ``async with``).
     """
+    if device.preparation_recipe is not None:
+        if controller is not None:
+            raise ValueError("An explicit controller cannot replace the configured preparation recipe")
+        controller = runtime_controller_for_device(device)
     connection = await connector.connect(device)
     try:
         prepared = await prepare_connection_runtime(

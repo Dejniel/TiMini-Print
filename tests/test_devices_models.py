@@ -859,7 +859,7 @@ class DevicesModelsTests(unittest.TestCase):
 
         gt08 = self.catalog.device_from_model("gt08")
         self.assertEqual(gt08.profile_key, "gt08")
-        self.assertEqual(gt08.profile.default_paper_preset.left_padding_px, 0)
+        self.assertIsNone(gt08.profile.default_paper_preset.left_padding_px)
         self.assertEqual(gt08.profile.default_paper_preset.render_width_px, 1600)
         self.assertEqual(gt08.profile.default_paper_preset.paper_width_px, 1728)
 
@@ -892,7 +892,7 @@ class DevicesModelsTests(unittest.TestCase):
         zp802 = self.catalog.detect_device("ZP802-1234")
         self.assertIsNotNone(zp802)
         self.assertEqual(zp802.profile_key, "zp802")
-        self.assertEqual(zp802.profile.default_paper_preset.left_padding_px, 0)
+        self.assertIsNone(zp802.profile.default_paper_preset.left_padding_px)
         self.assertEqual(zp802.profile.default_paper_preset.render_width_px, 2400)
         self.assertEqual(zp802.profile.default_paper_preset.paper_width_px, 2496)
 

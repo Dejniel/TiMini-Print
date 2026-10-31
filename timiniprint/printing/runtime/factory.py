@@ -23,6 +23,8 @@ if TYPE_CHECKING:
 
 
 def runtime_controller_for_device(device: PrinterDevice) -> RuntimeController | None:
+    if device.preparation_recipe is not None:
+        raise ValueError(f"Unsupported preparation recipe {device.preparation_recipe!r}")
     if device.protocol_family in (ProtocolFamily.TOPRINT_TSPL, ProtocolFamily.TOPRINT_HPRT_ESC):
         return ToPrintRuntimeController()
     if device.protocol_family in (ProtocolFamily.ELEPH_TSPL, ProtocolFamily.ELEPH_ESC):

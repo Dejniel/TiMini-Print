@@ -231,8 +231,8 @@ A `PaperPreset` contains:
 - `render_width_px`: width rendered by file/raster pipeline before protocol padding/centering
 - optional `render_height_px`: fixed content area height; taller pages are scaled to fit and text pagination uses this height
 - optional `raster_height_px`: exact final raster height; shorter output is padded with white rows at the trailing edge
-- optional `raster_width_px`: exact final raster width, independent of the protocol paper width; content is centered and oversized raw rasters are rejected, not cropped
-- optional `left_padding_px`: protocol-side left padding
+- optional `raster_width_px`: exact final raster width including any explicit left offset, independent of protocol paper width; oversized raw rasters are rejected, not cropped
+- optional `left_padding_px`: `null`/omitted for automatic centering, `0` for a left-origin content area, or a positive integer for its offset
 - optional `top_padding_px`: leading blank raster rows reserved before rendered content
 - optional `mirror_horizontal`: mirror the complete paper raster before protocol encoding
 - optional `rotation_degrees`: clockwise source rotation; one of `0`, `90`, `180`, or `270`
@@ -243,7 +243,18 @@ A `PaperPreset` contains:
 
 High-level callers select paper through `PrintSettings(paper_preset_key=...)`. They should not select low-level `paper_mode` directly. `paper_mode` exists because some wire protocols change feed/end-page behavior depending on medium type.
 
-If `paper_width_px` is wider than `render_width_px` and `left_padding_px` is zero, the printing layer centers the rendered page on a white canvas. If `left_padding_px` is set, the protocol builder applies that padding and the raster remains at `render_width_px`.
+With automatic placement, the printing layer centers narrower content on the
+paper canvas. An integer `left_padding_px` fixes the content area's origin;
+remaining right-hand whitespace follows from the canvas width. Content scaled
+to fit a fixed height stays centered inside its `render_width_px` content area.
+The protocol layer applies an explicit origin once, through raster padding or
+the recipe's native coordinate—not both. A narrow content limit and a fixed
+origin survive fresh session geometry negotiation independently; neither
+replaces measured wire width or DPI.
+
+Printer-config v3 distinguishes `null` from `0`. Importing v1/v2 translates
+legacy zero (automatic centering) and old body-only raster widths once at the
+configuration boundary. Rendering has no legacy alignment mode.
 
 `render_height_px` and `raster_height_px` model different stages. The first constrains file/text rendering. The second describes the final raster sent to the protocol builder. When both are present, `render_height_px + top_padding_px` must not exceed `raster_height_px`. Remaining rows are padded at the trailing edge. A raw raster that does not fit together with its leading padding is rejected instead of being cropped.
 

@@ -181,6 +181,9 @@ class PaperPreset:
     Neither height is a generic command to calibrate physical label pitch.
     ``raster_width_px`` optionally fixes the final raster width independently
     of the protocol-side paper width. Content must fit; it is never cropped.
+    ``left_padding_px=None`` centers content automatically; an integer sets an
+    explicit horizontal origin (zero means left). ``raster_width_px`` includes
+    that origin; remaining white space is derived, not another setting.
 
     ``paper_mode`` selects the medium/recipe, not density or width. Preset
     construction validates basic geometry, not every model's raster constraints.
@@ -194,7 +197,7 @@ class PaperPreset:
     render_width_px: int
     render_height_px: Optional[int] = None
     paper_mode: Optional[PaperMode] = None
-    left_padding_px: int = 0
+    left_padding_px: Optional[int] = None
     top_padding_px: int = 0
     max_height_px: Optional[int] = None
     raster_height_px: Optional[int] = None
@@ -205,6 +208,8 @@ class PaperPreset:
     render_height_scale: float = 1.0
 
     def __post_init__(self) -> None:
+        if self.left_padding_px is not None and type(self.left_padding_px) is not int:
+            raise ValueError("left_padding_px must be an integer or None")
         if not self.key:
             raise ValueError("paper preset requires key")
         if not self.label:
@@ -255,10 +260,10 @@ class PaperPreset:
             raise ValueError(
                 f"paper preset {self.key} paper_width_px must not be smaller than render_width_px"
             )
-        if self.left_padding_px and self.paper_width_px != self.render_width_px + self.left_padding_px:
+        if (self.left_padding_px is not None
+                and self.render_width_px + self.left_padding_px > (self.raster_width_px or self.paper_width_px)):
             raise ValueError(
-                f"paper preset {self.key} paper_width_px must equal render_width_px "
-                "plus left_padding_px"
+                f"paper preset {self.key} render_width_px plus left_padding_px must fit its canvas"
             )
 
 

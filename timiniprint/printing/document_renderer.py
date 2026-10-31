@@ -298,9 +298,11 @@ class DocumentRenderer:
             content_width=image.width,
             content_height=image.height,
             minimum_width=(
-                paper.render_width_px if paper.left_padding_px else paper.paper_width_px
+                paper.render_width_px + paper.left_padding_px
+                if paper.left_padding_px is not None else paper.paper_width_px
             ),
             content_box_height=paper.render_height_px,
+            content_box_width=paper.render_width_px,
             content_label="Rendered page",
         )
         if (

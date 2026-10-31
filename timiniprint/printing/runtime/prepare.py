@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import TYPE_CHECKING
 
 from ... import reporting
@@ -33,6 +34,7 @@ async def prepare_connection_runtime(
     session = RuntimeConnectionSession(connection, reporter=reporter)
     await session.attach_runtime_controller(controller, timeout=timeout)
     prepared = await controller.prepare(device, session, timeout=timeout)
+    prepared = _preserve_content_geometry(device, prepared)
     _validate_preparation(device, prepared, controller, connection)
     if prepared.runtime_controller is not controller:
         if not session.can_observe_replies():
@@ -49,6 +51,35 @@ async def prepare_connection_runtime(
                 session.report_warning(short="Runtime cleanup failed", detail=str(exc))
             raise
     return prepared
+
+
+def _preserve_content_geometry(original: PrinterDevice, prepared: PreparedPrinter) -> PreparedPrinter:
+    """Keep content constraints separate from negotiated hardware dimensions."""
+    device = prepared.device
+    if (original.profile == device.profile or not original.profile.paper_presets
+            or original.profile_key != device.profile_key):
+        return prepared
+    papers = []
+    for paper in device.profile.paper_presets:
+        source = original.profile.paper_preset(paper.key) or original.profile.default_paper_preset
+        available = (source.raster_width_px or source.paper_width_px) - (source.left_padding_px or 0)
+        limit = source.render_width_px if source.render_width_px < available else None
+        if limit is None and source.left_padding_px is None and source.raster_width_px is None:
+            papers.append(paper)
+            continue
+        origin = source.left_padding_px if source.left_padding_px is not None else paper.left_padding_px
+        row = paper.raster_width_px
+        if row is None and source.raster_width_px is not None:
+            row = (paper.paper_width_px if source.raster_width_px == source.paper_width_px
+                   else min(source.raster_width_px, paper.paper_width_px))
+        capacity = (row or paper.paper_width_px) - (origin or 0)
+        if capacity <= 0:
+            raise ValueError("Content origin exceeds the negotiated canvas")
+        width = min(paper.render_width_px, capacity, limit if limit is not None else capacity)
+        papers.append(replace(paper, left_padding_px=origin, render_width_px=width, raster_width_px=row))
+    if tuple(papers) == device.profile.paper_presets:
+        return prepared
+    return replace(prepared, device=device.with_print_profile(replace(device.profile, paper_presets=tuple(papers))))
 
 
 def _validate_preparation(

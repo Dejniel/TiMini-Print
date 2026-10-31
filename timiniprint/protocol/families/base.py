@@ -28,6 +28,10 @@ class ProtocolBehavior:
     print_controls: tuple[str, ...] = ()
     print_controls_resolver: Callable[[Optional[str], ImageEncoding], tuple[str, ...]] | None = None
     requires_speed: bool = False
+    # The family consumes left_padding_pixels, either in its raster packer
+    # or as a native coordinate. Other families receive an already padded body.
+    handles_raster_x_offset: bool = False
+    raster_x_offset_resolver: Callable[[Optional[str]], bool] | None = None
     contiguous_raster_variants: tuple[str, ...] = ()
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(
@@ -45,6 +49,11 @@ class ProtocolBehavior:
     advance_paper_builder: ManualMotionBuilder | None = None
     retract_paper_builder: ManualMotionBuilder | None = None
     job_builder: FamilyJobBuilder | None = None
+
+    def handles_raster_x_offset_for(self, protocol_variant: str | None) -> bool:
+        if self.raster_x_offset_resolver is not None:
+            return self.raster_x_offset_resolver(protocol_variant)
+        return self.handles_raster_x_offset
 
     def image_encoding_support_for(
         self,

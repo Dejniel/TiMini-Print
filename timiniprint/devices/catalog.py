@@ -708,10 +708,14 @@ class PrinterCatalog:
         The printer config keeps ``model_key`` as the catalog fallback when
         possible and writes full effective overrides so users can tune values
         in-place. Removing an override key falls back to the catalog model, or
-        to the raw profile for low-level profile configs.
+        to the raw profile for low-level profile configs. An unlisted profile
+        is embedded in v3 instead: no catalog entry is needed to restore it.
         """
         model_key = device.model_key if self.get_model(device.model_key) is not None else None
-        return serialize_printer_config(device, model_key=model_key)
+        return serialize_printer_config(
+            device, model_key=model_key,
+            standalone=model_key is None and self.get_profile(device.profile_key) is None,
+        )
 
     def device_from_printer_config(
         self,
@@ -740,8 +744,9 @@ class PrinterCatalog:
             image_pipeline=printer_config_parts.profile.default_image_pipeline,
             runtime_settings=printer_config_parts.runtime_settings,
             model_key=printer_config_parts.model_key
-            or f"printer_config:{printer_config_parts.profile.profile_key}",
+            or ("" if "profile" in printer_config else f"printer_config:{printer_config_parts.profile.profile_key}"),
             origin_ids=printer_config_parts.origin_ids,
+            preparation_recipe=printer_config_parts.preparation_recipe,
             transport_target=resolved_transport_target,
         )
 
@@ -777,6 +782,7 @@ class PrinterCatalog:
         model_key: str,
         origin_ids: tuple[str, ...],
         transport_target: TransportTarget | None,
+        preparation_recipe: str | None = None,
     ) -> PrinterDevice:
         self._validate_protocol_variant(protocol_family, protocol_variant)
         self._validate_profile_speed_for_family(
@@ -794,6 +800,7 @@ class PrinterCatalog:
             transport_target=transport_target,
             model_key=model_key,
             origin_ids=origin_ids,
+            preparation_recipe=preparation_recipe,
         )
 
     @staticmethod

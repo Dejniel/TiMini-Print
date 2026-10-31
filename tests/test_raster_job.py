@@ -66,7 +66,7 @@ class RasterJobTests(unittest.TestCase):
                     self.device.profile.default_paper_preset,
                     paper_width_px=16,
                     render_width_px=8,
-                    left_padding_px=0,
+                    left_padding_px=None,
                 ),
             ),
         )

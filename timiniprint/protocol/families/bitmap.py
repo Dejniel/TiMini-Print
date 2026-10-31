@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ...raster import PixelFormat, RasterBuffer
+from ...raster import PixelFormat, RasterBuffer, RasterSet
 from ..compression import compress_zlib
 from ..encoding import pack_line
 
@@ -23,6 +23,15 @@ def pad_raster(
         pixels.extend([fill] * right)
     pixels.extend([fill] * (width * bottom))
     return RasterBuffer(pixels, width, raster.pixel_format)
+
+
+def left_pad_raster_set(rasters: RasterSet, pixels: int) -> RasterSet:
+    """Apply one wire X origin consistently to every supplied pixel format."""
+    return RasterSet({
+        fmt: pad_raster(raster, left=pixels,
+                        fill=0 if fmt in (PixelFormat.BW1, PixelFormat.GRAY4) else 255)
+        for fmt, raster in rasters.rasters.items()
+    })
 
 
 def pack_bw1_rows(
