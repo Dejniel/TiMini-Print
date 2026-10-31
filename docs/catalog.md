@@ -252,9 +252,9 @@ the recipe's native coordinate—not both. A narrow content limit and a fixed
 origin survive fresh session geometry negotiation independently; neither
 replaces measured wire width or DPI.
 
-Printer-config v3 distinguishes `null` from `0`. Importing v1/v2 translates
-legacy zero (automatic centering) and old body-only raster widths once at the
-configuration boundary. Rendering has no legacy alignment mode.
+Printer-config v3 distinguishes `null` from `0`. Only the current schema is
+accepted; older configurations are rejected, not migrated. Rendering has no
+legacy alignment mode.
 
 `render_height_px` and `raster_height_px` model different stages. The first constrains file/text rendering. The second describes the final raster sent to the protocol builder. When both are present, `render_height_px + top_padding_px` must not exceed `raster_height_px`. Remaining rows are padded at the trailing edge. A raw raster that does not fit together with its leading padding is rejected instead of being cropped.
 

@@ -645,7 +645,8 @@ Model-based configs keep `model_key` as the fallback, so deleting an override fa
 All exports use schema `timiniprint/printer-config/v3`. An unlisted profile is
 embedded as editable `profile` data, without a `model_key` or catalog lookup on
 restoration. V3 distinguishes automatic `left_padding_px: null` from an explicit
-left origin (`0`); v1/v2 imports migrate legacy placement at the config boundary.
+left origin (`0`). Only the current schema is accepted; older configurations
+are rejected without migration.
 Configs also preserve an optional
 `device.preparation_recipe`: a runtime policy ID, not a live controller or
 cached session. The runtime factory must implement that policy; unsupported
