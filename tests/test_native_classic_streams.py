@@ -153,7 +153,7 @@ class _ClassicAdapter:
         return self.sock
 
 
-class NativeClassicStreamTests(unittest.IsolatedAsyncioTestCase):
+class NativeClassicFixtures:
     def setUp(self):
         self.stack = contextlib.ExitStack()
         self.addCleanup(self.stack.close)
@@ -187,6 +187,8 @@ class NativeClassicStreamTests(unittest.IsolatedAsyncioTestCase):
         self.addCleanup(sock.close)
         return sock, native, native.incoming.put
 
+
+class NativeClassicStreamTests(NativeClassicFixtures, unittest.IsolatedAsyncioTestCase):
     async def connect(self, sock):
         backend = SppBackend()
         self.stack.enter_context(patch("timiniprint.transport.bluetooth.backend._select_adapter",
