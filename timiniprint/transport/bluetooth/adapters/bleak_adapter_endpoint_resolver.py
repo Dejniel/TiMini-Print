@@ -102,7 +102,7 @@ class _BleWriteEndpointResolver:
                 notify_props = cls._normalize_properties(getattr(notify, "properties", ()))
                 if not {"write", "write-without-response"}.intersection(write_props):
                     continue
-                if not {"notify", "indicate"}.intersection(notify_props):
+                if layout.notify_char_uuid and not {"notify", "indicate"}.intersection(notify_props):
                     continue
                 return _WriteSelection(
                     write, "preferred_uuid", "write-without-response" not in write_props,

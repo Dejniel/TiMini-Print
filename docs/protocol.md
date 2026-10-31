@@ -537,7 +537,10 @@ For full support of runtime-sensitive families, the connection may also implemen
 Deliver received bytes to an attached runtime controller before evaluating
 pending reply predicates, so they can use the controller's updated state.
 When `device.ble_transport_profile.gatt_layouts` is nonempty, select the first
-complete write/reply pair in list order, within one service instance. Subscribe
+complete declared layout in list order, within one service instance. An explicitly
+empty `notify_char_uuid` declares a write-only layout: the write must still match
+that service and characteristic, with no generic fallback. Nonempty reply UUIDs
+remain mandatory notify/indicate endpoints. Subscribe
 its explicit reply characteristic and optional control channel from that same
 service; do not mix partial layouts or use generic endpoint fallback.
 Retain the selected characteristic instance for subscribing and unsubscribing;

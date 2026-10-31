@@ -16,7 +16,7 @@ class BleBulkWriteProfile:
 
 @dataclass(frozen=True)
 class BleGattLayout:
-    """One complete write/reply binding within a single GATT service."""
+    """One explicit binding in a service; empty notify declares write-only I/O."""
 
     service_uuid: str
     write_char_uuid: str
