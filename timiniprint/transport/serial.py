@@ -7,6 +7,7 @@ from collections.abc import Callable
 
 from .. import reporting
 from ..devices import PrinterDevice, SerialTarget
+from ..devices.profiles import StreamProfile
 from ..protocol import ProtocolJob
 from ._stream_receive import StreamReceiveHub
 from ._stream_session import StreamRuntimeSession, run_blocking
@@ -36,16 +37,17 @@ class SerialConnection:
     until disconnect(), including between protocol steps and print jobs.
     """
 
-    def __init__(self, device: PrinterDevice, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
-        target = device.transport_target
+    def __init__(self, target: SerialTarget, *, stream: StreamProfile,
+                 reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
         if not isinstance(target, SerialTarget):
-            raise RuntimeError("SerialConnector requires a PrinterDevice with SerialTarget")
+            raise ValueError("SerialConnection requires a SerialTarget")
         self._target = target
-        self._stream = device.profile.stream
+        self._stream = stream
         self._reporter = reporter
         self._port = None
         self._hub: StreamReceiveHub | None = None
         self._controller = None
+        self._data_observer: Callable[[bytes], None] | None = None
         self._runtime_session = StreamRuntimeSession(reporter, label="Serial")
         self._write_lock = threading.Lock()
         self._closing = False
@@ -71,6 +73,8 @@ class SerialConnection:
         return self.can_send_control_packet()
 
     async def attach_runtime_controller(self, runtime_controller, *, timeout: float = 1.0) -> None:
+        if runtime_controller is not None and self._data_observer is not None:
+            raise RuntimeError("Serial observer and printer runtime cannot share receive ownership")
         if runtime_controller is self._controller:
             return
         previous, self._controller = self._controller, None
@@ -88,7 +92,24 @@ class SerialConnection:
         if controller is not None:
             self._runtime_session.dispatch(lambda: self._controller, payload)
 
-    def _open(self) -> None:
+    async def open(self, *, receive: bool = True, timeout: float | None = None) -> None:
+        """Open native I/O once; deferred reception needs an observer/query to start.
+
+        A setup deadline never abandons an uncancellable native open. The caller
+        retains this connection and must disconnect after a failed attempt.
+        """
+        if self._port is not None or self._closing:
+            raise RuntimeError("Serial connection cannot be reopened")
+        operation = run_blocking(self._open, receive)
+        if timeout is None:
+            await operation
+        else:
+            try:
+                await asyncio.wait_for(operation, timeout=timeout)
+            except asyncio.TimeoutError:
+                raise TimeoutError("Timed out opening serial port") from None
+
+    def _open(self, receive: bool) -> None:
         try:
             import serial
         except ImportError as exc:
@@ -98,7 +119,31 @@ class SerialConnection:
         self._hub = StreamReceiveHub(
             _SerialReader(self._port), listener=self._handle_payload, on_error=self._runtime_session.abort,
         )
-        self._hub.start()
+        if receive:
+            self._hub.start()
+
+    async def set_data_observer(self, observer: Callable[[bytes], None] | None) -> None:
+        """Tap the one stream receiver, exclusively of a printer runtime."""
+        self._require_open()
+        if observer is not None and self._controller is not None:
+            raise RuntimeError("Serial runtime already owns reception")
+        self._data_observer = observer
+        await run_blocking(self._hub.set_listener, observer if observer is not None else self._handle_payload)
+        if observer is not None:
+            await run_blocking(self._hub.start)
+
+    async def quiesce(self) -> None:
+        """Stop receive/wait scheduling; disconnect still owns native disposal."""
+        if self._controller is not None:
+            raise RuntimeError("A printer runtime owns this serial connection")
+        self._closing = True
+        self._runtime_session.close_flow()
+        await run_blocking(self._stop_receive, cleanup=True)
+
+    def _stop_receive(self) -> None:
+        if self._hub is not None:
+            self._hub.stop()
+        self._data_observer = None
 
     async def send_control_packet(self, packet: bytes, *, timeout: float = 1.0) -> bool:
         await run_blocking(self._write_packet, packet, timeout)
@@ -202,10 +247,8 @@ class SerialConnection:
             await run_blocking(self._close, cleanup=True)
 
     def _close(self) -> None:
-        hub = self._hub
-        if hub is not None:
-            hub.stop()
-            self._hub = None
+        self._stop_receive()
+        self._hub = None
         with self._write_lock:
             if self._port is not None:
                 self._port.close()
@@ -219,9 +262,9 @@ class SerialConnector:
         self._reporter = reporter
 
     async def connect(self, device: PrinterDevice) -> SerialConnection:
-        connection = SerialConnection(device, reporter=self._reporter)
+        connection = SerialConnection(device.transport_target, stream=device.profile.stream, reporter=self._reporter)
         try:
-            await run_blocking(connection._open)
+            await connection.open()
         except BaseException:
             await connection.disconnect()
             raise

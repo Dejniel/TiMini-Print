@@ -459,7 +459,7 @@ def test_family_selection_uses_actual_fallback_transport_not_discovery_endpoints
 
 def test_serial_reports_no_ble_bindings():
     device = _device().with_transport_target(SerialTarget('/dev/test'))
-    assert SerialConnection(device).active_ble_profile is None
+    assert SerialConnection(device.transport_target, stream=device.profile.stream).active_ble_profile is None
 
 
 def test_unknown_custom_transport_cannot_silently_change_gatt_profile():

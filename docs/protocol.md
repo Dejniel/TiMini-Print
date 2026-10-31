@@ -288,6 +288,14 @@ interpret printer commands. Classic reception is available on Linux, Windows
 and macOS, not only BLE. Serial output is drained with a bounded wait before a
 payload send returns; this is not confirmation of printer-side completion.
 
+Use the connector for normal printing. Low-level serial construction takes a
+`SerialTarget` and an explicit `StreamProfile`, not a `PrinterDevice`;
+`SerialConnector.connect(device)` supplies those existing device settings.
+Raw tooling can defer reception until installing a data observer. That observer
+and a printer runtime cannot own the same receive path together. A timed-out
+native open remains owned until it returns and can be closed; a timeout does
+not authorize abandoning a live worker or port.
+
 For normal user-selected models prefer `device_from_model(...)` or an exported printer config. `device_from_profile(...)` is useful for diagnostics and low-level integration where you intentionally bypass model metadata.
 
 ## Print Text
