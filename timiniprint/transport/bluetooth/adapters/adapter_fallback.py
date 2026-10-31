@@ -7,6 +7,7 @@ from .base import _BleBluetoothAdapter
 from ....devices.bluetooth_profiles import BleTransportProfile
 from ..types import DeviceInfo, SocketLike
 from .... import reporting
+from ...base import ConnectionCleanupError
 
 
 class _FallbackAdapter(_BleBluetoothAdapter):
@@ -113,7 +114,7 @@ class _FallbackSocket:
             try:
                 sock.close()
             except Exception as cleanup_error:
-                raise exc from cleanup_error
+                raise exc from ConnectionCleanupError(cleanup_error)
             return exc
         self._active = sock
         self._reporter.debug(

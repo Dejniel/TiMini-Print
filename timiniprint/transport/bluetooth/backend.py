@@ -8,6 +8,7 @@ from typing import List, Optional, Tuple
 
 from .adapters import _get_ble_adapter, _get_classic_adapter
 from .._stream_receive import StreamReceiveHub
+from ..base import ConnectionCleanupError
 from .._stream_session import StreamRuntimeSession, run_blocking
 from .constants import IS_MACOS, IS_WINDOWS, RFCOMM_CHANNELS
 from .types import DeviceInfo, DeviceTransport, ScanFailure, SocketLike
@@ -84,11 +85,12 @@ class SppBackend:
     ) -> None:
         try:
             await run_blocking(self._connect_attempts_blocking, attempts, pairing_hint)
-        except BaseException:
+        except BaseException as error:
             try:
                 await self.disconnect()
-            except Exception as exc:
+            except (Exception, asyncio.CancelledError) as exc:
                 self._reporter.warning(short="Connection cleanup failed", detail=str(exc))
+                raise error from ConnectionCleanupError(exc)
             raise
 
     def is_connected(self) -> bool:
@@ -413,7 +415,7 @@ class SppBackend:
                     self._disconnect_blocking()
                 except Exception as cleanup_error:
                     self._reporter.warning(short="Connection cleanup failed", detail=str(cleanup_error))
-                    raise exc from cleanup_error
+                    raise exc from ConnectionCleanupError(cleanup_error)
         if last_error and _is_timeout_error(last_error):
             if pair_error:
                 raise RuntimeError(

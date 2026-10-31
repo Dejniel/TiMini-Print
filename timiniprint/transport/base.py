@@ -10,6 +10,20 @@ if TYPE_CHECKING:
     from ..devices.bluetooth_profiles import BleTransportProfile
 
 
+class ConnectionCleanupError(RuntimeError):
+    """Cause marking a failed open/preparation whose cleanup also failed.
+
+    The original operation exception is re-raised with this marker as its
+    cause; this marker's cause retains the actual cleanup exception. Stop
+    reconnecting rather than interpreting any chained exception as unsafe
+    cleanup. A successful disconnect is not implied by the operation failing.
+    """
+
+    def __init__(self, error: BaseException) -> None:
+        super().__init__("Printer connection cleanup failed")
+        self.__cause__ = error
+
+
 class PrinterConnection(Protocol):
     """Active transport connection able to send stream-only ``ProtocolJob`` objects."""
 
@@ -98,6 +112,11 @@ class RuntimeProbeConnection(PrinterConnection, Protocol):
 
 
 class PrinterConnector(Protocol):
-    """Transport factory that connects using a resolved ``PrinterDevice``."""
+    """Transport factory that connects using a resolved ``PrinterDevice``.
+
+    A failed open must release its resources. If cleanup fails, re-raise the
+    operation exception from ConnectionCleanupError(cleanup_error), so callers
+    can distinguish it from an ordinary connection error and stop reconnecting.
+    """
 
     async def connect(self, device: PrinterDevice) -> PrinterConnection: ...

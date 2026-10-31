@@ -17,6 +17,7 @@ from ..types import DeviceInfo, DeviceTransport, SocketLike
 from ..device_information import BleDeviceInformation, read_device_information
 from ..bleak_lifecycle import _BleakLifecycle
 from .... import reporting
+from ...base import ConnectionCleanupError
 from ....devices.bluetooth_profiles import (
     DEFAULT_BLE_TRANSPORT_PROFILE,
     BleTransportProfile,
@@ -107,7 +108,7 @@ class _BleakSocket:
                 self.close()
             except Exception as cleanup_error:
                 self._reporter.warning(short="BLE cleanup failed", detail=str(cleanup_error))
-                raise error from cleanup_error
+                raise error from ConnectionCleanupError(cleanup_error)
             raise
         finally:
             try:

@@ -10,6 +10,7 @@ from ..devices import PrinterDevice, SerialTarget
 from ..devices.profiles import StreamProfile
 from ..protocol import ProtocolJob
 from ._stream_receive import StreamReceiveHub
+from .base import ConnectionCleanupError
 from ._stream_session import StreamRuntimeSession, run_blocking
 
 _READ_POLL_SEC = 0.05
@@ -265,7 +266,10 @@ class SerialConnector:
         connection = SerialConnection(device.transport_target, stream=device.profile.stream, reporter=self._reporter)
         try:
             await connection.open()
-        except BaseException:
-            await connection.disconnect()
+        except BaseException as error:
+            try:
+                await connection.disconnect()
+            except (Exception, asyncio.CancelledError) as cleanup_error:
+                raise error from ConnectionCleanupError(cleanup_error)
             raise
         return connection

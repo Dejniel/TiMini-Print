@@ -12,6 +12,7 @@ from timiniprint.transport.bluetooth.adapters import bleak_adapter
 from timiniprint.transport.bluetooth.backend import SppBackend
 from timiniprint.transport.bluetooth.types import DeviceInfo, DeviceTransport
 from timiniprint.transport.bluetooth.adapters.adapter_fallback import _FallbackSocket
+from timiniprint.transport import ConnectionCleanupError
 
 
 def client():
@@ -130,7 +131,8 @@ def test_socket_preserves_connect_failure_when_cleanup_also_fails(monkeypatch):
     try:
         with pytest.raises(RuntimeError, match="connect failed") as error:
             sock.connect(("A", 1))
-        assert str(error.value.__cause__) == "disconnect failed"
+        assert isinstance(error.value.__cause__, ConnectionCleanupError)
+        assert str(error.value.__cause__.__cause__) == "disconnect failed"
         assert sock._client is transport and not sock._connected
     finally:
         transport.disconnect.side_effect = None
@@ -261,7 +263,8 @@ def test_backend_keeps_failed_close_and_does_not_open_fallback(monkeypatch):
                 for transport in (DeviceTransport.BLE, DeviceTransport.CLASSIC)]
     with pytest.raises(OSError, match="connect failed") as error:
         backend._connect_attempts_blocking(attempts, None)
-    assert str(error.value.__cause__) == "close failed"
+    assert isinstance(error.value.__cause__, ConnectionCleanupError)
+    assert str(error.value.__cause__.__cause__) == "close failed"
     assert not backend.is_connected() and backend._sock is sock
     adapter.create_socket.assert_called_once()
     sock.close.side_effect = None
@@ -308,7 +311,8 @@ def test_backend_wrapper_does_not_swallow_failed_connect_cleanup(failed_backend)
                            fallback_name="fallback", reporter=MagicMock())
     with pytest.raises(OSError, match=f"{failed_backend} connect") as error:
         sock.connect(("A", 1))
-    assert str(error.value.__cause__) == "close failed"
+    assert isinstance(error.value.__cause__, ConnectionCleanupError)
+    assert str(error.value.__cause__.__cause__) == "close failed"
     assert fallback.connect.call_count == (failed_backend == "fallback")
     failed.close.side_effect = None
     sock.close()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Iterable
 from dataclasses import dataclass
 import os
@@ -11,6 +12,7 @@ from ..protocol import PrinterProtocol, ProtocolJob
 from ..protocol.runtime import RuntimePrintCapabilities
 from ..protocol.types import ImagePipelineConfig, PageFlow
 from ..raster import RasterSet
+from ..transport.base import ConnectionCleanupError
 from .builder import PrintJobBuilder
 from .raster_job import build_raster_page_job as _build_raster_page_job
 from .raster_job import combine_raster_page_jobs as _combine_raster_page_jobs
@@ -262,7 +264,9 @@ async def connect_printer(
     by an explicit controller. Each connection gets fresh runtime state.
 
     On preparation failure or cancellation, close the connection and re-raise
-    the original error. On success, the caller owns cleanup (use ``async with``).
+    the original error. Failed cleanup remains visible through a
+    ConnectionCleanupError cause. On success, the caller owns cleanup
+    (use ``async with``).
     """
     if device.preparation_recipe is not None:
         if controller is not None:
@@ -277,11 +281,12 @@ async def connect_printer(
             reporter=reporter,
             controller=controller,
         )
-    except BaseException:
+    except BaseException as error:
         try:
             await connection.disconnect()
-        except Exception:
-            pass
+        except (Exception, asyncio.CancelledError) as cleanup_error:
+            reporter.warning(short="Printer connection cleanup failed", exc=cleanup_error)
+            raise error from ConnectionCleanupError(cleanup_error)
         raise
     return ConnectedPrinter(
         connection,

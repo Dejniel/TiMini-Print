@@ -211,6 +211,13 @@ is therefore not necessarily immediate and does not undo bytes already sent.
 Custom executor-backed transports must likewise settle worker I/O before
 releasing resources; cancelling its asyncio future alone does not stop a thread.
 
+If opening or preparation fails and cleanup also fails, the original exception
+is re-raised with a `timiniprint.transport.ConnectionCleanupError` cause. That
+marker retains the actual cleanup exception as its own cause. A caller running
+a series of attempts must stop on this marker, not on an arbitrary exception
+cause: ordinary connection/protocol errors may be chained too. Custom
+connectors must use the same contract for a failed open they cannot release.
+
 ### BLE Write Control
 
 Custom BLE adapters must retain notification-channel identity. A profile's
