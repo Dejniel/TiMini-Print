@@ -420,12 +420,17 @@ class _MacClassicSocket:
     def _connect_native(self, target) -> None:
         address, channel_id = target
         timeout = self._timeout if self._timeout is not None else 5.0
+        deadline = time.monotonic() + timeout
         # Ensure stale channel/device handles never leak across reconnects.
         device = self._backend.get_device(address, allow_discovery=True, timeout=timeout)
         if device is None:
             raise RuntimeError(f"Bluetooth device not found: {address}")
         self._device = device
+        if time.monotonic() >= deadline:
+            raise TimeoutError("macOS RFCOMM setup expired before channel open")
         self._channel = _open_rfcomm_channel(device, int(channel_id))
+        if time.monotonic() >= deadline:
+            raise TimeoutError("macOS RFCOMM channel open exceeded its setup budget")
 
     def sendall(self, data: bytes) -> None:
         self._run(lambda: self._send_native(bytes(data)))
@@ -523,14 +528,26 @@ class _MacClassicBackend:
             raise RuntimeError(f"macOS Classic Bluetooth scan failed: {inquiry_error}") from inquiry_error
         return []
 
-    def resolve_rfcomm_channels(self, address: str) -> List[int]:
-        device = self.get_device(address, allow_discovery=True, timeout=5.0)
+    def resolve_rfcomm_channels(self, address: str, *, timeout: Optional[float] = None) -> List[int]:
+        deadline = None if timeout is None else time.monotonic() + max(0.0, timeout)
+        if timeout is not None and timeout <= 0:
+            raise TimeoutError("macOS SDP setup budget expired")
+        # An explicit endpoint must not trigger a new global device inquiry.
+        device = self.get_device(address, allow_discovery=timeout is None,
+                                 timeout=5.0 if timeout is None else timeout)
         if device is None:
             return []
+        if deadline is not None and time.monotonic() >= deadline:
+            raise TimeoutError("macOS SDP setup budget expired before lookup")
         try:
-            return _find_spp_channels(device)
+            channels = _find_spp_channels(device)
         except Exception:
-            return []
+            channels = []
+        # Native SDP/channel calls may not support cancellation. Keep ownership
+        # until they return; never restart the caller's budget afterwards.
+        if deadline is not None and time.monotonic() >= deadline:
+            raise TimeoutError("macOS SDP lookup exceeded its setup budget")
+        return channels
 
     def pair_device(self, address: str) -> bool:
         device = self.get_device(address, allow_discovery=True, timeout=8.0)
