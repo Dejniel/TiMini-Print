@@ -14,6 +14,24 @@ from timiniprint.transport.bluetooth.types import DeviceInfo
 from timiniprint.transport.serial import SerialConnector
 
 
+@pytest.mark.parametrize("wrapped", [False, True])
+def test_cleanup_marker_is_recognized_through_explicit_cause_wrappers(wrapped):
+    original = asyncio.CancelledError()
+    original.__cause__ = ConnectionCleanupError(OSError("close failed"))
+    error = TimeoutError()
+    error.__cause__ = original
+    assert ConnectionCleanupError.is_cause_of(error if wrapped else original)
+    assert ConnectionCleanupError.is_cause_of(original.__cause__)
+
+
+def test_ordinary_and_circular_exception_causes_are_not_cleanup_markers():
+    error = RuntimeError("ordinary chained error")
+    error.__cause__ = OSError("ordinary cause")
+    assert not ConnectionCleanupError.is_cause_of(error)
+    error.__cause__.__cause__ = error
+    assert not ConnectionCleanupError.is_cause_of(error)
+
+
 @pytest.mark.parametrize("cancel", [False, True])
 @pytest.mark.parametrize("close_error", [None, OSError, asyncio.CancelledError])
 def test_preparation_preserves_the_original_error_and_marks_only_failed_cleanup(cancel, close_error):

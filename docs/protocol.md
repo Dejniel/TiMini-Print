@@ -217,6 +217,8 @@ marker retains the actual cleanup exception as its own cause. A caller running
 a series of attempts must stop on this marker, not on an arbitrary exception
 cause: ordinary connection/protocol errors may be chained too. Custom
 connectors must use the same contract for a failed open they cannot release.
+Use `ConnectionCleanupError.is_cause_of(error)` to recognize the marker through
+timeout/cancellation wrappers without treating ordinary causes as cleanup failures.
 
 ### BLE Write Control
 
@@ -548,6 +550,11 @@ async with await connect_printer(device, MyConnector()) as printer:
 For full support of runtime-sensitive families, the connection may also implement optional methods from `RuntimeProbeConnection` in `timiniprint.transport.base`, such as `send_control_packet(...)`, `query_control_packet(...)`, `wait_for_reply(...)`, `wait_for_notification(...)`, and `send_control_packet_wait_notification(...)`. If they are missing, runtime-sensitive families degrade or fail according to their controller.
 
 `wait_for_reply(...)` is the transport-neutral passive receive operation used by protocol steps and completion controllers. A Classic SPP connection reads from its socket; a BLE connection can satisfy the same operation through notifications. `wait_for_notification(...)` remains available for controllers whose behavior is specifically tied to BLE notification state.
+
+Raw transaction operations are declared by `ControlConnection`, shared with
+profile-free probing. `RuntimeProbeConnection` adds print-job sending, runtime
+controller ownership, bulk writes and BLE-specific passive waits; probe
+connections do not need those print-session operations.
 
 Deliver received bytes to an attached runtime controller before evaluating
 pending reply predicates, so they can use the controller's updated state.
