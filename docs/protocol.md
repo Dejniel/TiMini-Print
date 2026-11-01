@@ -239,6 +239,13 @@ refund its permission. Credit interpretation belongs to the runtime, never
 the adapter. The default hooks do nothing, preserving other families' behavior.
 Classic/SPP writes do not use these BLE hooks.
 
+For enabled standard or bulk flow control, use the profile's
+`flow_resume_timeout_s` when set, independently of the operation/command-ACK
+timeout. V5X allows up to 600 seconds per buffer pause before failing the
+pending send; it resumes at the next unsent chunk without replaying data.
+This is a host-side limit, not a firmware timing requirement or a longer ACK
+deadline. Chunk sizes, pacing and print-completion policy are unchanged.
+
 ## Choose A Bluetooth Printer
 
 Use `scan_devices()` when you want printable devices that TiMini can resolve automatically.

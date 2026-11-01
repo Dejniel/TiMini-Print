@@ -78,6 +78,7 @@ _PROFILES = {
     ProtocolFamily.V5X: BleTransportProfile(
         preferred_service_uuid="0000ae30-0000-1000-8000-00805f9b34fb",
         notify_char_uuid="0000ae02-0000-1000-8000-00805f9b34fb",
+        flow_resume_timeout_s=600.0,
         bulk_write=BleBulkWriteProfile(
             char_uuid="0000ae03-0000-1000-8000-00805f9b34fb",
             chunk_cap=180,

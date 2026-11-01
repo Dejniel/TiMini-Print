@@ -75,6 +75,8 @@ class BleTransportProfileTests(unittest.TestCase):
         self.assertEqual(v5x.bulk_write.chunk_cap, 180)
         self.assertEqual(v5x.bulk_write.write_delay_ms, 30)
         self.assertTrue(v5x.bulk_write.flow_controlled)
+        self.assertEqual(v5x.flow_resume_timeout_s, 600.0)
+        self.assertFalse(v5x.flow_controlled_standard_write)
         self.assertEqual(v5x.write_without_response_payload_reserve, 5)
 
         v5c = get_ble_transport_profile(ProtocolFamily.V5C)

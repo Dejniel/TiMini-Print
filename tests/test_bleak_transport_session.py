@@ -1728,6 +1728,96 @@ class BleakTransportSessionTests(unittest.TestCase):
         self.assertEqual(client.calls, [])
         self.assertFalse(session.flow_can_write)
 
+    def test_v5x_bulk_pause_outlasts_command_timeout_without_replaying_raster(self) -> None:
+        for runtime_steps in (False, True):
+            with self.subTest(runtime_steps=runtime_steps):
+                session, client = self._make_session(ProtocolFamily.V5X)
+                _enable_notification_waits(session)
+                cmd = _Char("0000ae01-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+                bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+                session.bindings.write_char = cmd
+                session.bindings.write_char_uuid = cmd.uuid
+                session.bindings.write_response_preference = False
+                session.bindings.bulk_write_char = bulk
+                session.bindings.bulk_write_char_uuid = bulk.uuid
+                payload = b"\xaa\x55" * 200
+                data = bytes.fromhex("2221A9000400010030010000") + payload + V5X_FINALIZE_PACKET
+
+                async def run() -> None:
+                    paused = asyncio.Event()
+                    bulk_writes = []
+
+                    async def write(char, chunk, response=True):
+                        client.calls.append((char.uuid, bytes(chunk), response))
+                        if char.uuid == cmd.uuid and prefixed_packet_opcode(chunk, ProtocolFamily.V5X) == 0xA9:
+                            session.handle_notification(V5X_NOTIFY_START_PRINT_OK)
+                        elif char.uuid == bulk.uuid:
+                            bulk_writes.append(bytes(chunk))
+                            if len(bulk_writes) == 1:
+                                session.handle_notification(bytes.fromhex("2221AE0101001070FF"))
+                                paused.set()
+
+                    async def send():
+                        if runtime_steps:
+                            await _send_v5x_runtime_payload(session, client, data, timeout=0.01)
+                        else:
+                            self.assertTrue(await session.send_bulk_payload(client, payload, mtu_size=180, timeout=0.01))
+
+                    with patch.object(client, "write_gatt_char", side_effect=write), \
+                         patch("timiniprint.printing.runtime.v5x.start_delay_ms", return_value=0):
+                        task = asyncio.create_task(send())
+                        try:
+                            await asyncio.wait_for(paused.wait(), 1)
+                            await asyncio.sleep(0.08)
+                            self.assertFalse(task.done())
+                            self.assertEqual(len(bulk_writes), 1)
+                            self.assertFalse(any(packet == V5X_FINALIZE_PACKET for _, packet, _ in client.calls))
+                            session.handle_notification(bytes.fromhex("2221AE0101000000FF"))
+                            await asyncio.wait_for(task, 1)
+                            self.assertEqual(b"".join(bulk_writes), payload)
+                            if runtime_steps:
+                                self.assertEqual(client.calls[-1][1], V5X_FINALIZE_PACKET)
+                        finally:
+                            if not task.done():
+                                task.cancel()
+                            await asyncio.gather(task, return_exceptions=True)
+
+                asyncio.run(run())
+
+    def test_v5x_bulk_resume_still_has_a_bounded_profile_timeout(self) -> None:
+        session, client = self._make_session(ProtocolFamily.V5X)
+        session._transport_profile = replace(session._transport_profile, flow_resume_timeout_s=0.01)
+        bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session.bindings.bulk_write_char = bulk
+        session.bindings.bulk_write_char_uuid = bulk.uuid
+        session.handle_notification(bytes.fromhex("2221AE0101001070FF"))
+
+        async def run() -> None:
+            with self.assertRaisesRegex(TimeoutError, "BLE flow-control resume"):
+                await asyncio.wait_for(session.send_bulk_payload(client, b"raster", mtu_size=180, timeout=1), 0.5)
+
+        asyncio.run(run())
+        self.assertEqual(client.calls, [])
+
+    def test_v5x_cancelled_bulk_wait_does_not_send_on_a_late_resume(self) -> None:
+        session, client = self._make_session(ProtocolFamily.V5X)
+        bulk = _Char("0000ae03-0000-1000-8000-00805f9b34fb", ["write-without-response"])
+        session.bindings.bulk_write_char = bulk
+        session.bindings.bulk_write_char_uuid = bulk.uuid
+        session.handle_notification(bytes.fromhex("2221AE0101001070FF"))
+
+        async def run() -> None:
+            task = asyncio.create_task(session.send_bulk_payload(client, b"raster", mtu_size=180, timeout=1))
+            await asyncio.sleep(0)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            session.handle_notification(bytes.fromhex("2221AE0101000000FF"))
+            await asyncio.sleep(0)
+            self.assertEqual(client.calls, [])
+
+        asyncio.run(run())
+
     def test_tiny_flow_resume_uses_profile_timeout_instead_of_send_timeout(self) -> None:
         session, client = self._make_session(ProtocolFamily.TINY)
         write_char = _Char(
