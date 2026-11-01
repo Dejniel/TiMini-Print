@@ -1,6 +1,8 @@
+import zlib
+
 import pytest
 
-from timiniprint.protocol.families._tspl import bitmap_command
+from timiniprint.protocol.families._tspl import bitmap_command, zlib_bitmap_command
 from timiniprint.raster import PixelFormat, RasterBuffer
 
 
@@ -38,3 +40,23 @@ def test_uncompressed_tspl_bitmap_rejects_other_modes(mode):
     raster = RasterBuffer([0] * 8, 8, PixelFormat.BW1)
     with pytest.raises(ValueError, match="mode"):
         bitmap_command(raster, line_end=b"\r\n", mode=mode)
+
+
+@pytest.mark.parametrize("window_bits", [15, -15])
+@pytest.mark.parametrize("x,y", [(0, 0), (8, 80), (3, 161)])
+def test_compressed_tspl_bitmap_coordinates_change_only_the_header(window_bits, x, y):
+    raster = RasterBuffer([1] + [0] * 7, 8, PixelFormat.BW1)
+    expected = zlib.compressobj(wbits=window_bits)
+    body = expected.compress(b"\x80") + expected.flush()
+    assert zlib_bitmap_command(raster, line_end=b"\r\n", window_bits=window_bits, x=x, y=y) == (
+        f"BITMAP {x},{y},1,1,3,{len(body)},".encode() + body + b"\r\n"
+    )
+    assert zlib_bitmap_command(raster, line_end=b"\r\n", window_bits=window_bits) == (
+        zlib_bitmap_command(raster, line_end=b"\r\n", window_bits=window_bits, x=0, y=0)
+    )
+
+
+@pytest.mark.parametrize("x,y", [(-1, 0), (0, -1)])
+def test_compressed_tspl_bitmap_rejects_negative_coordinates(x, y):
+    with pytest.raises(ValueError, match="coordinates"):
+        zlib_bitmap_command(RasterBuffer([0] * 8, 8, PixelFormat.BW1), line_end=b"\r\n", x=x, y=y)

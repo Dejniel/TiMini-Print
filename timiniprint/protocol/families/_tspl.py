@@ -45,13 +45,20 @@ def bitmap_command(
 
 def zlib_bitmap_command(
     raster: RasterBuffer, *, line_end: bytes, window_bits: int = 15, level: int = 6,
+    x: int = 0, y: int = 0,
 ) -> bytes:
-    """Build mode 3 with black-one rows and a full, length-prefixed zlib stream."""
+    """Build mode 3 with black-one rows and length-prefixed compressed data.
+
+    ``window_bits`` selects the wrapper (15: zlib, -15: raw DEFLATE).
+    Coordinates are native printer dots, including when sending row stripes.
+    """
+    if min(x, y) < 0:
+        raise ValueError("TSPL bitmap coordinates must be non-negative")
     compressed = compress_zlib(pack_bw1_rows(raster), window_bits=window_bits, level=level)
     return (
         command_head(
             "BITMAP",
-            f"0,0,{packed_row_width_bytes(raster.width)},{raster.height},3,{len(compressed)},",
+            f"{x},{y},{packed_row_width_bytes(raster.width)},{raster.height},3,{len(compressed)},",
         )
         + compressed
         + line_end
