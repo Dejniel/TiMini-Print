@@ -215,6 +215,36 @@ Catalog detection and Bluetooth discovery are different concerns.
 
 Transport owns scanning mechanics. Devices own turning raw endpoints into logical printers.
 
+All discovery views use `BluetoothEndpointResolver.transport_targets_from_endpoints(...)`
+for grouping before choosing a model: unique Classic/BLE pairs with the same
+real MAC take precedence. Within an ambiguous name group, shared catalog model
+matches may identify a pair only when each endpoint has exactly one compatible
+partner. Unmatched endpoints remain independently available. An originally
+unambiguous name group still supports pairs without a shared catalog match.
+Name normalization respects the catalog's whitespace rules. Removing a MAC
+pair does not manufacture uniqueness in the remaining name/model candidates.
+Different Classic/BLE addresses remain valid for name-based pairs.
+
+Catalog matching uses the original names and advertisement evidence on each
+grouped endpoint, not the target's display label. Automatic discovery returns
+only targets with one model candidate. The display view exposes all alternatives,
+while the unknown-target view contains groups with no catalog match. Both resolver
+view methods take only `endpoints`; they do not reconcile a separate list of
+previously resolved devices. `BluetoothDiscovery` builds these views from
+`BluetoothScanResult.raw_endpoints`. This keeps model detection, transport
+fallback and raw-target selection on the same endpoint grouping.
+
+For the historical single-printer BLE-first case, one unambiguous Classic-only
+device and exactly one anonymous, unmatched standalone BLE endpoint can provide
+an unconfirmed connection hint. The resolved device stores it separately as
+`BluetoothTarget.ble_candidate`; the raw BLE target remains available in the
+unknown-target view. It is not a grouped peer and contributes no identity,
+advertisement or pairing-state evidence to the Classic device.
+`bluetooth_connection_plan(...)` includes this candidate using the profile's
+transport preference. `ordered_endpoints(...)` and raw-target selection omit it.
+Discovery diagnostics identify use of this heuristic explicitly. This retains
+the connection workaround for #27 without hiding the anonymous endpoint.
+
 ## Paper And Media Boundaries
 
 User-facing paper choices are catalog data. Profiles list exact paper preset keys; `PrintSettings.paper_preset_key` selects one for file printing.

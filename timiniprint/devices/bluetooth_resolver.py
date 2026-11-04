@@ -10,6 +10,7 @@ from .device import (
     BluetoothEndpointTransport,
     BluetoothTarget,
     PrinterDevice,
+    TransportTarget,
 )
 from .profiles import DetectionNormalizer, ModelMatch, WhitespaceMode
 
@@ -19,7 +20,7 @@ _UUID_RE = re.compile(r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f
 
 @dataclass(frozen=True)
 class ResolvedBluetoothTarget:
-    """One raw Bluetooth target resolved without catalog model matching.
+    """One Bluetooth target grouped without choosing a printer model.
 
     ``display_name`` is presentation only and may fall back to an address.
     Catalog detection uses the original names stored on the endpoints.
@@ -29,13 +30,6 @@ class ResolvedBluetoothTarget:
     transport_target: BluetoothTarget
 
 
-@dataclass(frozen=True)
-class _ResolvedEndpoint:
-    endpoint: BluetoothEndpoint
-    device: PrinterDevice
-    normalized_name: str
-
-
 class BluetoothEndpointResolver:
     """Resolve raw Bluetooth endpoints into logical printer devices."""
 
@@ -43,61 +37,56 @@ class BluetoothEndpointResolver:
         self._catalog = catalog
 
     def devices_from_endpoints(self, endpoints: Iterable[BluetoothEndpoint]) -> List[PrinterDevice]:
-        """Resolve raw scan endpoints into logical printer devices."""
-        endpoint_list = self._share_advertisement_data(endpoints)
-        candidates = self._build_endpoint_candidates(endpoint_list)
-        grouped = self._group_candidates(candidates)
-
-        resolved: List[PrinterDevice] = []
-        for key in sorted(grouped.keys()):
-            classic_items = grouped[key].get(BluetoothEndpointTransport.CLASSIC, [])
-            ble_items = grouped[key].get(BluetoothEndpointTransport.BLE, [])
-            if len(classic_items) == 1 and len(ble_items) == 1:
-                resolved.append(self._merge_candidates(classic_items[0], ble_items[0]))
-                continue
-            for item in classic_items:
-                resolved.append(self._single_candidate(item))
-            for item in ble_items:
-                resolved.append(self._single_candidate(item))
-        resolved = self._attach_single_anonymous_ble_endpoint(resolved, endpoint_list)
-        return self.sort_devices(resolved)
+        """Return only targets with one unambiguous catalog model."""
+        choices = self.devices_for_display(endpoints)
+        models_by_target: Dict[TransportTarget | None, set[str]] = {}
+        for device in choices:
+            models_by_target.setdefault(device.transport_target, set()).add(device.model_key)
+        return [device for device in choices if len(models_by_target[device.transport_target]) == 1]
 
     def devices_for_display(
         self,
-        resolved_devices: Iterable[PrinterDevice],
         endpoints: Iterable[BluetoothEndpoint],
     ) -> List[PrinterDevice]:
-        """Return resolved devices plus manual candidates for ambiguous names."""
-        devices = list(resolved_devices)
-        seen = {
-            (device.model_key, device.address, device.transport_badge)
-            for device in devices
-        }
-        for item in self.transport_targets_from_endpoints(endpoints):
-            for candidate in self._detection_devices_for_target(item):
-                key = (candidate.model_key, candidate.address, candidate.transport_badge)
-                if key in seen:
-                    continue
-                seen.add(key)
-                devices.append(candidate)
-        return self.sort_devices(devices)
+        """Return all catalog choices on the same targets as automatic detection."""
+        devices: List[PrinterDevice] = []
+        unknown_targets: List[ResolvedBluetoothTarget] = []
+        for target in self.transport_targets_from_endpoints(endpoints):
+            candidates = self._detection_devices_for_target(target)
+            devices.extend(candidates)
+            if not candidates:
+                unknown_targets.append(target)
+        return self.sort_devices(self._with_anonymous_ble_candidate(devices, unknown_targets))
 
     def manual_targets_for_display(
         self,
-        resolved_devices: Iterable[PrinterDevice],
         endpoints: Iterable[BluetoothEndpoint],
     ) -> List[ResolvedBluetoothTarget]:
-        """Return raw targets that need a manual model choice before printing."""
-        represented = self._represented_endpoint_keys(resolved_devices)
-        manual_targets: List[ResolvedBluetoothTarget] = []
-        for item in self.transport_targets_from_endpoints(endpoints):
-            target_keys = self._target_endpoint_keys(item.transport_target)
-            if target_keys and target_keys.issubset(represented):
-                continue
-            if self._detection_devices_for_target(item):
-                continue
-            manual_targets.append(item)
-        return self.sort_transport_targets(manual_targets)
+        """Return targets with no catalog choice, including unmatched anonymous BLE."""
+        return [
+            target for target in self.transport_targets_from_endpoints(endpoints)
+            if not self._detection_devices_for_target(target)
+        ]
+
+    @staticmethod
+    def _with_anonymous_ble_candidate(
+        devices: List[PrinterDevice],
+        unknown_targets: List[ResolvedBluetoothTarget],
+    ) -> List[PrinterDevice]:
+        """Keep the single-printer BLE-first heuristic separate from grouping."""
+        if len(devices) != 1:
+            return devices
+        device = devices[0]
+        target = device.transport_target
+        if (device.profile.use_spp or not isinstance(target, BluetoothTarget)
+                or target.classic_endpoint is None or target.ble_endpoint is not None):
+            return devices
+        anonymous = [item.transport_target for item in unknown_targets
+                     if item.transport_target.ble_endpoint is not None
+                     and not (item.transport_target.ble_endpoint.name or "").strip()]
+        if len(anonymous) != 1 or anonymous[0].classic_endpoint is not None:
+            return devices
+        return [device.with_transport_target(replace(target, ble_candidate=anonymous[0].ble_endpoint))]
 
     def _detection_devices_for_target(self, item: ResolvedBluetoothTarget) -> List[PrinterDevice]:
         """Match endpoint identities, never the target's display label."""
@@ -127,11 +116,24 @@ class BluetoothEndpointResolver:
         self,
         endpoints: Iterable[BluetoothEndpoint],
     ) -> List[ResolvedBluetoothTarget]:
-        """Resolve raw scan endpoints into logical Bluetooth transport targets."""
-        grouped: Dict[str, Dict[BluetoothEndpointTransport, List[BluetoothEndpoint]]] = {}
+        """Pair unique MACs, then catalog-compatible peers within name groups.
+
+        A MAC pair must not make remaining name matches newly unambiguous.
+        Keep the original endpoint metadata; grouping does not select a model.
+        """
+        grouped: Dict[Tuple[str, str], Dict[BluetoothEndpointTransport, List[BluetoothEndpoint]]] = {}
+        by_mac: Dict[str, List[BluetoothEndpoint]] = {}
+        models_by_endpoint: Dict[BluetoothEndpoint, set[str]] = {}
         for endpoint in self._share_advertisement_data(endpoints):
-            normalized_name = self._raw_endpoint_group_name(endpoint)
-            key = normalized_name or endpoint.address.lower()
+            matches = self._catalog.detect_model(
+                endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
+            )
+            models_by_endpoint[endpoint] = {match.model.model_key for match in matches}
+            if DetectionNormalizer.is_mac_like_address(endpoint.address):
+                mac = DetectionNormalizer.normalize_mac_candidate(endpoint.address)
+                by_mac.setdefault(mac, []).append(endpoint)
+            normalized_name = self._raw_endpoint_group_name(endpoint, matches)
+            key = ("name", normalized_name) if normalized_name else ("address", endpoint.address.lower())
             bucket = grouped.setdefault(
                 key,
                 {BluetoothEndpointTransport.CLASSIC: [], BluetoothEndpointTransport.BLE: []},
@@ -139,16 +141,44 @@ class BluetoothEndpointResolver:
             bucket[endpoint.transport].append(endpoint)
 
         resolved: List[ResolvedBluetoothTarget] = []
+        paired: set[BluetoothEndpoint] = set()
+        for mac in sorted(by_mac):
+            peers = by_mac[mac]
+            if len(peers) != 2:
+                continue
+            classic = next((item for item in peers if item.transport == BluetoothEndpointTransport.CLASSIC), None)
+            ble = next((item for item in peers if item.transport == BluetoothEndpointTransport.BLE), None)
+            if classic is None or ble is None:
+                continue
+            resolved.append(self._merge_transport_targets(classic, ble))
+            paired.update((classic, ble))
         for key in sorted(grouped.keys()):
             classic_items = grouped[key].get(BluetoothEndpointTransport.CLASSIC, [])
             ble_items = grouped[key].get(BluetoothEndpointTransport.BLE, [])
-            if len(classic_items) == 1 and len(ble_items) == 1:
+            if (len(classic_items) == 1 and len(ble_items) == 1
+                    and classic_items[0] not in paired
+                    and ble_items[0] not in paired):
                 resolved.append(self._merge_transport_targets(classic_items[0], ble_items[0]))
+                paired.update((classic_items[0], ble_items[0]))
                 continue
-            for item in classic_items:
-                resolved.append(self._single_transport_target(item))
-            for item in ble_items:
-                resolved.append(self._single_transport_target(item))
+            # Count partners in the original group, including MAC-paired peers.
+            # Consuming an endpoint must not manufacture a unique model pair.
+            for classic in classic_items:
+                if classic in paired:
+                    continue
+                partners = [ble for ble in ble_items
+                            if models_by_endpoint[classic] & models_by_endpoint[ble]]
+                if len(partners) != 1 or partners[0] in paired:
+                    continue
+                ble = partners[0]
+                if sum(bool(models_by_endpoint[other] & models_by_endpoint[ble])
+                       for other in classic_items) != 1:
+                    continue
+                resolved.append(self._merge_transport_targets(classic, ble))
+                paired.update((classic, ble))
+            for item in (*classic_items, *ble_items):
+                if item not in paired:
+                    resolved.append(self._single_transport_target(item))
         return self.sort_transport_targets(resolved)
 
     def transport_target_from_endpoint(self, endpoint: BluetoothEndpoint) -> BluetoothTarget:
@@ -186,11 +216,13 @@ class BluetoothEndpointResolver:
                     return device
             return None
         target = name_or_address.lower()
-        for device in devices:
-            if (device.display_name or "").strip().lower() == target:
+        named_devices = [(device, self._selection_names(device.display_name, device.transport_target))
+                         for device in devices]
+        for device, names in named_devices:
+            if target in names:
                 return device
-        for device in devices:
-            if target in (device.display_name or "").strip().lower():
+        for device, names in named_devices:
+            if any(target in name for name in names):
                 return device
         return None
 
@@ -211,37 +243,24 @@ class BluetoothEndpointResolver:
                     return item
             return None
         target_name = name_or_address.lower()
-        for item in targets:
-            if (item.display_name or "").strip().lower() == target_name:
+        named_targets = [(item, self._selection_names(item.display_name, item.transport_target))
+                         for item in targets]
+        for item, names in named_targets:
+            if target_name in names:
                 return item
-        for item in targets:
-            if target_name in (item.display_name or "").strip().lower():
+        for item, names in named_targets:
+            if any(target_name in name for name in names):
                 return item
         return None
 
-    def _build_endpoint_candidates(
-        self,
-        endpoints: Iterable[BluetoothEndpoint],
-    ) -> List[_ResolvedEndpoint]:
-        candidates: List[_ResolvedEndpoint] = []
-        for endpoint in endpoints:
-            device = self._catalog.detect_device(
-                endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
-            )
-            if device is None:
-                continue
-            model = self._catalog.require_model(device.model_key)
-            candidates.append(
-                _ResolvedEndpoint(
-                    endpoint=endpoint,
-                    device=device,
-                    normalized_name=DetectionNormalizer.fold_name(
-                        endpoint.name or "",
-                        model.whitespace_mode,
-                    ),
-                )
-            )
-        return candidates
+    @staticmethod
+    def _selection_names(display_name: str, target: TransportTarget | None) -> tuple[str, ...]:
+        """Selection aliases only; never use display labels for catalog matching."""
+        names = [display_name]
+        if isinstance(target, BluetoothTarget):
+            names.extend(endpoint.name for endpoint in (target.classic_endpoint, target.ble_endpoint)
+                         if endpoint is not None)
+        return tuple(name.strip().lower() for name in names if name and name.strip())
 
     @staticmethod
     def _share_advertisement_data(endpoints: Iterable[BluetoothEndpoint]) -> List[BluetoothEndpoint]:
@@ -263,11 +282,9 @@ class BluetoothEndpointResolver:
             for endpoint in endpoints
         ]
 
-    def _raw_endpoint_group_name(self, endpoint: BluetoothEndpoint) -> str:
+    @staticmethod
+    def _raw_endpoint_group_name(endpoint: BluetoothEndpoint, matches: tuple[ModelMatch, ...]) -> str:
         name = endpoint.name or ""
-        matches = self._catalog.detect_model(
-            name, endpoint.address, manufacturer_data=endpoint.manufacturer_data,
-        )
         matched_modes = {match.model.whitespace_mode for match in matches}
         whitespace_mode = (
             matched_modes.pop()
@@ -277,103 +294,10 @@ class BluetoothEndpointResolver:
         return DetectionNormalizer.fold_name(name, whitespace_mode)
 
     @staticmethod
-    def _group_candidates(
-        candidates: Iterable[_ResolvedEndpoint],
-    ) -> Dict[Tuple[str, str, str], Dict[BluetoothEndpointTransport, List[_ResolvedEndpoint]]]:
-        grouped: Dict[Tuple[str, str, str], Dict[BluetoothEndpointTransport, List[_ResolvedEndpoint]]] = {}
-        for candidate in candidates:
-            # This classic+BLE merge is intentionally name/profile-based for the
-            # single-printer workflow. Revisit only if endpoint pairing ambiguity
-            # starts causing connection regressions in practice.
-            key = (
-                candidate.device.model_key,
-                candidate.device.profile_key,
-                candidate.normalized_name,
-            )
-            bucket = grouped.setdefault(
-                key,
-                {BluetoothEndpointTransport.CLASSIC: [], BluetoothEndpointTransport.BLE: []},
-            )
-            bucket[candidate.endpoint.transport].append(candidate)
-        return grouped
-
-    @staticmethod
     def _choose_name(primary: str, secondary: str) -> str:
         if primary and secondary:
             return primary if len(primary) >= len(secondary) else secondary
         return primary or secondary
-
-    def _single_candidate(self, candidate: _ResolvedEndpoint) -> PrinterDevice:
-        return candidate.device.with_transport_target(
-            self._single_transport_target(candidate.endpoint).transport_target
-        )
-
-    def _merge_candidates(
-        self,
-        classic_candidate: _ResolvedEndpoint,
-        ble_candidate: _ResolvedEndpoint,
-    ) -> PrinterDevice:
-        target = BluetoothTarget(
-            classic_endpoint=classic_candidate.endpoint,
-            ble_endpoint=ble_candidate.endpoint,
-            display_address=classic_candidate.endpoint.address,
-            transport_badge="[classic+ble]",
-        )
-        merged_name = self._choose_name(
-            classic_candidate.device.display_name,
-            ble_candidate.device.display_name,
-        )
-        return PrinterDevice(
-            display_name=merged_name,
-            profile=classic_candidate.device.profile,
-            protocol_family=classic_candidate.device.protocol_family,
-            protocol_variant=classic_candidate.device.protocol_variant,
-            image_pipeline=classic_candidate.device.image_pipeline,
-            runtime_settings=classic_candidate.device.runtime_settings,
-            transport_target=target,
-            model_key=classic_candidate.device.model_key,
-            origin_ids=classic_candidate.device.origin_ids,
-        )
-
-    def _attach_single_anonymous_ble_endpoint(
-        self,
-        resolved: List[PrinterDevice],
-        endpoints: Iterable[BluetoothEndpoint],
-    ) -> List[PrinterDevice]:
-        if len(resolved) != 1:
-            return resolved
-        device = resolved[0]
-        if device.profile.use_spp:
-            return resolved
-        target = device.transport_target
-        if (
-            not isinstance(target, BluetoothTarget)
-            or target.classic_endpoint is None
-            or target.ble_endpoint is not None
-        ):
-            return resolved
-
-        anonymous_ble = [
-            endpoint
-            for endpoint in endpoints
-            if endpoint.transport == BluetoothEndpointTransport.BLE
-            and not (endpoint.name or "").strip()
-            and self._catalog.detect_device(endpoint.name or "", endpoint.address,
-                                            manufacturer_data=endpoint.manufacturer_data) is None
-        ]
-        if len(anonymous_ble) != 1:
-            return resolved
-
-        return [
-            device.with_transport_target(
-                BluetoothTarget(
-                    classic_endpoint=target.classic_endpoint,
-                    ble_endpoint=anonymous_ble[0],
-                    display_address=target.display_address,
-                    transport_badge="[classic+ble]",
-                )
-            )
-        ]
 
     def _single_transport_target(self, endpoint: BluetoothEndpoint) -> ResolvedBluetoothTarget:
         return ResolvedBluetoothTarget(
@@ -401,31 +325,6 @@ class BluetoothEndpointResolver:
             or ble_endpoint.address,
             transport_target=target,
         )
-
-    @staticmethod
-    def _endpoint_key(endpoint: BluetoothEndpoint) -> Tuple[BluetoothEndpointTransport, str]:
-        return (endpoint.transport, endpoint.address.lower())
-
-    @classmethod
-    def _target_endpoint_keys(cls, target: BluetoothTarget) -> set[Tuple[BluetoothEndpointTransport, str]]:
-        keys = set()
-        if target.classic_endpoint is not None:
-            keys.add(cls._endpoint_key(target.classic_endpoint))
-        if target.ble_endpoint is not None:
-            keys.add(cls._endpoint_key(target.ble_endpoint))
-        return keys
-
-    @classmethod
-    def _represented_endpoint_keys(
-        cls,
-        devices: Iterable[PrinterDevice],
-    ) -> set[Tuple[BluetoothEndpointTransport, str]]:
-        keys = set()
-        for device in devices:
-            target = device.transport_target
-            if isinstance(target, BluetoothTarget):
-                keys.update(cls._target_endpoint_keys(target))
-        return keys
 
     @staticmethod
     def _looks_like_address(value: str) -> bool:

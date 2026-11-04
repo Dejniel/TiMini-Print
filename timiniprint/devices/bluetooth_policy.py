@@ -83,6 +83,9 @@ def bluetooth_connection_plan(device: PrinterDevice) -> BluetoothConnectionPlan:
     if not isinstance(target, BluetoothTarget):
         raise RuntimeError("Bluetooth connection requires a PrinterDevice with BluetoothTarget")
     endpoints = tuple(target.ordered_endpoints(prefer_spp=device.profile.use_spp))
+    if target.ble_candidate is not None:
+        endpoints = ((*endpoints, target.ble_candidate) if device.profile.use_spp
+                     else (target.ble_candidate, *endpoints))
     pairing_hint = target.paired is False
     attempts = tuple(
         BluetoothConnectionAttempt(

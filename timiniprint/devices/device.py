@@ -33,12 +33,24 @@ class BluetoothEndpoint:
 
 @dataclass(frozen=True)
 class BluetoothTarget:
-    """Bluetooth transport target, optionally combining classic and BLE endpoints."""
+    """Grouped endpoints, optionally with an unconfirmed BLE connection candidate.
+
+    ``ble_candidate`` is a connection hint, not identity or advertisement evidence.
+    Raw target selection and probing use only the grouped endpoints.
+    """
 
     classic_endpoint: Optional[BluetoothEndpoint]
     ble_endpoint: Optional[BluetoothEndpoint]
     display_address: str
     transport_badge: str
+    ble_candidate: Optional[BluetoothEndpoint] = None
+
+    def __post_init__(self) -> None:
+        if self.ble_candidate is not None and (
+            self.classic_endpoint is None or self.ble_endpoint is not None
+            or self.ble_candidate.transport is not BluetoothEndpointTransport.BLE
+        ):
+            raise ValueError("A BLE candidate requires a Classic-only target and a BLE endpoint")
 
     @property
     def paired(self) -> Optional[bool]:
@@ -65,7 +77,7 @@ class BluetoothTarget:
         return ()
 
     def ordered_endpoints(self, *, prefer_spp: bool) -> list[BluetoothEndpoint]:
-        """Return endpoints in the preferred connection order for this device."""
+        """Order grouped endpoints only; connection plans may also use ble_candidate."""
         ordered = []
         transports = (
             (BluetoothEndpointTransport.CLASSIC, self.classic_endpoint),

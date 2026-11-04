@@ -212,7 +212,7 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         attempts = backend.connect_attempts.await_args.args[0]
         self.assertEqual([item.transport for item in attempts], [DeviceTransport.BLE, DeviceTransport.CLASSIC])
 
-    def test_ble_first_classic_match_can_use_single_anonymous_ble_endpoint(self) -> None:
+    def test_ble_first_profile_keeps_anonymous_ble_as_a_separate_connection_candidate(self) -> None:
         classic = DeviceInfo(name="MX10", address="A1:11:02:24:EF:A7", transport=DeviceTransport.CLASSIC)
         ble = DeviceInfo(name="", address="EE:2E:02:06:67:16", transport=DeviceTransport.BLE)
 
@@ -223,17 +223,22 @@ class BluetoothDiscoveryAndConnectorTests(unittest.TestCase):
         self.assertEqual(device.profile_key, "v5g_small_203")
         self.assertIsInstance(device.transport_target, BluetoothTarget)
         self.assertIsNotNone(device.transport_target.classic_endpoint)
-        self.assertIsNotNone(device.transport_target.ble_endpoint)
-        self.assertEqual(device.transport_badge, "[classic+ble]")
+        self.assertIsNone(device.transport_target.ble_endpoint)
+        self.assertEqual(device.transport_target.ble_candidate.address, ble.address)
+        self.assertEqual(device.transport_badge, "[classic]")
+        result = BluetoothScanResult(devices=devices, failures=[], raw_endpoints=[classic, ble])
+        manual, = self.discovery.manual_targets_for_display(result)
+        self.assertEqual(manual.transport_target.ble_endpoint.address, ble.address)
 
         backend = MagicMock()
+        backend.transport = DeviceTransport.BLE
         backend.connect_attempts = AsyncMock()
         with patch("timiniprint.transport.bluetooth.connector.SppBackend", return_value=backend):
             _run(BleakBluetoothConnector().connect(device))
 
         attempts = backend.connect_attempts.await_args.args[0]
         self.assertEqual([item.transport for item in attempts], [DeviceTransport.BLE, DeviceTransport.CLASSIC])
-        self.assertEqual(attempts[0].address, "EE:2E:02:06:67:16")
+        self.assertEqual(attempts[0].address, ble.address)
 
     def test_anonymous_ble_is_not_attached_to_spp_preferred_profile(self) -> None:
         classic = DeviceInfo(name="X6H-ABCD", address="AA:BB:CC:DD:EE:01", transport=DeviceTransport.CLASSIC)
@@ -263,7 +268,7 @@ class BluetoothEndpointResolverTests(unittest.TestCase):
         self.catalog = PrinterCatalog.load()
         self.resolver = BluetoothEndpointResolver(self.catalog)
 
-    def test_display_keeps_supported_candidate_missing_from_resolved_list(self) -> None:
+    def test_display_builds_supported_candidate_from_scan_endpoints(self) -> None:
         endpoint = BluetoothEndpoint(
             name="X6H-ABCD",
             address="AA:BB:CC:DD:EE:01",
@@ -276,7 +281,7 @@ class BluetoothEndpointResolverTests(unittest.TestCase):
             transport_target=target,
         )
 
-        devices = self.resolver.devices_for_display([], [endpoint])
+        devices = self.resolver.devices_for_display([endpoint])
 
         self.assertEqual(devices, [candidate])
 

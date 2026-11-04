@@ -76,7 +76,7 @@ def test_scan_choices_keep_both_source_labels(source_catalog):
     )]
     resolved = resolver.devices_from_endpoints(endpoints)
     assert resolved == []
-    choices = resolver.devices_for_display(resolved, endpoints)
+    choices = resolver.devices_for_display(endpoints)
     assert {device.model_key: source_catalog.origin_names(device.origin_ids) for device in choices} == {
         "app_model": ("Printing app",), "manual_model": ("Manufacturer ESC/POS",),
     }

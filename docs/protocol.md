@@ -159,6 +159,15 @@ async with await connect_printer(device, BleakBluetoothConnector()) as printer:
 
 This path handles file conversion, rendering, protocol job building, protocol steps, runtime waits, stream chunking, and disconnect cleanup. The caller does not manually pass stream parameters or runtime controllers.
 
+Custom Bluetooth integrations should use `bluetooth_connection_plan(device)`
+for connection attempts, rather than enumerate the target's grouped endpoints.
+For the single-printer BLE-first workaround, `BluetoothTarget.ble_candidate`
+can contain an anonymous, unconfirmed BLE alternative. The connection plan
+includes it according to the profile preference; the target's `ble_endpoint`,
+`ordered_endpoints(...)`, pairing state and advertisement evidence do not.
+The anonymous endpoint also remains independently selectable as a raw target.
+Printer config serialization preserves this distinction.
+
 ### Prepared sessions and low-level integration
 
 `connect_printer(...)` returns only after identification and preparation have

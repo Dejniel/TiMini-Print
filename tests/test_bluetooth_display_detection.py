@@ -39,8 +39,8 @@ def test_unnamed_endpoint_is_manual_even_when_its_display_address_matches_a_name
     ]
     resolver = BluetoothEndpointResolver(catalog)
     assert resolver.devices_from_endpoints(endpoints) == []
-    assert resolver.devices_for_display([], endpoints) == []
-    manual, = resolver.manual_targets_for_display([], endpoints)
+    assert resolver.devices_for_display(endpoints) == []
+    manual, = resolver.manual_targets_for_display(endpoints)
     assert manual.display_name == address
     assert manual.transport_target.display_address == address
     assert manual.transport_target.transport_badge == (
@@ -61,12 +61,13 @@ def test_actual_advertised_name_still_matches_and_merged_choices_are_not_duplica
     ]
     resolver = BluetoothEndpointResolver(catalog)
     automatic = resolver.devices_from_endpoints(endpoints)
-    device, = resolver.devices_for_display(automatic, endpoints)
+    device, = resolver.devices_for_display(endpoints)
+    assert automatic == [device]
     assert device.model_key == "ordinary"
     assert device.origin_ids == ("app.a", "app.b")
     assert device.display_name == name
     assert device.transport_badge == ("[classic+ble]" if layout == "both" else f"[{layout}]")
-    assert resolver.manual_targets_for_display(automatic, endpoints) == []
+    assert resolver.manual_targets_for_display(endpoints) == []
 
 
 @pytest.mark.parametrize("same_mac", [False, True])
@@ -83,7 +84,7 @@ def test_grouped_candidates_use_each_endpoints_own_name_mac_and_advertisement(
                           manufacturer_data=advertisement if advertised_transport is BluetoothEndpointTransport.BLE else ()),
     ]
     resolver = BluetoothEndpointResolver(catalog)
-    devices = resolver.devices_for_display([], endpoints)
+    devices = resolver.devices_for_display(endpoints)
     expected = {"mac_variant": ("app.a",), "advertised_variant": ("app.b",)}
     if not same_mac:
         expected["ordinary"] = ("app.a", "app.b")
@@ -95,4 +96,4 @@ def test_grouped_candidates_use_each_endpoints_own_name_mac_and_advertisement(
         assert device.transport_badge == "[classic+ble]"
         assert device.transport_target.classic_endpoint.name == "E200"
         assert device.transport_target.ble_endpoint.name == "e200"
-    assert resolver.manual_targets_for_display([], endpoints) == []
+    assert resolver.manual_targets_for_display(endpoints) == []

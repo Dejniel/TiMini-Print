@@ -34,7 +34,6 @@ class BluetoothDiscovery:
         catalog: PrinterCatalog,
         reporter: reporting.Reporter | None = None,
     ) -> None:
-        self._catalog = catalog
         self._resolver = BluetoothEndpointResolver(catalog)
         self._policy = BluetoothTransportPolicy(catalog)
         self._reporter = reporter
@@ -53,12 +52,13 @@ class BluetoothDiscovery:
         )
         if include_classic and include_ble:
             if self._policy.should_retry_ble_scan(self._endpoints_from_scan(devices)):
-                ble_devices, _failures = await SppBackend.scan_with_failures(
+                ble_devices, ble_failures = await SppBackend.scan_with_failures(
                     timeout=timeout,
                     include_classic=False,
                     include_ble=True,
                 )
                 devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
+                failures = list(failures) + list(ble_failures)
         return devices, failures
 
     def _scan_endpoints_blocking(
@@ -75,12 +75,13 @@ class BluetoothDiscovery:
         )
         if include_classic and include_ble:
             if self._policy.should_retry_ble_scan(self._endpoints_from_scan(devices)):
-                ble_devices, _failures = SppBackend.scan_with_failures_blocking(
+                ble_devices, ble_failures = SppBackend.scan_with_failures_blocking(
                     timeout=timeout,
                     include_classic=False,
                     include_ble=True,
                 )
                 devices = DeviceInfo.dedupe(list(devices) + list(ble_devices))
+                failures = list(failures) + list(ble_failures)
         return devices, failures
 
     async def scan_report(
@@ -137,16 +138,14 @@ class BluetoothDiscovery:
         return self._policy.devices_from_endpoints(self._endpoints_from_scan(devices))
 
     def devices_for_display(self, result: BluetoothScanResult) -> List[PrinterDevice]:
-        """Return scan devices plus manual source-app candidates for UI/CLI lists."""
+        """Build all catalog choices from the report's original scan endpoints."""
         return self._resolver.devices_for_display(
-            result.devices,
             self._endpoints_from_scan(result.raw_endpoints),
         )
 
     def manual_targets_for_display(self, result: BluetoothScanResult) -> List[ResolvedBluetoothTarget]:
-        """Return scanned raw targets that need a manual model choice."""
+        """Return targets with no catalog match from the report's raw endpoints."""
         return self._resolver.manual_targets_for_display(
-            result.devices,
             self._endpoints_from_scan(result.raw_endpoints),
         )
 
@@ -258,6 +257,27 @@ class BluetoothDiscovery:
                 failures=len(failure_list),
             ),
         )
+        for device in resolved_list:
+            target = device.transport_target
+            if isinstance(target, BluetoothTarget) and target.ble_candidate is not None:
+                self._reporter.debug(
+                    short="Discovery",
+                    detail=reporting.format_kv(
+                        "Discovery connection candidate",
+                        transport="ble",
+                        reason="single_anonymous_ble_for_ble_first_profile",
+                        heuristic=True,
+                        profile=device.profile_key,
+                        model=device.model_key,
+                    ),
+                )
+        catalog_choices = self._resolver.devices_for_display(self._endpoints_from_scan(endpoint_list))
+        choices_by_endpoint = {}
+        for choice in catalog_choices:
+            for endpoint in (choice.transport_target.classic_endpoint, choice.transport_target.ble_endpoint):
+                if endpoint is not None:
+                    key = (endpoint.transport.value, endpoint.address.lower())
+                    choices_by_endpoint.setdefault(key, []).append(choice)
         diagnostic_endpoints = [
             endpoint
             for item in self._resolver.transport_targets_from_endpoints(self._endpoints_from_scan(endpoint_list))
@@ -273,10 +293,10 @@ class BluetoothDiscovery:
                     short="Discovery",
                     detail=reporting.format_kv(
                         "Discovery attached",
-                        name=endpoint.name or "<unknown>",
-                        address=endpoint.address or "<unknown>",
+                        name=reporting.device_metadata_text(endpoint.name) or "<unknown>",
+                        address=reporting.device_metadata_text(endpoint.address) or "<unknown>",
                         transport=endpoint.transport.value,
-                        reason="single_ble_endpoint_for_ble_first_profile",
+                        reason="same_mac",
                         profile=detected.profile_key,
                         family=detected.protocol_family.value,
                         model=detected.model_key,
@@ -284,15 +304,13 @@ class BluetoothDiscovery:
                 )
                 continue
             if detected is None:
-                matches = self._catalog.detect_model(
-                    endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
-                )
-                if len(matches) > 1:
+                choices = choices_by_endpoint.get((endpoint.transport.value, endpoint.address.lower()), [])
+                if len(choices) > 1:
                     reason = "ambiguous_model"
-                    candidates = ",".join(match.model.model_key for match in matches)
-                elif matches:
+                    candidates = ",".join(choice.model_key for choice in choices)
+                elif choices:
                     reason = "unresolved_endpoint"
-                    candidates = matches[0].model.model_key
+                    candidates = choices[0].model_key
                 else:
                     reason = "no_supported_model"
                     candidates = ""
@@ -300,8 +318,8 @@ class BluetoothDiscovery:
                     short="Discovery",
                     detail=reporting.format_kv(
                         "Discovery ignored",
-                        name=endpoint.name or "<unknown>",
-                        address=endpoint.address or "<unknown>",
+                        name=reporting.device_metadata_text(endpoint.name) or "<unknown>",
+                        address=reporting.device_metadata_text(endpoint.address) or "<unknown>",
                         transport=endpoint.transport.value,
                         reason=reason,
                         candidates=candidates,
@@ -312,8 +330,8 @@ class BluetoothDiscovery:
                 short="Discovery",
                 detail=reporting.format_kv(
                     "Discovery matched",
-                    name=endpoint.name or "<unknown>",
-                    address=endpoint.address or "<unknown>",
+                    name=reporting.device_metadata_text(endpoint.name) or "<unknown>",
+                    address=reporting.device_metadata_text(endpoint.address) or "<unknown>",
                     transport=endpoint.transport.value,
                     profile=detected.profile_key,
                     family=detected.protocol_family.value,

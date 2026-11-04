@@ -60,7 +60,7 @@ def test_scan_data_survives_dedupe_resolution_and_display_candidates():
     assert target.ble_endpoint.manufacturer_data == endpoint.manufacturer_data
     raw = BluetoothEndpoint(endpoint.name, endpoint.address, transport=BluetoothEndpointTransport.BLE,
                             manufacturer_data=endpoint.manufacturer_data)
-    displayed = BluetoothEndpointResolver(catalog).devices_for_display([device], [raw])
+    displayed = BluetoothEndpointResolver(catalog).devices_for_display([raw])
     assert len(displayed) == 1
     assert displayed[0].model_key == device.model_key
 
@@ -71,13 +71,17 @@ def test_classic_and_ble_same_mac_share_evidence_without_duplicate_profiles():
     ble = BluetoothEndpoint("MX03", classic.address, transport=BluetoothEndpointTransport.BLE,
                             manufacturer_data=(bytes(4) + b"\x59",))
     devices = resolver.devices_from_endpoints([classic, ble])
-    displayed = resolver.devices_for_display(devices, [classic, ble])
+    displayed = resolver.devices_for_display([classic, ble])
+    assert devices == displayed
     assert len(displayed) == 1
     assert displayed[0].protocol_family is ProtocolFamily.V5X
     assert displayed[0].transport_badge == "[classic+ble]"
     unrelated = BluetoothEndpoint("MX03", "AA:BB:CC:DD:EE:11", transport=BluetoothEndpointTransport.CLASSIC)
     other_devices = resolver.devices_from_endpoints([unrelated, ble])
-    assert {device.protocol_family for device in other_devices} == {ProtocolFamily.V5G, ProtocolFamily.V5X}
+    assert other_devices == []
+    choices = resolver.devices_for_display([unrelated, ble])
+    assert {device.protocol_family for device in choices} == {ProtocolFamily.V5G, ProtocolFamily.V5X}
+    assert all(device.transport_badge == "[classic+ble]" for device in choices)
 
 
 @pytest.fixture
@@ -117,10 +121,8 @@ def test_display_choices_keep_source_and_advertisement_context_for_every_endpoin
     resolver = BluetoothEndpointResolver(catalog)
     automatic = resolver.devices_from_endpoints(endpoints)
     assert all(device.address != address for device in automatic)
-    displayed = resolver.devices_for_display(automatic, endpoints)
-    expected_badges = ("[classic]", "[ble]") if layout == "multiple_ble" else (
-        "[classic+ble]" if layout == "both" else f"[{layout}]",
-    )
+    displayed = resolver.devices_for_display(endpoints)
+    expected_badges = ("[classic+ble]",) if layout in ("both", "multiple_ble") else (f"[{layout}]",)
     for badge in expected_badges:
         choices = [device for device in displayed if device.address == address and device.transport_badge == badge]
         assert {device.model_key: device.origin_ids for device in choices} == {
@@ -129,6 +131,9 @@ def test_display_choices_keep_source_and_advertisement_context_for_every_endpoin
         assert {device.protocol_family for device in choices} == {ProtocolFamily.V5G, ProtocolFamily.V5X}
         for device in choices:
             assert device.transport_target.manufacturer_data == advertisement
+            if badge == "[classic+ble]":
+                assert device.transport_target.classic_endpoint.address == address
+                assert device.transport_target.ble_endpoint.address == address
     if layout == "multiple_ble":
         other = [device for device in displayed if device.address != address]
         assert len(other) == 1
@@ -154,16 +159,14 @@ def test_scan_logs_use_the_same_advertisement_evidence_as_detection(
     scan = "scan_with_failures_blocking" if blocking else "scan_with_failures"
     with patch(f"timiniprint.transport.bluetooth.discovery.SppBackend.{scan}", return_value=(endpoints, [])):
         result = discovery.scan_report_blocking() if blocking else asyncio.run(discovery.scan_report())
-    assert len(result.devices) == (0 if same_mac else 1)
+    assert result.devices == []
     ignored = [m.detail for m in sink.messages if m.detail.startswith("Discovery ignored")]
-    assert len(ignored) == (2 if same_mac else 1)
+    assert len(ignored) == 2
     for log in ignored:
         assert "reason=ambiguous_model" in log
         assert "ordinary" in log and "advertised" in log
     matched = [m.detail for m in sink.messages if m.detail.startswith("Discovery matched")]
-    assert len(matched) == (0 if same_mac else 1)
-    if matched:
-        assert "model=ordinary" in matched[0]
+    assert matched == []
 
 
 @pytest.mark.parametrize("blocking", [False, True])
@@ -224,21 +227,34 @@ def test_scan_logs_why_unresolved_endpoints_were_ignored(diagnostic_catalog, nam
         assert manual[0].transport_target.ble_endpoint.address == endpoint.address
 
 
-def test_scan_logs_attached_anonymous_ble_with_the_resolved_profile(diagnostic_catalog):
+@pytest.mark.parametrize("same_mac", [False, True])
+def test_scan_logs_anonymous_ble_pairing_only_with_matching_mac(diagnostic_catalog, same_mac):
     reporter, sink = build_capture_reporter()
     discovery = BluetoothDiscovery(diagnostic_catalog, reporter)
     endpoints = [DeviceInfo("Known", "AA:BB:CC:DD:EE:00", transport=DeviceTransport.CLASSIC),
-                 DeviceInfo("", "BLE-UUID", transport=DeviceTransport.BLE)]
+                 DeviceInfo("", "AA:BB:CC:DD:EE:00" if same_mac else "BLE-UUID", transport=DeviceTransport.BLE)]
     with patch("timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures_blocking",
                return_value=(endpoints, [])):
         result = discovery.scan_report_blocking()
     assert len(result.devices) == 1
-    assert result.devices[0].transport_badge == "[classic+ble]"
+    assert result.devices[0].transport_badge == ("[classic+ble]" if same_mac else "[classic]")
     logs = [message.detail for message in sink.messages if message.detail.startswith("Discovery attached")]
-    assert len(logs) == 1
-    assert "reason=single_ble_endpoint_for_ble_first_profile" in logs[0]
-    assert "profile=v5x" in logs[0]
-    assert "address=BLE-UUID" in logs[0]
+    assert len(logs) == int(same_mac)
+    if same_mac:
+        assert "reason=same_mac" in logs[0]
+        assert "profile=v5x" in logs[0]
+        assert discovery.manual_targets_for_display(result) == []
+    else:
+        assert result.devices[0].transport_target.ble_candidate.address == "BLE-UUID"
+        manual, = discovery.manual_targets_for_display(result)
+        assert manual.transport_target.ble_endpoint.address == "BLE-UUID"
+        ignored = [m.detail for m in sink.messages if m.detail.startswith("Discovery ignored")]
+        assert len(ignored) == 1
+        assert "reason=no_supported_model" in ignored[0]
+        candidates = [m.detail for m in sink.messages if m.detail.startswith("Discovery connection candidate")]
+        assert len(candidates) == 1
+        assert "heuristic=true" in candidates[0]
+        assert "reason=single_anonymous_ble_for_ble_first_profile" in candidates[0]
 
 
 def test_bleak_scanner_preserves_company_identifier_and_all_manufacturer_entries():
