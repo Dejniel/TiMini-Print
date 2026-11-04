@@ -11,7 +11,7 @@ from .device import (
     BluetoothTarget,
     PrinterDevice,
 )
-from .profiles import DetectionNormalizer, WhitespaceMode
+from .profiles import DetectionNormalizer, ModelMatch, WhitespaceMode
 
 _ADDRESS_RE = re.compile(r"^([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}$")
 _UUID_RE = re.compile(r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$")
@@ -19,7 +19,11 @@ _UUID_RE = re.compile(r"^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f
 
 @dataclass(frozen=True)
 class ResolvedBluetoothTarget:
-    """One raw Bluetooth target resolved without catalog model matching."""
+    """One raw Bluetooth target resolved without catalog model matching.
+
+    ``display_name`` is presentation only and may fall back to an address.
+    Catalog detection uses the original names stored on the endpoints.
+    """
 
     display_name: str
     transport_target: BluetoothTarget
@@ -70,15 +74,7 @@ class BluetoothEndpointResolver:
             for device in devices
         }
         for item in self.transport_targets_from_endpoints(endpoints):
-            candidates = self._catalog.detection_devices(
-                item.display_name,
-                item.transport_target.display_address,
-                display_name=item.display_name,
-                transport_target=item.transport_target,
-            )
-            if not candidates:
-                continue
-            for candidate in candidates:
+            for candidate in self._detection_devices_for_target(item):
                 key = (candidate.model_key, candidate.address, candidate.transport_badge)
                 if key in seen:
                     continue
@@ -98,16 +94,34 @@ class BluetoothEndpointResolver:
             target_keys = self._target_endpoint_keys(item.transport_target)
             if target_keys and target_keys.issubset(represented):
                 continue
-            candidates = self._catalog.detection_devices(
-                item.display_name,
-                item.transport_target.display_address,
-                display_name=item.display_name,
-                transport_target=item.transport_target,
-            )
-            if candidates:
+            if self._detection_devices_for_target(item):
                 continue
             manual_targets.append(item)
         return self.sort_transport_targets(manual_targets)
+
+    def _detection_devices_for_target(self, item: ResolvedBluetoothTarget) -> List[PrinterDevice]:
+        """Match endpoint identities, never the target's display label."""
+        target = item.transport_target
+        matches: Dict[str, ModelMatch] = {}
+        for endpoint in (target.classic_endpoint, target.ble_endpoint):
+            if endpoint is None:
+                continue
+            for match in self._catalog.detect_model(
+                endpoint.name or "", endpoint.address, manufacturer_data=endpoint.manufacturer_data,
+            ):
+                previous = matches.get(match.model.model_key)
+                if previous is not None:
+                    match = replace(match, origin_ids=tuple(
+                        origin for origin in match.model.origin_ids
+                        if origin in previous.origin_ids or origin in match.origin_ids
+                    ))
+                matches[match.model.model_key] = match
+        return [
+            self._catalog.device_from_match(
+                match, display_name=item.display_name, transport_target=target,
+            )
+            for match in matches.values()
+        ]
 
     def transport_targets_from_endpoints(
         self,

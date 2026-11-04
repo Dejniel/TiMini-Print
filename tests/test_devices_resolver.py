@@ -263,25 +263,20 @@ class BluetoothEndpointResolverTests(unittest.TestCase):
         self.catalog = PrinterCatalog.load()
         self.resolver = BluetoothEndpointResolver(self.catalog)
 
-    def test_display_keeps_single_manual_candidate_not_resolved_automatically(self) -> None:
+    def test_display_keeps_supported_candidate_missing_from_resolved_list(self) -> None:
         endpoint = BluetoothEndpoint(
-            name="Ambiguous Printer",
+            name="X6H-ABCD",
             address="AA:BB:CC:DD:EE:01",
             transport=BluetoothEndpointTransport.BLE,
         )
         target = self.resolver.transport_target_from_endpoint(endpoint)
         candidate = self.catalog.device_from_model(
-            "x6",
+            "ewtto_et_z0504",
             display_name=endpoint.name,
             transport_target=target,
         )
 
-        with patch.object(
-            self.catalog,
-            "detection_devices",
-            return_value=(candidate,),
-        ):
-            devices = self.resolver.devices_for_display([], [endpoint])
+        devices = self.resolver.devices_for_display([], [endpoint])
 
         self.assertEqual(devices, [candidate])
 
