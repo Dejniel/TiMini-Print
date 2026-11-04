@@ -115,7 +115,8 @@ def parse_printer_config(
     if printer_config.get("model_key") and not set(origin_ids).issubset(base_device.origin_ids):
         raise RuntimeError("Printer config device.origin_ids must belong to the selected model")
     preparation_recipe = model_from_json(
-        Optional[str], device_entry.get("preparation_recipe"), path="$.device.preparation_recipe",
+        Optional[str], device_entry.get("preparation_recipe", base_device.preparation_recipe),
+        path="$.device.preparation_recipe",
     )
     if preparation_recipe is not None and (not preparation_recipe or preparation_recipe != preparation_recipe.strip()):
         raise ValueError("$.device.preparation_recipe must be a nonblank recipe ID")

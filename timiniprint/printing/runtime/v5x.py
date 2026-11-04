@@ -72,7 +72,9 @@ class V5XRuntimeController(RuntimeController):
     _START_ACCEPT_TIMEOUT_S: float = 60.0
     _BUSY_RETRY_DELAY_S: float = 0.4
 
-    def __init__(self) -> None:
+    def __init__(self, *, query_connect_info: bool = True) -> None:
+        """Configure optional startup B1; job waits and notifications stay active."""
+        self._query_connect_info = query_connect_info
         self._state = _V5XSessionState()
 
     def debug_snapshot(self) -> dict[str, object]:
@@ -109,6 +111,8 @@ class V5XRuntimeController(RuntimeController):
 
     async def initialize_connection(self, session, *, mtu_size: int, timeout: float) -> None:
         _ = mtu_size
+        if not self._query_connect_info:
+            return
         self._state.await_connect_info = session.can_wait_for_notification()
         await asyncio.sleep(0.2)
         sent = await session.send_control_packet(V5X_CONNECT_INIT_PACKET, timeout=timeout)

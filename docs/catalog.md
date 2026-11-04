@@ -23,9 +23,16 @@ A supported model entry represents a source-backed printer model that TiMini can
 - `detections`: Bluetooth matching rules and optional aliases associated with each rule
 - `origin_ids`: required, non-empty list of source IDs
 - `profile_key`: shared printable profile recipe
+- optional `preparation_recipe`: session-preparation policy, independent of wire encoding
 - optional `protocol_override`, `image_pipeline_override`, and runtime override fields
 
 Several model entries may point to the same profile when they use the same protocol recipe. If two sources use the same advertised Bluetooth name for different protocols or values, keep both variants explicit and let automatic detection stay conservative.
+
+`preparation_recipe` uses the same policy contract as `PrinterDevice` and
+saved configurations. It applies to both detected and manually selected models.
+The printing layer validates the policy against the selected protocol before
+opening a connection; the catalog does not execute it or interpret printer
+commands. Omitted policies keep the family's normal preparation.
 
 Marketing names never trigger automatic Bluetooth detection. They are public catalog names, so they are shown in model inventories and can be used for explicit CLI/GUI selection.
 

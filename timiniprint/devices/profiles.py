@@ -697,7 +697,11 @@ class ModelDetection:
 
 @dataclass(frozen=True)
 class PrinterModel:
-    """A printable catalog model, its source attribution and profile overrides."""
+    """A printable catalog model, its source attribution and profile overrides.
+
+    ``preparation_recipe`` selects a printing-layer session policy without
+    changing the wire family or raster codec. It does not perform I/O here.
+    """
 
     model_key: str
     detections: Tuple[ModelDetection, ...]
@@ -709,10 +713,17 @@ class PrinterModel:
     protocol_override: Optional[ProtocolOverride] = None
     image_pipeline: Optional[ImagePipelineConfig] = None
     profile_runtime_preset_key: Optional[str] = None
+    preparation_recipe: Optional[str] = None
 
     def __post_init__(self) -> None:
         if not self.model_key:
             raise ValueError("Printer model requires model_key")
+        if self.preparation_recipe is not None and (
+            not isinstance(self.preparation_recipe, str)
+            or not self.preparation_recipe
+            or self.preparation_recipe != self.preparation_recipe.strip()
+        ):
+            raise ValueError("Printer model preparation_recipe must be a nonblank recipe ID")
         origin_ids = tuple(self.origin_ids)
         if not origin_ids or any(not value or value != value.strip() for value in origin_ids):
             raise ValueError(f"Printer model {self.model_key} requires non-blank origin IDs")

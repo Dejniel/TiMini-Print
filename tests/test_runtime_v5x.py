@@ -570,6 +570,20 @@ class V5XRuntimeControllerTests(unittest.IsolatedAsyncioTestCase):
                     if reply is not None:
                         self.assertTrue(any("no readable firmware payload" in line for line in session.debug))
 
+    async def test_optional_startup_query_can_be_omitted_without_disabling_notifications(self) -> None:
+        controller = V5XRuntimeController(query_connect_info=False)
+        session = _ConnectInfoSession(controller)
+        await controller.initialize_connection(session, mtu_size=123, timeout=0.1)
+        await controller.after_initialize(session, timeout=0.1)
+        self.assertEqual(session.events, [])
+        self.assertEqual(session.waits, [])
+        self.assertFalse(controller.debug_snapshot()["connect_info_received"])
+        self.assertFalse(controller.debug_snapshot()["await_connect_info"])
+
+        controller.handle_notification(session, make_packet(0xB1, b"FW1.0.22\x00", ProtocolFamily.V5X))
+        self.assertEqual(controller.debug_snapshot()["firmware_version"], "FW1.0.22")
+        self.assertTrue(controller.debug_snapshot()["connect_info_received"])
+
     async def test_readable_connect_info_reports_ready_before_or_during_wait(self) -> None:
         replies = (
             (make_packet(0xB1, b"FW1.0.22\x00", ProtocolFamily.V5X), "FW1.0.22"),

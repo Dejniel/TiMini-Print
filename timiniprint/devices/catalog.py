@@ -480,6 +480,7 @@ class PrinterCatalog:
             runtime_settings=self._runtime_settings_for_model(model, profile),
             model_key=model.model_key,
             origin_ids=match.origin_ids,
+            preparation_recipe=model.preparation_recipe,
             transport_target=transport_target,
         )
 
@@ -699,6 +700,7 @@ class PrinterCatalog:
             runtime_settings=self._runtime_settings_for_model(model, profile),
             model_key=model.model_key,
             origin_ids=model.origin_ids,
+            preparation_recipe=model.preparation_recipe,
             transport_target=transport_target,
         )
 
