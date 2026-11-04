@@ -80,6 +80,20 @@ class RenderingRendererTests(unittest.TestCase):
         self.assertEqual(preview.mode, "L")
         self.assertEqual(list(preview.get_flattened_data()), [0, 0, 255, 255])
 
+    def test_gray4_preserves_the_high_nibble_at_every_quantization_boundary(self) -> None:
+        image = Image.new("L", (256, 1))
+        image.putdata(range(256))
+        expected = [15 - value // 16 for value in range(256)]
+        direct = self.renderer.encode(image, PixelFormat.GRAY4)
+        prepared = self.renderer.raster_set(
+            image, (PixelFormat.GRAY4,), dither_mode=DitherMode.NONE,
+        ).require(PixelFormat.GRAY4)
+        self.assertEqual(list(direct.pixels), expected)
+        self.assertEqual(list(prepared.pixels), expected)
+
+        preview = self.renderer.preview_image(image, PixelFormat.GRAY4, dither_mode=DitherMode.NONE)
+        self.assertEqual(list(preview.get_flattened_data()), [(value // 16) * 17 for value in range(256)])
+
     def test_preview_png_expands_gray4_visual_range(self) -> None:
         img = Image.new("L", (2, 1))
         img.putdata([0, 255])
