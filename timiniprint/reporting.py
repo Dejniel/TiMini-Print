@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import IntEnum
+import re
 import sys
 from typing import Any, Dict, Iterable, Optional
 
@@ -115,6 +116,55 @@ def summarize_detail(detail: str) -> str:
 def format_kv(label: str, **fields: Any) -> str:
     parts = [f"{key}={_format_field_value(value)}" for key, value in fields.items()]
     return f"{label}: " + " ".join(parts)
+
+
+_METADATA_ADDRESS = re.compile(
+    r"(?<![0-9a-f])(?:[0-9a-f]{2}[:-]){5}[0-9a-f]{2}(?![0-9a-f])"
+    r"|(?<![0-9a-f])[0-9a-f]{12}(?![0-9a-f])"
+    r"|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", re.IGNORECASE,
+)
+_MAX_DEVICE_METADATA_CHARS = 96
+_MAX_EXCEPTION_CAUSES = 4
+_METADATA_URI = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
+_METADATA_DOCUMENT_NAME = re.compile(
+    r"\.(?:png|jpe?g|gif|bmp|webp|heic|tiff?|pdf|txt|svg|docx?|xlsx?|pptx?)\b", re.IGNORECASE,
+)
+
+
+def device_metadata_text(value: str) -> str | None:
+    """Format a known device metadata field, masking Bluetooth identifiers.
+
+    Only use for decoded model/manufacturer/revision/serial fields, never raw
+    replies or exception messages. Reject document names, paths, URIs, control characters and
+    oversized values instead of publishing their prefix. This is not a general
+    content anonymizer.
+    """
+    if not isinstance(value, str) or not value.isprintable() or "/" in value or "\\" in value:
+        return None
+    text = _METADATA_ADDRESS.sub("<address>", value).strip()
+    if not text or len(text) > _MAX_DEVICE_METADATA_CHARS or _METADATA_URI.match(text) or _METADATA_DOCUMENT_NAME.search(text):
+        return None
+    return text
+
+
+def exception_summary(error: BaseException) -> str:
+    """Describe exception types and numeric OS codes, never messages or args.
+
+    Native error text, filenames and attached protocol bytes belong in trace.
+    Follow a bounded cause chain so a wrapper does not hide the OS failure.
+    """
+    parts = []
+    seen = set()
+    while error is not None and id(error) not in seen and len(parts) < _MAX_EXCEPTION_CAUSES:
+        seen.add(id(error))
+        codes = []
+        for key in ("errno", "winerror"):
+            value = getattr(error, key, None)
+            if type(value) is int:
+                codes.append(f"{key}={value}")
+        parts.append(type(error).__name__ + (f"({','.join(codes)})" if codes else ""))
+        error = error.__cause__ or (None if error.__suppress_context__ else error.__context__)
+    return " <- ".join(parts)
 
 
 def _format_field_value(value: Any) -> str:

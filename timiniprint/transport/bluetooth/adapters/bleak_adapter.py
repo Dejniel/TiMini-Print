@@ -130,7 +130,8 @@ class _BleakSocket:
         except ImportError as exc:
             raise _missing_bleak_error() from exc
 
-        self._reporter.debug(short="BLE connect", detail=f"Resolving {address}")
+        self._reporter.debug(short="BLE connect", detail="Resolving BLE endpoint")
+        self._reporter.trace(short="BLE connect endpoint", detail=f"address={address}")
         self._client = BleakClient(
             await self._resolve_client_target(address),
             timeout=self._timeout,

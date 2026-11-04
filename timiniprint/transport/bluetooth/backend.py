@@ -89,7 +89,8 @@ class SppBackend:
             try:
                 await self.disconnect()
             except (Exception, asyncio.CancelledError) as exc:
-                self._reporter.warning(short="Connection cleanup failed", detail=str(exc))
+                self._reporter.warning(short="Connection cleanup failed", detail=reporting.exception_summary(exc))
+                self._reporter.trace(short="Connection cleanup exception", exc=exc)
                 raise error from ConnectionCleanupError(exc)
             raise
 
@@ -264,11 +265,14 @@ class SppBackend:
             detail=(
                 "Bluetooth connect plan: "
                 + ", ".join(
-                    f"{item.transport.value}({item.address})"
+                    item.transport.value
                     for item in unique_attempts
                 )
             ),
         )
+        self._reporter.trace(short="Bluetooth endpoints", detail=", ".join(
+            f"{item.transport.value}({item.address})" for item in unique_attempts
+        ))
         errors: List[Tuple[DeviceInfo, Exception]] = []
 
         for index, candidate in enumerate(unique_attempts):
@@ -280,7 +284,7 @@ class SppBackend:
             ):
                 refreshed = _refresh_ble_attempt_macos_workaround(candidate, self._reporter)
                 if refreshed.address != candidate.address:
-                    self._reporter.debug(
+                    self._reporter.trace(
                         short="Bluetooth",
                         detail=(
                             "Refreshed BLE endpoint before fallback: "
@@ -293,7 +297,7 @@ class SppBackend:
                 short="Bluetooth",
                 detail=(
                     f"Bluetooth attempt {index + 1}/{len(unique_attempts)}: "
-                    f"transport={candidate.transport.value} address={candidate.address}"
+                    f"transport={candidate.transport.value}"
                 ),
             )
             try:
@@ -302,7 +306,7 @@ class SppBackend:
                     short="Bluetooth",
                     detail=(
                         f"Bluetooth attempt {index + 1} succeeded: "
-                        f"transport={candidate.transport.value} address={candidate.address}"
+                        f"transport={candidate.transport.value}"
                     ),
                 )
                 return
@@ -315,9 +319,10 @@ class SppBackend:
                     short="Bluetooth",
                     detail=(
                         f"Bluetooth attempt {index + 1} failed: "
-                        f"transport={candidate.transport.value} address={candidate.address} error={exc}"
+                        f"transport={candidate.transport.value} error={reporting.exception_summary(exc)}"
                     ),
                 )
+                self._reporter.trace(short="Bluetooth attempt exception", exc=exc)
                 if index < len(unique_attempts) - 1:
                     next_transport = unique_attempts[index + 1].transport
                     if IS_MACOS and candidate.transport == DeviceTransport.CLASSIC and next_transport == DeviceTransport.BLE:
@@ -332,8 +337,7 @@ class SppBackend:
                     self._reporter.warning(
                         detail=(
                             f"{_transport_label(candidate.transport)} Bluetooth connection failed, "
-                            f"retrying over {_transport_label(next_transport)} "
-                            f"(device: {candidate.name or candidate.address})."
+                            f"retrying over {_transport_label(next_transport)}."
                         ),
                     )
 
@@ -354,9 +358,10 @@ class SppBackend:
             short="Bluetooth",
             detail=(
                 f"Connecting using {device.transport.value}: "
-                f"address={device.address} pairing_hint={pairing_hint}"
+                f"pairing_hint={pairing_hint}"
             ),
         )
+        self._reporter.trace(short="Bluetooth endpoint", detail=f"address={device.address}")
         adapter = _select_adapter(device.transport)
         if adapter is None:
             raise RuntimeError(f"{device.transport.value} Bluetooth is not supported on this platform")
@@ -365,14 +370,15 @@ class SppBackend:
             if pairing_hint and IS_WINDOWS:
                 self._reporter.status(reporting.STATUS_PAIRING_CONFIRM)
             adapter.ensure_paired(device.address, pairing_hint)
-            self._reporter.debug(short="Bluetooth", detail=f"Pairing check done for {device.address}")
+            self._reporter.debug(short="Bluetooth", detail="Pairing check done")
         except Exception as exc:
             pair_error = exc
-            self._reporter.debug(short="Bluetooth", detail=f"Pairing check failed for {device.address}: {exc}")
+            self._reporter.debug(short="Bluetooth", detail=f"Pairing check failed: {reporting.exception_summary(exc)}")
+            self._reporter.trace(short="Bluetooth pairing exception", exc=exc)
         channels = _resolve_rfcomm_channels(adapter, device.address)
         self._reporter.debug(
             short="Bluetooth",
-            detail=f"RFCOMM channels for {device.transport.value} {device.address}: {channels}",
+            detail=f"RFCOMM channels for {device.transport.value}: {channels}",
         )
         last_error = None
         for channel in channels:
@@ -380,7 +386,7 @@ class SppBackend:
             try:
                 self._reporter.debug(
                     short="Bluetooth",
-                    detail=f"Trying RFCOMM channel {channel} for {device.address}",
+                    detail=f"Trying RFCOMM channel {channel}",
                 )
                 sock = adapter.create_socket(
                     pairing_hint,
@@ -400,7 +406,7 @@ class SppBackend:
                 self._reporter.debug(
                     short="Bluetooth",
                     detail=(
-                        f"Connected via {device.transport.value} {device.address} "
+                        f"Connected via {device.transport.value} "
                         f"on RFCOMM channel {channel}"
                     ),
                 )
@@ -409,12 +415,14 @@ class SppBackend:
                 last_error = exc
                 self._reporter.debug(
                     short="Bluetooth",
-                    detail=f"RFCOMM channel {channel} failed for {device.address}: {exc}",
+                    detail=f"RFCOMM channel {channel} failed: {reporting.exception_summary(exc)}",
                 )
+                self._reporter.trace(short="RFCOMM exception", exc=exc)
                 try:
                     self._disconnect_blocking()
                 except Exception as cleanup_error:
-                    self._reporter.warning(short="Connection cleanup failed", detail=str(cleanup_error))
+                    self._reporter.warning(short="Connection cleanup failed", detail=reporting.exception_summary(cleanup_error))
+                    self._reporter.trace(short="Connection cleanup exception", exc=cleanup_error)
                     raise exc from ConnectionCleanupError(cleanup_error)
         if last_error and _is_timeout_error(last_error):
             if pair_error:

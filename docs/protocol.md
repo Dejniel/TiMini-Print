@@ -39,6 +39,15 @@ support reports. The CLI defaults to warnings/errors; `-v` enables debug and
 These levels are not a general anonymization mechanism for arbitrary error
 messages or device metadata.
 
+Decoded BLE Device Information stays available in debug, without the endpoint
+address. Bluetooth identifiers embedded in its model/revision strings are
+masked; unreadable fields retain a failure category rather than native error
+text. Connection diagnostics keep transport/channel decisions, exception types
+and numeric OS error codes. Full metadata snapshots and native exception text
+remain trace-only. `reporting.exception_summary()` and
+`reporting.device_metadata_text()` format these explicitly selected diagnostics;
+they do not make arbitrary buffers or document data safe to log.
+
 `DocumentRenderer` exposes file read/decode failures as
 `rendering.DocumentReadError`, whose text contains a document kind and failure
 category, not the source filename or native decoder message. Original errors

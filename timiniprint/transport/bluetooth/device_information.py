@@ -66,7 +66,21 @@ class BleDeviceInformation:
         }
 
     def log(self, reporter: reporting.Reporter) -> None:
-        reporter.debug(short="BLE device information", detail=json.dumps(self.as_dict()))
+        values = {}
+        errors = {}
+        for name in DEVICE_INFORMATION_CHARACTERISTICS:
+            value = reporting.device_metadata_text(self.values.get(name, ""))
+            if value is not None:
+                values[name] = value
+            if name in self.errors:
+                error = self.errors[name]
+                errors[name] = error if error in ("timeout", "not_readable", "invalid_utf8") else "read_failed"
+        reporter.debug(short="BLE device information", detail=json.dumps({
+            "service_present": self.service_present, "values": values,
+            "available_fields": sorted(name for name in DEVICE_INFORMATION_CHARACTERISTICS if name in self.values),
+            "errors": errors,
+        }))
+        reporter.trace(short="BLE device information raw", detail=json.dumps(self.as_dict()))
 
 
 async def read_device_information(
