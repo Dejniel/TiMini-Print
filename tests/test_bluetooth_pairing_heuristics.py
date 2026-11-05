@@ -117,6 +117,24 @@ def test_anonymous_candidate_does_not_become_identity_or_advertisement_evidence(
         assert bluetooth_connection_plan(rebuilt).endpoints == (ble, classic)
 
 
+def test_one_physical_target_keeps_ble_fallback_for_manual_model_choices(catalog):
+    models = [replace(model, detections=(ModelDetection(exact_names=("Shared",)),))
+              for model in catalog.models]
+    catalog = PrinterCatalog(catalog.profiles, models)
+    resolver = BluetoothEndpointResolver(catalog)
+    ble = replace(UNKNOWN_BLE, name="")
+    for order in permutations((CLASSIC_A, ble)):
+        choices = {device.model_key: device for device in resolver.devices_for_display(order)}
+        assert set(choices) == {"a", "b"}
+        assert choices["a"].transport_target.ble_candidate is None
+        assert choices["b"].transport_target.ble_candidate is ble
+        assert resolver.devices_from_endpoints(order) == []
+        manual, = resolver.manual_targets_for_display(order)
+        assert manual.transport_target.ble_endpoint is ble
+        assert manual.transport_target.classic_endpoint is None
+        assert bluetooth_connection_plan(choices["b"]).endpoints == (ble, CLASSIC_A)
+
+
 @pytest.mark.parametrize("case", ["two_anonymous", "two_known", "ambiguous_known", "paired_unknown", "named_ble"])
 def test_anonymous_heuristic_does_not_override_other_discovery_evidence(catalog, case):
     classic = replace(CLASSIC_A, address="BB:22:00:00:00:01")

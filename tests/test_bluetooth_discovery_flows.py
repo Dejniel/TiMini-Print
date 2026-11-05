@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
+from tests.helpers import build_capture_reporter
 from timiniprint.devices import PrinterCatalog, bluetooth_connection_plan
 from timiniprint.devices.profiles import ModelDetection, PrinterModel
 from timiniprint.transport.bluetooth import BluetoothDiscovery
@@ -62,3 +63,24 @@ def test_both_endpoint_aliases_select_the_same_automatically_detected_device(cat
         ble = asyncio.run(discovery.resolve_device("Alias"))
     assert classic == ble
     assert classic.transport_badge == "[classic+ble]"
+
+
+def test_manual_model_choice_reports_the_unconfirmed_ble_connection_hint():
+    profiles = PrinterCatalog.load().profiles
+    catalog = PrinterCatalog(profiles, [
+        PrinterModel(model_key="classic", profile_key="x6h", origin_ids=("source.a",),
+                     detections=(ModelDetection(exact_names=("Known",)),)),
+        PrinterModel(model_key="ble", profile_key="v5x", origin_ids=("source.b",),
+                     detections=(ModelDetection(exact_names=("Known",)),)),
+    ])
+    endpoints = [DeviceInfo("Known", MAC_A), DeviceInfo("", MAC_B, transport=DeviceTransport.BLE)]
+    reporter, sink = build_capture_reporter()
+    discovery = BluetoothDiscovery(catalog, reporter)
+    with patch("timiniprint.transport.bluetooth.discovery.SppBackend.scan_with_failures", return_value=(endpoints, [])):
+        result = asyncio.run(discovery.scan_report())
+    assert result.devices == []
+    assert len(discovery.devices_for_display(result)) == 2
+    hints = [message.detail for message in sink.messages if (message.detail or "").startswith("Discovery connection candidate")]
+    assert len(hints) == 1
+    assert "model=ble" in hints[0] and "heuristic=true" in hints[0]
+    assert MAC_A not in hints[0] and MAC_B not in hints[0]

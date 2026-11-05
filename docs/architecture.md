@@ -242,12 +242,14 @@ previously resolved devices. `BluetoothDiscovery` builds these views from
 `BluetoothScanResult.raw_endpoints`. This keeps model detection, transport
 fallback and raw-target selection on the same endpoint grouping.
 
-For the historical single-printer BLE-first case, one unambiguous Classic-only
-device and exactly one anonymous, unmatched standalone BLE endpoint can provide
+For the historical single-printer BLE-first case, one Classic-only physical
+target and exactly one anonymous, unmatched standalone BLE endpoint can provide
 an unconfirmed connection hint. The resolved device stores it separately as
 `BluetoothTarget.ble_candidate`; the raw BLE target remains available in the
 unknown-target view. It is not a grouped peer and contributes no identity,
 advertisement or pairing-state evidence to the Classic device.
+If that physical target has several catalog choices, its BLE-first choices
+retain the hint after manual selection; the hint never resolves model ambiguity.
 `bluetooth_connection_plan(...)` includes this candidate using the profile's
 transport preference. `ordered_endpoints(...)` and raw-target selection omit it.
 Discovery diagnostics identify use of this heuristic explicitly. This retains

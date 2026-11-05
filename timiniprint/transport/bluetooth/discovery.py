@@ -257,7 +257,8 @@ class BluetoothDiscovery:
                 failures=len(failure_list),
             ),
         )
-        for device in resolved_list:
+        catalog_choices = self._resolver.devices_for_display(self._endpoints_from_scan(endpoint_list))
+        for device in catalog_choices:
             target = device.transport_target
             if isinstance(target, BluetoothTarget) and target.ble_candidate is not None:
                 self._reporter.debug(
@@ -271,7 +272,6 @@ class BluetoothDiscovery:
                         model=device.model_key,
                     ),
                 )
-        catalog_choices = self._resolver.devices_for_display(self._endpoints_from_scan(endpoint_list))
         choices_by_endpoint = {}
         for choice in catalog_choices:
             for endpoint in (choice.transport_target.classic_endpoint, choice.transport_target.ble_endpoint):

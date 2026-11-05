@@ -39,10 +39,16 @@ class BluetoothEndpointResolver:
     def devices_from_endpoints(self, endpoints: Iterable[BluetoothEndpoint]) -> List[PrinterDevice]:
         """Return only targets with one unambiguous catalog model."""
         choices = self.devices_for_display(endpoints)
+        identities = []
         models_by_target: Dict[TransportTarget | None, set[str]] = {}
         for device in choices:
-            models_by_target.setdefault(device.transport_target, set()).add(device.model_key)
-        return [device for device in choices if len(models_by_target[device.transport_target]) == 1]
+            target = device.transport_target
+            if isinstance(target, BluetoothTarget):
+                # A profile's connection hint must not resolve model ambiguity.
+                target = replace(target, ble_candidate=None)
+            identities.append((device, target))
+            models_by_target.setdefault(target, set()).add(device.model_key)
+        return [device for device, target in identities if len(models_by_target[target]) == 1]
 
     def devices_for_display(
         self,
@@ -74,11 +80,11 @@ class BluetoothEndpointResolver:
         unknown_targets: List[ResolvedBluetoothTarget],
     ) -> List[PrinterDevice]:
         """Keep the single-printer BLE-first heuristic separate from grouping."""
-        if len(devices) != 1:
+        targets = {device.transport_target for device in devices}
+        if len(targets) != 1:
             return devices
-        device = devices[0]
-        target = device.transport_target
-        if (device.profile.use_spp or not isinstance(target, BluetoothTarget)
+        target = next(iter(targets))
+        if (all(device.profile.use_spp for device in devices) or not isinstance(target, BluetoothTarget)
                 or target.classic_endpoint is None or target.ble_endpoint is not None):
             return devices
         anonymous = [item.transport_target for item in unknown_targets
@@ -86,7 +92,11 @@ class BluetoothEndpointResolver:
                      and not (item.transport_target.ble_endpoint.name or "").strip()]
         if len(anonymous) != 1 or anonymous[0].classic_endpoint is not None:
             return devices
-        return [device.with_transport_target(replace(target, ble_candidate=anonymous[0].ble_endpoint))]
+        return [
+            device if device.profile.use_spp else device.with_transport_target(
+                replace(target, ble_candidate=anonymous[0].ble_endpoint))
+            for device in devices
+        ]
 
     def _detection_devices_for_target(self, item: ResolvedBluetoothTarget) -> List[PrinterDevice]:
         """Match endpoint identities, never the target's display label."""
