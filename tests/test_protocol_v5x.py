@@ -45,6 +45,20 @@ class V5XProtocolTests(unittest.TestCase):
                 self.assertEqual(split.commands[-1], bytes.fromhex("2221a9000400010030020000"))
                 self.assertEqual(split.bulk_payload, expected)
 
+    def test_mono_rows_keep_lsb_order_and_do_not_merge_row_boundaries(self) -> None:
+        pixels = [1] + [0] * 383 + [0] * 383 + [1]
+        raster = RasterSet.from_single(RasterBuffer(pixels, 384, PixelFormat.BW1))
+        job = self.protocol.build_job(raster, is_text=False)
+        split = split_print_stream(job.payload)
+        self.assertEqual(split.bulk_payload, b"\x01" + bytes(94) + b"\x80")
+        self.assertEqual(split.commands[-1][6:8], b"\x02\x00")
+        self.assertEqual(split.trailing_commands, (V5X_FINALIZE_PACKET,))
+
+    def test_mono_does_not_silently_pad_non_byte_aligned_width(self) -> None:
+        raster = RasterSet.from_single(RasterBuffer([0] * 383, 383, PixelFormat.BW1))
+        with self.assertRaisesRegex(ValueError, "Width must be divisible by 8"):
+            self.protocol.build_job(raster, is_text=False)
+
     def test_raster_prefix_and_suffix_are_never_parsed_as_commands(self) -> None:
         for raw in (
             make_packet(0xA4, b"\x00\x00", ProtocolFamily.V5X) + bytes(38),

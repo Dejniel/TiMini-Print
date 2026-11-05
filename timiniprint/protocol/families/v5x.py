@@ -4,7 +4,6 @@ from dataclasses import dataclass
 import hashlib
 import hmac
 
-from ..encoding import pack_line
 from ..packet import make_packet, prefixed_packet_length, prefixed_packet_opcode
 from ..family import ProtocolFamily
 from ..plan import ProtocolPlan
@@ -12,6 +11,7 @@ from ..steps import ProtocolStep
 from ...raster import PixelFormat
 from ..types import ImageEncoding, ImagePipelineConfig, PaperMode
 from .base import PrintJobRequest, ProtocolBehavior
+from .bitmap import pack_bw1_rows
 
 def _hex_bytes(value: str) -> bytes:
     return bytes.fromhex(value)
@@ -107,19 +107,6 @@ def build_sign_response(challenge: bytes, *, timestamp_ms: int) -> bytes:
     )
 
 
-def _raw_lsb_payload(pixels: list[int] | tuple[int, ...], width: int) -> bytes:
-    if width % 8 != 0:
-        raise ValueError("Width must be divisible by 8")
-    if len(pixels) % width != 0:
-        raise ValueError("Pixel count must be a multiple of width")
-    payload = bytearray()
-    height = len(pixels) // width
-    for row in range(height):
-        line = pixels[row * width : (row + 1) * width]
-        payload += pack_line(line, lsb_first=True)
-    return bytes(payload)
-
-
 def _gray_payload(raster) -> bytes:
     if raster.pixel_format == PixelFormat.GRAY8:
         return bytes(raster.pixels)
@@ -180,7 +167,9 @@ def _build_payload(request: PrintJobRequest) -> bytes:
     if is_gray:
         job += _gray_payload(raster)
     else:
-        job += _raw_lsb_payload(list(raster.pixels), raster.width)
+        if raster.width % 8:
+            raise ValueError("Width must be divisible by 8")
+        job += pack_bw1_rows(raster, lsb_first=True)
     job += V5X_FINALIZE_PACKET
     return bytes(job)
 
