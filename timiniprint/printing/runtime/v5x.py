@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional
 
+from ... import reporting
 from ...protocol.family import ProtocolFamily
 from ...protocol.families.v5x import (
     V5X_CONNECT_INIT_PACKET,
@@ -250,7 +251,8 @@ class V5XRuntimeController(RuntimeController):
             packet = make_packet(0xA2, adjusted_payload, ProtocolFamily.V5X)
             payload = adjusted_payload
         if self._state.last_density_payload == payload:
-            session.report_debug(f"skipping unchanged V5X density packet: {payload.hex()}")
+            density = payload[0] if len(payload) == 1 else "<unavailable>"
+            session.report_debug(f"skipping unchanged V5X density packet: density={density}")
             return None, False
         return packet, True
 
@@ -536,8 +538,9 @@ class V5XRuntimeController(RuntimeController):
         except Exception as exc:
             session.report_warning(
                 short="V5X signing reply failed",
-                detail=str(exc),
+                detail=reporting.exception_summary(exc),
             )
+            session.report_trace(f"V5X signing reply failed: {exc}")
             return
         self._state.mxw_sign_responses_sent += 1
         session.report_debug(
@@ -562,7 +565,7 @@ class V5XRuntimeController(RuntimeController):
         if not firmware:
             session.report_debug(
                 "V5X connect info 0xb1 has no readable firmware payload: "
-                f"bytes={len(payload)} head={payload[:24].hex()}"
+                f"bytes={len(payload)}"
             )
             return
         self._state.connect_info_received = True
@@ -575,6 +578,7 @@ class V5XRuntimeController(RuntimeController):
         else:
             self._state.print_head_type = "weishibie"
         session.report_debug(
-            f"V5X firmware: version={firmware}, print_head_type={self._state.print_head_type}"
+            f"V5X firmware: version={reporting.device_metadata_text(firmware) or '<unavailable>'}, "
+            f"print_head_type={self._state.print_head_type}"
         )
         self._mark_connect_info(session)
