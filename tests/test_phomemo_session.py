@@ -159,7 +159,10 @@ class PhomemoSessionTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(name=name):
                 connection = ReplyConnection()
                 connection.query_replies[b"\x1f\x11\x38"] = bytes.fromhex("1a1603")
-                context, _ = await self.prepare(connection, name=name)
+                variant = "t02" if name.casefold().startswith("t02") else "m02h" if name != "M02" else "m02"
+                device = replace(self.device(name), protocol_variant=variant)
+                with patch("timiniprint.printing.runtime.phomemo.asyncio.sleep", new_callable=AsyncMock):
+                    context = await prepare_connection_runtime(device, connection, timeout=.01)
                 self.assertEqual(connection.sent, [b"\x1b\x40"] if name == "M02H" else [])
                 self.assertEqual(context.capabilities.chip_type, 3 if name == "T02" else None)
 

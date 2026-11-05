@@ -98,7 +98,15 @@ See [diagnostic log levels](protocol.md#diagnostic-log-levels) for the API.
 ### `PrinterDevice`
 A resolved printer instance as the program intends to use it. It combines display name, profile, protocol family, protocol variant, image pipeline, runtime settings, paper presets, optional transport target, and the BLE transport profile derived by the devices layer.
 
+Runtime rules that depend on a Bluetooth name use
+`PrinterDevice.advertised_names`, not its presentation label. These are the
+grouped endpoint names with original case/whitespace; unconfirmed connection
+candidates are excluded. Without an advertised name, a manual/offline device
+retains its supplied name hint. This property derives from existing device
+data and adds no persisted field. Catalog detection still uses raw endpoints.
+
 ### `ConnectedPrinter`
+
 The high-level object for an active printer session. It owns an active connection and its `PreparedPrinter` result, then exposes `print_file(...)`, `print_text(...)`, `send_job(...)`, `feed()`, `retract()`, and `disconnect()`.
 
 CLI and GUI should use `ConnectedPrinter` instead of manually combining `PrintJobBuilder`, runtime preparation, and `send_prepared_job`.

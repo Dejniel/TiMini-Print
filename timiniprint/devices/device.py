@@ -132,6 +132,25 @@ class PrinterDevice:
         return self.display_name
 
     @property
+    def advertised_names(self) -> tuple[str, ...]:
+        """Endpoint names for runtime rules, preserving case and whitespace.
+
+        Grouped Classic/BLE names take precedence over the UI label; an
+        unconfirmed BLE candidate is not identity evidence. With no advertised
+        name, manual/offline devices retain their supplied name hint.
+        Catalog detection still matches raw endpoints, not this fallback.
+        """
+        if isinstance(self.transport_target, BluetoothTarget):
+            names = tuple(dict.fromkeys(
+                endpoint.name
+                for endpoint in (self.transport_target.classic_endpoint, self.transport_target.ble_endpoint)
+                if endpoint is not None and endpoint.name
+            ))
+            if names:
+                return names
+        return (self.display_name,)
+
+    @property
     def profile_key(self) -> str:
         return self.profile.profile_key
 

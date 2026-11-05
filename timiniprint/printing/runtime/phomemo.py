@@ -68,8 +68,8 @@ class PhomemoRuntimeController(RuntimeController):
         self._ready_at = 0.0
 
     async def prepare(self, device: PrinterDevice, session: RuntimeSessionApi, *, timeout: float) -> PreparedPrinter:
-        self._legacy_chip_reply = device.display_name == "T02"
-        if device.display_name == "M02H":
+        self._legacy_chip_reply = device.protocol_variant == "t02" and "T02" in device.advertised_names
+        if device.protocol_variant == "m02h" and "M02H" in device.advertised_names:
             await session.send_standard_payload(b"\x1b\x40")
         if session.can_query_control_packet() or session.can_send_control_packet_wait_notification():
             # Metadata is optional unless the raster recipe requires a serial.
