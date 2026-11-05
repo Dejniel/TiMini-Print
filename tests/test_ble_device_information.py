@@ -12,8 +12,8 @@ from timiniprint.transport.bluetooth.device_information import (
     DEVICE_INFORMATION_SERVICE_UUID, DEVICE_INFORMATION_CHARACTERISTICS,
 )
 
-MODEL = DEVICE_INFORMATION_CHARACTERISTICS["model"]
-FIRMWARE = DEVICE_INFORMATION_CHARACTERISTICS["firmware"]
+MODEL = DEVICE_INFORMATION_CHARACTERISTICS["model"].uuid
+FIRMWARE = DEVICE_INFORMATION_CHARACTERISTICS["firmware"].uuid
 
 
 def client_with_information(values):
@@ -94,11 +94,12 @@ class BleDeviceInformationTests(unittest.IsolatedAsyncioTestCase):
                 await probe_ble_device_information("a")
         client.disconnect.assert_awaited_once()
 
-    def test_decoder_excludes_unknown_characteristics_and_serial_number(self):
+    def test_decoder_excludes_unknown_characteristics_but_keeps_serial_number(self):
         result = BleDeviceInformation.from_gatt("a", service_present=True, values={
             MODEL: b"P1", "00002a25-0000-1000-8000-00805f9b34fb": b"serial",
+            "0000ff01-0000-1000-8000-00805f9b34fb": b"unknown",
         }, errors={})
-        self.assertEqual(result.values, {"model": "P1"})
+        self.assertEqual(result.values, {"model": "P1", "serial": "serial"})
 
 
 class BleConnectInformationTests(unittest.TestCase):

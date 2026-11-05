@@ -6,6 +6,7 @@ binding plus write routing to `_BleakTransportSession`.
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Callable
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -15,6 +16,7 @@ from .bleak_adapter_transport import _BleakTransportSession
 from ..constants import IS_MACOS
 from ..types import DeviceInfo, DeviceTransport, SocketLike
 from ..device_information import BleDeviceInformation, read_device_information
+from ...gatt import gatt_inventory
 from ..bleak_lifecycle import _BleakLifecycle
 from .... import reporting
 from ...base import ConnectionCleanupError
@@ -144,6 +146,8 @@ class _BleakSocket:
         except Exception as exc:
             detail = str(exc).strip() or repr(exc) or exc.__class__.__name__
             raise RuntimeError(f"Failed to connect to BLE device {address}: {detail}") from exc
+
+        self._reporter.debug(short="BLE GATT inventory", detail=json.dumps(gatt_inventory(getattr(self._client, "services", None))))
 
         if (
             self._ble_mtu_request is not None

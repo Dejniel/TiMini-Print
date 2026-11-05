@@ -113,19 +113,32 @@ control, not independent blocking errors.
 
 ## Optional BLE Device Information
 
-BLE transports read the standard GATT Device Information service (`180A`) once
-after connecting, before printer-family preparation, and log an endpoint-tagged
-snapshot. Missing services/fields are normal; failed reads are diagnostic only.
-This does not replace model detection or protocol negotiation: values may
-describe the Bluetooth module rather than the printer. Serial numbers are not
-collected. Classic/SPP does not read this service or open an extra BLE link.
+Ordinary BLE connections read known standard metadata once after connecting,
+before printer-family preparation: GAP Device Name (`1800/2A00`), and DIS
+manufacturer/model/firmware/hardware/software, Serial Number (`180A/2A25`)
+and PnP ID (`180A/2A50`). Missing services/fields are normal; failed reads
+are diagnostic only. Values may describe the Bluetooth module rather than
+the printer and must not automatically select a protocol. Classic/SPP does
+not open an extra BLE link. The full discovered service/characteristic UUID
+inventory and properties are logged in DEBUG, without characteristic values.
 
 `timiniprint.transport.bluetooth.read_device_information(client, address)` reads
-an already connected Bleak-compatible client. UUIDs and UTF-8 decoding live in
-core; native mobile bridges only supply characteristic values. The result is a
-`BleDeviceInformation` with `values`, `errors`, `service_present`, `address`, and
-`read_at`; `as_dict()` is suitable for diagnostic reports. Reads use one bounded
-deadline, never writes or printer commands, and propagate cancellation.
+an already connected Bleak-compatible client. Each
+`DEVICE_INFORMATION_CHARACTERISTICS` entry now describes its `service_uuid`,
+characteristic `uuid` and `decode` function, not just a UUID string.
+The shared `BleDeviceInformation.from_gatt()` decoder consumes raw values/errors
+keyed by the full characteristic UUID. Native bridges select the owning service
+from these definitions and supply bytes, without copying decoders.
+The result is a `BleDeviceInformation` with `values`, `errors`, `service_present`, `address`, and
+`read_at`. `service_present` still refers to DIS (`180A`): GAP's device name
+can be present when this flag is false. Text fields are UTF-8 strings.
+`values["pnp_id"]` contains numeric `vendor_id_source`, `vendor_id`,
+`product_id` and `product_version`, decoded from exactly seven bytes
+(one source byte and three little-endian uint16 fields). Invalid lengths are
+reported as `invalid_length`. DEBUG contains sanitized strings and decoded
+PnP fields, not a raw hexadecimal dump.
+Reads share one bounded deadline, never write or pair, and propagate
+cancellation. A timed-out read ends the sequence without queueing more requests.
 
 `probe_ble_device_information(address)` connects, reads, and disconnects without
 a printer profile, writable characteristic, or notification subscription. The
