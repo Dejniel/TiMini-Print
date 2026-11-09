@@ -90,7 +90,19 @@ class BleTransportProfileTests(unittest.TestCase):
                 self.assertTrue(profile.flow_controlled_standard_write)
                 self.assertEqual(profile.flow_resume_timeout_s, 600.0)
 
-    def test_unspecialized_families_keep_generic_transport_defaults(self) -> None:
+    def test_luck_normal_ble_fallback_enables_receiving_without_inventing_endpoints(self) -> None:
+        for family in (ProtocolFamily.LUCK_NORMAL, ProtocolFamily.LUCK_NORMAL_A4):
+            with self.subTest(family=family.value):
+                profile = get_ble_transport_profile(family)
+                self.assertTrue(profile.prefer_generic_notify)
+                self.assertEqual(profile.preferred_service_uuid, "")
+                self.assertEqual(profile.preferred_write_char_uuid, "")
+                self.assertEqual(profile.notify_char_uuid, "")
+                self.assertEqual(profile.notify_service_uuids, ())
+                self.assertFalse(profile.flow_controlled_standard_write)
+                self.assertIsNone(profile.bulk_write)
+
+    def test_luck_and_unspecialized_families_keep_default_stream_tuning(self) -> None:
         for family in (
             ProtocolFamily.LUCK_NORMAL,
             ProtocolFamily.LUCK_NORMAL_A4,

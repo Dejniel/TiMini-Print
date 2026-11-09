@@ -47,6 +47,8 @@ class BleTransportProfile:
 
 _FALLBACK_PROFILE = BleTransportProfile()
 
+_LUCK_NORMAL_TRANSPORT_PROFILE = BleTransportProfile(prefer_generic_notify=True)
+
 _TINY_TRANSPORT_PROFILE = BleTransportProfile(
     standard_chunk_cap=512,
     prefer_generic_notify=True,
@@ -63,6 +65,8 @@ _ELEPH_TRANSPORT_PROFILE = BleTransportProfile(
 )
 
 _PROFILES = {
+    ProtocolFamily.LUCK_NORMAL: _LUCK_NORMAL_TRANSPORT_PROFILE,
+    ProtocolFamily.LUCK_NORMAL_A4: _LUCK_NORMAL_TRANSPORT_PROFILE,
     ProtocolFamily.TINY: _TINY_TRANSPORT_PROFILE,
     ProtocolFamily.TINY_PREFIXED: _TINY_TRANSPORT_PROFILE,
     ProtocolFamily.V5G: BleTransportProfile(

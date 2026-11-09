@@ -208,6 +208,12 @@ selection. The transport selects endpoints by GATT metadata, never by opcodes.
 On receipt, runtime observers update session state before pending reply
 predicates run; this allows passive waits to depend on parsed runtime state.
 
+Luck normal/A4 BLE fallback enables `prefer_generic_notify` to select an
+available notify/indicate characteristic without assuming fixed GATT UUIDs.
+This leaves write pacing and Classic preference unchanged. A discovered
+channel does not prove protocol compatibility; required printer replies must
+still be confirmed, and a write-only connection cannot bypass them.
+
 An optional ordered `BleTransportProfile.gatt_layouts` list binds write, reply
 and optional control characteristics within one service. The first complete
 layout wins; partial layouts are not combined and do not use generic fallback.
