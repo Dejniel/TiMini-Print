@@ -565,7 +565,7 @@ class V5XRuntimeController(RuntimeController):
         if not firmware:
             session.report_debug(
                 "V5X connect info 0xb1 has no readable firmware payload: "
-                f"bytes={len(payload)}"
+                f"bytes={len(payload)} rx={reporting.rx_preview(raw)}"
             )
             return
         self._state.connect_info_received = True

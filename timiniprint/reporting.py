@@ -124,6 +124,8 @@ _METADATA_ADDRESS = re.compile(
     r"|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", re.IGNORECASE,
 )
 _MAX_DEVICE_METADATA_CHARS = 96
+_MAX_RX_PREVIEW_BYTES = 64
+_RX_IDENTIFIER_LOOKAHEAD = 36  # A textual Bluetooth identifier can be a UUID.
 _MAX_EXCEPTION_CAUSES = 4
 _METADATA_URI = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 _METADATA_DOCUMENT_NAME = re.compile(
@@ -145,6 +147,34 @@ def device_metadata_text(value: str) -> str | None:
     if not text or len(text) > _MAX_DEVICE_METADATA_CHARS or _METADATA_URI.match(text) or _METADATA_DOCUMENT_NAME.search(text):
         return None
     return text
+
+
+def rx_preview(data: bytes | None) -> str:
+    """Bounded hex for selected received replies, never TX or print buffers.
+
+    Show at most the first 64 bytes. Mask textual Bluetooth addresses, including
+    identifiers crossing the preview boundary, and omit obvious document
+    references. This is not a general anonymizer for arbitrary binary content;
+    callers choose useful control replies rather than logging every fragment.
+    """
+    if data is None:
+        return "<none>"
+    if not data:
+        return "<empty>"
+    sample = bytes(data[:_MAX_RX_PREVIEW_BYTES + _RX_IDENTIFIER_LOOKAHEAD]).decode("latin-1")
+    if (_METADATA_DOCUMENT_NAME.search(sample) or "://" in sample
+            or any(scheme in sample.lower() for scheme in ("file:", "content:", "urn:"))):
+        return "<document reference omitted>"
+    end = min(len(data), _MAX_RX_PREVIEW_BYTES)
+    parts, offset = [], 0
+    for match in _METADATA_ADDRESS.finditer(sample):
+        if match.start() >= end:
+            break
+        parts.extend((data[offset:match.start()].hex(" "), "<address>"))
+        offset = match.end()
+    parts.append(data[offset:end].hex(" "))
+    suffix = f" ... ({len(data)} bytes)" if len(data) > end else ""
+    return " ".join(part for part in parts if part) + suffix
 
 
 def exception_summary(error: BaseException) -> str:

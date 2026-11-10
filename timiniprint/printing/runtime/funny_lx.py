@@ -6,6 +6,7 @@ from collections import deque
 from collections.abc import Awaitable, Callable
 from dataclasses import asdict
 
+from ... import reporting
 from ...devices import PrinterDevice
 from ...devices.profiles import DetectionNormalizer
 from ...protocol.families.funny_lx.core import FunnyLxStatus, challenge_crc, decode_status
@@ -455,5 +456,5 @@ async def _wait_for_image_transfer_ready_or_retry(
         timeout=wait_timeout,
         required=False,
     )
-    session.report_debug(f"Funny LX wait {step.label}: rx={bytes_preview(reply)}")
+    session.report_debug(f"Funny LX wait {step.label}: rx={reporting.rx_preview(reply)}")
     return reply

@@ -3,6 +3,7 @@ import io
 
 import pytest
 
+from tests.helpers import build_capture_reporter
 from timiniprint import reporting
 from timiniprint.devices import PrinterCatalog
 from timiniprint.printing.builder import PrintJobBuilder
@@ -42,8 +43,8 @@ def logs():
 
 
 @pytest.mark.parametrize("operation", ["send", "query"])
-@pytest.mark.parametrize("payload", [b"private", bytes(range(64))])
-def test_step_logs_keep_counts_but_only_trace_contains_bytes(operation, payload):
+@pytest.mark.parametrize("payload", [b"private-command", bytes(range(64))])
+def test_step_logs_keep_tx_in_trace_and_selected_rx_in_debug(operation, payload):
     reporter, normal, full = logs()
     connection = Connection()
     session = RuntimeConnectionSession(connection, reporter=reporter)
@@ -57,15 +58,17 @@ def test_step_logs_keep_counts_but_only_trace_contains_bytes(operation, payload)
     assert "data=" not in normal.getvalue()
     assert "head=" not in normal.getvalue()
     assert "tx=" not in normal.getvalue()
-    assert "rx=" not in normal.getvalue()
+    assert payload[:16].hex(" ") not in normal.getvalue()
     assert payload[:16].hex(" ") in full.getvalue()
     if operation == "query":
-        assert b"reply-private".hex(" ") not in normal.getvalue()
+        assert f"rx={b'reply-private'.hex(' ')}" in normal.getvalue()
         assert b"reply-private".hex(" ") in full.getvalue()
+    else:
+        assert "rx=" not in normal.getvalue()
 
 
 def test_required_reply_error_does_not_promote_raw_bytes_to_error_level():
-    reporter, normal, full = logs()
+    reporter, sink = build_capture_reporter(min_level=reporting.ReportLevel.TRACE)
     session = RuntimeConnectionSession(Connection(), reporter=reporter)
     step = ProtocolStep.query(
         "print start", b"Q", expect=ProtocolReplyExpectation.NONE, reply_required=True,
@@ -74,9 +77,13 @@ def test_required_reply_error_does_not_promote_raw_bytes_to_error_level():
     with pytest.raises(RuntimeError) as error:
         asyncio.run(execute_protocol_step(session, step, timeout=0.1))
     reporter.error(exc=error.value)
-    assert "received_bytes=13" in normal.getvalue()
-    assert b"reply-private".hex(" ") not in normal.getvalue()
-    assert b"reply-private".hex(" ") in full.getvalue()
+    errors = "\n".join(message.detail or "" for message in sink.messages
+                       if message.level == reporting.ReportLevel.ERROR)
+    debug = "\n".join(message.detail or "" for message in sink.messages
+                      if message.level == reporting.ReportLevel.DEBUG)
+    assert "received_bytes=13" in errors
+    assert b"reply-private".hex(" ") not in errors
+    assert b"reply-private".hex(" ") in debug
 
 
 @pytest.mark.parametrize("step_based", [False, True])

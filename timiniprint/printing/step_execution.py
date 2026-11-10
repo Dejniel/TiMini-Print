@@ -4,6 +4,7 @@ import asyncio
 import time
 from typing import TYPE_CHECKING
 
+from .. import reporting
 from ..protocol import ProtocolReplyExpectation, ProtocolStep, ProtocolStepOperation
 from ..protocol.steps import reply_matches_expectation
 if TYPE_CHECKING:
@@ -75,7 +76,8 @@ async def _execute_wait_step(
         timeout=wait_timeout,
         required=False,
     )
-    session.report_debug(f"{log_prefix} wait {step.label}: rx_bytes={None if reply is None else len(reply)}")
+    session.report_debug(f"{log_prefix} wait {step.label}: rx_bytes={None if reply is None else len(reply)} "
+                         f"rx={reporting.rx_preview(reply)}")
     session.report_trace(f"{log_prefix} wait {step.label}: rx={bytes_preview(reply)}")
     return reply
 
@@ -164,7 +166,7 @@ async def _query_once(
             reply = bytes(buffer)
     session.report_debug(
         f"{log_prefix} query {step.label}: tx_bytes={len(step.data)} "
-        f"rx_bytes={None if reply is None else len(reply)}"
+        f"rx_bytes={None if reply is None else len(reply)} rx={reporting.rx_preview(reply)}"
     )
     session.report_trace(
         f"{log_prefix} query {step.label}: "

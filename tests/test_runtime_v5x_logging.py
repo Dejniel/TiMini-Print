@@ -26,7 +26,7 @@ def public_log(sink):
     (b"FW AA:BB:CC:DD:EE:01", "version=FW <address>"),
     (b"/private/customer-label.png", "version=<unavailable>"),
 ])
-def test_firmware_diagnostics_do_not_dump_frames_or_private_metadata(payload, expected):
+def test_firmware_diagnostics_keep_metadata_private_and_preview_unreadable_rx(payload, expected):
     reporter, sink = build_capture_reporter()
     controller = V5XRuntimeController()
     session = RuntimeConnectionSession(object(), reporter=reporter)
@@ -34,6 +34,8 @@ def test_firmware_diagnostics_do_not_dump_frames_or_private_metadata(payload, ex
     controller.handle_notification(session, packet)
     debug = public_log(sink)
     assert expected in debug
+    if payload == b"\xff" * 9:
+        assert "rx=" + payload.hex(" ") in debug
     for private in (packet.hex(), payload.hex(), "AA:BB:CC:DD:EE:01", "customer-label.png", "/private/"):
         assert private not in debug
     assert controller.debug_snapshot()["firmware_version"] == payload.decode("ascii", errors="ignore")
