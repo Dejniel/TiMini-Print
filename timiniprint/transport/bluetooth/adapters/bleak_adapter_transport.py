@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, List, Optional, Tuple
 
 from .... import reporting
+from ....devices.bluetooth_channels import BLE_UART_READERS, ble_uuid
 from ....devices.bluetooth_profiles import BleBulkWriteProfile, BleGattLayout, BleTransportProfile
 from .bleak_adapter_diagnostics import (
     BleWriteCounters,
@@ -148,12 +149,11 @@ class _BleakTransportSession:
         self.bindings.notify_char = None
         self.bindings.notify_char_uuid = ""
         self.bindings.additional_notify_char_uuids = ()
-        service_notify = () if layout else self._service_notify_characteristics(services, transport.notify_service_uuids)
+        service_notify = self._service_notify_characteristics(services, transport.notify_service_uuids)
         if layout:
             self.bindings.notify_char = self._find_characteristic_by_uuid(services, layout.notify_char_uuid)
         elif transport.notify_service_uuids:
             self.bindings.notify_char = service_notify[0] if service_notify else None
-            self.bindings.additional_notify_char_uuids = tuple(str(char.uuid).lower() for char in service_notify[1:])
         elif transport.notify_char_uuid:
             self.bindings.notify_char = self._find_characteristic_by_uuid(
                 services,
@@ -165,6 +165,10 @@ class _BleakTransportSession:
 
         self.bindings.notify_char_uuid = _BleWriteEndpointResolver._normalize_uuid(
             getattr(self.bindings.notify_char, "uuid", "")
+        )
+        self.bindings.additional_notify_char_uuids = tuple(
+            str(char.uuid).lower() for char in service_notify
+            if str(char.uuid).lower() != self.bindings.notify_char_uuid
         )
         if transport.control_notify_char_uuid:
             control = self._find_characteristic_by_uuid(services, transport.control_notify_char_uuid)
@@ -543,11 +547,7 @@ class _BleakTransportSession:
                     continue
                 char_uuid = _BleWriteEndpointResolver._normalize_uuid(getattr(characteristic, "uuid", ""))
                 candidate = (service_uuid, char_uuid, characteristic)
-                if _BleWriteEndpointResolver._uuid_is_preferred(
-                    char_uuid,
-                    _BleWriteEndpointResolver._PREFERRED_NOTIFY_UUIDS,
-                    _BleWriteEndpointResolver._PREFERRED_NOTIFY_SHORT,
-                ):
+                if ble_uuid(char_uuid) in BLE_UART_READERS:
                     preferred.append(candidate)
                 else:
                     generic.append(candidate)

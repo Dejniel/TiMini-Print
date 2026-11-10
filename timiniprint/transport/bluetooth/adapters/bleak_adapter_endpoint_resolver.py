@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import Any, Iterable, List, Optional, Sequence, Tuple
 
 from .... import reporting
+from ....devices.bluetooth_channels import BLE_UART_READERS, BLE_UART_SERVICES, BLE_UART_WRITERS, ble_uuid
 from ....devices.bluetooth_profiles import BleGattLayout
 
 
@@ -33,34 +34,6 @@ class _WriteSelection:
 
 
 class _BleWriteEndpointResolver:
-    _BASE_BLUETOOTH_UUID_SUFFIX = "-0000-1000-8000-00805f9b34fb"
-    _PREFERRED_SERVICE_UUIDS = {
-        "0000ae30-0000-1000-8000-00805f9b34fb",
-        "0000ae3a-0000-1000-8000-00805f9b34fb",
-        "0000ae00-0000-1000-8000-00805f9b34fb",
-        "0000ae80-0000-1000-8000-00805f9b34fb",
-        "0000ff00-0000-1000-8000-00805f9b34fb",
-        "0000ab00-0000-1000-8000-00805f9b34fb",
-        "49535343-fe7d-4ae5-8fa9-9fafd205e455",
-    }
-    _PREFERRED_SERVICE_SHORT = {"ae30", "ae3a", "ae00", "ae80", "ff00", "ab00"}
-    _PREFERRED_WRITE_UUIDS = {
-        "0000ae01-0000-1000-8000-00805f9b34fb",
-        "0000ae3b-0000-1000-8000-00805f9b34fb",
-        "0000ae81-0000-1000-8000-00805f9b34fb",
-        "0000ff02-0000-1000-8000-00805f9b34fb",
-        "0000ab01-0000-1000-8000-00805f9b34fb",
-        "49535343-8841-43f4-a8d4-ecbe34729bb3",
-    }
-    _PREFERRED_WRITE_SHORT = {"ae01", "ae3b", "ae81", "ff02", "ab01"}
-    _PREFERRED_NOTIFY_UUIDS = {
-        "0000ae02-0000-1000-8000-00805f9b34fb",
-        "0000ae04-0000-1000-8000-00805f9b34fb",
-        "0000ae3c-0000-1000-8000-00805f9b34fb",
-        "0000ab03-0000-1000-8000-00805f9b34fb",
-    }
-    _PREFERRED_NOTIFY_SHORT = {"ae02", "ae04", "ae3c", "ab03"}
-
     def __init__(self, reporter: reporting.Reporter = reporting.DUMMY_REPORTER) -> None:
         self._reporter = reporter
 
@@ -151,31 +124,6 @@ class _BleWriteEndpointResolver:
         return str(value).strip().lower()
 
     @classmethod
-    def _uuid_short(cls, value: str) -> str:
-        if (
-            len(value) == 36
-            and value.startswith("0000")
-            and value.endswith(cls._BASE_BLUETOOTH_UUID_SUFFIX)
-        ):
-            return value[4:8]
-        return ""
-
-    @classmethod
-    def _uuid_is_preferred(
-        cls,
-        value: str,
-        preferred_uuids: Set[str],
-        preferred_short: Set[str],
-    ) -> bool:
-        normalized = cls._normalize_uuid(value)
-        if not normalized:
-            return False
-        if normalized in preferred_uuids:
-            return True
-        token = cls._uuid_short(normalized)
-        return bool(token and token in preferred_short)
-
-    @classmethod
     def _normalize_properties(cls, properties: Iterable[object]) -> Tuple[str, ...]:
         normalized = sorted({str(item).strip().lower() for item in properties})
         return tuple(normalized)
@@ -222,23 +170,11 @@ class _BleWriteEndpointResolver:
                         properties=props,
                         has_write=has_write,
                         has_write_without_response=has_write_without_response,
-                        char_preferred=cls._uuid_is_preferred(
-                            char_uuid,
-                            cls._PREFERRED_WRITE_UUIDS,
-                            cls._PREFERRED_WRITE_SHORT,
-                        )
+                        char_preferred=ble_uuid(char_uuid) in BLE_UART_WRITERS
                         or (bool(write_preference) and char_uuid == write_preference),
-                        service_preferred=cls._uuid_is_preferred(
-                            service_uuid,
-                            cls._PREFERRED_SERVICE_UUIDS,
-                            cls._PREFERRED_SERVICE_SHORT,
-                        )
+                        service_preferred=ble_uuid(service_uuid) in BLE_UART_SERVICES
                         or (bool(service_preference) and service_uuid == service_preference),
-                        notify_preferred=cls._uuid_is_preferred(
-                            char_uuid,
-                            cls._PREFERRED_NOTIFY_UUIDS,
-                            cls._PREFERRED_NOTIFY_SHORT,
-                        ),
+                        notify_preferred=ble_uuid(char_uuid) in BLE_UART_READERS,
                         char=characteristic,
                     )
                 )

@@ -129,6 +129,15 @@ _PROFILES = {
 
 DEFAULT_BLE_TRANSPORT_PROFILE = _PROFILES[ProtocolFamily.TINY]
 
+# Explicit vendor services take precedence over reserved UUID-range heuristics.
+# Derived from the same channel descriptions used by ordinary connections.
+KNOWN_BLE_SERVICE_UUIDS = frozenset(
+    uuid.casefold()
+    for profile in _PROFILES.values()
+    for uuid in (profile.preferred_service_uuid, *(layout.service_uuid for layout in profile.gatt_layouts))
+    if uuid
+)
+
 
 def get_ble_transport_profile(
     protocol_family: ProtocolFamily | str | None,
