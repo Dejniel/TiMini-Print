@@ -328,7 +328,13 @@ class _BleakTransportSession:
 
             try:
                 await start_notify(target, channel_callback)
-            except Exception:
+            except Exception as exc:
+                if metadata_only:
+                    self.report_debug(
+                        f"optional GATT metadata subscription failed: char={uuid} "
+                        f"error={reporting.exception_summary(exc)}"
+                    )
+                    continue
                 if (index == 0 or self._transport_profile.notify_all_services
                         or self._transport_profile.notify_service_uuids or self._is_control_channel(uuid)):
                     await self.stop_notify_if_started(client)

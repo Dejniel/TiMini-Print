@@ -22,6 +22,9 @@ Never concatenate partial records from different channels.
 Standard GAP/GATT, Device Information and Battery notifications remain metadata:
 they are subscribed and logged separately, never decoded as printer credits or
 page replies. Classification uses the owning service, not just a characteristic UUID.
+These metadata subscriptions are best-effort: a refused Service Changed or
+Battery subscription does not invalidate a usable printer reply channel.
+Required printer-channel failures still abort setup and close earlier subscriptions.
 
 Host-buffer readiness belongs to the native writer. Await it as required by the
 platform even when the printer has granted credits. The desktop adapter awaits
