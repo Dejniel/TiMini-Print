@@ -205,9 +205,10 @@ def test_cancelled_classic_query_waits_for_reply_or_timeout_before_cleanup(reply
 
 @pytest.mark.parametrize('phase', ['initialize', 'after_initialize', 'prepare', 'after_prepare'])
 @pytest.mark.parametrize('stop_fails', [False, True])
-def test_failed_setup_cleans_up_once_and_preserves_original_error(phase, stop_fails):
+def test_failed_setup_preserves_original_error_and_retains_failed_cleanup(phase, stop_fails):
     class FailingSetup(RuntimeController):
         stopped = 0
+        fail_stop = stop_fails
 
         async def initialize_connection(self, session, *, mtu_size, timeout):
             self.owner = asyncio.get_running_loop()
@@ -229,16 +230,28 @@ def test_failed_setup_cleans_up_once_and_preserves_original_error(phase, stop_fa
         async def stop(self, session):
             assert asyncio.get_running_loop() is self.owner
             self.stopped += 1
-            if stop_fails:
+            if self.fail_stop:
                 raise RuntimeError('cleanup error')
 
     async def run():
         device = _device()
         link = _Link(device)
         controller = FailingSetup()
-        with pytest.raises(ValueError, match='original setup error'):
+        with pytest.raises(ValueError, match='original setup error') as caught:
             await connect_printer(device, link, controller=controller)
-        assert controller.stopped == 1
+        assert link.client.disconnected
+        if stop_fails:
+            from timiniprint.transport.base import ConnectionCleanupError
+            assert isinstance(caught.value.__cause__, ConnectionCleanupError)
+            assert not link.loop.is_closed()
+            assert link.socket._transport._runtime_controller is controller
+            # Initialization has its own rollback, followed by connection
+            # cleanup. Neither failure may discard the provisional controller.
+            assert controller.stopped == (2 if phase in ('initialize', 'after_initialize') else 1)
+            controller.fail_stop = False
+            await link.connection.disconnect()
+        else:
+            assert controller.stopped == 1
         assert link.client.disconnected and link.loop.is_closed()
         assert not link.backend.is_connected()
     asyncio.run(run())

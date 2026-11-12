@@ -267,13 +267,28 @@ to subscribe to a present control characteristic must fail connection setup.
 Notifications received before runtime attachment must retain their channel
 during replay.
 
-Immediately before **each physical GATT write**, after chunking, await
+Immediately before **each physical GATT write**, after applying host/profile bounds, await
 `controller.before_write(session, size=len(chunk), timeout=timeout)`.
 This applies to payload, protocol-step, control-packet and bulk writes.
+None permits that size. A positive integer permits only that many bytes,
+bounded by the proposed size; shorten the next write and advance by its actual
+length without dropping the remainder. This lets a runtime apply a payload
+limit negotiated while waiting for permission. Reject other return values.
 An exception stops sending; do not invent a credit, retry a failed write or
 refund its permission. Credit interpretation belongs to the runtime, never
 the adapter. The default hooks do nothing, preserving other families' behavior.
 Classic/SPP writes do not use these BLE hooks.
+
+Deliver ordinary BLE bytes through
+`controller.handle_ble_notification(session, payload, source=channel_id)`.
+Use one stable, opaque ID per characteristic instance throughout this connection,
+including early replay; do not use a printer MAC address as that ID. The default
+implementation uses the ordinary stream handler. Channel-aware controllers keep
+their incremental decoders separate. Dedicated control channels still use
+`handle_control_notification`. Preserve initial notifications until first runtime
+attachment rather than expiring them as recent reply history. The built-in
+adapter bounds that backlog to 64 KiB and 1024 records; overflow fails attachment
+instead of silently discarding credits or partial metadata.
 
 For enabled standard or bulk flow control, use the profile's
 `flow_resume_timeout_s` when set, independently of the operation/command-ACK
@@ -526,6 +541,12 @@ do not join independent PDF pages into one raster.
 
 ### Phomemo Sessions
 
+Phomemo BLE uses FF02, notification subscriptions across discovered services,
+and a runtime-owned write-credit window. Print Master keeps its separate BLE
+profile and runtime. SPP selection, raster recipes and page-completion policies
+are unchanged. See [Phomemo BLE integration](phomemo-ble.md) for startup,
+payload limits and custom-adapter requirements.
+
 Connection preparation reads device information through the connection's
 query/reply interface; the runtime does not select or require a particular
 transport. Missing optional firmware, battery or feature replies do not block
@@ -611,7 +632,11 @@ its explicit reply characteristic and optional control channel from that same
 service; do not mix partial layouts or use generic endpoint fallback.
 Retain the selected characteristic instance for subscribing and unsubscribing;
 resolving its UUID again can select another instance with the same UUID.
-Otherwise, honor `notify_service_uuids` when nonempty: subscribe to every
+Otherwise, `required_write_char_uuid`, when set, forbids fallback to another
+writer; a matching writer can belong to any discovered service.
+With `notify_all_services=True`, subscribe every discovered notify/indicate
+characteristic, retaining actual instances even when UUIDs repeat. Otherwise,
+honor `notify_service_uuids` when nonempty: subscribe to every
 notify/indicate characteristic in those services, not just the primary UUID.
 
 `ProtocolStep.query(...)` and `ProtocolStep.wait(...)` can set

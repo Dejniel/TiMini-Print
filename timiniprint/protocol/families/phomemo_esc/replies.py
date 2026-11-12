@@ -9,6 +9,8 @@ class _ReplyDecoder:
     _sizes: dict[int, int]
     _prefixes = (0x1A,)
     _allow_bare = False
+    # Complete unprefixed records; values include their entire header.
+    _raw_sizes: dict[bytes, int] = {}
 
     def __init__(self) -> None:
         self._pending = bytearray()
@@ -21,6 +23,17 @@ class _ReplyDecoder:
         self._pending.extend(payload)
         frames = []
         while self._pending:
+            raw_header = next((header for header in self._raw_sizes
+                               if self._pending.startswith(header)), None)
+            if raw_header is not None:
+                size = self._raw_sizes[raw_header]
+                if len(self._pending) < size:
+                    break
+                frames.append(bytes(self._pending[:size]))
+                del self._pending[:size]
+                continue
+            if self._raw_sizes and any(header.startswith(self._pending) for header in self._raw_sizes):
+                break
             start = 1 if self._pending[0] in self._prefixes else 0
             if not start and not self._allow_bare:
                 del self._pending[0]
@@ -46,6 +59,17 @@ class PhomemoReplyDecoder(_ReplyDecoder):
         0x09: 2, 0x0B: 2, 0x0E: 2, 0x0F: 2, 0x16: 2, 0x17: 2,
         0x1D: 2, 0x20: 2, 0x35: 2, 0x3B: 6,
     }
+
+
+class PhomemoBleReplyDecoder(PhomemoReplyDecoder):
+    """BLE write-window records and ordinary statuses in one incremental stream.
+
+    A complete status owns its payload, including bytes resembling credits or
+    frame headers. BLE does not change the established 3B capability length.
+    """
+
+    _sizes = {**PhomemoReplyDecoder._sizes, 0x0D: 13, 0x36: 2, 0x60: 2, 0x8F: 2}
+    _raw_sizes = {b"\x01": 2, b"\x02": 2, b"\xaa\xab\xac\x01": 6}
 
 
 class PrintMasterReplyDecoder(_ReplyDecoder):

@@ -28,6 +28,8 @@ class PreparedPrinter:
 
 
 class RuntimeSessionApi(Protocol):
+    def is_ble_transport(self) -> bool: ...
+
     def report_status(self, message: str) -> None: ...
 
     def report_debug(self, message: str) -> None: ...
@@ -167,17 +169,31 @@ class RuntimeController:
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
         return None
 
+    def handle_ble_notification(self, session: RuntimeSessionApi, payload: bytes, *, source: str) -> None:
+        """Receive one BLE channel's bytes; ``source`` is an opaque session-local ID.
+
+        Stream-oriented controllers share their ordinary receive handler.
+        Controllers subscribing to independent channels can override this hook
+        to keep partial frames separate. Preserve the ID during early replay.
+        Dedicated control notifications use their separate hook instead.
+        """
+        self.handle_notification(session, payload)
+
     def handle_control_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
         """Receive a dedicated BLE control channel, separate from printer replies."""
         return None
 
     async def before_write(
         self, session: RuntimeSessionApi, *, size: int, timeout: float,
-    ) -> None:
+    ) -> int | None:
         """Reserve permission immediately before each physical BLE write.
 
-        Called after chunking, for standard, control-packet and bulk sends.
-        Returning permits exactly one write; raising prevents that write.
+        Called for standard, control-packet and bulk sends. ``size`` is the
+        maximum next write, already bounded by the host and transport profile.
+        Return None to permit that size, or a positive integer no larger than
+        ``size`` to shorten it using a limit negotiated while awaiting permission.
+        The writer must advance by the actual permitted size, without dropping
+        the remaining bytes. Returning permits one write; raising prevents it.
         A failed physical write must abort sending, not refund/retry a credit.
         """
         return None

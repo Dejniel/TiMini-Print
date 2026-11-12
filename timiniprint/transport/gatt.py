@@ -20,3 +20,17 @@ def gatt_inventory(services) -> list[dict]:
         {"uuid": gatt_uuid(char.uuid), "properties": [prop for prop in char.properties
          if prop in ("read", "write", "write-without-response", "notify", "indicate")]}
         for char in service.characteristics]} for service in services or ()]
+
+
+def is_gatt_metadata_service(service_uuid: str) -> bool:
+    """GAP, GATT, Device Information and Battery are not a printer byte stream.
+
+    Check the owning service, not just characteristic UUIDs which may also
+    appear in vendor services. Other services remain available to the runtime.
+    """
+    return gatt_uuid(service_uuid) in {
+        "00001800-0000-1000-8000-00805f9b34fb",
+        "00001801-0000-1000-8000-00805f9b34fb",
+        "0000180a-0000-1000-8000-00805f9b34fb",
+        "0000180f-0000-1000-8000-00805f9b34fb",
+    }

@@ -12,6 +12,13 @@ class RuntimeConnectionSession:
         self._connection = connection
         self._reporter = reporter
 
+    def is_ble_transport(self) -> bool:
+        """Report the opened endpoint, not the catalog's transport preference."""
+        return (
+            getattr(self._connection, "active_ble_profile", None) is not None
+            or self.can_wait_for_notification()
+        )
+
     async def attach_runtime_controller(self, runtime_controller, *, timeout: float) -> None:
         attach_runtime_controller = getattr(self._connection, "attach_runtime_controller", None)
         if not callable(attach_runtime_controller):

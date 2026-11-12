@@ -26,10 +26,10 @@ class BleTransportProfileTests(unittest.TestCase):
                 "",
             ),
             ProtocolFamily.PHOMEMO_ESC: (
-                128,
+                255,
                 20,
                 "0000ff00-0000-1000-8000-00805f9b34fb",
-                "0000ff02-0000-1000-8000-00805f9b34fb",
+                "",
             ),
             ProtocolFamily.NIIMBOT: (
                 20,

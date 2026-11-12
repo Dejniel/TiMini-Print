@@ -38,6 +38,9 @@ async def run_blocking(operation, *args, cleanup: bool = False):
 class StreamRuntimeSession:
     """Notification callbacks and writer gating, with no printer semantics."""
 
+    def is_ble_transport(self) -> bool:
+        return False
+
     def __init__(self, reporter: reporting.Reporter, *, label: str, flow_resume_timeout_s: float = 600.0) -> None:
         self._reporter = reporter
         self._label = label

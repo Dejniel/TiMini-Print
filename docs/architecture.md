@@ -208,6 +208,16 @@ selection. The transport selects endpoints by GATT metadata, never by opcodes.
 On receipt, runtime observers update session state before pending reply
 predicates run; this allows passive waits to depend on parsed runtime state.
 
+An exact `required_write_char_uuid` constrains writer selection without a fixed
+service gate. `notify_all_services` expands subscriptions, not protocol
+identification. Keep characteristic instances and channel IDs distinct even
+when UUIDs repeat. BLE runtime callbacks preserve that identity; stream-oriented
+controllers use their ordinary receive handler by default. Initial callbacks
+have a separate bounded replay backlog, not the expiring recent-reply history.
+Per-write runtime permission may shorten a host-bounded write. The one existing
+writer advances by its actual length; native readiness remains transport-owned.
+Printer credits, counters and page completion remain runtime-owned.
+
 Luck normal/A4 BLE fallback enables `prefer_generic_notify` to select an
 available notify/indicate characteristic without assuming fixed GATT UUIDs.
 This leaves write pacing and Classic preference unchanged. A discovered

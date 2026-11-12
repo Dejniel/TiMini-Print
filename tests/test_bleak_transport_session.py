@@ -26,6 +26,7 @@ from timiniprint.devices.bluetooth_profiles import (
     get_ble_transport_profile,
 )
 from timiniprint.printing.runtime.v5c import V5CRuntimeController
+from timiniprint.printing.runtime.base import RuntimeController
 from timiniprint.printing.runtime.tiny import TinyRuntimeController
 from timiniprint.printing.runtime.v5g import V5GRuntimeController
 from timiniprint.printing.runtime.v5g_density import DensityLevels
@@ -188,7 +189,7 @@ def _attach_runtime_controller_for_test(
     session._runtime_controller = controller
 
 
-class _NotificationCountingController:
+class _NotificationCountingController(RuntimeController):
     def __init__(self) -> None:
         self.notifications: list[bytes] = []
 
@@ -369,7 +370,6 @@ class BleakTransportSessionTests(unittest.TestCase):
         session, client = self._make_session(ProtocolFamily.V5X)
         notify = _Char("0000ae02-0000-1000-8000-00805f9b34fb", ["notify"])
         session.bindings.notify_char = notify
-        session.bindings.notify_char_uuid = notify.uuid
 
         async def run() -> None:
             await session.start_notify_if_available(client, lambda *_args: None)

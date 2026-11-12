@@ -11,6 +11,7 @@ from timiniprint.printing.runtime.base import RuntimeController
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_transport import _BleakTransportSession
 from timiniprint.transport._stream_receive import StreamReceiveHub
+from timiniprint.transport.gatt import is_gatt_metadata_service
 
 
 def characteristic(uuid, *properties):
@@ -24,11 +25,13 @@ class Client:
         self.fail_on = fail_on
 
     async def start_notify(self, uuid, callback):
+        uuid = getattr(uuid, "uuid", uuid)
         if uuid == self.fail_on:
             raise RuntimeError("subscription failed")
         self.callbacks[uuid] = callback
 
     async def stop_notify(self, uuid):
+        uuid = getattr(uuid, "uuid", uuid)
         self.stopped.append(uuid)
         self.callbacks.pop(uuid, None)
 
@@ -50,6 +53,14 @@ def make_session():
 
 
 class BleNotifyServicesTests(unittest.IsolatedAsyncioTestCase):
+    def test_metadata_classification_uses_service_identity_not_uuid_prefixes(self):
+        for service in ("1800", "1801", "180a", "180f"):
+            self.assertTrue(is_gatt_metadata_service(service))
+            self.assertTrue(is_gatt_metadata_service("0000" + service + "-0000-1000-8000-00805f9b34fb"))
+        self.assertFalse(is_gatt_metadata_service("180f0000-1111-2222-3333-444444444444"))
+        self.assertFalse(is_gatt_metadata_service("vendor-service"))
+        self.assertFalse(is_gatt_metadata_service(""))
+
     async def test_property_subscriptions_are_scoped_to_services_and_all_closed(self):
         session = make_session()
         client = Client()
@@ -93,7 +104,7 @@ class BleNotifyServicesTests(unittest.IsolatedAsyncioTestCase):
 
 
 class PhomemoNotifyProfileTests(unittest.IsolatedAsyncioTestCase):
-    async def test_notify_selection_uses_properties_in_preferred_service(self):
+    async def test_phomemo_subscribes_all_services_without_a_fixed_reply_uuid(self):
         from timiniprint.devices import get_ble_transport_profile
         from timiniprint.protocol.family import ProtocolFamily
 
@@ -107,14 +118,14 @@ class PhomemoNotifyProfileTests(unittest.IsolatedAsyncioTestCase):
                 session.configure_endpoints([
                     SimpleNamespace(uuid="unrelated", characteristics=[characteristic("other", "notify")]),
                     SimpleNamespace(uuid=profile.preferred_service_uuid, characteristics=[
-                        characteristic(profile.preferred_write_char_uuid, "write-without-response"), reply,
+                        characteristic(profile.required_write_char_uuid, "write-without-response"), reply,
                     ]),
                 ])
                 client = Client()
                 await session.start_notify_if_available(client, lambda *_args: None)
-                self.assertEqual(set(client.callbacks), {reply.uuid})
+                self.assertEqual(set(client.callbacks), {reply.uuid, "other"})
                 await session.stop_notify_if_started(client)
-                self.assertEqual(client.stopped, [reply.uuid])
+                self.assertEqual(set(client.stopped), {reply.uuid, "other"})
 
 
 class ClassicReplyObservationTests(unittest.TestCase):

@@ -29,11 +29,14 @@ class BleTransportProfile:
     standard_write_delay_ms: int = 50
     preferred_service_uuid: str = ""
     preferred_write_char_uuid: str = ""
+    # Bind this writer exactly, without falling back to unrelated UARTs.
+    required_write_char_uuid: str = ""
     notify_char_uuid: str = ""
     # A separate runtime flow-control channel, not a printer reply stream.
     control_notify_char_uuid: str = ""
     # Subscribe every notify/indicate characteristic in these services.
     notify_service_uuids: Tuple[str, ...] = ()
+    notify_all_services: bool = False
     prefer_generic_notify: bool = False
     flow_controlled_standard_write: bool = False
     flow_resume_timeout_s: Optional[float] = None
@@ -64,6 +67,22 @@ _ELEPH_TRANSPORT_PROFILE = BleTransportProfile(
     standard_write_delay_ms=30,
 )
 
+_PHOMEMO_TRANSPORT_PROFILE = BleTransportProfile(
+    preferred_service_uuid="0000ff00-0000-1000-8000-00805f9b34fb",
+    required_write_char_uuid="0000ff02-0000-1000-8000-00805f9b34fb",
+    notify_all_services=True,
+    standard_chunk_cap=255,
+    standard_write_delay_ms=20,
+)
+
+_PRINTMASTER_ESC_TRANSPORT_PROFILE = BleTransportProfile(
+    preferred_service_uuid="0000ff00-0000-1000-8000-00805f9b34fb",
+    preferred_write_char_uuid="0000ff02-0000-1000-8000-00805f9b34fb",
+    prefer_generic_notify=True,
+    standard_chunk_cap=128,
+    standard_write_delay_ms=20,
+)
+
 _PROFILES = {
     ProtocolFamily.LUCK_NORMAL: _LUCK_NORMAL_TRANSPORT_PROFILE,
     ProtocolFamily.LUCK_NORMAL_A4: _LUCK_NORMAL_TRANSPORT_PROFILE,
@@ -91,13 +110,7 @@ _PROFILES = {
         ),
         write_without_response_payload_reserve=5,
     ),
-    ProtocolFamily.PHOMEMO_ESC: BleTransportProfile(
-        preferred_service_uuid="0000ff00-0000-1000-8000-00805f9b34fb",
-        preferred_write_char_uuid="0000ff02-0000-1000-8000-00805f9b34fb",
-        prefer_generic_notify=True,
-        standard_chunk_cap=128,
-        standard_write_delay_ms=20,
-    ),
+    ProtocolFamily.PHOMEMO_ESC: _PHOMEMO_TRANSPORT_PROFILE,
     ProtocolFamily.NIIMBOT: BleTransportProfile(
         preferred_service_uuid="e7810a71-73ae-499d-8c15-faa9aef0c3f2",
         prefer_generic_notify=True,
@@ -141,6 +154,9 @@ KNOWN_BLE_SERVICE_UUIDS = frozenset(
 
 def get_ble_transport_profile(
     protocol_family: ProtocolFamily | str | None,
+    *, protocol_variant: str | None = None,
 ) -> BleTransportProfile:
     family = ProtocolFamily.from_value(protocol_family)
+    if family is ProtocolFamily.PHOMEMO_ESC and (protocol_variant or "").startswith("printmaster_"):
+        return _PRINTMASTER_ESC_TRANSPORT_PROFILE
     return _PROFILES.get(family, _FALLBACK_PROFILE)

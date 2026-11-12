@@ -16,16 +16,19 @@ from ...protocol import PaperMode, ProtocolJob, ProtocolReplyExpectation, Protoc
 from ...protocol.families.phomemo_esc.flow import (
     PhomemoCapabilities, PhomemoPageStep,
 )
-from ...protocol.families.phomemo_esc.replies import PhomemoReplyDecoder, phomemo_reply
+from ...protocol.families.phomemo_esc.replies import PhomemoBleReplyDecoder, PhomemoReplyDecoder, phomemo_reply
 from ...protocol.status import PrinterStatusCode
 from ..errors import PrinterNotReadyError
 from ..step_execution import execute_protocol_step
 from .base import PreparedPrinter, RuntimeController, RuntimeSessionApi
+from .phomemo_ble import PhomemoBleWriteWindow
 
 
 class PhomemoRuntimeController(RuntimeController):
     COMPLETION_TIMEOUT_SEC = 180.0
     INFO_REPLY_TIMEOUT_SEC = 0.5
+    BLE_INITIAL_CREDIT_TIMEOUT_SEC = 10.0
+    BLE_CREDIT_TIMEOUT_SEC = 180.0
 
     def __init__(
         self, *, ribbon_status: bool = False, cutter_status: bool = False,
@@ -52,6 +55,11 @@ class PhomemoRuntimeController(RuntimeController):
         self._paper_present_delay_sec = paper_present_delay_sec
         self._paper_recovery_delay_sec = paper_recovery_delay_sec
         self._decoder = PhomemoReplyDecoder()
+        self._ble_window: PhomemoBleWriteWindow | None = None
+        self._ble_decoders: dict[str, PhomemoBleReplyDecoder] = {}
+        self._ble_replies: dict[int, tuple[int, bytes]] = {}
+        self._ignored_ble_sources: set[str] = set()
+        self._ble_page_started = False
         self._lock = threading.RLock()
         self._active = False
         self._error: Exception | None = None
@@ -67,11 +75,44 @@ class PhomemoRuntimeController(RuntimeController):
         self._refresh_ribbon = False
         self._ready_at = 0.0
 
+    async def initialize_connection(self, session: RuntimeSessionApi, *, mtu_size: int, timeout: float) -> None:
+        # Custom connectors may also initialize stream transports.
+        if not session.is_ble_transport():
+            return
+        if not session.can_wait_for_notification():
+            raise RuntimeError("Phomemo BLE requires an active notification receiver")
+        with self._lock:
+            self._decoder = PhomemoBleReplyDecoder()
+            self._ble_decoders = {"": self._decoder}
+            self._ble_replies.clear()
+            self._ignored_ble_sources.clear()
+            self._ble_window = PhomemoBleWriteWindow()
+
+    async def before_write(self, session: RuntimeSessionApi, *, size: int, timeout: float) -> int | None:
+        self._raise_error()
+        if self._ble_window is None:
+            return None
+        wait_limit = self.BLE_CREDIT_TIMEOUT_SEC if self._active else self.BLE_INITIAL_CREDIT_TIMEOUT_SEC
+        permitted = await self._ble_window.reserve(
+            size, timeout=max(timeout, wait_limit), check_error=self._raise_error,
+            report_debug=session.report_debug,
+        )
+        self._raise_error()
+        with self._lock:
+            # Replies received while blocked on the first credit belong to an
+            # older page, not to data which has not yet reached the writer.
+            self._ble_page_started = True
+        return permitted
+
     async def prepare(self, device: PrinterDevice, session: RuntimeSessionApi, *, timeout: float) -> PreparedPrinter:
+        if session.is_ble_transport() and self._ble_window is None:
+            raise RuntimeError("Phomemo BLE requires adapter-owned initialization and per-write gating")
         self._legacy_chip_reply = device.protocol_variant == "t02" and "T02" in device.advertised_names
         if device.protocol_variant == "m02h" and "M02H" in device.advertised_names:
             await session.send_standard_payload(b"\x1b\x40")
-        if session.can_query_control_packet() or session.can_send_control_packet_wait_notification():
+        if self._ble_window is not None:
+            await self._prepare_ble_metadata(session, timeout=timeout)
+        elif session.can_query_control_packet() or session.can_send_control_packet_wait_notification():
             # Metadata is optional unless the raster recipe requires a serial.
             info_timeout = min(timeout, self.INFO_REPLY_TIMEOUT_SEC)
             queries = (
@@ -96,22 +137,62 @@ class PhomemoRuntimeController(RuntimeController):
             await self._query_ribbon(session, timeout=timeout)
         return PreparedPrinter(device, self, self._capabilities)
 
+    async def _prepare_ble_metadata(self, session: RuntimeSessionApi, *, timeout: float) -> None:
+        if not session.can_observe_replies():
+            raise RuntimeError("Phomemo BLE requires continuous runtime notification delivery")
+        commands = ((0x7B, 0x20, 0x45, 0x0E, 0x07, 0x5E, 0x08, 0x09, 0x38, 0x8B, 0x63)
+                    if self._query_extended_info else (0x0E, 0x07, 0x08, 0x09, 0x38))
+        batch = b"".join(bytes((0x1F, 0x11, command)) for command in commands)
+        # One optional metadata window, not a separate timeout for every query.
+        # A partial set remains useful through the attached continuous receiver.
+        def metadata_complete(data: bytes) -> bool:
+            with self._lock:
+                opcodes = set(self._ble_replies)
+            chip = 0x17 in opcodes or (self._legacy_chip_reply and 0x16 in opcodes)
+            return chip and {0x04, 0x07, 0x08, 0x09}.issubset(opcodes) and (
+                not self._query_extended_info or 0x3B in opcodes
+            )
+
+        await execute_protocol_step(session, ProtocolStep.query(
+            "Phomemo BLE metadata", batch, expect=ProtocolReplyExpectation.NONE,
+            reply_matcher=ProtocolReplyMatcher(complete=metadata_complete),
+            reply_required=False, include_in_payload=False,
+        ), timeout=timeout if self._require_serial or self._require_chip else min(timeout, self.INFO_REPLY_TIMEOUT_SEC))
+        for command, opcode in ((0x12, 0x05), (0x11, 0x06)):
+            await self.query_reply(session, bytes((0x1F, 0x11, command)), opcode,
+                                   timeout=timeout, required=False)
+
     async def query_reply(
         self, session: RuntimeSessionApi, command: bytes, opcode: int | tuple[int, ...] | None,
         *, timeout: float, required: bool = True,
     ) -> bytes | None:
         await asyncio.sleep(0.1)
+        sequence = self._sequence
+        def complete(data: bytes) -> bool:
+            if self._ble_window is not None:
+                return self._latest_ble_reply(opcode, after=sequence) is not None
+            return phomemo_reply(data, opcode) is not None
+
         reply = await execute_protocol_step(session, ProtocolStep.query(
             "Phomemo query " + command.hex(" "), command,
             expect=ProtocolReplyExpectation.NONE,
             reply_matcher=ProtocolReplyMatcher(
-                complete=lambda data: phomemo_reply(data, opcode) is not None,
+                complete=complete,
             ),
             reply_required=required, include_in_payload=False,
         ), timeout=timeout)
         if reply and not session.can_observe_replies():
             self.handle_notification(session, reply)
+        if self._ble_window is not None:
+            return self._latest_ble_reply(opcode, after=sequence)
         return phomemo_reply(reply or b"", opcode)
+
+    def _latest_ble_reply(self, opcode: int | tuple[int, ...] | None, *, after: int) -> bytes | None:
+        opcodes = (opcode,) if isinstance(opcode, int) else opcode
+        with self._lock:
+            replies = [reply for key, reply in self._ble_replies.items()
+                       if (opcodes is None or key in opcodes) and reply[0] > after]
+            return max(replies)[1] if replies else None
 
     async def _query_ribbon(self, session: RuntimeSessionApi, *, timeout: float) -> None:
         self._refresh_ribbon = False
@@ -134,6 +215,8 @@ class PhomemoRuntimeController(RuntimeController):
             self._expected = 0
             self._received = 0
             self._ignore_pending_result = self._decoder.has_pending_frame
+            self._ignored_ble_sources = {source for source, decoder in self._ble_decoders.items()
+                                         if decoder.has_pending_frame}
         try:
             if not job.steps:
                 # Raw callers still get fault checking and a passive result wait.
@@ -146,75 +229,118 @@ class PhomemoRuntimeController(RuntimeController):
                 self._expected = 0
 
     def handle_notification(self, session: RuntimeSessionApi, payload: bytes) -> None:
+        if self._ble_window is not None:
+            self.handle_ble_notification(session, payload, source="")
+            return
         with self._lock:
-            for frame in self._decoder.feed(payload):
+            self._handle_frames(session, self._decoder.feed(payload))
+
+    def handle_ble_notification(self, session: RuntimeSessionApi, payload: bytes, *, source: str) -> None:
+        if self._ble_window is None:
+            self.handle_notification(session, payload)
+            return
+        with self._lock:
+            if source not in self._ble_decoders:
+                self._ble_decoders[source] = PhomemoBleReplyDecoder()
+            self._handle_frames(session, self._ble_decoders[source].feed(payload), source=source)
+
+    def _handle_frames(self, session: RuntimeSessionApi, frames: list[bytes], *, source: str | None = None) -> None:
+        """Apply complete records while holding the receive-state lock."""
+        for frame in frames:
+            if source is None:
                 old_result = self._ignore_pending_result
                 self._ignore_pending_result = False
-                self._sequence += 1
-                opcode, value = frame[:2]
+            else:
+                old_result = source in self._ignored_ble_sources
+                self._ignored_ble_sources.discard(source)
+            if self._ble_window is not None:
+                if frame[0] == 0x01:
+                    self._ble_window.grant(frame[1])
+                    continue
+                if frame[0] == 0x02:
+                    self._ble_window.set_payload_limit(frame[1])
+                    session.report_debug(f"Phomemo BLE payload limit: {frame[1]} bytes")
+                    continue
+                if frame.startswith(b"\xaa\xab\xac\x01"):
+                    session.report_debug(f"Phomemo BLE diagnostic credit total: {int.from_bytes(frame[4:], 'big')}")
+                    continue
+            self._sequence += 1
+            opcode, value = frame[:2]
+            if self._ble_window is not None:
+                self._ble_replies[opcode] = (self._sequence, frame[1:])
+            if opcode == 0x0D:
+                session.report_debug("Phomemo BLE MAC identity received (12 bytes)")
+            else:
                 session.report_debug("Phomemo reply: " + frame.hex(" "))
-                fault = None
-                if opcode == 0x03 and value in (0xA8, 0xA9):
-                    self._overheated = value == 0xA9
-                elif opcode == 0x04:
-                    self._battery_low = value in (0xA1, 0xA2, 0xA3)
-                    self._battery = {0xA1: 10, 0xA2: 5, 0xA3: 3}.get(value, int.from_bytes(frame[1:2], "big", signed=True))
-                elif opcode == 0x07:
-                    self._firmware = ".".join(str(v if v < 128 else v - 256) for v in frame[1:])
-                elif opcode == 0x08:
-                    self._capabilities = replace(self._capabilities, serial_number=frame[1:])
-                elif opcode == 0x09:
-                    self._shutdown_value = 5 * int.from_bytes(frame[1:2], "big", signed=True)
-                elif opcode == 0x17 or (opcode == 0x16 and self._legacy_chip_reply):
-                    self._capabilities = replace(self._capabilities, chip_type=value)
-                elif opcode == 0x35:
-                    self._charging = value == 0x02
-                elif opcode == 0x3B:
-                    d0, d1, d2 = frame[2:5]
-                    self._capabilities = replace(
-                        self._capabilities,
-                        reported_supports_gray=bool(d0 & 4),
-                        reported_gray_levels=(1 << (d1 >> 4)) if d1 >> 4 else 16,
-                        double_dpi=bool(d1 & 8), charging_print_restricted=bool(d1 & 2),
-                        multiple_densities=bool(d2 & 1), label_workshop=bool(d2 & 8),
-                        paper_sensor_suppression=bool(d2 & 4),
+            fault = None
+            if opcode == 0x03 and value in (0xA8, 0xA9):
+                self._overheated = value == 0xA9
+            elif opcode == 0x04:
+                self._battery_low = value in (0xA1, 0xA2, 0xA3)
+                self._battery = {0xA1: 10, 0xA2: 5, 0xA3: 3}.get(value, int.from_bytes(frame[1:2], "big", signed=True))
+            elif opcode == 0x07:
+                self._firmware = ".".join(str(v if v < 128 else v - 256) for v in frame[1:])
+            elif opcode == 0x08:
+                self._capabilities = replace(self._capabilities, serial_number=frame[1:])
+                if self._ble_window is not None:
+                    self._ble_window.received_serial()
+            elif opcode == 0x09:
+                self._shutdown_value = 5 * int.from_bytes(frame[1:2], "big", signed=True)
+            elif opcode == 0x17 or (opcode == 0x16 and self._legacy_chip_reply):
+                self._capabilities = replace(self._capabilities, chip_type=value)
+            elif opcode == 0x35:
+                self._charging = value == 0x02
+            elif opcode == 0x36 and self._ble_window is not None:
+                self._ble_window.set_burst(value)
+            elif opcode == 0x3B:
+                d0, d1, d2 = frame[2:5]
+                self._capabilities = replace(
+                    self._capabilities,
+                    reported_supports_gray=bool(d0 & 4),
+                    reported_gray_levels=(1 << (d1 >> 4)) if d1 >> 4 else 16,
+                    double_dpi=bool(d1 & 8), charging_print_restricted=bool(d1 & 2),
+                    multiple_densities=bool(d2 & 1), label_workshop=bool(d2 & 8),
+                    paper_sensor_suppression=bool(d2 & 4),
+                )
+            elif opcode == 0x05 and value in (0x98, 0x99):
+                self._cover_open = value == 0x99
+                if self._cover_open:
+                    fault = (PrinterStatusCode.COVER_OPEN, "cover opened")
+                elif self._ribbon_status:
+                    self._refresh_ribbon = True
+            elif opcode == 0x06:
+                was_out = self._paper_out
+                self._paper_out = value == 0x88
+                if self._paper_out and not self._paginated:
+                    fault = (PrinterStatusCode.PAPER_OUT, "out of paper")
+                elif not self._paper_out:
+                    delay = max(
+                        self._paper_present_delay_sec,
+                        self._paper_recovery_delay_sec if was_out else 0.0,
                     )
-                elif opcode == 0x05 and value in (0x98, 0x99):
-                    self._cover_open = value == 0x99
-                    if self._cover_open:
-                        fault = (PrinterStatusCode.COVER_OPEN, "cover opened")
-                    elif self._ribbon_status:
+                    self._ready_at = max(self._ready_at, time.monotonic() + delay)
+                    if self._ribbon_status:
                         self._refresh_ribbon = True
-                elif opcode == 0x06:
-                    was_out = self._paper_out
-                    self._paper_out = value == 0x88
-                    if self._paper_out and not self._paginated:
-                        fault = (PrinterStatusCode.PAPER_OUT, "out of paper")
-                    elif not self._paper_out:
-                        delay = max(
-                            self._paper_present_delay_sec,
-                            self._paper_recovery_delay_sec if was_out else 0.0,
-                        )
-                        self._ready_at = max(self._ready_at, time.monotonic() + delay)
-                        if self._ribbon_status:
-                            self._refresh_ribbon = True
-                elif opcode == 0x0B and value == 0xB8 and not self._ignore_cancel:
-                    fault = (PrinterStatusCode.NOT_READY, "job cancelled at the printer")
-                elif opcode == 0x0E and self._cutter_status and value in (0xB8, 0xB9):
-                    self._cutter_pressed = value == 0xB8
-                    if self._cutter_pressed:
-                        fault = (PrinterStatusCode.CUTTER_ERROR, "cutter pressed")
-                elif opcode == 0x20 and self._ribbon_status:
-                    self._ribbon_fault = value in (0x01, 0x03)
-                    if self._ribbon_fault:
-                        fault = (PrinterStatusCode.RIBBON_ERROR, "ribbon fault")
-                elif opcode == 0x0F and not old_result:
-                    if value != 0x0C:
-                        fault = (PrinterStatusCode.PRINTER_ERROR, "print failed (0x%02X)" % value)
-                    elif self._active and self._received < self._expected:
-                        self._received += 1
-                if fault and self._active and self._error is None:
-                    self._error = PrinterNotReadyError("Phomemo: " + fault[1], fault[0])
+            elif opcode == 0x0B and value == 0xB8 and not self._ignore_cancel:
+                fault = (PrinterStatusCode.NOT_READY, "job cancelled at the printer")
+            elif opcode == 0x0E and self._cutter_status and value in (0xB8, 0xB9):
+                self._cutter_pressed = value == 0xB8
+                if self._cutter_pressed:
+                    fault = (PrinterStatusCode.CUTTER_ERROR, "cutter pressed")
+            elif opcode == 0x20 and self._ribbon_status:
+                self._ribbon_fault = value in (0x01, 0x03)
+                if self._ribbon_fault:
+                    fault = (PrinterStatusCode.RIBBON_ERROR, "ribbon fault")
+            elif opcode == 0x0F and not old_result:
+                if value != 0x0C:
+                    fault = (PrinterStatusCode.PRINTER_ERROR, "print failed (0x%02X)" % value)
+                elif (self._active and self._received < self._expected
+                      and (self._ble_window is None or self._ble_page_started)):
+                    self._received += 1
+            if fault and self._active and self._error is None:
+                self._error = PrinterNotReadyError("Phomemo: " + fault[1], fault[0])
+            if self._ble_window is not None:
+                self._ble_window.wake()
 
     def _raise_error(self) -> None:
         with self._lock:
@@ -284,7 +410,10 @@ class PhomemoRuntimeController(RuntimeController):
             self._raise_error()
             self._received = 0
             self._expected = count
+            self._ble_page_started = False
             self._ignore_pending_result = self._decoder.has_pending_frame
+            self._ignored_ble_sources = {source for source, decoder in self._ble_decoders.items()
+                                         if decoder.has_pending_frame}
 
     async def send_protocol_steps(
         self, session: RuntimeSessionApi, steps: tuple[ProtocolStep, ...], *, timeout: float,
@@ -353,10 +482,14 @@ class PhomemoRuntimeController(RuntimeController):
         with self._lock:
             self._error = RuntimeError("Phomemo connection closed during printing")
             self._active = False
+            if self._ble_window is not None:
+                self._ble_window.stop()
 
     def debug_snapshot(self) -> dict[str, Any]:
         with self._lock:
             return {
+                "ble_write_control": self._ble_window is not None,
+                **(self._ble_window.debug_snapshot() if self._ble_window is not None else {}),
                 "paper_out": self._paper_out, "cover_open": self._cover_open,
                 "overheated": self._overheated, "ribbon_fault": self._ribbon_fault,
                 "cutter_pressed": self._cutter_pressed, "received_results": self._received,

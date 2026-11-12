@@ -137,6 +137,7 @@ class _BleakSocket:
         self._client = BleakClient(
             await self._resolve_client_target(address),
             timeout=self._timeout,
+            disconnected_callback=self._handle_disconnected,
         )
 
         try:
@@ -213,6 +214,7 @@ class _BleakSocket:
             self._client.services,
             preferred_service_uuid=transport.preferred_service_uuid,
             preferred_write_char_uuid=transport.preferred_write_char_uuid,
+            required_write_char_uuid=transport.required_write_char_uuid,
             gatt_layouts=transport.gatt_layouts,
         )
 
@@ -413,6 +415,7 @@ class _BleakSocket:
             before_disconnect=(self._transport.stop_notify_if_started(self._client)
                                if self._client is not None else None),
         )
+        self._transport.ensure_runtime_stopped()
 
     def _cleanup_loop(self) -> None:
         """Dispose the temporary event loop used by the socket wrapper."""
@@ -421,6 +424,12 @@ class _BleakSocket:
                 raise RuntimeError("Cannot close BLE event loop with pending tasks")
             self._loop.close()
             self._loop = None
+
+    def _handle_disconnected(self, client: Any) -> None:
+        if client is not self._client:
+            return
+        self._connected = False
+        self._transport.connection_lost()
 
     def _handle_notification(self, _sender: Any, data: Any) -> None:
         self._transport.handle_notification(bytes(data), source=_sender)

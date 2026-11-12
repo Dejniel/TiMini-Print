@@ -123,7 +123,7 @@ class BleakSocketTests(unittest.TestCase):
         ):
             asyncio.run(s._connect_async("AA"))
 
-        self.assertEqual(calls, [(target, {"timeout": 12.0})])
+        self.assertEqual(calls, [(target, {"timeout": 12.0, "disconnected_callback": s._handle_disconnected})])
         self.assertTrue(client.connected)
 
     def test_connect_caps_reported_ble_mtu_to_standard_request(self) -> None:
@@ -250,7 +250,7 @@ class BleakSocketTests(unittest.TestCase):
         client = _Client([])
         s._client = client
         s._connected = True
-        s._transport.bindings.notify_char_uuid = "0000ae02-0000-1000-8000-00805f9b34fb"
+        s._transport.bindings.notify_char = _Char("0000ae02-0000-1000-8000-00805f9b34fb", ["notify"])
         loop.run_until_complete(s._transport.start_notify_if_available(client, s._handle_notification))
         self.assertTrue(client.notify_callbacks)
         s.close()

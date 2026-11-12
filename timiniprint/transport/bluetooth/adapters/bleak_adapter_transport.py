@@ -11,6 +11,7 @@ from typing import Any, Iterable, List, Optional, Tuple
 from .... import reporting
 from ....devices.bluetooth_channels import BLE_UART_READERS, ble_uuid
 from ....devices.bluetooth_profiles import BleBulkWriteProfile, BleGattLayout, BleTransportProfile
+from ...gatt import is_gatt_metadata_service
 from .bleak_adapter_diagnostics import (
     BleWriteCounters,
     BleWriteProgress,
@@ -24,6 +25,8 @@ from .bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver, _WriteSe
 
 _NOTIFICATION_HISTORY_LIMIT = 16
 _NOTIFICATION_HISTORY_TTL_SEC = 5.0
+_MAX_STARTUP_NOTIFICATION_BYTES = 64 * 1024
+_MAX_STARTUP_NOTIFICATIONS = 1024
 
 
 @dataclass
@@ -31,15 +34,22 @@ class _BleakBindings:
     write_char: Any = None
     bulk_write_char: Any = None
     notify_char: Any = None
+    additional_notify_chars: tuple[Any, ...] = ()
     write_selection_strategy: str = "unknown"
     write_response_preference: Optional[bool] = None
     write_service_uuid: str = ""
     write_char_uuid: str = ""
     bulk_write_char_uuid: str = ""
-    notify_char_uuid: str = ""
-    additional_notify_char_uuids: tuple[str, ...] = ()
     gatt_layout: BleGattLayout | None = None
     gatt_service: Any = None
+
+    @property
+    def notify_char_uuid(self) -> str:
+        return _BleWriteEndpointResolver._normalize_uuid(getattr(self.notify_char, "uuid", ""))
+
+    @property
+    def additional_notify_char_uuids(self) -> tuple[str, ...]:
+        return tuple(_BleWriteEndpointResolver._normalize_uuid(char.uuid) for char in self.additional_notify_chars)
 
 
 @dataclass
@@ -63,14 +73,21 @@ class _BleakTransportSession:
         self._reporter = reporter
         self.bindings = _BleakBindings()
         self.notify_started = False
-        self._notify_subscriptions: dict[str, Any] = {}
+        self._notify_subscriptions: dict[tuple[str, int], Any] = {}
         self._flow_can_write = True
         self._flow_resume_event: asyncio.Event | None = None
         self._flow_resume_event_loop: asyncio.AbstractEventLoop | None = None
         self._client: Any = None
+        self._mtu_size = 20
         self._runtime_controller = None
+        self._connection_error: ConnectionError | None = None
+        self._disconnected_runtime_task: asyncio.Task | None = None
+        self._runtime_attached_once = False
+        self._startup_notifications: list[tuple[bytes, bool, str]] = []
+        self._startup_notification_bytes = 0
+        self._startup_notification_error: Exception | None = None
         self._notification_waiters: list[_NotificationWaiter] = []
-        self._notification_history: deque[tuple[float, bytes, bool]] = deque(
+        self._notification_history: deque[tuple[float, bytes, bool, str]] = deque(
             maxlen=_NOTIFICATION_HISTORY_LIMIT
         )
         self._notification_count = 0
@@ -87,6 +104,9 @@ class _BleakTransportSession:
     @property
     def flow_can_write(self) -> bool:
         return self._flow_can_write
+
+    def is_ble_transport(self) -> bool:
+        return True
 
     @flow_can_write.setter
     def flow_can_write(self, value: bool) -> None:
@@ -120,7 +140,10 @@ class _BleakTransportSession:
         layout = self.bindings.gatt_layout
         if transport.gatt_layouts:
             if layout is None:
-                selection = self._write_resolver.resolve(services, gatt_layouts=transport.gatt_layouts)
+                selection = self._write_resolver.resolve(
+                    services, gatt_layouts=transport.gatt_layouts,
+                    required_write_char_uuid=transport.required_write_char_uuid,
+                )
                 if selection is None:
                     raise RuntimeError("No complete configured GATT layout was found")
                 self.apply_write_selection(selection)
@@ -147,39 +170,49 @@ class _BleakTransportSession:
                 self.report_debug("configured bulk characteristic not found")
 
         self.bindings.notify_char = None
-        self.bindings.notify_char_uuid = ""
-        self.bindings.additional_notify_char_uuids = ()
-        service_notify = self._service_notify_characteristics(services, transport.notify_service_uuids)
+        self.bindings.additional_notify_chars = ()
+        notify_services = (tuple(str(service.uuid) for service in services)
+                           if transport.notify_all_services else transport.notify_service_uuids)
+        service_notify = self._service_notify_characteristics(
+            services, notify_services, preserve_instances=transport.notify_all_services,
+        )
         if layout:
             self.bindings.notify_char = self._find_characteristic_by_uuid(services, layout.notify_char_uuid)
-        elif transport.notify_service_uuids:
+        elif transport.notify_service_uuids or transport.notify_all_services:
             self.bindings.notify_char = service_notify[0] if service_notify else None
         elif transport.notify_char_uuid:
             self.bindings.notify_char = self._find_characteristic_by_uuid(
-                services,
-                transport.notify_char_uuid,
+                services, transport.notify_char_uuid,
                 preferred_service_uuid=transport.preferred_service_uuid,
             )
         elif transport.prefer_generic_notify:
             self.bindings.notify_char = self.find_notify_characteristic(services)
 
-        self.bindings.notify_char_uuid = _BleWriteEndpointResolver._normalize_uuid(
-            getattr(self.bindings.notify_char, "uuid", "")
-        )
-        self.bindings.additional_notify_char_uuids = tuple(
-            str(char.uuid).lower() for char in service_notify
-            if str(char.uuid).lower() != self.bindings.notify_char_uuid
-        )
-        if transport.control_notify_char_uuid:
-            control = self._find_characteristic_by_uuid(services, transport.control_notify_char_uuid)
+        # A broad subscription retains distinct native instances. Existing
+        # explicit/service-scoped bindings retain their UUID de-duplication.
+        if transport.notify_all_services:
+            additional = {id(char): char for char in service_notify if char is not self.bindings.notify_char}
+        else:
+            additional = {str(char.uuid).lower(): char for char in service_notify
+                          if str(char.uuid).lower() != self.bindings.notify_char_uuid}
+        for uuid in (transport.control_notify_char_uuid,):
+            if not uuid:
+                continue
+            char = self._find_characteristic_by_uuid(
+                services, uuid, preferred_service_uuid=transport.preferred_service_uuid,
+            )
+            if char is None:
+                continue
             if layout and not {"notify", "indicate"}.intersection(
-                self._write_resolver._normalize_properties(getattr(control, "properties", ())),
+                self._write_resolver._normalize_properties(getattr(char, "properties", ())),
             ):
-                control = None
-            if control is not None:
-                uuid = _BleWriteEndpointResolver._normalize_uuid(control.uuid)
-                if uuid != self.bindings.notify_char_uuid and uuid not in self.bindings.additional_notify_char_uuids:
-                    self.bindings.additional_notify_char_uuids += (uuid,)
+                continue
+            if transport.notify_all_services:
+                if char is not self.bindings.notify_char:
+                    additional[id(char)] = char
+            elif str(char.uuid).lower() != self.bindings.notify_char_uuid:
+                additional[str(char.uuid).lower()] = char
+        self.bindings.additional_notify_chars = tuple(additional.values())
         if self.bindings.notify_char:
             self.report_debug(
                 f"selected notify characteristic char={self.bindings.notify_char_uuid}"
@@ -194,37 +227,64 @@ class _BleakTransportSession:
         mtu_size: int,
         timeout: float,
     ):
+        if runtime_controller is not None:
+            self._raise_connection_error()
+        pending = self._disconnected_runtime_task
+        if pending is not None:
+            try:
+                await asyncio.shield(pending)
+            finally:
+                if pending.done():
+                    self._disconnected_runtime_task = None
         previous = self._runtime_controller
         if runtime_controller is previous:
             return
-        self._runtime_controller = None
-        if previous is not None:
-            # Controller tasks/notification callbacks belong to this BLE loop.
-            await previous.stop(self)
+        await self._stop_runtime_controller()
         if runtime_controller is None:
             return
+        self._raise_connection_error()
         if previous is None:
             try:
+                if self._startup_notification_error is not None:
+                    raise self._startup_notification_error
+                self._mtu_size = mtu_size
                 await runtime_controller.initialize_connection(
                     self,
                     mtu_size=mtu_size,
                     timeout=timeout,
                 )
+                self._raise_connection_error()
                 self._runtime_controller = runtime_controller
+                self._runtime_attached_once = True
                 self._replay_notifications_to_runtime_controller()
                 await runtime_controller.after_initialize(self, timeout=timeout)
+                self._raise_connection_error()
             except BaseException:
-                self._runtime_controller = None
+                if self._runtime_controller is None and self._disconnected_runtime_task is None:
+                    # Retain provisional resources too if stopping them fails.
+                    self._runtime_controller = runtime_controller
                 try:
-                    await runtime_controller.stop(self)
+                    await self.attach_runtime_controller(None, mtu_size=0, timeout=timeout)
                 except Exception as exc:
                     self.report_warning(short="Runtime cleanup failed", detail=str(exc))
                 raise
         else:
             self._runtime_controller = runtime_controller
 
+    async def _stop_runtime_controller(self) -> None:
+        """One stop path for replacement, initialization rollback and disconnect."""
+        controller = self._runtime_controller
+        if controller is None:
+            return
+        self._runtime_controller = None
+        try:
+            await controller.stop(self)
+        except BaseException:
+            self._runtime_controller = controller
+            raise
+
     @staticmethod
-    def _service_notify_characteristics(services, service_uuids) -> tuple[Any, ...]:
+    def _service_notify_characteristics(services, service_uuids, *, preserve_instances=False) -> tuple[Any, ...]:
         allowed = {uuid.lower() for uuid in service_uuids}
         found = {}
         for service in services:
@@ -233,39 +293,96 @@ class _BleakTransportSession:
             for char in getattr(service, "characteristics", ()):
                 props = {str(value).lower() for value in getattr(char, "properties", ())}
                 if props.intersection({"notify", "indicate"}):
-                    found[str(char.uuid).lower()] = char
+                    key = (str(char.uuid).lower(), len(found)) if preserve_instances else str(char.uuid).lower()
+                    found[key] = char
         return tuple(found[uuid] for uuid in sorted(found))
 
     async def start_notify_if_available(self, client: Any, callback) -> None:
+        characteristics = tuple(char for char in (
+            self.bindings.notify_char, *self.bindings.additional_notify_chars,
+        ) if getattr(char, "uuid", ""))
         start_notify = getattr(client, "start_notify", None)
-        if not callable(start_notify):
+        if not characteristics or not callable(start_notify):
             return
-        uuids = (self.bindings.notify_char_uuid, *self.bindings.additional_notify_char_uuids)
-        try:
-            for uuid in filter(None, uuids):
-                def channel_callback(_sender, data, *, _uuid=uuid):
-                    callback(_uuid, data)
-                target = self._find_characteristic_by_uuid(
-                    (self.bindings.gatt_service,), uuid,
-                ) if self.bindings.gatt_layout else uuid
+        subscribed = []
+        for index, char in enumerate(characteristics):
+            uuid = _BleWriteEndpointResolver._normalize_uuid(char.uuid)
+            if self._transport_profile.notify_all_services:
+                target = source = char
+            elif self.bindings.gatt_layout:
+                target = char
+                source = uuid
+            else:
+                target = source = uuid
+
+            metadata_only = self._transport_profile.notify_all_services and is_gatt_metadata_service(
+                getattr(char, "service_uuid", ""),
+            )
+
+            def channel_callback(_sender, data, *, _source=source, _metadata_only=metadata_only, _uuid=uuid):
+                if _metadata_only:
+                    self.report_debug(f"GATT metadata notification: char={_uuid} bytes={len(data)}")
+                    self.report_trace(f"GATT metadata notify {_uuid}: {bytes(data).hex()}")
+                    return
+                callback(_source, data)
+
+            try:
                 await start_notify(target, channel_callback)
-                self._notify_subscriptions[uuid] = target
-                self.notify_started = True
-        except Exception:
-            await self.stop_notify_if_started(client)
-            raise
-        if self.notify_started:
-            self.report_debug(f"subscribed to notify characteristics {list(self._notify_subscriptions)}")
+            except Exception:
+                if (index == 0 or self._transport_profile.notify_all_services
+                        or self._transport_profile.notify_service_uuids or self._is_control_channel(uuid)):
+                    await self.stop_notify_if_started(client)
+                    raise
+                self.report_debug(f"optional notify subscription failed for {uuid}")
+                continue
+            subscribed.append(uuid)
+            self._notify_subscriptions[(uuid, index)] = target
+            self.notify_started = True
+        self.report_debug(f"subscribed to notify characteristics {subscribed}")
+
+    def connection_lost(self) -> None:
+        """Release blocked I/O in the BLE loop, without reconnecting or retrying.
+
+        The stop task is owned here and drained before disposing the I/O loop.
+        """
+        if self._connection_error is not None:
+            return
+        self._connection_error = ConnectionError("BLE connection was lost")
+        self.report_debug("BLE native connection closed")
+        if self._flow_resume_event is not None:
+            self._flow_resume_event.set()
+        for waiter in tuple(self._notification_waiters):
+            if not waiter.future.done():
+                waiter.future.set_exception(self._connection_error)
+            self._remove_notification_waiter(waiter)
+        if self._runtime_controller is not None:
+            self._disconnected_runtime_task = asyncio.create_task(self._stop_runtime_controller())
+            # Retain the task for cleanup without an unobserved exception if
+            # the caller delays closing the disconnected link.
+            self._disconnected_runtime_task.add_done_callback(
+                lambda task: None if task.cancelled() else task.exception(),
+            )
+
+    def _raise_connection_error(self) -> None:
+        if self._connection_error is not None:
+            raise self._connection_error
+
+    def ensure_runtime_stopped(self) -> None:
+        """Do not release native resources while runtime cleanup is incomplete."""
+        if self._runtime_controller is not None or self._disconnected_runtime_task is not None:
+            raise RuntimeError("BLE cleanup incomplete: runtime shutdown has not finished")
 
     async def stop_notify_if_started(self, client: Any) -> None:
         await self.attach_runtime_controller(None, mtu_size=0, timeout=0)
         self._cancel_notification_waiters()
+        self._startup_notifications.clear()
+        self._startup_notification_bytes = 0
         if not self.notify_started:
             return
         stop_notify = getattr(client, "stop_notify", None)
         if not callable(stop_notify):
             return
-        for uuid, target in tuple(self._notify_subscriptions.items()):
+        for (uuid, _index), target in tuple(self._notify_subscriptions.items()):
             try:
                 await stop_notify(target)
             except Exception as exc:
@@ -281,6 +398,7 @@ class _BleakTransportSession:
         timeout: float,
     ) -> None:
         self._client = client
+        self._mtu_size = mtu_size
         self._session_started_monotonic = time.monotonic()
         if self._runtime_controller is not None:
             await self._runtime_controller.initialize_connection(self, mtu_size=mtu_size, timeout=timeout)
@@ -439,19 +557,32 @@ class _BleakTransportSession:
             raise ValueError("BLE chunk size must be positive")
         progress = BleWriteProgress(progress_label, total_chunks) if progress_label else None
         chunks_written = 0
-        for chunk_index, offset in enumerate(range(0, len(data), chunk_size), start=1):
+        offset = 0
+        while offset < len(data):
+            self._raise_connection_error()
             if wait_for_flow:
                 await self._wait_for_flow(timeout)
-            chunk = data[offset : offset + chunk_size]
+            size = min(chunk_size, len(data) - offset)
             if self._runtime_controller is not None:
-                await self._runtime_controller.before_write(self, size=len(chunk), timeout=timeout)
+                permitted = await self._runtime_controller.before_write(self, size=size, timeout=timeout)
+                if permitted is not None:
+                    if type(permitted) is not int or not 0 < permitted <= size:
+                        raise ValueError("Runtime write size must be a positive integer within the host limit")
+                    if permitted < size:
+                        # A negotiated size may change again while waiting for
+                        # credits. Do not present an obsolete chunk-count total.
+                        progress = None
+                    size = permitted
+            chunk = data[offset : offset + size]
+            self._raise_connection_error()
             await client.write_gatt_char(char, chunk, response=response)
+            self._raise_connection_error()
             self._record_write_activity(progress_label, len(chunk))
-            chunks_written = chunk_index
-            byte_count = min(offset + chunk_size, len(data))
+            chunks_written += 1
+            offset += size
             progress_message = None if progress is None else progress.message_for(
-                chunk_index,
-                byte_count,
+                chunks_written,
+                offset,
                 len(data),
             )
             if progress_message:
@@ -471,6 +602,7 @@ class _BleakTransportSession:
                 self._flow_resume_event_for_current_loop().wait(),
                 timeout=max(0.0, resume_timeout),
             )
+            self._raise_connection_error()
         except asyncio.TimeoutError:
             raise TimeoutError("Timed out waiting for BLE flow-control resume") from None
 
@@ -481,13 +613,16 @@ class _BleakTransportSession:
         source_value = getattr(source, "uuid", source)
         source_uuid = _BleWriteEndpointResolver._normalize_uuid(source_value) if isinstance(source_value, str) else ""
         is_control = self._is_control_channel(source_uuid)
-        self._remember_notification(now, payload, is_control)
+        channel = source_uuid if isinstance(source, (str, type(None))) else (
+            f"{source_uuid}#{getattr(source, 'handle', id(source))}"
+        )
+        self._remember_notification(now, payload, is_control, channel)
         try:
             if self._runtime_controller is not None:
                 if is_control:
                     self._runtime_controller.handle_control_notification(self, payload)
                 else:
-                    self._runtime_controller.handle_notification(self, payload)
+                    self._runtime_controller.handle_ble_notification(self, payload, source=channel)
         finally:
             if not is_control:
                 self._match_notification_waiters(payload)
@@ -510,7 +645,7 @@ class _BleakTransportSession:
         return bool(configured) and uuid == _BleWriteEndpointResolver._normalize_uuid(configured)
 
     def can_observe_control_notifications(self) -> bool:
-        return any(self._is_control_channel(uuid) for uuid in self._notify_subscriptions)
+        return any(self._is_control_channel(uuid) for uuid, _index in self._notify_subscriptions)
 
     @staticmethod
     def _find_characteristic_by_uuid(
@@ -641,7 +776,7 @@ class _BleakTransportSession:
         )
 
     def can_send_control_packet(self) -> bool:
-        return bool(self._client and self.bindings.write_char)
+        return self._connection_error is None and bool(self._client and self.bindings.write_char)
 
     def can_send_bulk_payload(self) -> bool:
         return bool(
@@ -654,7 +789,7 @@ class _BleakTransportSession:
         return False
 
     def can_wait_for_notification(self) -> bool:
-        return self.notify_started
+        return self._connection_error is None and self.notify_started
 
     def can_send_control_packet_wait_notification(self) -> bool:
         return self.can_send_control_packet() and self.can_wait_for_notification()
@@ -667,6 +802,7 @@ class _BleakTransportSession:
         timeout: float,
         required: bool = True,
     ) -> bytes | None:
+        self._raise_connection_error()
         if not self.can_wait_for_notification():
             if required:
                 raise RuntimeError(f"BLE notification wait unavailable: {label}")
@@ -731,7 +867,13 @@ class _BleakTransportSession:
             self.bindings.write_char,
             packet,
             response=response,
-            chunk_size=min(180, self._transport_profile.standard_chunk_cap),
+            chunk_size=min(
+                180, self._transport_profile.standard_chunk_cap,
+                self._effective_mtu_payload(
+                    self.bindings.write_char, self._mtu_size, response=response,
+                    reserve=self._transport_profile.write_without_response_payload_reserve,
+                ),
+            ),
             delay_seconds=self._transport_profile.standard_write_delay_ms / 1000.0,
             timeout=timeout,
         )
@@ -782,25 +924,35 @@ class _BleakTransportSession:
         self._notification_waiters.append(waiter)
         return waiter
 
-    def _remember_notification(self, now: float, payload: bytes, is_control: bool) -> None:
-        self._notification_history.append((now, bytes(payload), is_control))
+    def _remember_notification(self, now: float, payload: bytes, is_control: bool, channel: str) -> None:
+        # Initial grants and partial metadata are not expendable recent-reply
+        # history. Keep them until the first controller owns reception.
+        if payload and not self._runtime_attached_once and self._startup_notification_error is None:
+            self._startup_notification_bytes += len(payload)
+            if (self._startup_notification_bytes > _MAX_STARTUP_NOTIFICATION_BYTES
+                    or len(self._startup_notifications) >= _MAX_STARTUP_NOTIFICATIONS):
+                self._startup_notification_error = RuntimeError("BLE startup notifications exceeded the replay limit")
+                self._startup_notifications.clear()
+            else:
+                self._startup_notifications.append((bytes(payload), is_control, channel))
+        self._notification_history.append((now, bytes(payload), is_control, channel))
         self._trim_notification_history(now)
 
     def _replay_notifications_to_runtime_controller(self) -> None:
         if self._runtime_controller is None:
             return
-        now = time.monotonic()
-        self._trim_notification_history(now)
-        for _timestamp, payload, is_control in self._notification_history:
+        pending, self._startup_notifications = self._startup_notifications, []
+        self._startup_notification_bytes = 0
+        for payload, is_control, channel in pending:
             if is_control:
                 self._runtime_controller.handle_control_notification(self, payload)
             else:
-                self._runtime_controller.handle_notification(self, payload)
+                self._runtime_controller.handle_ble_notification(self, payload, source=channel)
 
     def _match_notification_history(self, match: Callable[[bytes], bool]) -> bytes | None:
         now = time.monotonic()
         self._trim_notification_history(now)
-        for _timestamp, payload, is_control in reversed(self._notification_history):
+        for _timestamp, payload, is_control, _channel in reversed(self._notification_history):
             if not is_control and match(payload):
                 return payload
         return None
@@ -845,6 +997,8 @@ class _BleakTransportSession:
                 self.report_trace(f"notification matched {waiter.label}: {payload.hex()}")
 
     def _remove_notification_waiter(self, waiter: _NotificationWaiter) -> None:
+        if waiter.future.done() and not waiter.future.cancelled():
+            waiter.future.exception()
         try:
             self._notification_waiters.remove(waiter)
         except ValueError:

@@ -181,7 +181,7 @@ class PrinterDevice:
 
     @property
     def ble_transport_profile(self) -> BleTransportProfile:
-        return get_ble_transport_profile(self.protocol_family)
+        return get_ble_transport_profile(self.protocol_family, protocol_variant=self.protocol_variant)
 
     def with_transport_target(self, transport_target: Optional[TransportTarget]) -> "PrinterDevice":
         """Return a copy of this device with a different transport target."""

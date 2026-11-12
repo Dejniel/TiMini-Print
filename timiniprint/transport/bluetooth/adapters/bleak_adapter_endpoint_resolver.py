@@ -43,15 +43,22 @@ class _BleWriteEndpointResolver:
         *,
         preferred_service_uuid: str = "",
         preferred_write_char_uuid: str = "",
+        required_write_char_uuid: str = "",
         gatt_layouts: Sequence[BleGattLayout] = (),
     ) -> Optional[_WriteSelection]:
         if gatt_layouts:
+            if required_write_char_uuid:
+                gatt_layouts = tuple(layout for layout in gatt_layouts
+                                     if ble_uuid(layout.write_char_uuid) == ble_uuid(required_write_char_uuid))
             return self._resolve_layout(services, gatt_layouts)
         candidates = self._collect_candidates(
             services,
             preferred_service_uuid=preferred_service_uuid,
             preferred_write_char_uuid=preferred_write_char_uuid,
         )
+        if required_write_char_uuid:
+            candidates = [candidate for candidate in candidates
+                          if ble_uuid(candidate.char_uuid) == ble_uuid(required_write_char_uuid)]
         self._log_candidates(candidates)
         return self._select_candidate(candidates)
 
