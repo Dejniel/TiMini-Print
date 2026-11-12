@@ -33,6 +33,8 @@ class ProtocolBehavior:
     handles_raster_x_offset: bool = False
     raster_x_offset_resolver: Callable[[Optional[str]], bool] | None = None
     contiguous_raster_variants: tuple[str, ...] = ()
+    # A medium can need a complete raster even when another medium can stream.
+    contiguous_raster_resolver: Callable[[str | None, str | None], bool] | None = None
     default_image_pipeline: ImagePipelineConfig = field(
         default_factory=lambda: ImagePipelineConfig(
             formats=(PixelFormat.BW1,),

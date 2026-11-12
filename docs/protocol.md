@@ -515,7 +515,8 @@ is_text=False, settings=settings)`. This helper applies the selected preset's
 layout, but does not rotate, rescale or dither the supplied pixels.
 
 Before splitting a continuous raster into several jobs, check
-`PrinterProtocol(device).requires_contiguous_raster_for_continuous_pages()`.
+`PrinterProtocol(device).requires_contiguous_raster_for_continuous_pages(paper_preset_key=...)`.
+Pass the selected paper key; omitting it queries the profile's default medium.
 If true, join compatible content fragments with `RasterSet.concatenate_vertical(...)`
 before applying paper layout and building one job. `PrintJobBuilder` already
 handles continuous text without requiring the caller to join its render chunks.

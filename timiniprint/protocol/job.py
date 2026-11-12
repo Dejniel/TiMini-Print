@@ -406,12 +406,19 @@ class PrinterProtocol:
         return bool(job.payload or job.steps)
 
 
-    def requires_contiguous_raster_for_continuous_pages(self) -> bool:
+    def requires_contiguous_raster_for_continuous_pages(self, *, paper_preset_key: str | None = None) -> bool:
         """Whether render fragments of one continuous document need joint encoding.
 
+        Paper defaults to the profile preset; an unknown key raises ValueError.
         This does not combine independent physical pages or perform I/O.
         """
         behavior = get_protocol_behavior(self.device.protocol_family)
+        paper = (self.device.profile.paper_preset(paper_preset_key) if paper_preset_key
+                 else self.device.profile.default_paper_preset)
+        if paper is None:
+            raise ValueError(f"Unknown paper preset: {paper_preset_key}")
+        if behavior.contiguous_raster_resolver is not None:
+            return behavior.contiguous_raster_resolver(self.device.protocol_variant, paper.key)
         return self.device.protocol_variant in behavior.contiguous_raster_variants
 
     @staticmethod

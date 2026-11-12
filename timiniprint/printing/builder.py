@@ -103,7 +103,9 @@ class PrintJobBuilder:
         merge_continuous = (
             page_count > 1
             and plan.page_flow is PageFlow.CONTINUOUS
-            and PrinterProtocol(self.device).requires_contiguous_raster_for_continuous_pages()
+            and PrinterProtocol(self.device).requires_contiguous_raster_for_continuous_pages(
+                paper_preset_key=self.settings.paper_preset_key,
+            )
         )
         fragments: list[RasterSet] = []
         first_rendered: RenderedPage | None = None
