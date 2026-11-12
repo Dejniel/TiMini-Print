@@ -59,6 +59,12 @@ class _NotificationWaiter:
     future: asyncio.Future
 
 
+@dataclass(frozen=True)
+class _NotificationSubscription:
+    target: Any
+    metadata_only: bool
+
+
 class _BleakTransportSession:
     """Encapsulates endpoint binding and delegates family runtime to controllers."""
 
@@ -72,8 +78,7 @@ class _BleakTransportSession:
         self._write_resolver = write_resolver
         self._reporter = reporter
         self.bindings = _BleakBindings()
-        self.notify_started = False
-        self._notify_subscriptions: dict[tuple[str, int], Any] = {}
+        self._notify_subscriptions: dict[tuple[str, int], _NotificationSubscription] = {}
         self._flow_can_write = True
         self._flow_resume_event: asyncio.Event | None = None
         self._flow_resume_event_loop: asyncio.AbstractEventLoop | None = None
@@ -107,6 +112,11 @@ class _BleakTransportSession:
 
     def is_ble_transport(self) -> bool:
         return True
+
+    @property
+    def notify_started(self) -> bool:
+        """Any active subscription, including metadata retained for cleanup."""
+        return bool(self._notify_subscriptions)
 
     @flow_can_write.setter
     def flow_can_write(self, value: bool) -> None:
@@ -342,8 +352,7 @@ class _BleakTransportSession:
                 self.report_debug(f"optional notify subscription failed for {uuid}")
                 continue
             subscribed.append(uuid)
-            self._notify_subscriptions[(uuid, index)] = target
-            self.notify_started = True
+            self._notify_subscriptions[(uuid, index)] = _NotificationSubscription(target, metadata_only)
         self.report_debug(f"subscribed to notify characteristics {subscribed}")
 
     def connection_lost(self) -> None:
@@ -388,13 +397,12 @@ class _BleakTransportSession:
         stop_notify = getattr(client, "stop_notify", None)
         if not callable(stop_notify):
             return
-        for (uuid, _index), target in tuple(self._notify_subscriptions.items()):
+        for (uuid, _index), subscription in tuple(self._notify_subscriptions.items()):
             try:
-                await stop_notify(target)
+                await stop_notify(subscription.target)
             except Exception as exc:
                 self.report_warning(short="BLE notification shutdown failed", detail=f"{uuid}: {exc}")
         self._notify_subscriptions.clear()
-        self.notify_started = False
 
     async def initialize_connection(
         self,
@@ -651,7 +659,8 @@ class _BleakTransportSession:
         return bool(configured) and uuid == _BleWriteEndpointResolver._normalize_uuid(configured)
 
     def can_observe_control_notifications(self) -> bool:
-        return any(self._is_control_channel(uuid) for uuid, _index in self._notify_subscriptions)
+        return any(not subscription.metadata_only and self._is_control_channel(uuid)
+                   for (uuid, _index), subscription in self._notify_subscriptions.items())
 
     @staticmethod
     def _find_characteristic_by_uuid(
@@ -795,7 +804,11 @@ class _BleakTransportSession:
         return False
 
     def can_wait_for_notification(self) -> bool:
-        return self._connection_error is None and self.notify_started
+        """A subscribed channel delivers bytes to printer reply waiters."""
+        return self._connection_error is None and any(
+            not subscription.metadata_only and not self._is_control_channel(uuid)
+            for (uuid, _index), subscription in self._notify_subscriptions.items()
+        )
 
     def can_send_control_packet_wait_notification(self) -> bool:
         return self.can_send_control_packet() and self.can_wait_for_notification()

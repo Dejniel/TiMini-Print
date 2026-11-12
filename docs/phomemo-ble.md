@@ -25,6 +25,10 @@ page replies. Classification uses the owning service, not just a characteristic 
 These metadata subscriptions are best-effort: a refused Service Changed or
 Battery subscription does not invalidate a usable printer reply channel.
 Required printer-channel failures still abort setup and close earlier subscriptions.
+An active metadata subscription alone does not provide a printer reply receiver.
+Reply waits/queries require a subscribed printer-data channel; dedicated flow-control
+subscriptions do not count either. Metadata-only connections still close their
+subscriptions normally, and Phomemo preparation rejects them before sending queries.
 
 Host-buffer readiness belongs to the native writer. Await it as required by the
 platform even when the printer has granted credits. The desktop adapter awaits

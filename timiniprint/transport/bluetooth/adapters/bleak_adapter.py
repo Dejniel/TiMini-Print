@@ -85,10 +85,6 @@ class _BleakSocket:
     def _notify_started(self) -> bool:
         return self._transport.notify_started
 
-    @_notify_started.setter
-    def _notify_started(self, value: bool) -> None:
-        self._transport.notify_started = value
-
     def connect(self, address_channel: Tuple[str, int]) -> None:
         """Connect to the BLE device and prepare family-specific endpoints."""
         address, _ = address_channel

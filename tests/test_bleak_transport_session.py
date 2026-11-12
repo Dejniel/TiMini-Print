@@ -164,7 +164,10 @@ def _make_v5g_controller(
 
 
 def _enable_notification_waits(session: _BleakTransportSession) -> None:
-    session.notify_started = True
+    session.bindings.notify_char = _Char("test-reply", ["notify"])
+    asyncio.run(session.start_notify_if_available(
+        _Client([]), lambda source, data: session.handle_notification(data, source),
+    ))
 
 
 def _runtime_controller_for_test(family: ProtocolFamily):
