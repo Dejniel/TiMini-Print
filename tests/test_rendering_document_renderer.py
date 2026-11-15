@@ -245,7 +245,7 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         self.assertEqual(preview_image.getpixel((255, 0)), 0)
         self.assertEqual(preview_image.getpixel((256, 0)), 255)
 
-    def test_paper_preset_left_padding_stays_protocol_side(self) -> None:
+    def test_paper_preset_left_padding_is_visible_but_stays_protocol_side(self) -> None:
         renderer = DocumentRenderer(
             image_loader=lambda _path: _test_image(),
         )
@@ -274,7 +274,9 @@ class RenderingDocumentRendererTests(unittest.TestCase):
         preview = renderer.preview_page(plan, plan.pages[0], device, settings)
         rendered = renderer.print_page(plan, plan.pages[0], device, settings)
 
-        self.assertEqual(preview.width, 128)
+        self.assertEqual(preview.width, 192)
+        self.assertEqual(preview.raster_width, 128)
+        self.assertEqual(preview.layout.left_margin_px, 64)
         self.assertEqual(rendered.raster_set.width, 128)
 
     def test_paper_preset_exact_raster_height_is_used_for_preview_and_print(self) -> None:

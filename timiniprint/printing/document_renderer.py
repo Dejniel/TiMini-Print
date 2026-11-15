@@ -20,7 +20,7 @@ from ..rendering.converters.text import TextConverter
 from ..rendering.errors import DocumentReadError
 from ..rendering.formats import document_kind, mm_to_px
 from ..rendering.renderer import PrintImageRenderer
-from .paper import ResolvedPaper, _plan_paper_layout, resolve_paper
+from .paper import PreviewLayout, ResolvedPaper, _plan_paper_layout, resolve_paper
 from .settings import ImageMode, PrintSettings, resolve_gray_preprocessing
 
 TextFontResolver = Callable[[Optional[str]], Optional[str]]
@@ -62,6 +62,15 @@ class DocumentPlan:
 
 @dataclass(frozen=True)
 class PreviewPage:
+    """A display image and optional printer-dot placement, never a print input.
+
+    width/height describe the PNG. raster_width/raster_height describe the
+    prepared print body before its protocol-side horizontal origin. For a
+    printer preview, layout describes the surrounding canvas and content box;
+    a source-only preview has no printer layout. Neither output is a physical
+    paper measurement or a promise of mechanical print completion.
+    """
+
     png: bytes
     width: int
     height: int
@@ -69,6 +78,7 @@ class PreviewPage:
     raster_height: int
     page_count: int = 1
     page_number: int = 1
+    layout: PreviewLayout | None = None
 
 
 @dataclass(frozen=True)
@@ -156,7 +166,7 @@ class DocumentRenderer:
         device: PrinterDevice,
         settings: PrintSettings,
     ) -> PreviewPage:
-        vendor_page = self._open_vendor_page(plan, page, device, settings)
+        vendor_page, layout = self._open_vendor_page(plan, page, device, settings)
         pipeline, dither_mode, gamma_handle, gamma_value = self._render_options(
             vendor_page,
             device,
@@ -169,14 +179,20 @@ class DocumentRenderer:
             gamma_handle=gamma_handle,
             gamma_value=gamma_value,
         )
+        raster_width, raster_height = preview.size
+        if preview.size != (layout.width, layout.height):
+            canvas = Image.new(preview.mode, (layout.width, layout.height), _white_for_mode(preview.mode))
+            canvas.paste(preview, (layout.raster.left, layout.raster.top))
+            preview = canvas
         return PreviewPage(
             png=PrintImageRenderer.image_png(preview),
             width=preview.width,
             height=preview.height,
-            raster_width=preview.width,
-            raster_height=preview.height,
+            raster_width=raster_width,
+            raster_height=raster_height,
             page_count=plan.page_count,
             page_number=page.index + 1,
+            layout=layout,
         )
 
     def preview_source_page(
@@ -244,7 +260,7 @@ class DocumentRenderer:
         settings: PrintSettings,
         runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> RenderedPage:
-        vendor_page = self._open_vendor_page(plan, page, device, settings)
+        vendor_page, _layout = self._open_vendor_page(plan, page, device, settings)
         pipeline, dither_mode, gamma_handle, gamma_value = self._render_options(
             vendor_page,
             device,
@@ -273,14 +289,14 @@ class DocumentRenderer:
         page: DocumentPage,
         device: PrinterDevice,
         settings: PrintSettings,
-    ) -> Page:
+    ) -> tuple[Page, PreviewLayout]:
         paper = resolve_paper(device, settings)
         with self._reading_document(plan.kind), self._open_source(plan.document, plan.kind, device, settings) as source:
             if page.index < 0 or page.index >= source.page_count:
                 raise IndexError(f"Document page out of range: {page.number}")
             return self._apply_paper_layout(source.page(page.index), paper)
 
-    def _apply_paper_layout(self, page: Page, paper: ResolvedPaper) -> Page:
+    def _apply_paper_layout(self, page: Page, paper: ResolvedPaper) -> tuple[Page, PreviewLayout]:
         image = page.image
         if paper.render_height_scale != 1.0:
             image = image.resize(
@@ -305,12 +321,13 @@ class DocumentRenderer:
             content_box_width=paper.render_width_px,
             content_label="Rendered page",
         )
+        preview_layout = layout.preview_layout(paper)
         if (
             image is page.image
             and (layout.width, layout.height) == image.size
             and not paper.mirror_horizontal
         ):
-            return page
+            return page, preview_layout
         canvas = Image.new(
             image.mode,
             (layout.width, layout.height),
@@ -319,7 +336,7 @@ class DocumentRenderer:
         canvas.paste(image, (layout.left_padding, layout.top_padding))
         if paper.mirror_horizontal:
             canvas = ImageOps.mirror(canvas)
-        return Page(canvas, dither=page.dither, is_text=page.is_text)
+        return Page(canvas, dither=page.dither, is_text=page.is_text), preview_layout
 
     def _open_source(
         self,

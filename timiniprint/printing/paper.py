@@ -29,6 +29,56 @@ class ResolvedPaper:
 
 
 @dataclass(frozen=True)
+class PreviewBounds:
+    """A rectangle in printer dots, measured from the preview canvas origin.
+
+    Content bounds describe the fitted source, including any white pixels in
+    it, not the bounding box of ink. They follow rendering-side mirroring.
+    """
+
+    left: int
+    top: int
+    width: int
+    height: int
+
+
+@dataclass(frozen=True)
+class PreviewLayout:
+    """Known page placement, not measured physical paper or unprintable edges.
+
+    All coordinates are printer dots, before display pixel-aspect correction.
+    ``raster`` locates the prepared body; its explicit horizontal offset is
+    still applied by the encoder, not by the printable raster renderer.
+    ``content`` locates the fitted source inside that body. Margins are the
+    geometric space around this rectangle, not guaranteed white/unprinted ink.
+    The canvas follows an exact raster width when supplied, otherwise the
+    declared protocol width. Height covers the prepared body only: no recipe
+    footer, page/copy gap, cutter feed or unknown physical margin is invented.
+    """
+
+    width: int
+    height: int
+    raster: PreviewBounds
+    content: PreviewBounds
+
+    @property
+    def left_margin_px(self) -> int:
+        return self.content.left
+
+    @property
+    def top_margin_px(self) -> int:
+        return self.content.top
+
+    @property
+    def right_margin_px(self) -> int:
+        return self.width - self.content.left - self.content.width
+
+    @property
+    def bottom_margin_px(self) -> int:
+        return self.height - self.content.top - self.content.height
+
+
+@dataclass(frozen=True)
 class _PaperLayoutPlan:
     width: int
     height: int
@@ -36,6 +86,21 @@ class _PaperLayoutPlan:
     right_padding: int
     top_padding: int
     bottom_padding: int
+
+    def preview_layout(self, paper: ResolvedPaper) -> PreviewLayout:
+        """Describe this resolved placement without changing its raster body."""
+        origin = paper.left_padding_px or 0
+        return PreviewLayout(
+            width=paper.raster_width_px or max(paper.paper_width_px, origin + self.width),
+            height=self.height,
+            raster=PreviewBounds(origin, 0, self.width, self.height),
+            content=PreviewBounds(
+                origin + (self.right_padding if paper.mirror_horizontal else self.left_padding),
+                self.top_padding,
+                self.width - self.left_padding - self.right_padding,
+                self.height - self.top_padding - self.bottom_padding,
+            ),
+        )
 
 
 def paper_presets_for_device(device: PrinterDevice | None) -> tuple[PaperPreset, ...]:

@@ -83,6 +83,44 @@ A connector opens a low-level transport connection for that device. The built-in
 - `feed()` and `retract()` for manual paper motion
 - `disconnect()` or `async with` for connection cleanup
 
+## Preview Geometry
+
+`DocumentRenderer.preview_page(plan, page, device, settings)` returns a
+`PreviewPage` whose PNG includes the known page canvas and the prepared raster's
+horizontal origin. Preview composition does not pad the printable raster or
+change protocol jobs; the encoder still applies that origin exactly once.
+`preview_source_page(...)` views the original document without printer layout.
+
+For a printer preview, `preview.layout` is an immutable `PreviewLayout` from
+`timiniprint.printing.paper`:
+
+- `width`, `height`: known canvas size in printer dots;
+- `raster`: `PreviewBounds(left, top, width, height)` locating the prepared
+  raster body before protocol-side padding;
+- `content`: the fitted source rectangle after layout/mirroring, including
+  any white pixels retained in the source, not an ink bounding box;
+- `left_margin_px`, `top_margin_px`, `right_margin_px`, `bottom_margin_px`:
+  derived geometric space around `content`, not additional printer settings.
+
+The canvas uses `raster_width_px` when specified, otherwise the declared
+protocol width (expanded if necessary to contain the placed body). Its height
+is the prepared body's height, including rendering-side padding. These are
+known layout bounds, **not** measured physical roll edges or unprintable areas.
+Recipe-specific wire footers, page/copy gaps, feed/cut movement and unknown
+physical margins are not synthesized in the preview.
+
+`PreviewPage.width/height` describe the actual PNG;
+`raster_width/raster_height` retain the prepared body size, so they may be
+smaller than the preview canvas. Layout coordinates stay in printer dots even
+when a renderer corrects the PNG's display pixel aspect. Map coordinates with
+`preview.width / layout.width` and `preview.height / layout.height` when drawing
+an overlay; do not assume display pixels are printer dots. Source-only previews
+have `layout=None`. Neither PNG is an input to the raster/job builders.
+
+For example, a 128-dot body with a 64-dot left origin on a 192-dot canvas has
+`preview.width == 192`, `preview.raster_width == 128`, and
+`preview.layout.raster.left == 64`. Its print body remains 128 dots wide.
+
 ## Printer Conditions And Failed Operations
 
 Blocking states reported by the printer raise
