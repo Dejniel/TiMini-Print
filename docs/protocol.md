@@ -189,9 +189,6 @@ PnP fields, not a raw hexadecimal dump.
 Reads share one bounded deadline, never write or pair, and propagate
 cancellation. A timed-out read ends the sequence without queueing more requests.
 
-`probe_ble_device_information(address)` connects, reads, and disconnects without
-a printer profile, writable characteristic, or notification subscription. The
-caller must not invoke it alongside an active connection to the same device.
 `BleakBluetoothConnection.read_device_information()` returns the connect-time
 snapshot (or `None` for Classic); it does not race new reads with a print job.
 

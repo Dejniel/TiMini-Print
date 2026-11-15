@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, patch
 from unittest.mock import MagicMock
 
 from timiniprint.transport.bluetooth import (
-    BleDeviceInformation, read_device_information, probe_ble_device_information,
+    BleDeviceInformation, read_device_information,
 )
 from timiniprint.transport.bluetooth.device_information import (
     DEVICE_INFORMATION_SERVICE_UUID, DEVICE_INFORMATION_CHARACTERISTICS,
@@ -78,22 +78,6 @@ class BleDeviceInformationTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.CancelledError):
             await read_device_information(client, "a")
 
-    async def test_probe_needs_no_writable_characteristics_or_printer_profile(self):
-        client = client_with_information({MODEL: b"P1"})
-        client.connect = AsyncMock()
-        client.disconnect = AsyncMock()
-        with patch.dict(sys.modules, {"bleak": SimpleNamespace(BleakClient=lambda *a, **kw: client)}):
-            result = await probe_ble_device_information("a")
-        self.assertEqual(result.values, {"model": "P1"})
-        client.disconnect.assert_awaited_once()
-
-    async def test_probe_closes_client_even_if_connect_fails(self):
-        client = SimpleNamespace(connect=AsyncMock(side_effect=OSError("unavailable")), disconnect=AsyncMock())
-        with patch.dict(sys.modules, {"bleak": SimpleNamespace(BleakClient=lambda *a, **kw: client)}):
-            with self.assertRaises(OSError):
-                await probe_ble_device_information("a")
-        client.disconnect.assert_awaited_once()
-
     def test_decoder_excludes_unknown_characteristics_but_keeps_serial_number(self):
         result = BleDeviceInformation.from_gatt("a", service_present=True, values={
             MODEL: b"P1", "00002a25-0000-1000-8000-00805f9b34fb": b"serial",
@@ -103,6 +87,35 @@ class BleDeviceInformationTests(unittest.IsolatedAsyncioTestCase):
 
 
 class BleConnectInformationTests(unittest.TestCase):
+    def test_ordinary_connection_still_reads_and_logs_metadata_once(self):
+        from timiniprint.devices.bluetooth_profiles import BleTransportProfile
+        from timiniprint.transport.bluetooth.adapters.bleak_adapter import _BleakSocket
+
+        client = client_with_information({MODEL: b"P1"})
+        client.services.append(SimpleNamespace(
+            uuid="0000ff00-0000-1000-8000-00805f9b34fb", characteristics=[
+                SimpleNamespace(uuid="0000ff02-0000-1000-8000-00805f9b34fb", properties=["write"]),
+                SimpleNamespace(uuid="0000ff01-0000-1000-8000-00805f9b34fb", properties=["notify"]),
+            ],
+        ))
+        client.connect, client.disconnect = AsyncMock(), AsyncMock()
+        client.start_notify, client.stop_notify = AsyncMock(), AsyncMock()
+        client.mtu_size = None
+        reporter = MagicMock()
+        sock = _BleakSocket(reporter=reporter, device_cache={"A": object()},
+                            ble_profile=BleTransportProfile(prefer_generic_notify=True))
+        with patch.dict(sys.modules, {"bleak": SimpleNamespace(BleakClient=lambda *args, **kwargs: client)}):
+            try:
+                sock.connect(("A", 1))
+                self.assertEqual(sock.device_information.values, {"model": "P1"})
+                client.read_gatt_char.assert_awaited_once()
+                self.assertEqual(sum(call.kwargs.get("short") == "BLE device information"
+                                     for call in reporter.debug.call_args_list), 1)
+            finally:
+                sock.close()
+        client.connect.assert_awaited_once()
+        client.disconnect.assert_awaited_once()
+
     def test_connect_logs_information_before_rejecting_missing_write_endpoint(self):
         from timiniprint.transport.bluetooth.adapters.bleak_adapter import _BleakSocket
         client = client_with_information({MODEL: b"P1"})

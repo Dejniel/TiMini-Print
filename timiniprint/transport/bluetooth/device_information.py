@@ -9,7 +9,6 @@ from time import monotonic
 from typing import Callable
 
 from ... import reporting
-from .bleak_lifecycle import _BleakLifecycle
 
 DEVICE_INFORMATION_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb"
 _GAP_SERVICE_UUID = "00001800-0000-1000-8000-00805f9b34fb"
@@ -57,7 +56,6 @@ DEVICE_INFORMATION_CHARACTERISTICS = {
     "pnp_id": DeviceInformationCharacteristic("00002a50-0000-1000-8000-00805f9b34fb", decode=_pnp_id),
 }
 DEVICE_INFORMATION_TIMEOUT = 2.0
-_PROBE_TIMEOUT = 15.0
 
 
 @dataclass(frozen=True)
@@ -169,29 +167,3 @@ async def read_device_information(
     return BleDeviceInformation.from_gatt(
         address, service_present=service_present, values=values, errors=errors,
     )
-
-
-async def probe_ble_device_information(address: str) -> BleDeviceInformation:
-    """Read without a profile; bound setup to 15 seconds and cleanup separately."""
-    from bleak import BleakClient
-
-    client = BleakClient(address, timeout=_PROBE_TIMEOUT)
-    lifecycle = _BleakLifecycle()
-
-    async def read():
-        await client.connect()
-        return await read_device_information(client, address)
-
-    error = None
-    try:
-        return await lifecycle.run(read(), timeout=_PROBE_TIMEOUT, label="device information probe")
-    except BaseException as exc:
-        error = exc
-        raise
-    finally:
-        try:
-            await lifecycle.disconnect(client)
-        except Exception as cleanup_error:
-            if error is not None:
-                raise error from cleanup_error
-            raise

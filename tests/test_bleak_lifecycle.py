@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from timiniprint.devices.bluetooth_profiles import BleTransportProfile
-from timiniprint.transport.bluetooth import device_information
 from timiniprint.transport.bluetooth import bleak_lifecycle
 from timiniprint.transport.bluetooth.adapters import bleak_adapter
 from timiniprint.transport.bluetooth.backend import SppBackend
@@ -194,51 +193,21 @@ def test_disconnect_checks_the_reported_link_state():
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("stage", ["connect", "information", "disconnect"])
-def test_information_probe_has_setup_and_cleanup_deadlines(monkeypatch, stage):
-    transport = client()
-    monkeypatch.setitem(sys.modules, "bleak", SimpleNamespace(BleakClient=lambda *a, **kw: transport))
-    monkeypatch.setattr(device_information, "_PROBE_TIMEOUT", 0.02)
-    monkeypatch.setattr(bleak_lifecycle, "BLE_CLEANUP_TIMEOUT", 0.04)
-    if stage == "information":
-        monkeypatch.setattr(device_information, "read_device_information", slow_operation)
-    else:
-        getattr(transport, stage).side_effect = slow_operation
-    with pytest.raises((TimeoutError, RuntimeError)):
-        asyncio.run(device_information.probe_ble_device_information("A"))
-    transport.disconnect.assert_awaited_once()
-
-
-def test_probe_preserves_connect_error_when_disconnect_also_fails(monkeypatch):
-    transport = client()
-    transport.connect.side_effect = OSError("connect failed")
-    transport.disconnect.side_effect = OSError("disconnect failed")
-    monkeypatch.setitem(sys.modules, "bleak", SimpleNamespace(BleakClient=lambda *a, **kw: transport))
-    with pytest.raises(OSError, match="connect failed") as error:
-        asyncio.run(device_information.probe_ble_device_information("A"))
-    assert str(error.value.__cause__) == "disconnect failed"
-
-
-def test_repeated_probe_cancellation_waits_for_disconnect(monkeypatch):
+def test_repeated_cleanup_cancellation_waits_for_disconnect():
     async def run():
-        connecting, disconnecting, release = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        disconnecting, release = asyncio.Event(), asyncio.Event()
         transport = client()
-
-        async def connect():
-            connecting.set()
-            await asyncio.Event().wait()
+        lifecycle = bleak_lifecycle._BleakLifecycle()
 
         async def disconnect():
             disconnecting.set()
             await release.wait()
 
-        transport.connect.side_effect = connect
         transport.disconnect.side_effect = disconnect
-        monkeypatch.setitem(sys.modules, "bleak", SimpleNamespace(BleakClient=lambda *a, **kw: transport))
-        task = asyncio.create_task(device_information.probe_ble_device_information("A"))
-        await connecting.wait()
-        task.cancel()
+        task = asyncio.create_task(lifecycle.disconnect(transport))
         await disconnecting.wait()
+        task.cancel()
+        await asyncio.sleep(0)
         task.cancel()
         await asyncio.sleep(0)
         assert not task.done()
