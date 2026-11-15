@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from ...devices import PrinterDevice
 from ...protocol import ProtocolJob, ProtocolStep, ProtocolStepOperation
-from ...protocol.families.yk_astra_p1.session import AstraP1Status, paper_details_from_frame, status_from_frame
-from ...protocol.families.yk_common import YkFrame, iter_yk_frames, pack_yk_frame, resequence_yk_frame
+from ...protocol.families.yk_astra_p1.session import AstraP1Status
+from ...protocol.families.yk_common import iter_yk_frames, resequence_yk_frame
 from ...protocol.status import PrinterStatusCode
 from ..errors import PrinterNotReadyError
 from .base import RuntimeSessionApi
@@ -67,10 +65,6 @@ class XEasyLabelRuntimeController(AstraP1RuntimeController):
         self._raise_if_not_ready()
         return super()._consume_completed_job()
 
-    def diagnostic_fields(self, device: PrinterDevice) -> tuple[str, ...]:
-        fields = ("status", "battery", "firmware", "serial")
-        return fields + (("paper",) if self._astra_state.paper_query_on_valid else ())
-
     def debug_snapshot(self) -> dict[str, object]:
         return {
             **super().debug_snapshot(),
@@ -78,54 +72,6 @@ class XEasyLabelRuntimeController(AstraP1RuntimeController):
             "paper_query_pending": self._paper_query_needed,
             "cutter_ready": None if self._astra_state.last_status is None else self._astra_state.last_status.cutter_ready,
         }
-
-    async def query_diagnostic(
-        self, device: PrinterDevice, session: RuntimeSessionApi, field: str, *, timeout: float,
-    ) -> object | None:
-        if field not in self.diagnostic_fields(device):
-            raise ValueError(f"Unsupported XEasyLabel diagnostic field: {field}")
-        if not session.can_query_control_packet():
-            return None
-        if field in ("status", "battery"):
-            command, payload = 0x10, b""
-        elif field == "paper":
-            command, payload = 0x72, b"\x01"
-        else:
-            command, payload = (0x11 if field == "firmware" else 0x12), b""
-
-        def matching(data: bytes | None) -> YkFrame | None:
-            for frame in iter_yk_frames(data or b""):
-                if command == 0x10 and status_from_frame(frame) is not None:
-                    return frame
-                if command == 0x72 and paper_details_from_frame(frame) is not None:
-                    return frame
-                if command == 0x11 and frame.command == 0xF1 and len(frame.payload) == 2:
-                    return frame
-                if command == 0x12 and frame.command == 0xF2 and frame.payload:
-                    return frame
-            return None
-
-        try:
-            reply = await session.query_control_packet(
-                pack_yk_frame(command, payload, sequence=self._take_sequence()),
-                timeout=timeout, reply_complete=lambda data: matching(data) is not None,
-            )
-        except (TimeoutError, asyncio.TimeoutError):
-            return None
-        frame = matching(reply)
-        if frame is None:
-            return None
-        self._consume_frames(session, iter_yk_frames(reply or b""))
-        if field == "battery":
-            return self._astra_state.last_status.battery_percent
-        if field == "status":
-            return self.debug_snapshot()
-        if field == "paper":
-            self._paper_query_needed = False
-            return self.debug_snapshot()["paper_details"]
-        if field == "firmware":
-            return f"{frame.payload[1]}.{frame.payload[0]}"
-        return frame.payload.decode("ascii", errors="replace").rstrip("\x00")
 
     def _consume_status(self, session: RuntimeSessionApi, status: AstraP1Status) -> None:
         previous = self._astra_state.last_status

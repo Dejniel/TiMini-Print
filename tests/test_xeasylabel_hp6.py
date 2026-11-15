@@ -222,20 +222,26 @@ def test_completion_is_armed_on_every_send_path(path, completion):
     asyncio.run(run())
 
 
-def test_shared_sequence_wraps_across_jobs_and_diagnostics():
+@pytest.mark.parametrize("paper_query", [False, True])
+def test_shared_sequence_wraps_across_preparation_queries_and_jobs(paper_query):
     async def run():
-        controller = XEasyLabelRuntimeController()
+        controller = XEasyLabelRuntimeController(paper_query_on_valid=paper_query)
         device = PrinterCatalog.load().device_from_model("xeasylabel_hp6_c")
         connection = Connection(controller)
         async def query(packet, *, timeout, reply_complete=None):
-            connection.sent.extend(iter_yk_frames(packet))
-            return pack_yk_frame(0xF1, b"\x1e\x2c")
+            frames = tuple(iter_yk_frames(packet))
+            connection.sent.extend(frames)
+            assert frames[0].command in (0x10, 0x72)
+            reply = status(0x3003) if frames[0].command == 0x10 else pack_yk_frame(0x73, b"\x15\x0c\x28\x01")
+            assert reply_complete(reply)
+            return reply
         connection.query_control_packet = query
         session = RuntimeConnectionSession(connection, reporter=reporting.DUMMY_REPORTER)
-        assert await controller.query_diagnostic(device, session, "firmware", timeout=0.1) == "44.30"
+        prepared = await controller.prepare(device, session, timeout=0.1)
+        assert [frame.command for frame in connection.sent] == ([0x10, 0x72] if paper_query else [0x10])
         job = ProtocolJob(steps=PUBLIC_RECIPE.build_job(request(height=1)).steps)
         for _ in range(12):
-            await send_prepared_job(PreparedPrinter(device, controller), connection, job)
+            await send_prepared_job(prepared, connection, job)
         assert [f.sequence for f in connection.sent] == [(i + 1) % 64 for i in range(len(connection.sent))]
     asyncio.run(run())
 
@@ -370,8 +376,9 @@ def test_printer_error_during_completion_is_not_reported_as_timeout():
     asyncio.run(run())
 
 
-@pytest.mark.parametrize("query_stage", ["prepare", "paper", "diagnostic"])
-def test_coalesced_query_replies_keep_latest_status_and_block_faulty_print(query_stage):
+@pytest.mark.parametrize("query_stage", ["prepare", "paper"])
+@pytest.mark.parametrize("steps", [False, True])
+def test_coalesced_query_replies_keep_latest_status_and_block_faulty_print(query_stage, steps):
     async def run():
         controller = XEasyLabelRuntimeController(paper_query_on_valid=query_stage == "paper")
         device = PrinterCatalog.load().device_from_model("xeasylabel_hp6_c")
@@ -389,15 +396,12 @@ def test_coalesced_query_replies_keep_latest_status_and_block_faulty_print(query
 
         connection.query_control_packet = query
         session = RuntimeConnectionSession(connection, reporter=reporting.DUMMY_REPORTER)
-        if query_stage == "diagnostic":
-            result = await controller.query_diagnostic(device, session, "status", timeout=0.1)
-            assert result["paper_out"]
-        else:
-            await controller.prepare(device, session, timeout=0.1)
+        prepared = await controller.prepare(device, session, timeout=0.1)
         assert controller.debug_snapshot()["paper_out"]
-        job = ProtocolJob(steps=PUBLIC_RECIPE.build_job(request(height=1)).steps)
+        plan = PUBLIC_RECIPE.build_job(request(height=1))
+        job = ProtocolJob(payload=plan.payload, steps=plan.steps if steps else ())
         with pytest.raises(PrinterNotReadyError):
-            await send_prepared_job(PreparedPrinter(device, controller), connection, job)
+            await send_prepared_job(prepared, connection, job)
         assert not connection.sent
 
     asyncio.run(run())

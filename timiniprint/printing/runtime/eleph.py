@@ -203,25 +203,6 @@ class ElephRuntimeController(RuntimeController):
                     detail="Printer requested a reprint; TiMini will not replay the job automatically.",
                 )
 
-    def diagnostic_fields(self, device: PrinterDevice) -> tuple[str, ...]:
-        return ("device_info", "status")
-
-    async def query_diagnostic(
-        self, device: PrinterDevice, session: RuntimeSessionApi, field: str, *, timeout: float,
-    ) -> object | None:
-        if field == "device_info":
-            reply = await self._query(session, DEVICE_INFO_QUERY, timeout=timeout)
-            if reply is None:
-                return None
-            # A diagnostic read does not mutate the already prepared print inputs.
-            return asdict(ElephDeviceInfo.parse(reply))
-        if field == "status":
-            status = await self._check_status(session, timeout=timeout)
-            return None if status is None else {
-                "raw": status.raw.hex(), "errors": [code.value for code in status.error_codes],
-            }
-        raise ValueError(f"Unknown Eleph diagnostic field: {field}")
-
     def debug_snapshot(self) -> dict[str, object]:
         with self._state.lock:
             return {

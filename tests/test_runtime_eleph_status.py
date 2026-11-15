@@ -332,8 +332,9 @@ def test_reprint_prompt_is_diagnostic_not_automatic_replay(ble):
 
 
 @pytest.mark.parametrize("ble", [False, True])
-def test_diagnostic_info_reads_do_not_mutate_prepared_device(ble):
-    connection = Connection(b"\x20\x48\x0c\x00", mode=1, ble=ble)
+@pytest.mark.parametrize("steps", [False, True])
+def test_job_status_queries_preserve_prepared_geometry_and_do_not_repeat_info(ble, steps):
+    connection = Connection(bytes(4), mode=1, ble=ble)
 
     async def scenario():
         prepared = await prepare_connection_runtime(
@@ -341,18 +342,19 @@ def test_diagnostic_info_reads_do_not_mutate_prepared_device(ble):
         )
         device = prepared.device
         controller = prepared.runtime_controller
-        assert controller.diagnostic_fields(device) == ("device_info", "status")
         connection.response[DEVICE_INFO_QUERY] = information(width=384, mode=2)
-        info = await controller.query_diagnostic(device, connection, "device_info", timeout=1)
-        status = await controller.query_diagnostic(device, connection, "status", timeout=1)
-        assert info["width"] == 384 and info["command_mode"] == 2
-        assert status == {"raw": "20480c00", "errors": [
-            "cover_open", "paper_out", "overheated", "cutter_error",
-        ]}
+        job = ProtocolJob(payload=b"image", steps=(ProtocolStep.send("image", b"image"),) if steps else ())
+        await send_prepared_job(prepared, connection, job)
+        connection.response[STATUS_QUERY] = b"\x20\x48\x0c\x00"
+        with pytest.raises(PrinterNotReadyError) as caught:
+            await send_prepared_job(prepared, connection, job)
+        assert caught.value.reasons == (
+            PrinterStatusCode.COVER_OPEN, PrinterStatusCode.PAPER_OUT,
+            PrinterStatusCode.OVERHEATED, PrinterStatusCode.CUTTER_ERROR,
+        )
         assert prepared.device is device
         assert device.profile.default_paper_preset.paper_width_px == 576
         assert controller.debug_snapshot()["device_info"]["command_mode"] == 1
-        with pytest.raises(ValueError, match="diagnostic field"):
-            await controller.query_diagnostic(device, connection, "write_mode", timeout=1)
-        assert connection.sent == [DEVICE_INFO_QUERY, DEVICE_INFO_QUERY, STATUS_QUERY]
+        assert connection.sent == [DEVICE_INFO_QUERY, STATUS_QUERY, STATUS_QUERY]
+        assert len(connection.jobs) + len(connection.payloads) == 1
     asyncio.run(scenario())
