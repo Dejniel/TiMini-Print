@@ -18,6 +18,7 @@ from .. import reporting
 from ..devices import PrinterCatalog, PrinterDevice, ResolvedBluetoothTarget
 from ..licensing import license_text
 from ..printing.connected import ConnectedPrinter, connect_printer
+from ..printing.options import describe_print_options
 from ..printing.errors import PrinterNotReadyError
 from ..printing.paper import default_paper_preset_for_device, paper_presets_for_device
 from ..printing.settings import ImageMode, PrintSettings
@@ -859,7 +860,8 @@ class TiMiniPrintGUI(tk.Tk):
         device = self.connected_device or self._effective_selected_device()
         capabilities = self.connected_printer.print_capabilities() if self.connected_printer else None
         settings = PrintSettings(paper_preset_key=self._selected_paper_key())
-        modes = settings.available_image_modes(device, runtime_capabilities=capabilities) if device else ()
+        options = describe_print_options(device, settings, runtime_capabilities=capabilities) if device else None
+        modes = options.image_modes if options else ()
         if modes and self._explicit_image_mode not in modes:
             self._explicit_image_mode = None
         mode = self._explicit_image_mode or (modes[0] if modes else None)

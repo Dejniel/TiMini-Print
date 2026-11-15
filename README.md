@@ -109,6 +109,8 @@ python3 timiniprint_gui.py
 ## Library integration
 If you want to build your own integration instead of using only the bundled GUI or CLI, start with [docs/protocol.md](docs/protocol.md). It is the practical first-steps guide to resolving a `PrinterDevice`, connecting it, and printing through `ConnectedPrinter`. For package boundaries, continue with [docs/architecture.md](docs/architecture.md). For model/profile JSON data, read [docs/catalog.md](docs/catalog.md).
 
+For selectable per-job settings, see [the print options API](docs/print-options.md).
+
 # Supported formats
 - Images: .png .jpg .jpeg .gif .bmp
 - PDF: prints all pages

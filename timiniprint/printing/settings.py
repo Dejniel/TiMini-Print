@@ -35,6 +35,14 @@ class ImageMode(str, Enum):
         return DitherMode(self.value)
 
 
+class PrintQuality(str, Enum):
+    """Shared quality vocabulary; this edition implements only STANDARD."""
+
+    SPEED = "speed"
+    STANDARD = "standard"
+    HIGH = "high"
+
+
 @dataclass
 class PrintSettings:
     """File/raster print options; creating settings performs no I/O.
@@ -52,6 +60,7 @@ class PrintSettings:
     apply. ``lsb_first=None`` keeps profile bit ordering.
     """
 
+    print_quality: PrintQuality = PrintQuality.STANDARD
     image_mode: ImageMode | None = None
     lsb_first: Optional[bool] = None
     text_mode: Optional[bool] = None
@@ -74,6 +83,9 @@ class PrintSettings:
     v5c_gamma_value: Optional[float] = None
 
     def __post_init__(self) -> None:
+        self.print_quality = PrintQuality(self.print_quality)
+        if self.print_quality is not PrintQuality.STANDARD:
+            raise ValueError("This edition implements only standard print quality")
         if self.image_mode is not None:
             self.image_mode = ImageMode(self.image_mode)
 
@@ -134,6 +146,8 @@ class PrintSettings:
         file rendering). Low-level callers can still use PrinterProtocol with
         an explicit ImagePipelineConfig or pixel format.
         """
+        if PrintQuality(self.print_quality) is not PrintQuality.STANDARD:
+            raise ValueError("This edition implements only standard print quality")
         mode = None if self.image_mode is None else ImageMode(self.image_mode)
         selection_capabilities = runtime_capabilities
         if (runtime_capabilities is not None and runtime_capabilities.supports_gray is False

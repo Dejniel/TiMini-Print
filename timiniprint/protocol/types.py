@@ -7,6 +7,46 @@ from typing import Tuple
 from ..raster import PixelFormat
 
 
+class AntiCrease(str, Enum):
+    """Optional printer-side paper treatment, independent of density/quality."""
+
+    OFF = "off"
+    WEAK = "weak"
+    STRONG = "strong"
+
+
+@dataclass(frozen=True)
+class PrintMaterialPreset:
+    """Available session-qualified material setting; no outgoing bytes or I/O.
+
+    Pass ``key`` as ``material_preset`` when building a job. Keys are scoped to
+    the device/material calibration, not globally reusable parameter-group IDs.
+    ``is_default`` describes the material's recommended choice; ordinary jobs
+    do not opt into material calibration automatically.
+    """
+
+    key: str
+    label: str
+    material: str
+    is_default: bool = False
+
+
+class PageConfirmationPolicy(str, Enum):
+    """Host-side transition between acknowledged pages, not printer ACK support.
+
+    UNAVAILABLE declares no extra next-page confirmation policy. It does not
+    exclude other protocol actions such as inserting/removing a slip. OPTIONAL
+    permits opting in with PrintSettings.manual_page_confirmation. REQUIRED means the
+    recipe or supplied session snapshot already imposes confirmation; False
+    cannot disable it. Live runtime state may add requirements after the query.
+    """
+
+    UNAVAILABLE = "unavailable"
+    OPTIONAL = "optional"
+    REQUIRED = "required"
+
+
+
 class ImageEncoding(str, Enum):
     """Wire codec/recipe identifier, distinct from the input raster pixel format."""
 

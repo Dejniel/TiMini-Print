@@ -81,7 +81,13 @@ A connector opens a low-level transport connection for that device. The built-in
 - `print_text(...)` for raw text
 - `send_job(...)` when you already built a `ProtocolJob`
 - `feed()` and `retract()` for manual paper motion
+- `print_options(settings)` for the prepared session's selectable print options
 - `disconnect()` or `async with` for connection cleanup
+
+Describe print options offline with `describe_print_options(device, settings)`
+and after preparation with `printer.print_options(settings)`. `PrintSettings`
+holds per-job values; `PrintOptions` describes available choices without I/O
+or changing those values. See [the print options API](print-options.md).
 
 ## Preview Geometry
 

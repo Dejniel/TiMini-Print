@@ -345,6 +345,7 @@ class PrinterProtocol:
     def supported_print_settings(
         self, *, pixel_format: PixelFormat | None = None,
         paper_preset_key: str | None = None,
+        image_pipeline: ImagePipelineConfig | None = None,
         runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> tuple[str, ...]:
         """Return implemented adjustment keys for this paper/format, without I/O.
@@ -356,11 +357,14 @@ class PrinterProtocol:
 
         ``pixel_format=None`` and ``paper_preset_key=None`` use device defaults.
         Pass the same paper, format and session capabilities used for printing;
+        ``image_pipeline`` also preserves an explicitly selected codec instead
+        of describing controls for the profile's default encoding.
         invalid combinations raise ``ValueError`` through pipeline resolution.
         This describes available controls, not validation of all PrintSettings.
         """
         pipeline = self.resolve_image_pipeline(
             paper_preset_key=paper_preset_key,
+            image_pipeline=image_pipeline,
             pixel_format_override=pixel_format, runtime_capabilities=runtime_capabilities,
         )
         behavior = get_protocol_behavior(self.device.protocol_family)

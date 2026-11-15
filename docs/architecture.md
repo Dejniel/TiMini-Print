@@ -79,6 +79,13 @@ Owns the file-to-job flow and stateful print-session behavior.
 
 It contains `ConnectedPrinter`, `connect_printer`, `PrintJobBuilder`, `DocumentRenderer`, `PrintSettings`, send helpers, and runtime controllers. This package is allowed to coordinate devices, protocol, rendering, and transport because it is the app-level print orchestration layer.
 
+`describe_print_options` and `ConnectedPrinter.print_options` resolve the same
+typed UI choices from existing paper/codec/session rules, without I/O.
+`PrintSettings` holds the requested per-job values; immutable `PrintOptions`
+describes the choices for the selected paper, image pipeline and session.
+Describing options does not read or change printer configuration. See
+[the print options API](print-options.md).
+
 ### `timiniprint.protocol`
 Owns stateless wire-format construction.
 

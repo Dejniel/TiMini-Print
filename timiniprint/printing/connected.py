@@ -22,6 +22,7 @@ from .runtime.factory import runtime_controller_for_device
 from .runtime.session import RuntimeConnectionSession
 from .send import send_prepared_job
 from .settings import PrintSettings
+from .options import PrintOptions, describe_print_options
 
 if TYPE_CHECKING:
     from ..devices import PrinterDevice
@@ -85,6 +86,13 @@ class ConnectedPrinter:
         capability/pipeline queries; this method does not re-query the printer.
         """
         return self._prepared.capabilities
+
+    def print_options(self, settings: PrintSettings | None = None) -> PrintOptions:
+        """Describe selectable print options for this prepared session, without I/O."""
+        return describe_print_options(
+            self._prepared.device, settings,
+            runtime_capabilities=self._prepared.capabilities,
+        )
 
     def printer_device(self) -> "PrinterDevice":
         """Return the resolved immutable device description, without I/O.
