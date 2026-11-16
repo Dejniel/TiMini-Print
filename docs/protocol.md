@@ -89,43 +89,28 @@ and after preparation with `printer.print_options(settings)`. `PrintSettings`
 holds per-job values; `PrintOptions` describes available choices without I/O
 or changing those values. See [the print options API](print-options.md).
 
-## Preview Geometry
+## Preview Images
 
 `DocumentRenderer.preview_page(plan, page, device, settings)` returns a
-`PreviewPage` whose PNG includes the known page canvas and the prepared raster's
-horizontal origin. Preview composition does not pad the printable raster or
-change protocol jobs; the encoder still applies that origin exactly once.
-`preview_source_page(...)` views the original document without printer layout.
+`PreviewPage` with the display PNG, its `width`/`height`, prepared print-body
+`raster_width`/`raster_height`, and `page_count`/`page_number`.
+The PNG includes the known canvas and horizontal origin for the selected print
+recipe. Rendering-side fitting, padding and mirroring stay identical to print
+preparation; display composition does not change the raster sent to the encoder.
 
-For a printer preview, `preview.layout` is an immutable `PreviewLayout` from
-`timiniprint.printing.paper`:
+The canvas uses an exact raster width when specified, otherwise the declared
+protocol width, expanded if needed to contain the placed body. The PNG can be
+wider than the print body, and its display aspect may differ from printer dots.
+These dimensions are not measured physical paper edges or unprintable margins.
+Recipe-specific wire footers, page/copy gaps and feed/cut movement are not
+synthesized in the preview. A decorative paper frame belongs outside the PNG.
 
-- `width`, `height`: known canvas size in printer dots;
-- `raster`: `PreviewBounds(left, top, width, height)` locating the prepared
-  raster body before protocol-side padding;
-- `content`: the fitted source rectangle after layout/mirroring, including
-  any white pixels retained in the source, not an ink bounding box;
-- `left_margin_px`, `top_margin_px`, `right_margin_px`, `bottom_margin_px`:
-  derived geometric space around `content`, not additional printer settings.
-
-The canvas uses `raster_width_px` when specified, otherwise the declared
-protocol width (expanded if necessary to contain the placed body). Its height
-is the prepared body's height, including rendering-side padding. These are
-known layout bounds, **not** measured physical roll edges or unprintable areas.
-Recipe-specific wire footers, page/copy gaps, feed/cut movement and unknown
-physical margins are not synthesized in the preview.
-
-`PreviewPage.width/height` describe the actual PNG;
-`raster_width/raster_height` retain the prepared body size, so they may be
-smaller than the preview canvas. Layout coordinates stay in printer dots even
-when a renderer corrects the PNG's display pixel aspect. Map coordinates with
-`preview.width / layout.width` and `preview.height / layout.height` when drawing
-an overlay; do not assume display pixels are printer dots. Source-only previews
-have `layout=None`. Neither PNG is an input to the raster/job builders.
+`preview_source_page(...)` shows the original document without printer
+transforms. Neither preview PNG is an input to the raster/job builders.
 
 For example, a 128-dot body with a 64-dot left origin on a 192-dot canvas has
-`preview.width == 192`, `preview.raster_width == 128`, and
-`preview.layout.raster.left == 64`. Its print body remains 128 dots wide.
+`preview.width == 192` and `preview.raster_width == 128`. Its print body remains
+128 dots wide.
 
 ## Printer Conditions And Failed Operations
 

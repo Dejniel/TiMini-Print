@@ -276,7 +276,8 @@ class RenderingDocumentRendererTests(unittest.TestCase):
 
         self.assertEqual(preview.width, 192)
         self.assertEqual(preview.raster_width, 128)
-        self.assertEqual(preview.layout.left_margin_px, 64)
+        with Image.open(io.BytesIO(preview.png)) as image:
+            self.assertEqual(image.convert("L").crop((0, 0, 64, image.height)).getextrema(), (255, 255))
         self.assertEqual(rendered.raster_set.width, 128)
 
     def test_paper_preset_exact_raster_height_is_used_for_preview_and_print(self) -> None:

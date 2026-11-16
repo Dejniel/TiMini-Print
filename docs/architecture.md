@@ -49,16 +49,13 @@ unknown or ambiguous identities are not resolved by catalog order.
 ## Preview Placement
 
 The printing-side paper planner is the single source of resolved content
-placement. It returns the same printable body as before and also describes its
-preview canvas, raster bounds and fitted source bounds. `DocumentRenderer`
-composes the prepared preview on this canvas for display only, without changing
-the raster sent to a family encoder. Protocol offsets remain encoder-owned;
-rendering does not decode jobs or duplicate family command logic to discover
-margins. `PreviewPage.layout` exposes the result to integrations without asking
-each UI to reproduce placement rules. Source-only previews have no layout.
-This is known layout geometry, not a hardware simulation: physical edges,
-recipe footers and paper movement are not inferred. See
-[preview geometry](protocol.md#preview-geometry) for coordinates and units.
+placement. Its private preview-canvas information keeps display composition
+separate from the printable body. `DocumentRenderer` composes the PNG without
+changing the raster sent to a family encoder. Protocol offsets remain
+encoder-owned; rendering does not decode jobs or duplicate command logic to
+discover margins. `PreviewPage` exposes the image and its dimensions, not paper
+geometry or margin measurements. Physical edges, recipe footers and paper
+movement are not inferred. See [preview images](protocol.md#preview-images).
 
 ## Package Boundaries
 
