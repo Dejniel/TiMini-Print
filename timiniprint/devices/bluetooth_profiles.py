@@ -36,6 +36,7 @@ class BleTransportProfile:
     control_notify_char_uuid: str = ""
     # Subscribe every notify/indicate characteristic in these services.
     notify_service_uuids: Tuple[str, ...] = ()
+    # Receive across services even when a GATT layout pins the primary endpoints.
     notify_all_services: bool = False
     prefer_generic_notify: bool = False
     flow_controlled_standard_write: bool = False
@@ -44,7 +45,8 @@ class BleTransportProfile:
     # Some BLE writers need a smaller application chunk than the reported ATT
     # payload for write-without-response transfers.
     write_without_response_payload_reserve: int = 0
-    # Ordered alternatives; never combine characteristics from two layouts.
+    # Ordered primary endpoint alternatives; bulk stays in the selected service.
+    # notify_all_services may explicitly broaden reception, never writer selection.
     gatt_layouts: Tuple[BleGattLayout, ...] = ()
 
 

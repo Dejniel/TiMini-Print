@@ -144,7 +144,8 @@ class _BleakTransportSession:
         )
 
     def configure_endpoints(self, services: Iterable[object]) -> None:
-        services = tuple(services)
+        discovered_services = tuple(services)
+        services = discovered_services
         transport = self._transport_profile
 
         layout = self.bindings.gatt_layout
@@ -181,10 +182,13 @@ class _BleakTransportSession:
 
         self.bindings.notify_char = None
         self.bindings.additional_notify_chars = ()
-        notify_services = (tuple(str(service.uuid) for service in services)
+        # Broad reception is independent of the pinned writer/primary reply.
+        # Bulk and primary endpoints remain confined to the selected layout.
+        receive_services = discovered_services if transport.notify_all_services else services
+        notify_services = (tuple(str(service.uuid) for service in receive_services)
                            if transport.notify_all_services else transport.notify_service_uuids)
         service_notify = self._service_notify_characteristics(
-            services, notify_services, preserve_instances=transport.notify_all_services,
+            receive_services, notify_services, preserve_instances=transport.notify_all_services,
         )
         if layout:
             self.bindings.notify_char = self._find_characteristic_by_uuid(services, layout.notify_char_uuid)

@@ -6,7 +6,7 @@ import unittest
 from types import SimpleNamespace
 
 from timiniprint import reporting
-from timiniprint.devices.bluetooth_profiles import BleTransportProfile
+from timiniprint.devices.bluetooth_profiles import BleBulkWriteProfile, BleGattLayout, BleTransportProfile
 from timiniprint.printing.runtime.base import RuntimeController
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_endpoint_resolver import _BleWriteEndpointResolver
 from timiniprint.transport.bluetooth.adapters.bleak_adapter_transport import _BleakTransportSession
@@ -53,6 +53,45 @@ def make_session():
 
 
 class BleNotifyServicesTests(unittest.IsolatedAsyncioTestCase):
+    async def test_broad_notifications_do_not_change_the_bound_write_service(self):
+        selected = SimpleNamespace(uuid="service-a", characteristics=[
+            characteristic("write", "write-without-response"),
+            characteristic("reply", "notify"),
+        ])
+        other = SimpleNamespace(uuid="service-b", characteristics=[
+            characteristic("write", "write-without-response"),
+            characteristic("credits", "notify"),
+            characteristic("bulk", "write-without-response"),
+        ])
+        for broad in (False, True):
+            with self.subTest(notify_all_services=broad):
+                profile = BleTransportProfile(
+                    gatt_layouts=(BleGattLayout("service-a", "write", "reply"),),
+                    notify_all_services=broad, bulk_write=BleBulkWriteProfile("bulk"),
+                )
+                session = _BleakTransportSession(
+                    profile, _BleWriteEndpointResolver(), reporting.DUMMY_REPORTER,
+                )
+                session.configure_endpoints([other, selected])
+                self.assertIs(session.bindings.write_char, selected.characteristics[0])
+                self.assertIs(session.bindings.notify_char, selected.characteristics[1])
+                self.assertIsNone(session.bindings.bulk_write_char)
+                client = Client()
+                received = []
+                try:
+                    await session.start_notify_if_available(
+                        client, lambda _source, data: received.append(data),
+                    )
+                    expected = {"reply", "credits"} if broad else {"reply"}
+                    self.assertEqual(set(client.callbacks), expected)
+                    if broad:
+                        client.callbacks["credits"]("credits", b"grant")
+                        self.assertEqual(received, [b"grant"])
+                finally:
+                    await session.stop_notify_if_started(client)
+                self.assertEqual(set(client.stopped), expected)
+                self.assertFalse(client.callbacks)
+
     def test_metadata_classification_uses_service_identity_not_uuid_prefixes(self):
         for service in ("1800", "1801", "180a", "180f"):
             self.assertTrue(is_gatt_metadata_service(service))
