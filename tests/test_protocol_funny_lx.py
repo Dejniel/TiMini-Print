@@ -154,7 +154,7 @@ class FunnyLxProtocolTests(unittest.TestCase):
             "image transfer ready",
             "print footer",
         ])
-        self.assertEqual(job.steps[0].data, bytes.fromhex("5a 0c 03"))
+        self.assertEqual(job.steps[0].data, bytes.fromhex("5a 0c 05"))
         self.assertEqual(job.steps[1].data, bytes.fromhex("5a 04 00 01 00 00"))
         self.assertEqual(job.steps[2].data[:3], bytes.fromhex("55 00 00"))
         self.assertEqual(job.steps[2].data[3:51], bytes([0x80]) + bytes(47))
@@ -264,7 +264,7 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
         job = PrinterProtocol(device).build_job(
             RasterSet.from_single(raster),
             is_text=False,
-            blackening=4,
+            blackening=3,
         )
         session = _FunnyLxSession([
             bytes.fromhex("5a 01 00 03 c0 00 00 00 04 60"),
@@ -312,8 +312,8 @@ class FunnyLxRuntimeTests(unittest.IsolatedAsyncioTestCase):
         sent = await controller.send_protocol_steps(session, job.steps, timeout=0.1)
 
         self.assertTrue(sent)
-        self.assertIn(bytes.fromhex("5a 0c 04"), session.standard_payloads)
-        self.assertEqual(controller.debug_snapshot()["darkness_code"], 4)
+        self.assertIn(bytes.fromhex("5a 0c 06"), session.standard_payloads)
+        self.assertEqual(controller.debug_snapshot()["darkness_code"], 6)
 
     async def test_runtime_resends_from_previous_image_packet_on_5a05_retry(self) -> None:
         device = PrinterCatalog.load().device_from_model("funny_lx_d")

@@ -11,7 +11,6 @@ from ..bitmap import pack_bw1_rows
 
 _PRINTHEAD_WIDTH_PX = 384
 _PACKET_DATA_BYTES = 96
-_DEFAULT_DARKNESS_LEVEL = 4
 _IMAGE_ACCEPT_TIMEOUT_SEC = 10.0
 _PRINT_FOOTER_TIMEOUT_SEC = 10.0
 _DIRECT_VARIANT = "lx_d_direct"
@@ -130,8 +129,9 @@ def _image_packets(content: bytes) -> tuple[bytes, ...]:
 
 
 def _darkness_level(blackening: int) -> int:
-    level = max(1, min(5, int(blackening or _DEFAULT_DARKNESS_LEVEL)))
-    return level - 1
+    level = max(1, min(5, int(blackening)))
+    # Five normalized levels span the seven wire levels; midpoint is code 3.
+    return ((level - 1) * 6 + 2) // 4
 
 
 def _u16be(value: int) -> bytes:

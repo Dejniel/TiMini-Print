@@ -91,7 +91,7 @@ def test_negotiated_darkness_controls_new_and_prebuilt_jobs(device, darkness, pr
             assert any(step.label == "darkness" for step in job.steps) is darkness
         await send_prepared_job(prepared, connection, job)
     asyncio.run(run())
-    assert (b"\x5a\x0c\x04" in connection.sent) is darkness
+    assert (b"\x5a\x0c\x06" in connection.sent) is darkness
     assert any(packet.startswith(b"\x55") for packet in connection.sent)
 
 
