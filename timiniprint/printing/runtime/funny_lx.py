@@ -141,7 +141,7 @@ class FunnyLxRuntimeController(RuntimeController):
     ) -> bool:
         if not any(_is_image_packet(step) for step in steps):
             return False
-        if not session.can_send_standard_payload() or not session.can_wait_for_notification():
+        if not session.can_send_standard_payload() or not session.can_wait_for_reply():
             return False
         if any(
             step.operation is ProtocolStepOperation.QUERY for step in steps
@@ -450,7 +450,7 @@ async def _wait_for_image_transfer_ready_or_retry(
         )
 
     wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
-    reply = await session.wait_for_notification(
+    reply = await session.wait_for_reply(
         step.label,
         complete,
         timeout=wait_timeout,

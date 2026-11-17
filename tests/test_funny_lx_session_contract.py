@@ -117,6 +117,43 @@ def test_missing_reply_operations_do_not_fall_back_to_blind_stream(device):
     assert connection.stream_jobs == []
 
 
+@pytest.mark.parametrize("darkness", [False, True])
+@pytest.mark.parametrize("retry", [False, True])
+@pytest.mark.parametrize("prepared_job", [False, True])
+def test_protocol_reply_wait_keeps_runtime_darkness_and_retry_policy(device, darkness, retry, prepared_job):
+    class ReplyOnlyConnection(Connection):
+        def __init__(self):
+            super().__init__(darkness=darkness)
+            self.waits = [b"\x5a\x06\x00"]
+            if retry:
+                self.waits.insert(0, b"\x5a\x05\x00\x01")
+
+        def can_wait_for_notification(self):
+            return False
+
+        async def wait_for_notification(self, *args, **kwargs):
+            raise AssertionError("use the protocol reply port")
+
+        async def wait_for_reply(self, label, match, *, timeout, required=True):
+            reply = self.waits.pop(0)
+            assert match(reply)
+            return reply
+
+    connection = ReplyOnlyConnection()
+
+    async def run():
+        prepared = await prepare(device, connection)
+        job = build_job(device, prepared.capabilities if prepared_job else None)
+        await send_prepared_job(prepared, connection, job)
+
+    asyncio.run(run())
+    assert (b"\x5a\x0c\x06" in connection.sent) is darkness
+    images = [packet for packet in connection.sent if packet.startswith(b"\x55")]
+    assert len(images) == (2 if retry else 1)
+    assert all(packet == images[0] for packet in images)
+    assert not connection.waits and not connection.stream_jobs
+
+
 def test_passive_status_is_diagnostic_not_a_flow_or_completion_reply():
     controller = FunnyLxRuntimeController(bluetooth_address="C0:00:00:00:04:60")
     connection = Connection()

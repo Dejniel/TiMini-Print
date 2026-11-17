@@ -34,7 +34,7 @@ class _FunnyLxSession:
     def can_send_standard_payload(self) -> bool:
         return True
 
-    def can_wait_for_notification(self) -> bool:
+    def can_wait_for_reply(self) -> bool:
         return True
 
     def can_query_control_packet(self) -> bool:
@@ -62,7 +62,7 @@ class _FunnyLxSession:
         self.control_timeouts.append(timeout)
         return True
 
-    async def wait_for_notification(
+    async def wait_for_reply(
         self,
         label: str,
         match,
@@ -76,7 +76,7 @@ class _FunnyLxSession:
             if match(reply):
                 return reply
         if required:
-            raise AssertionError("wait reply did not match any queued notification")
+            raise AssertionError("wait reply did not match any queued response")
         return None
 
     async def send_standard_payload(self, data: bytes) -> None:
