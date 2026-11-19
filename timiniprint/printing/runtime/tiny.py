@@ -18,13 +18,17 @@ class TinyRuntimeController(RuntimeController):
         session: RuntimeSessionApi,
         payload: bytes,
     ) -> None:
-        for packet in self._decoder.feed(payload):
+        packets = self._decoder.feed(payload)
+        if payload and not packets:
+            state = "incomplete" if self._decoder.pending else "unrecognized"
+            self._log_rx(session, f"Tiny {state} RX", payload, changes=False)
+        for packet in packets:
             if packet.opcode != 0xAE or packet.flags != 1:
                 continue
             if packet.payload == b"\x10":
-                session.set_flow_paused(True, payload=packet.raw)
+                self._set_flow_paused(session, True, payload=packet.raw)
             elif packet.payload == b"\x00":
-                session.set_flow_paused(False, payload=packet.raw)
+                self._set_flow_paused(session, False, payload=packet.raw)
 
 
 __all__ = ["TinyRuntimeController"]

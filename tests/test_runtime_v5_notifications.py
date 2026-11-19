@@ -131,7 +131,7 @@ def test_coalesced_notifications_preserve_flow_and_partial_next_frame(family, co
 def test_fragmented_v5c_idle_completes_the_current_job():
     async def run():
         controller = V5CRuntimeController()
-        session = SimpleNamespace(can_observe_replies=lambda: True)
+        session = SimpleNamespace(can_observe_replies=lambda: True, report_debug=lambda message: None)
         reply = make_packet(0xA1, b"\x00", "v5c")
         async with controller.job_scope(session, ProtocolJob(payload=b"raster"), timeout=0.1):
             for byte in reply:

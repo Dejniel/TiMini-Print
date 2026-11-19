@@ -20,9 +20,9 @@ def test_rx_preview_distinguishes_missing_empty_and_binary_replies():
 
 
 def test_rx_preview_bounds_large_replies_without_including_the_tail():
-    data = bytes(range(64)) + b"hidden reply tail" * 100
+    data = bytes(range(128)) + b"hidden reply tail" * 100
     preview = reporting.rx_preview(data)
-    assert preview == data[:64].hex(" ") + f" ... ({len(data)} bytes)"
+    assert preview == data[:128].hex(" ") + f" ... ({len(data)} bytes)"
     assert b"hidden reply tail".hex(" ") not in preview
 
 
@@ -30,13 +30,13 @@ def test_rx_preview_bounds_large_replies_without_including_the_tail():
     "DC:0D:51:C0:6B:F7", "dc-0d-51-c0-6b-f7", "DC0D51C06BF7",
     "12345678-1234-5678-9ABC-DC0D51C06BF7",
 ])
-@pytest.mark.parametrize("padding", [0, 60])
+@pytest.mark.parametrize("padding", [0, 60, 124])
 def test_rx_preview_masks_textual_addresses_even_across_the_preview_boundary(address, padding):
     data = bytes(padding) + address.encode() + b" revision"
     preview = reporting.rx_preview(data)
     assert "<address>" in preview
     assert address.encode().hex(" ") not in preview
-    assert data[:64].hex(" ") not in preview
+    assert data[:128].hex(" ") not in preview
 
 
 @pytest.mark.parametrize("data", [
@@ -52,7 +52,7 @@ def test_protocol_step_results_log_rx_but_keep_send_and_query_tx_in_trace(notifi
     packet = b"private-control-request"
     image = b"private-raster-from-customer-label.png"
     reply = b"OK"
-    completion = bytes(range(128))
+    completion = bytes(range(256))
     connection = SimpleNamespace(
         send_standard_payload=AsyncMock(),
         can_query_control_packet=lambda: not notification_only,

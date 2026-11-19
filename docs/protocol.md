@@ -33,10 +33,17 @@ so normal GUI progress does not depend on enabling debug or trace output.
 
 Transfer summaries retain byte/chunk counts, timings and operation names at
 `debug`. Selected control-query results, passive waits and malformed replies
-can also include `reporting.rx_preview(...)`: at most the first 64 received
+can also include `reporting.rx_preview(...)`: at most the first 128 received
 bytes, with textual Bluetooth identifiers masked and obvious document
 references omitted. These previews summarize operations, not every transport
 notification. They are not general anonymization of arbitrary received data.
+Runtime flow-control events include the received control frame and, on resume,
+the duration of the pause. Selected runtime statuses are logged on change;
+identical statuses and unrecognized/incomplete RX samples are summarized at
+most once per five seconds, with a suppressed-entry count on the next sample.
+Sampling never suppresses reply delivery, status updates or flow transitions.
+Known credential replies retain their family-owned redaction, and known MAC
+identity records are excluded from raw debug previews.
 TX/print-buffer previews and input-file paths use `trace`, which may
 contain print content or filenames. Do not automatically attach trace logs to
 support reports. The CLI defaults to warnings/errors; `-v` enables debug and

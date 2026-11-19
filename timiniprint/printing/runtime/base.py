@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+from functools import cached_property
 from typing import TYPE_CHECKING, Any, Protocol
 
 from ...protocol.runtime import RuntimePrintCapabilities
+from ._rx_logging import RuntimeRxLog
 
 if TYPE_CHECKING:
     from ...devices import PrinterDevice
@@ -94,6 +96,17 @@ class RuntimeSessionApi(Protocol):
 
 
 class RuntimeController:
+    @cached_property
+    def _rx_log(self) -> RuntimeRxLog:
+        return RuntimeRxLog()
+
+    def _log_rx(self, session: RuntimeSessionApi, label: str, payload: bytes, *, changes: bool = True) -> bool:
+        return self._rx_log.record(session, label, payload, changes=changes)
+
+    def _set_flow_paused(self, session: RuntimeSessionApi, paused: bool, *, payload: bytes = b"") -> None:
+        session.set_flow_paused(paused, payload=payload)
+        self._rx_log.flow(session, paused, payload)
+
     @asynccontextmanager
     async def job_scope(
         self, session: RuntimeSessionApi, job: ProtocolJob, *, timeout: float,

@@ -317,12 +317,16 @@ class V5XRuntimeController(RuntimeController):
 
     def handle_notification(self, session, payload: bytes) -> None:
         if payload in V5X_NOTIFY_PAUSE_PACKETS:
-            session.set_flow_paused(True, payload=payload)
+            self._set_flow_paused(session, True, payload=payload)
             return
         if payload in V5X_NOTIFY_RESUME_PACKETS:
-            session.set_flow_paused(False, payload=payload)
+            self._set_flow_paused(session, False, payload=payload)
             return
         opcode = prefixed_packet_opcode(payload, ProtocolFamily.V5X)
+        if opcode in (0xA3, 0xA9, 0xAB, 0xB0):
+            self._log_rx(session, f"V5X reply opcode=0x{opcode:02x}", payload)
+        elif opcode is None and payload:
+            self._log_rx(session, "V5X unrecognized RX", payload, changes=False)
         if opcode == 0xA7:
             self._update_info_from_a7(payload)
             self._mark_command_ack(session, 0xA7)
@@ -465,10 +469,11 @@ class V5XRuntimeController(RuntimeController):
         if self._state.first_status_monotonic is None:
             self._state.first_status_monotonic = now
         elapsed = now - self._state.first_status_monotonic
-        session.report_debug(
-            f"V5X status +{elapsed:5.2f}s: state={self._state.task_state_name} "
-            f"battery={raw[3]} temp={raw[4]}C err={raw[6]}/{raw[7]}"
-        )
+        if self._log_rx(session, "V5X status", payload):
+            session.report_debug(
+                f"V5X status +{elapsed:5.2f}s: state={self._state.task_state_name} "
+                f"battery={raw[3]} temp={raw[4]}C err={raw[6]}/{raw[7]}"
+            )
         self._handle_error_state(session, raw[6], raw[7])
 
     @staticmethod

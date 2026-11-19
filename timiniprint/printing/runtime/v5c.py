@@ -131,11 +131,15 @@ class V5CRuntimeController(RuntimeController):
             raise self._state.fatal_error
 
     def handle_notification(self, session, payload: bytes) -> None:
-        for frame in self._decoder.feed(payload):
+        frames = self._decoder.feed(payload)
+        if payload and not frames:
+            state = "incomplete" if self._decoder.pending else "unrecognized"
+            self._log_rx(session, f"V5C {state} RX", payload, changes=False)
+        for frame in frames:
             if frame.raw == V5C_NOTIFY_PAUSE:
-                session.set_flow_paused(True, payload=frame.raw)
+                self._set_flow_paused(session, True, payload=frame.raw)
             elif frame.raw == V5C_NOTIFY_RESUME:
-                session.set_flow_paused(False, payload=frame.raw)
+                self._set_flow_paused(session, False, payload=frame.raw)
             elif frame.opcode == 0xA1:
                 self._update_status(session, frame.raw)
             elif frame.opcode == 0xAA:
@@ -171,6 +175,8 @@ class V5CRuntimeController(RuntimeController):
             if self._state.completion is not None:
                 self._state.completion.set()
         self._handle_status(session, status)
+        if self._log_rx(session, "V5C status", payload):
+            session.report_debug(f"V5C state={self._state.status_name} status=0x{status:02x}")
 
     @staticmethod
     def _status_name(status: int) -> str:

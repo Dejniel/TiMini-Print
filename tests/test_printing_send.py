@@ -28,6 +28,9 @@ class _Reporter:
 
 
 class _Connection:
+    def report_debug(self, message: str) -> None:
+        pass
+
     def __init__(
         self,
         *,

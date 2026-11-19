@@ -55,6 +55,8 @@ async def execute_protocol_step(
     else:
         raise ValueError(f"Unsupported protocol step operation: {step.operation.value}")
     if step.reply_required and not reply_matches_for(step, reply):
+        expectation = "custom_matcher" if step.reply_matcher is not None else step.expect.value
+        session.report_debug(f"{log_prefix} reply rejected {step.label}: expectation={expectation}")
         raise ProtocolReplyError(step, reply)
     return reply
 
@@ -70,13 +72,14 @@ async def _execute_wait_step(
     if reply_complete is None:
         return None
     wait_timeout = timeout if step.timeout_sec is None else step.timeout_sec
+    started = time.perf_counter()
     reply = await session.wait_for_reply(
         step.label,
         reply_complete,
         timeout=wait_timeout,
         required=False,
     )
-    session.report_debug(f"{log_prefix} wait {step.label}: rx_bytes={None if reply is None else len(reply)} "
+    session.report_debug(f"{log_prefix} wait {step.label}: elapsed_ms={int((time.perf_counter() - started) * 1000)} timeout_ms={int(wait_timeout * 1000)} rx_bytes={None if reply is None else len(reply)} "
                          f"rx={reporting.rx_preview(reply)}")
     session.report_trace(f"{log_prefix} wait {step.label}: rx={bytes_preview(reply)}")
     return reply
@@ -134,6 +137,7 @@ async def _query_once(
     else:
         query_timeout = step.timeout_sec
     reply_complete = reply_complete_for(step)
+    started = time.perf_counter()
     if session.can_query_control_packet():
         reply = await session.query_control_packet(
             step.data,
@@ -165,7 +169,8 @@ async def _query_once(
         if buffer:
             reply = bytes(buffer)
     session.report_debug(
-        f"{log_prefix} query {step.label}: tx_bytes={len(step.data)} "
+        f"{log_prefix} query {step.label}: elapsed_ms={int((time.perf_counter() - started) * 1000)} "
+        f"timeout_ms={int(query_timeout * 1000)} tx_bytes={len(step.data)} "
         f"rx_bytes={None if reply is None else len(reply)} rx={reporting.rx_preview(reply)}"
     )
     session.report_trace(

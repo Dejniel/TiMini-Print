@@ -256,10 +256,12 @@ class PhomemoRuntimeController(RuntimeController):
             if self._ble_window is not None:
                 if frame[0] == 0x01:
                     self._ble_window.grant(frame[1])
+                    self._log_rx(session, "Phomemo BLE credits", frame, changes=False)
                     continue
                 if frame[0] == 0x02:
                     self._ble_window.set_payload_limit(frame[1])
-                    session.report_debug(f"Phomemo BLE payload limit: {frame[1]} bytes")
+                    if self._log_rx(session, "Phomemo BLE payload limit", frame):
+                        session.report_debug(f"Phomemo BLE payload limit: {frame[1]} bytes")
                     continue
                 if frame.startswith(b"\xaa\xab\xac\x01"):
                     session.report_debug(f"Phomemo BLE diagnostic credit total: {int.from_bytes(frame[4:], 'big')}")
@@ -271,7 +273,7 @@ class PhomemoRuntimeController(RuntimeController):
             if opcode == 0x0D:
                 session.report_debug("Phomemo BLE MAC identity received (12 bytes)")
             else:
-                session.report_debug("Phomemo reply: " + frame.hex(" "))
+                self._log_rx(session, f"Phomemo reply opcode=0x{opcode:02x}", frame)
             fault = None
             if opcode == 0x03 and value in (0xA8, 0xA9):
                 self._overheated = value == 0xA9

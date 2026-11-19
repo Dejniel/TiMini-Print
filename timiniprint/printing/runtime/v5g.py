@@ -181,7 +181,11 @@ class V5GRuntimeController(RuntimeController):
         return True
 
     def handle_notification(self, session, payload: bytes) -> None:
-        for frame in self._decoder.feed(payload):
+        frames = self._decoder.feed(payload)
+        if payload and not frames:
+            state = "incomplete" if self._decoder.pending else "unrecognized"
+            self._log_rx(session, f"V5G {state} RX", payload, changes=False)
+        for frame in frames:
             if frame.opcode == 0xA3:
                 self._update_status(session, frame.raw)
             elif frame.opcode == 0xD2:
@@ -190,9 +194,9 @@ class V5GRuntimeController(RuntimeController):
                 self._update_temperature(session, frame.raw)
             elif frame.opcode == 0xAE:
                 if frame.payload == b"\x10":
-                    session.set_flow_paused(True, payload=frame.raw)
+                    self._set_flow_paused(session, True, payload=frame.raw)
                 elif frame.payload == b"\x00":
-                    session.set_flow_paused(False, payload=frame.raw)
+                    self._set_flow_paused(session, False, payload=frame.raw)
 
     def _select_levels(self, *, is_text: bool) -> DensityLevels | None:
         preset = None if self._runtime_settings is None else self._runtime_settings.preset
@@ -451,16 +455,17 @@ class V5GRuntimeController(RuntimeController):
             self._state.didian_status = True
         elif reason is PrinterStatusCode.OVERHEATED:
             self._state.d2_status = True
-        session.report_debug(
-            f"V5G status status=0x{status:02x} didian={self._state.didian_status} d2={self._state.d2_status}"
-        )
+        if self._log_rx(session, "V5G status", payload):
+            session.report_debug(
+                f"V5G status status=0x{status:02x} didian={self._state.didian_status} d2={self._state.d2_status}"
+            )
 
     def _update_d2_status(self, session, payload: bytes) -> None:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5G)
         if raw is None:
             return
         self._state.d2_status = True
-        session.report_debug("V5G D2 status received")
+        self._log_rx(session, "V5G D2 status", payload)
 
     def _update_temperature(self, session, payload: bytes) -> None:
         raw = prefixed_packet_payload(payload, ProtocolFamily.V5G)
@@ -481,7 +486,8 @@ class V5GRuntimeController(RuntimeController):
             )
         ):
             self._schedule_density_reset(session, 120)
-        session.report_debug(f"V5G temperature={self._state.temperature_c}")
+        if self._log_rx(session, "V5G temperature", payload):
+            session.report_debug(f"V5G temperature={self._state.temperature_c}")
 
     def _schedule_density_reset(self, session, value: int) -> None:
         if self._state.pending_reset_task is not None and not self._state.pending_reset_task.done():

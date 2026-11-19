@@ -18,6 +18,9 @@ class _RecordingSession:
     def set_flow_paused(self, paused: bool, *, payload: bytes = b"") -> None:
         self.flow_calls.append((paused, payload))
 
+    def report_debug(self, message: str) -> None:
+        pass
+
 
 class TinyFlowControlTests(unittest.TestCase):
     def test_runtime_handles_fragmented_and_coalesced_notifications(self) -> None:

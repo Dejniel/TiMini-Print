@@ -124,7 +124,7 @@ _METADATA_ADDRESS = re.compile(
     r"|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", re.IGNORECASE,
 )
 _MAX_DEVICE_METADATA_CHARS = 96
-_MAX_RX_PREVIEW_BYTES = 64
+_MAX_RX_PREVIEW_BYTES = 128
 _RX_IDENTIFIER_LOOKAHEAD = 36  # A textual Bluetooth identifier can be a UUID.
 _MAX_EXCEPTION_CAUSES = 4
 _METADATA_URI = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
@@ -152,7 +152,7 @@ def device_metadata_text(value: str) -> str | None:
 def rx_preview(data: bytes | None) -> str:
     """Bounded hex for selected received replies, never TX or print buffers.
 
-    Show at most the first 64 bytes. Mask textual Bluetooth addresses, including
+    Show at most the first 128 bytes. Mask textual Bluetooth addresses, including
     identifiers crossing the preview boundary, and omit obvious document
     references. This is not a general anonymizer for arbitrary binary content;
     callers choose useful control replies rather than logging every fragment.

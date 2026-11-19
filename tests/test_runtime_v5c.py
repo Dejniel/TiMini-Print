@@ -13,6 +13,9 @@ from timiniprint.protocol.steps import ProtocolStep
 
 
 class _Session:
+    def report_debug(self, message: str) -> None:
+        pass
+
     def __init__(self, *, can_send: bool = True, fail_on: bytes | None = None) -> None:
         self.can_send = can_send
         self.fail_on = fail_on
