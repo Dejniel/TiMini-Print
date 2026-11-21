@@ -8,8 +8,8 @@ Private local notes may live in ignored files such as `AGENTS.local.md`.
 
 ## PR Scope
 
-- Keep one behavioral change per PR.
-- Do not mix protocol fixes, transport fixes, documentation updates, and unrelated cleanup in one PR.
+- Keep each PR focused on one coherent behavioral change.
+- Include the code, tests, and documentation needed for that change, even across multiple layers. Do not bundle unrelated fixes or cleanup.
 - Keep related cleanup in a separate commit; use a new PR only for independent follow-up work.
 - Do not include opportunistic fixes found while working unless they are required for the main change; put them in a separate commit and call out why they are included.
 - Do not add speculative support only because a model name looks similar.
@@ -78,7 +78,7 @@ Private local notes may live in ignored files such as `AGENTS.local.md`.
 
 ## Tests
 
-- Test public contracts before private state.
+- Prefer testing public contracts. Test internal behavior directly when necessary; do not add production APIs solely to expose internals to tests.
 - Add regression tests for fixed bugs.
 - For runtime hooks, test both payload jobs and `ProtocolJob.steps` when both paths can apply.
 - For catalog changes, test detection outcome and relevant runtime/profile settings, not only the profile key.
