@@ -184,6 +184,8 @@ class PaperPreset:
     ``left_padding_px=None`` centers content automatically; an integer sets an
     explicit horizontal origin (zero means left). ``raster_width_px`` includes
     that origin; remaining white space is derived, not another setting.
+    ``paper_height_px`` keeps paper/label length (excluding its gap) separate
+    from the printable height; it does not change raster sizing.
 
     ``paper_mode`` selects the medium/recipe, not density or width. Preset
     construction validates basic geometry, not every model's raster constraints.
@@ -206,6 +208,7 @@ class PaperPreset:
     rotation_degrees: int = 0
     dither_mode: Optional[DitherMode] = None
     render_height_scale: float = 1.0
+    paper_height_px: Optional[int] = None
 
     def __post_init__(self) -> None:
         if self.left_padding_px is not None and type(self.left_padding_px) is not int:
@@ -227,6 +230,7 @@ class PaperPreset:
             "max_height_px",
             "raster_height_px",
             "raster_width_px",
+            "paper_height_px",
         ):
             value = getattr(self, field_name)
             if value is not None and value < 0:
@@ -239,6 +243,12 @@ class PaperPreset:
             raise ValueError(f"paper preset {self.key} render_height_px must be greater than zero")
         if self.raster_height_px == 0:
             raise ValueError(f"paper preset {self.key} raster_height_px must be greater than zero")
+        if self.paper_height_px is not None and (
+            self.paper_height_px <= 0 or (
+                self.render_height_px is not None and self.render_height_px > self.paper_height_px
+            )
+        ):
+            raise ValueError(f"paper preset {self.key} paper_height_px must contain the render height")
         if self.raster_width_px is not None and self.raster_width_px < self.render_width_px:
             raise ValueError(
                 f"paper preset {self.key} raster_width_px must not be smaller than render_width_px"
@@ -330,11 +340,11 @@ class PrinterProfile:
             None,
         )
         if preset is None:
-            available = ", ".join(
+            available = ", ".join(dict.fromkeys(
                 preset.paper_mode.value
                 for preset in self.paper_presets
                 if preset.paper_mode is not None
-            )
+            ))
             suffix = f"; available: {available}" if available else ""
             raise ValueError(
                 f"profile {self.profile_key} does not define paper mode "
@@ -701,6 +711,8 @@ class PrinterModel:
 
     ``preparation_recipe`` selects a printing-layer session policy without
     changing the wire family or raster codec. It does not perform I/O here.
+    ``additional_paper_presets`` adds model-specific formats to a shared
+    profile without replacing that profile's existing choices or default.
     """
 
     model_key: str
@@ -714,6 +726,7 @@ class PrinterModel:
     image_pipeline: Optional[ImagePipelineConfig] = None
     profile_runtime_preset_key: Optional[str] = None
     preparation_recipe: Optional[str] = None
+    additional_paper_presets: Tuple[PaperPreset, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.model_key:

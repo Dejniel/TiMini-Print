@@ -140,6 +140,9 @@ def _profile_overrides_for_device(device: PrinterDevice) -> dict[str, Any]:
 
 def _profile_payload_for_device(device: PrinterDevice) -> dict[str, Any]:
     entry = model_to_json(device.profile)
+    for preset in entry["paper_presets"]:
+        if preset["paper_height_px"] is None:
+            del preset["paper_height_px"]
     entry["protocol_default"] = {
         "type": device.protocol_family.value,
         "packets_type": device.protocol_variant,

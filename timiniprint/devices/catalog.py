@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional
 
 from ..protocol.families import (
     get_protocol_behavior,
@@ -67,7 +68,7 @@ class PrinterCatalog:
         self._validate_paper_presets()
         self._validate_model_keys()
         self._validate_runtime_presets()
-        self._validate_model_references()
+        self._model_profiles = self._resolve_model_profiles()
         self._validate_implemented_protocols()
         self._validate_origin_names()
 
@@ -222,11 +223,17 @@ class PrinterCatalog:
         profiles = [
             model_from_json(
                 PrinterProfile,
-                cls._resolve_profile_paper_presets(entry, paper_presets),
+                cls._resolve_paper_preset_references(entry, paper_presets, owner="profile"),
             )
             for entry in profiles_raw
         ]
-        models = [model_from_json(PrinterModel, entry) for entry in models_raw]
+        models = [
+            model_from_json(
+                PrinterModel,
+                cls._resolve_paper_preset_references(entry, paper_presets, owner="model"),
+            )
+            for entry in models_raw
+        ]
         origin_names = {
             str(origin_id): str(name)
             for origin_id, name in origin_names_raw.items()
@@ -253,31 +260,31 @@ class PrinterCatalog:
         return presets
 
     @staticmethod
-    def _resolve_profile_paper_presets(
+    def _resolve_paper_preset_references(
         entry: object,
         paper_presets: Mapping[str, Mapping[str, object]],
+        *,
+        owner: Literal["profile", "model"],
     ) -> object:
         if not isinstance(entry, Mapping):
             return entry
+        field = "paper_presets" if owner == "profile" else "additional_paper_presets"
+        if owner == "model" and field not in entry:
+            return entry
         payload = dict(entry)
-        references = payload.get("paper_presets")
+        context = f"{owner} {payload.get(f'{owner}_key', '<unknown>')}"
+        references = payload.get(field)
         if not isinstance(references, list):
-            raise ValueError(f"profile {payload.get('profile_key', '<unknown>')} paper_presets must be an array")
+            raise ValueError(f"{context} {field} must be an array")
         resolved = []
         for reference in references:
             if not isinstance(reference, str):
-                raise ValueError(
-                    f"profile {payload.get('profile_key', '<unknown>')} paper_presets must contain preset keys"
-                )
+                raise ValueError(f"{context} {field} must contain preset keys")
             preset = paper_presets.get(reference)
             if preset is None:
-                raise ValueError(
-                    f"profile {payload.get('profile_key', '<unknown>')} references unknown paper preset {reference!r}"
-                )
-            resolved_preset = dict(preset)
-            resolved_preset["key"] = reference
-            resolved.append(resolved_preset)
-        payload["paper_presets"] = resolved
+                raise ValueError(f"{context} references unknown paper preset {reference!r}")
+            resolved.append(preset)
+        payload[field] = resolved
         return payload
 
     def _validate_speed_requirements(self) -> None:
@@ -336,7 +343,8 @@ class PrinterCatalog:
                     )
                 seen_in_profile.add(preset.key)
 
-    def _validate_model_references(self) -> None:
+    def _resolve_model_profiles(self) -> dict[str, PrinterProfile]:
+        profiles = {}
         for model in self._models:
             profile = self._profile_by_key.get(model.profile_key)
             if profile is None:
@@ -344,9 +352,16 @@ class PrinterCatalog:
                     f"Printer model {model.model_key} references unknown profile "
                     f"{model.profile_key}"
                 )
-            if model.profile_runtime_preset_key is None:
-                continue
-            if not any(
+            if model.additional_paper_presets:
+                protocol = get_protocol_behavior(self._protocol_family_for_model(model, profile))
+                modes = protocol.supported_paper_modes_for(self._protocol_packets_type_for_model(model, profile))
+                for preset in model.additional_paper_presets:
+                    if preset.paper_mode is not None and preset.paper_mode not in modes:
+                        raise ValueError(f"model {model.model_key} paper preset {preset.key} uses unsupported paper mode")
+                profile = replace(
+                    profile, paper_presets=(*profile.paper_presets, *model.additional_paper_presets),
+                )
+            if model.profile_runtime_preset_key is not None and not any(
                 preset.key == model.profile_runtime_preset_key
                 for preset in profile.runtime_presets
             ):
@@ -354,6 +369,8 @@ class PrinterCatalog:
                     f"Printer model {model.model_key} references unknown runtime preset "
                     f"{model.profile_runtime_preset_key} for profile {profile.profile_key}"
                 )
+            profiles[model.model_key] = profile
+        return profiles
 
     def _validate_implemented_protocols(self) -> None:
         for model in self._models:
@@ -469,18 +486,11 @@ class PrinterCatalog:
         transport_target: TransportTarget | None = None,
     ) -> PrinterDevice:
         """Create a runtime device from a supported catalog match."""
-        model = match.model
-        profile = match.profile
-        return self._build_device(
+        return self._build_model_device(
+            match.model,
+            match.profile,
             display_name=display_name or match.detection.names[0],
-            profile=profile,
-            protocol_family=self._protocol_family_for_model(model, profile),
-            protocol_variant=self._protocol_packets_type_for_model(model, profile),
-            image_pipeline=self._select_image_pipeline(profile, model),
-            runtime_settings=self._runtime_settings_for_model(model, profile),
-            model_key=model.model_key,
             origin_ids=match.origin_ids,
-            preparation_recipe=model.preparation_recipe,
             transport_target=transport_target,
         )
 
@@ -677,7 +687,7 @@ class PrinterCatalog:
     ) -> ModelMatch:
         return ModelMatch(
             model=model,
-            profile=self.require_profile(model.profile_key),
+            profile=self._model_profiles[model.model_key],
             detection=detection,
             origin_ids=origin_ids,
         )
@@ -690,16 +700,32 @@ class PrinterCatalog:
         transport_target: TransportTarget | None = None,
     ) -> PrinterDevice:
         model = self.require_model(model_key)
-        profile = self.require_profile(model.profile_key)
-        return self._build_device(
+        return self._build_model_device(
+            model,
+            self._model_profiles[model_key],
             display_name=display_name or model.names[0],
+            origin_ids=model.origin_ids,
+            transport_target=transport_target,
+        )
+
+    def _build_model_device(
+        self,
+        model: PrinterModel,
+        profile: PrinterProfile,
+        *,
+        display_name: str,
+        origin_ids: tuple[str, ...],
+        transport_target: TransportTarget | None,
+    ) -> PrinterDevice:
+        return self._build_device(
+            display_name=display_name,
             profile=profile,
             protocol_family=self._protocol_family_for_model(model, profile),
             protocol_variant=self._protocol_packets_type_for_model(model, profile),
             image_pipeline=self._select_image_pipeline(profile, model),
             runtime_settings=self._runtime_settings_for_model(model, profile),
             model_key=model.model_key,
-            origin_ids=model.origin_ids,
+            origin_ids=origin_ids,
             preparation_recipe=model.preparation_recipe,
             transport_target=transport_target,
         )

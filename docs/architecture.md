@@ -291,7 +291,10 @@ the connection workaround for #27 without hiding the anonymous endpoint.
 
 ## Paper And Media Boundaries
 
-User-facing paper choices are catalog data. Profiles list exact paper preset keys; `PrintSettings.paper_preset_key` selects one for file printing.
+User-facing paper choices are catalog data. Profiles list exact paper preset
+keys; a model may append its own supported sizes to a shared profile without
+changing the default. `PrintSettings.paper_preset_key` selects one for file
+printing.
 
 Rendering uses the preset's render width, optional fixed content height, leading
 padding, and orientation transform. The printing layer applies the equivalent

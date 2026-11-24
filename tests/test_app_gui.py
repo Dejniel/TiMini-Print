@@ -104,8 +104,13 @@ class GuiPaperChoiceTests(unittest.TestCase):
         device = catalog.detect_device("QIRUI_Q2_1234")
 
         self.assertIsNotNone(device)
-        labels = [label for label, _key in TiMiniPrintGUI._paper_choices_for_device(device)]
-        self.assertEqual(labels, ["Plain roll", "Tag", "Black tag", "Tattoo"])
+        choices = TiMiniPrintGUI._paper_choices_for_device(device)
+        self.assertEqual(choices, (
+            ("Plain roll", "plain_576r"), ("Tag", "tag_576r"),
+            ("Black tag", "blacktag_576r"), ("Tattoo", "tattoo_576r"),
+            *((f"50 × {height} mm labels", f"luck_label_50x{height}_576r_300dpi")
+              for height in (15, *range(20, 121, 10))),
+        ))
 
     def test_text_columns_follow_selected_paper_width(self) -> None:
         narrow = PaperPreset(

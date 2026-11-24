@@ -43,6 +43,10 @@
   },
   {
     "model_key": "ibleem_v5x",
+    "additional_paper_presets": [
+      "v5x_tag_40x20", "v5x_tag_50x15", "v5x_tag_50x70",
+      "v5x_tag_50x30"
+    ],
     "profile_key": "v5x",
     "origin_ids": [
       "com.bleem.liugm"
@@ -70,6 +74,10 @@
   },
   {
     "model_key": "funprint_v5x_gray_label",
+    "additional_paper_presets": [
+      "v5x_tag_40x20", "v5x_tag_50x15", "v5x_tag_50x70",
+      "v5x_tag_50x30"
+    ],
     "profile_key": "v5x",
     "protocol_override": {
       "packets_type": "gray_label"
@@ -1415,6 +1423,10 @@
   },
   {
     "model_key": "v5x",
+    "additional_paper_presets": [
+      "v5x_tag_40x20", "v5x_tag_50x15", "v5x_tag_50x70",
+      "v5x_tag_50x30"
+    ],
     "profile_key": "v5x",
     "detections": [
       {
@@ -1793,6 +1805,10 @@
   },
   {
     "model_key": "luck_a2",
+    "additional_paper_presets": [
+      "luck_label_50x15_384r_203dpi", "luck_label_50x20_384r_203dpi", "luck_label_50x30_384r_203dpi", "luck_label_50x40_384r_203dpi",
+      "luck_label_50x50_384r_203dpi", "luck_label_50x60_384r_203dpi"
+    ],
     "profile_key": "luck_a2",
     "detections": [
       {
@@ -1813,6 +1829,10 @@
   },
   {
     "model_key": "luck_a2h",
+    "additional_paper_presets": [
+      "luck_label_50x15_576r_300dpi", "luck_label_50x20_576r_300dpi", "luck_label_50x30_576r_300dpi", "luck_label_50x40_576r_300dpi",
+      "luck_label_50x50_576r_300dpi", "luck_label_50x60_576r_300dpi"
+    ],
     "profile_key": "luck_a2h",
     "detections": [
       {
@@ -1832,6 +1852,10 @@
   },
   {
     "model_key": "luck_ppa2l",
+    "additional_paper_presets": [
+      "luck_label_50x15_384r_203dpi", "luck_label_50x20_384r_203dpi", "luck_label_50x30_384r_203dpi", "luck_label_50x40_384r_203dpi",
+      "luck_label_50x50_384r_203dpi", "luck_label_50x60_384r_203dpi"
+    ],
     "profile_key": "luck_ppa2l",
     "protocol_override": {
       "packets_type": "lujiang_normal"
@@ -1850,6 +1874,10 @@
   },
   {
     "model_key": "luck_ppa2lh",
+    "additional_paper_presets": [
+      "luck_label_50x15_576r_300dpi", "luck_label_50x20_576r_300dpi", "luck_label_50x30_576r_300dpi", "luck_label_50x40_576r_300dpi",
+      "luck_label_50x50_576r_300dpi", "luck_label_50x60_576r_300dpi"
+    ],
     "profile_key": "luck_ppa2lh",
     "protocol_override": {
       "packets_type": "lujiang_normal_h"
@@ -1982,6 +2010,13 @@
   },
   {
     "model_key": "luck_apa46y",
+    "additional_paper_presets": [
+      "luck_label_20x10_160r_203dpi", "luck_label_25x15_200r_203dpi", "luck_label_30x15_240r_203dpi", "luck_label_30x20_240r_203dpi",
+      "luck_label_30x30_240r_203dpi", "luck_label_40x20_320r_203dpi", "luck_label_40x30_320r_203dpi", "luck_label_40x40_320r_203dpi",
+      "luck_label_40x60_320r_203dpi", "luck_label_40x80_320r_203dpi", "luck_label_45x57_360r_203dpi", "luck_label_50x15_400r_203dpi",
+      "luck_label_50x20_400r_203dpi", "luck_label_50x30_400r_203dpi", "luck_label_50x40_400r_203dpi", "luck_label_50x50_400r_203dpi",
+      "luck_label_50x70_400r_203dpi", "luck_label_50x80_400r_203dpi"
+    ],
     "profile_key": "luck_a4_compressed_tattoo_96",
     "detections": [
       {
@@ -1997,6 +2032,13 @@
   },
   {
     "model_key": "luck_apl86",
+    "additional_paper_presets": [
+      "luck_label_20x10_160r_203dpi", "luck_label_25x15_200r_203dpi", "luck_label_30x15_240r_203dpi", "luck_label_30x20_240r_203dpi",
+      "luck_label_30x30_240r_203dpi", "luck_label_40x20_320r_203dpi", "luck_label_40x30_320r_203dpi", "luck_label_40x40_320r_203dpi",
+      "luck_label_40x60_320r_203dpi", "luck_label_40x80_320r_203dpi", "luck_label_45x57_360r_203dpi", "luck_label_50x15_400r_203dpi",
+      "luck_label_50x20_400r_203dpi", "luck_label_50x30_400r_203dpi", "luck_label_50x40_400r_203dpi", "luck_label_50x50_400r_203dpi",
+      "luck_label_50x70_400r_203dpi", "luck_label_50x80_400r_203dpi"
+    ],
     "profile_key": "luck_apl86",
     "detections": [
       {
@@ -2016,6 +2058,13 @@
   },
   {
     "model_key": "luck_apl86h",
+    "additional_paper_presets": [
+      "luck_label_20x10_240r_300dpi", "luck_label_25x15_300r_300dpi", "luck_label_30x15_360r_300dpi", "luck_label_30x20_360r_300dpi",
+      "luck_label_30x30_360r_300dpi", "luck_label_40x20_480r_300dpi", "luck_label_40x30_480r_300dpi", "luck_label_40x40_480r_300dpi",
+      "luck_label_40x60_480r_300dpi", "luck_label_40x80_480r_300dpi", "luck_label_45x57_540r_300dpi", "luck_label_50x15_600r_300dpi",
+      "luck_label_50x20_600r_300dpi", "luck_label_50x30_600r_300dpi", "luck_label_50x40_600r_300dpi", "luck_label_50x50_600r_300dpi",
+      "luck_label_50x70_600r_300dpi", "luck_label_50x80_600r_300dpi"
+    ],
     "profile_key": "luck_apl86h",
     "detections": [
       {
@@ -2035,6 +2084,9 @@
   },
   {
     "model_key": "luck_u8",
+    "additional_paper_presets": [
+      "luck_label_50x15_400r_203dpi", "luck_label_50x30_400r_203dpi", "luck_label_50x40_400r_203dpi", "luck_label_50x50_400r_203dpi"
+    ],
     "profile_key": "luck_u8",
     "detections": [
       {
@@ -2050,6 +2102,9 @@
   },
   {
     "model_key": "luck_d80",
+    "additional_paper_presets": [
+      "luck_label_50x15_400r_203dpi", "luck_label_50x30_400r_203dpi", "luck_label_50x40_400r_203dpi", "luck_label_50x50_400r_203dpi"
+    ],
     "profile_key": "luck_d80",
     "detections": [
       {
@@ -2079,6 +2134,9 @@
   },
   {
     "model_key": "luck_d80h",
+    "additional_paper_presets": [
+      "luck_label_50x15_600r_300dpi", "luck_label_50x30_600r_300dpi", "luck_label_50x40_600r_300dpi", "luck_label_50x50_600r_300dpi"
+    ],
     "profile_key": "luck_d80h",
     "detections": [
       {
@@ -2097,6 +2155,9 @@
   },
   {
     "model_key": "luck_a80h_way1",
+    "additional_paper_presets": [
+      "luck_label_50x15_600r_300dpi", "luck_label_50x30_600r_300dpi", "luck_label_50x40_600r_300dpi", "luck_label_50x50_600r_300dpi"
+    ],
     "profile_key": "luck_a80h_way1",
     "protocol_override": {
       "packets_type": "a80h_way1"
@@ -2118,6 +2179,11 @@
   },
   {
     "model_key": "luck_qirui_q1",
+    "additional_paper_presets": [
+      "luck_label_50x15_384r_203dpi", "luck_label_50x20_384r_203dpi", "luck_label_50x30_384r_203dpi", "luck_label_50x40_384r_203dpi",
+      "luck_label_50x50_384r_203dpi", "luck_label_50x60_384r_203dpi", "luck_label_50x70_384r_203dpi", "luck_label_50x80_384r_203dpi",
+      "luck_label_50x90_384r_203dpi", "luck_label_50x100_384r_203dpi", "luck_label_50x110_384r_203dpi", "luck_label_50x120_384r_203dpi"
+    ],
     "profile_key": "luck_qirui_q1",
     "detections": [
       {
@@ -2133,6 +2199,11 @@
   },
   {
     "model_key": "luck_qirui_q2",
+    "additional_paper_presets": [
+      "luck_label_50x15_576r_300dpi", "luck_label_50x20_576r_300dpi", "luck_label_50x30_576r_300dpi", "luck_label_50x40_576r_300dpi",
+      "luck_label_50x50_576r_300dpi", "luck_label_50x60_576r_300dpi", "luck_label_50x70_576r_300dpi", "luck_label_50x80_576r_300dpi",
+      "luck_label_50x90_576r_300dpi", "luck_label_50x100_576r_300dpi", "luck_label_50x110_576r_300dpi", "luck_label_50x120_576r_300dpi"
+    ],
     "profile_key": "luck_qirui_q2",
     "detections": [
       {
