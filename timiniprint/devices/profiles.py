@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from math import isfinite
 from typing import Optional, Tuple
 
 from ..protocol.family import ProtocolFamily
@@ -187,6 +188,11 @@ class PaperPreset:
     ``paper_height_px`` keeps paper/label length (excluding its gap) separate
     from the printable height; it does not change raster sizing.
 
+    ``nominal_width_mm`` and ``nominal_height_mm`` describe physical stock,
+    excluding any inter-label gap. ``standard_format`` is a stable identifier
+    such as ``a4`` or ``letter``. These fields are presentation metadata only:
+    they do not affect printing and are never inferred from raster geometry or DPI.
+
     ``paper_mode`` selects the medium/recipe, not density or width. Preset
     construction validates basic geometry, not every model's raster constraints.
     Select one of the resolved profile's presets through PrintSettings rather
@@ -209,8 +215,22 @@ class PaperPreset:
     dither_mode: Optional[DitherMode] = None
     render_height_scale: float = 1.0
     paper_height_px: Optional[int] = None
+    nominal_width_mm: Optional[float] = None
+    nominal_height_mm: Optional[float] = None
+    standard_format: Optional[str] = None
 
     def __post_init__(self) -> None:
+        for field_name in ("nominal_width_mm", "nominal_height_mm"):
+            value = getattr(self, field_name)
+            if value is not None:
+                if (isinstance(value, bool) or not isinstance(value, (int, float))
+                        or not isfinite(value) or value <= 0):
+                    raise ValueError(f"{field_name} must be a positive finite number or None")
+                object.__setattr__(self, field_name, float(value))
+        if self.standard_format is not None and (
+            not isinstance(self.standard_format, str) or not self.standard_format.strip()
+        ):
+            raise ValueError("standard_format must be a non-empty identifier or None")
         if self.left_padding_px is not None and type(self.left_padding_px) is not int:
             raise ValueError("left_padding_px must be an integer or None")
         if not self.key:

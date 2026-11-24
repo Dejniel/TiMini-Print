@@ -34,7 +34,7 @@ async def prepare_connection_runtime(
     session = RuntimeConnectionSession(connection, reporter=reporter)
     await session.attach_runtime_controller(controller, timeout=timeout)
     prepared = await controller.prepare(device, session, timeout=timeout)
-    prepared = _preserve_content_geometry(device, prepared)
+    prepared = _preserve_paper_configuration(device, prepared)
     _validate_preparation(device, prepared, controller, connection)
     if prepared.runtime_controller is not controller:
         if not session.can_observe_replies():
@@ -53,15 +53,37 @@ async def prepare_connection_runtime(
     return prepared
 
 
-def _preserve_content_geometry(original: PrinterDevice, prepared: PreparedPrinter) -> PreparedPrinter:
-    """Keep content constraints separate from negotiated hardware dimensions."""
+def _preserve_paper_configuration(original: PrinterDevice, prepared: PreparedPrinter) -> PreparedPrinter:
+    """Keep authored layout and stock metadata across hardware negotiation."""
     device = prepared.device
     if (original.profile == device.profile or not original.profile.paper_presets
             or original.profile_key != device.profile_key):
         return prepared
     papers = []
     for paper in device.profile.paper_presets:
-        source = original.profile.paper_preset(paper.key) or original.profile.default_paper_preset
+        source = original.profile.paper_preset(paper.key)
+        metadata_source = source if source is None or source.paper_mode in (None, paper.paper_mode) else None
+        if metadata_source is None and paper.paper_mode is not None:
+            sources = [p for p in original.profile.paper_presets if p.paper_mode == paper.paper_mode]
+            targets = [p for p in device.profile.paper_presets if p.paper_mode == paper.paper_mode]
+            if len(sources) == len(targets) == 1:
+                metadata_source = sources[0]
+        if (metadata_source is None and len(original.profile.paper_presets) == 1
+                and original.profile.default_paper_preset.paper_mode is None
+                and paper.key == device.profile.default_paper_preset.key):
+            metadata_source = original.profile.default_paper_preset
+        if metadata_source is not None and (
+            paper.nominal_width_mm is None and paper.nominal_height_mm is None and paper.standard_format is None
+        ):
+            # Preserve one stock's metadata together; never mix it into a
+            # newly detected size or infer a stock from the default layout.
+            paper = replace(
+                paper,
+                nominal_width_mm=metadata_source.nominal_width_mm,
+                nominal_height_mm=metadata_source.nominal_height_mm,
+                standard_format=metadata_source.standard_format,
+            )
+        source = source or original.profile.default_paper_preset
         available = (source.raster_width_px or source.paper_width_px) - (source.left_padding_px or 0)
         limit = source.render_width_px if source.render_width_px < available else None
         if limit is None and source.left_padding_px is None and source.raster_width_px is None:

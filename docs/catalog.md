@@ -234,6 +234,8 @@ A `PaperPreset` contains:
 
 - `key`: stable preset key used in configs and CLI/GUI selection
 - `label`: user-facing label
+- optional `nominal_width_mm`, `nominal_height_mm`: physical stock dimensions in millimeters, not printable area; label height excludes the inter-label gap
+- optional `standard_format`: stable, non-localized format identifier, for example `a4`, `a5`, or `letter`
 - `paper_width_px`: full protocol paper/canvas width, including margins
 - `render_width_px`: width rendered by file/raster pipeline before protocol padding/centering
 - optional `render_height_px`: fixed content area height; taller pages are scaled to fit and text pagination uses this height
@@ -249,6 +251,17 @@ A `PaperPreset` contains:
 - optional `max_height_px`: sheet/page height cap when the protocol needs one
 
 High-level callers select paper through `PrintSettings(paper_preset_key=...)`. They should not select low-level `paper_mode` directly. `paper_mode` exists because some wire protocols change feed/end-page behavior depending on medium type.
+
+Nominal dimensions and standard format are presentation-only metadata. Omitted
+or `null` values mean unspecified; no dimension is inferred from dots, DPI, or
+the format identifier. A continuous roll can specify only `nominal_width_mm`.
+For example, a 50 × 30 mm label adds `"nominal_width_mm": 50` and
+`"nominal_height_mm": 30`; A4 stock adds `210`, `297`, and
+`"standard_format": "a4"`. Existing keys, labels, media recipes and dot geometry
+remain authoritative for printing. Printer configs preserve supplied metadata
+and omit unspecified fields. Session geometry negotiation preserves metadata
+for retained preset keys or an unambiguous retained medium, without copying
+it onto unrelated detected stock. Explicitly detected stock metadata wins.
 
 With automatic placement, the printing layer centers narrower content on the
 paper canvas. An integer `left_padding_px` fixes the content area's origin;

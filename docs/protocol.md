@@ -424,6 +424,12 @@ The key must be one of the paper preset keys supported by the device profile. Th
 
 See [catalog.md](catalog.md) for the data model behind paper presets.
 
+Each `PaperPreset` also exposes optional `nominal_width_mm`,
+`nominal_height_mm`, and `standard_format` for presentation. These describe
+physical stock, not print area; label height excludes the gap. `None` means
+unspecified (including continuous-roll height). Do not derive missing values
+from raster dimensions. These fields do not change print geometry or commands.
+
 V5X devices with the `gray_label` protocol variant use start mode `03` for
 grayscale on tag media. Plain grayscale keeps mode `02`, and monochrome tags
 keep mode `01`. Select media through the existing paper presets; this variant
