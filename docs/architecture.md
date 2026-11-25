@@ -88,6 +88,10 @@ Owns stateless wire-format construction.
 
 It contains `PrinterProtocol`, `ProtocolJob`, protocol families, packet builders, image encoding choices, paper-mode recipe values, and internal low-level builders. It must not connect to hardware, scan Bluetooth, or know transport adapters.
 
+`PrinterProtocol` consumes the resolved `PrinterDevice` data model. It may
+import `PaperPreset` under `TYPE_CHECKING` for annotations when selecting
+paper geometry, but must not import catalog lookup or configuration assembly.
+
 ### `timiniprint.rendering`
 Owns files, pages, converters, transforms, and rasterization.
 
