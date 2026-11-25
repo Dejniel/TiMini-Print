@@ -1,6 +1,8 @@
 """Generic BLE adapter fallback wrapper."""
 from __future__ import annotations
 
+import asyncio
+import threading
 from typing import List, Optional
 
 from .base import _BleBluetoothAdapter
@@ -68,6 +70,10 @@ class _FallbackSocket:
         self._reporter = reporter
         self._timeout = 30.0
         self._active: SocketLike | None = None
+        self._connect_cancel_event: threading.Event | None = None
+
+    def set_connect_cancel_event(self, event: threading.Event) -> None:
+        self._connect_cancel_event = event
 
     def settimeout(self, timeout: float) -> None:
         self._timeout = timeout
@@ -108,6 +114,8 @@ class _FallbackSocket:
             raise error
 
     def _try_connect(self, sock: SocketLike, backend_name: str, address_channel, address: str) -> Exception | None:
+        if self._connect_cancel_event is not None and self._connect_cancel_event.is_set():
+            raise asyncio.CancelledError
         try:
             sock.connect(address_channel)
         except Exception as exc:
@@ -115,6 +123,8 @@ class _FallbackSocket:
                 sock.close()
             except Exception as cleanup_error:
                 raise exc from ConnectionCleanupError(cleanup_error)
+            if ConnectionCleanupError.is_cause_of(exc):
+                raise
             return exc
         self._active = sock
         self._reporter.debug(

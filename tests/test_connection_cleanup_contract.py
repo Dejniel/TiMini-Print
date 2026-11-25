@@ -96,3 +96,43 @@ def test_ble_fallback_does_not_open_another_socket_after_failed_cleanup():
     assert caught.value is original
     assert isinstance(original.__cause__, ConnectionCleanupError)
     fallback.connect.assert_not_called()
+
+
+@pytest.mark.parametrize("close_fails", [False, True])
+@pytest.mark.parametrize("cancel_twice", [False, True])
+def test_caller_cancellation_during_cleanup_remains_primary(close_fails, cancel_twice):
+    async def run():
+        closing, release = asyncio.Event(), asyncio.Event()
+        connection, connector = AsyncMock(), AsyncMock()
+        connector.connect.return_value = connection
+        failure = OSError("close failed")
+
+        async def close():
+            closing.set()
+            await release.wait()
+            if close_fails:
+                raise failure
+
+        connection.disconnect.side_effect = close
+        device = PrinterCatalog.load().device_from_profile("x6h")
+        with patch("timiniprint.printing.connected.prepare_connection_runtime", side_effect=ValueError("setup failed")):
+            task = asyncio.create_task(connect_printer(device, connector))
+            try:
+                await asyncio.wait_for(closing.wait(), 1)
+                task.cancel()
+                await asyncio.sleep(0)
+                if cancel_twice:
+                    task.cancel()
+                    await asyncio.sleep(0)
+                assert not task.done(), "cancellation must wait for connection cleanup"
+                release.set()
+                with pytest.raises(asyncio.CancelledError) as caught:
+                    await task
+            finally:
+                release.set()
+                await asyncio.gather(task, return_exceptions=True)
+        assert ConnectionCleanupError.is_cause_of(caught.value) is close_fails
+        if close_fails:
+            assert caught.value.__cause__.__cause__ is failure
+        connection.disconnect.assert_awaited_once()
+    asyncio.run(run())

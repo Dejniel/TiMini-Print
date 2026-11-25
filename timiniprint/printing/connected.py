@@ -13,6 +13,7 @@ from ..protocol.runtime import RuntimePrintCapabilities
 from ..protocol.types import ImagePipelineConfig, PageFlow
 from ..raster import RasterSet
 from ..transport.base import ConnectionCleanupError
+from ._connection_cleanup import disconnect_with_deadline
 from .builder import PrintJobBuilder
 from .raster_job import build_raster_page_job as _build_raster_page_job
 from .raster_job import combine_raster_page_jobs as _combine_raster_page_jobs
@@ -273,7 +274,8 @@ async def connect_printer(
 
     On preparation failure or cancellation, close the connection and re-raise
     the original error. Failed cleanup remains visible through a
-    ConnectionCleanupError cause. On success, the caller owns cleanup
+    ConnectionCleanupError cause. Caller cancellation during cleanup takes
+    precedence over the preparation error. On success, the caller owns cleanup
     (use ``async with``).
     """
     if device.preparation_recipe is not None:
@@ -291,8 +293,8 @@ async def connect_printer(
         )
     except BaseException as error:
         try:
-            await connection.disconnect()
-        except (Exception, asyncio.CancelledError) as cleanup_error:
+            await disconnect_with_deadline(connection)
+        except Exception as cleanup_error:
             reporter.warning(short="Printer connection cleanup failed", exc=cleanup_error)
             raise error from ConnectionCleanupError(cleanup_error)
         raise

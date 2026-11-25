@@ -7,11 +7,12 @@ import time
 from concurrent.futures import Future, TimeoutError as FutureTimeoutError
 
 from .. import reporting
+from .base import ConnectionCleanupError
 
 _NOTIFICATION_DISPATCH_TIMEOUT_SEC = 5.0
 
 
-async def run_blocking(operation, *args, cleanup: bool = False):
+async def run_blocking(operation, *args, cleanup: bool = False, cancel_event: threading.Event | None = None):
     """Keep ownership of executor I/O through repeated caller cancellation.
 
     A failed cleanup must remain visible even when its caller was cancelled.
@@ -20,7 +21,9 @@ async def run_blocking(operation, *args, cleanup: bool = False):
     pending = asyncio.get_running_loop().run_in_executor(None, operation, *args)
     try:
         return await asyncio.shield(pending)
-    except asyncio.CancelledError:
+    except asyncio.CancelledError as cancellation:
+        if cancel_event is not None:
+            cancel_event.set()
         while not pending.done():
             try:
                 await asyncio.shield(pending)
@@ -32,6 +35,8 @@ async def run_blocking(operation, *args, cleanup: bool = False):
             error = pending.exception()
             if cleanup and error is not None:
                 raise error
+            if error is not None and ConnectionCleanupError.is_cause_of(error):
+                raise cancellation from error
         raise
 
 

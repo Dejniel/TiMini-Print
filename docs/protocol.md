@@ -277,6 +277,8 @@ bindings cannot be verified.
 Cancelling Bluetooth I/O waits for the current worker operation to finish or
 reach its timeout before cleanup can close its socket/event loop. Cancellation
 is therefore not necessarily immediate and does not undo bytes already sent.
+During connection opening, cancellation stops subsequent channel, endpoint,
+and BLE-backend fallback; it does not abandon the native call already running.
 Custom executor-backed transports must likewise settle worker I/O before
 releasing resources; cancelling its asyncio future alone does not stop a thread.
 
@@ -288,6 +290,10 @@ cause: ordinary connection/protocol errors may be chained too. Custom
 connectors must use the same contract for a failed open they cannot release.
 Use `ConnectionCleanupError.is_cause_of(error)` to recognize the marker through
 timeout/cancellation wrappers without treating ordinary causes as cleanup failures.
+
+If the caller cancels `connect_printer()` during preparation-failure cleanup,
+cleanup is still awaited, then cancellation takes precedence over the preparation
+error. A failed close remains visible in the cancellation's cleanup-error cause.
 
 ### BLE Write Control
 

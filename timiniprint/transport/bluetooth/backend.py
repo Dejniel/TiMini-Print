@@ -30,6 +30,7 @@ class SppBackend:
     ) -> None:
         self._sock: Optional[SocketLike] = None
         self._lock = threading.Lock()
+        self._connect_cancelled = threading.Event()
         self._classic_receive_lock = threading.Lock()
         self._connected = False
         self._channel: Optional[int] = None
@@ -83,8 +84,10 @@ class SppBackend:
         attempts: List[DeviceInfo],
         pairing_hint: Optional[bool] = None,
     ) -> None:
+        self._connect_cancelled.clear()
         try:
-            await run_blocking(self._connect_attempts_blocking, attempts, pairing_hint)
+            await run_blocking(self._connect_attempts_blocking, attempts, pairing_hint,
+                               cancel_event=self._connect_cancelled)
         except BaseException as error:
             try:
                 await self.disconnect()
@@ -118,6 +121,7 @@ class SppBackend:
 
     async def disconnect(self) -> None:
         """Make the transport unusable; retain its socket for retry if close fails."""
+        self._connect_cancelled.set()
         try:
             await self._stop_classic_runtime_controller()
         finally:
@@ -276,6 +280,7 @@ class SppBackend:
         errors: List[Tuple[DeviceInfo, Exception]] = []
 
         for index, candidate in enumerate(unique_attempts):
+            self._check_connect_cancelled()
             if (
                 IS_MACOS
                 and index > 0
@@ -311,9 +316,10 @@ class SppBackend:
                 )
                 return
             except Exception as exc:
-                if self._sock is not None:
+                if self._sock is not None or ConnectionCleanupError.is_cause_of(exc):
                     # A failed close must not be hidden by opening another socket.
                     raise
+                self._check_connect_cancelled()
                 errors.append((candidate, exc))
                 self._reporter.debug(
                     short="Bluetooth",
@@ -354,6 +360,7 @@ class SppBackend:
         raise RuntimeError(f"Bluetooth connection failed ({detail})")
 
     def _connect_with_device(self, device: DeviceInfo, pairing_hint: Optional[bool]) -> None:
+        self._check_connect_cancelled()
         self._reporter.debug(
             short="Bluetooth",
             detail=(
@@ -365,6 +372,7 @@ class SppBackend:
         adapter = _select_adapter(device.transport)
         if adapter is None:
             raise RuntimeError(f"{device.transport.value} Bluetooth is not supported on this platform")
+        self._check_connect_cancelled()
         pair_error = None
         try:
             if pairing_hint and IS_WINDOWS:
@@ -372,9 +380,12 @@ class SppBackend:
             adapter.ensure_paired(device.address, pairing_hint)
             self._reporter.debug(short="Bluetooth", detail="Pairing check done")
         except Exception as exc:
+            if ConnectionCleanupError.is_cause_of(exc):
+                raise
             pair_error = exc
             self._reporter.debug(short="Bluetooth", detail=f"Pairing check failed: {reporting.exception_summary(exc)}")
             self._reporter.trace(short="Bluetooth pairing exception", exc=exc)
+        self._check_connect_cancelled()
         channels = _resolve_rfcomm_channels(adapter, device.address)
         self._reporter.debug(
             short="Bluetooth",
@@ -382,6 +393,7 @@ class SppBackend:
         )
         last_error = None
         for channel in channels:
+            self._check_connect_cancelled()
             sock = None
             try:
                 self._reporter.debug(
@@ -395,10 +407,15 @@ class SppBackend:
                     ble_mtu_request=device.ble_mtu_request,
                 )
                 self._sock = sock
+                install_cancel_event = getattr(sock, "set_connect_cancel_event", None)
+                if callable(install_cancel_event):
+                    install_cancel_event(self._connect_cancelled)
                 set_timeout = getattr(sock, "settimeout", None)
                 if callable(set_timeout):
                     set_timeout(_CONNECT_TIMEOUT_SEC)
+                self._check_connect_cancelled()
                 sock.connect((device.address, channel))
+                self._check_connect_cancelled()
                 self._connected = True
                 self._channel = channel
                 self._transport = device.transport
@@ -424,6 +441,8 @@ class SppBackend:
                     self._reporter.warning(short="Connection cleanup failed", detail=reporting.exception_summary(cleanup_error))
                     self._reporter.trace(short="Connection cleanup exception", exc=cleanup_error)
                     raise exc from ConnectionCleanupError(cleanup_error)
+                if ConnectionCleanupError.is_cause_of(exc):
+                    raise
         if last_error and _is_timeout_error(last_error):
             if pair_error:
                 raise RuntimeError(
@@ -440,6 +459,10 @@ class SppBackend:
         if last_error:
             detail += f", last error: {last_error}"
         raise RuntimeError("Bluetooth connection failed (" + detail + ")")
+
+    def _check_connect_cancelled(self) -> None:
+        if self._connect_cancelled.is_set():
+            raise asyncio.CancelledError
 
     def _disconnect_blocking(self) -> None:
         closing_classic = self._transport is DeviceTransport.CLASSIC
@@ -874,7 +897,9 @@ def _is_timeout_error(exc: Exception) -> bool:
 def _resolve_rfcomm_channels(adapter, address: str) -> List[int]:
     try:
         resolved = list(adapter.resolve_rfcomm_channels(address) or [])
-    except Exception:
+    except Exception as error:
+        if ConnectionCleanupError.is_cause_of(error):
+            raise
         resolved = []
     explicit_channels: List[int] = []
     for item in resolved:
