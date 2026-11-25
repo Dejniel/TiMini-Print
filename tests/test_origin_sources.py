@@ -47,7 +47,7 @@ def source_catalog():
     )
     manual_model = replace(app_model, model_key="manual_model", origin_ids=("vendor.manual",))
     return PrinterCatalog(
-        [base.device_from_model("pocket_printer").profile], [app_model, manual_model],
+        [base.require_profile(app_model.profile_key)], [app_model, manual_model],
         origin_names={"com.example.app": "Printing app", "vendor.manual": "Manufacturer ESC/POS"},
     )
 
@@ -83,8 +83,8 @@ def test_scan_choices_keep_both_source_labels(source_catalog):
 
 
 def test_registered_sources_must_cover_catalog_models(source_catalog):
-    profile = source_catalog.device_from_model("manual_model").profile
     model = source_catalog.require_model("manual_model")
+    profile = source_catalog.require_profile(model.profile_key)
     with pytest.raises(ValueError, match="missing IDs: vendor.manual"):
         PrinterCatalog([profile], [model], origin_names={"another-source": "Other"})
     # Custom catalogs may omit the label registry and show their source IDs directly.
