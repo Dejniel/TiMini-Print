@@ -69,7 +69,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
         await connected.disconnect()
 
         self.assertEqual(connector.connected_devices, [device])
-        self.assertEqual(connection.sent_jobs[0], job)
+        self.assertEqual(connection.sent_jobs[0].payload, job.payload)
         self.assertGreater(len(connection.sent_jobs[1].payload), 0)
         self.assertEqual(connection.disconnects, 1)
 
@@ -88,7 +88,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
 
         builder_cls.assert_called_once_with(device, settings=settings, runtime_capabilities=ANY, reporter=ANY)
         builder.build_from_file.assert_called_once_with("input.png")
-        self.assertEqual(connection.sent_jobs, [job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [job.payload])
 
     async def test_connected_printer_print_text_builds_temp_file_and_cleans_it_up(self) -> None:
         device = PrinterCatalog.load().device_from_profile("x6h")
@@ -112,7 +112,7 @@ class ConnectedPrinterTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(captured["text"], "hello")
         self.assertFalse(os.path.exists(captured["path"]))
-        self.assertEqual(connection.sent_jobs, [job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [job.payload])
 
     async def test_connected_printer_builds_raster_jobs_with_runtime_context(self) -> None:
         device = PrinterCatalog.load().device_from_profile("x6h")

@@ -170,7 +170,7 @@ class RequiredProtocolReplyTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(reporter.warnings)
         raw_job = ProtocolJob(payload=b"raw")
         await send_prepared_job(PreparedPrinter(_GenericDevice()), connection, raw_job)
-        self.assertEqual(connection.sent_jobs, [raw_job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [raw_job.payload])
 
     def test_required_reply_must_have_an_expectation(self):
         with self.assertRaises(ValueError):

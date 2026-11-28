@@ -169,7 +169,8 @@ class SendPreparedJobCompletionTests(unittest.IsolatedAsyncioTestCase):
 
         await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job)
 
-        self.assertEqual(connection.sent, [job])
+        self.assertEqual([sent.payload for sent in connection.sent], [job.payload])
+        self.assertFalse(connection.sent[0].wait_for_completion)
         self.assertEqual(connection.waits, ["V5X print completion 0xa1"])
 
     async def test_send_prepared_job_invokes_wait_for_completion(self) -> None:

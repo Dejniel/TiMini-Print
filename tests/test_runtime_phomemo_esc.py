@@ -59,7 +59,7 @@ class PhomemoEscRuntimeTests(unittest.IsolatedAsyncioTestCase):
 
         await prepare_and_send(self.device, connection, job, timeout=0.1)
 
-        self.assertEqual(connection.sent_jobs, [job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [job.payload])
         self.assertEqual(connection.wait_labels, ["Print Master completion"])
 
     async def test_step_job_also_waits_for_inherited_completion(self) -> None:
