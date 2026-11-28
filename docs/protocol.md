@@ -115,6 +115,12 @@ synthesized in the preview. A decorative paper frame belongs outside the PNG.
 `preview_source_page(...)` shows the original document without printer
 transforms. Neither preview PNG is an input to the raster/job builders.
 
+For a prepared connection, pass
+`runtime_capabilities=printer.print_capabilities()` to both `preview_page()`
+and print/job building. The preview then uses the same negotiated grayscale
+fallback and preprocessing as printing. Omitting capabilities retains offline
+catalog behavior; previewing never queries the printer or changes settings.
+
 For example, a 128-dot body with a 64-dot left origin on a 192-dot canvas has
 `preview.width == 192` and `preview.raster_width == 128`. Its print body remains
 128 dots wide.

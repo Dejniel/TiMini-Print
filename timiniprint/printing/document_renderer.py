@@ -163,12 +163,19 @@ class DocumentRenderer:
         page: DocumentPage,
         device: PrinterDevice,
         settings: PrintSettings,
+        runtime_capabilities: RuntimePrintCapabilities | None = None,
     ) -> PreviewPage:
+        """Preview with the same prepared capabilities supplied to printing.
+
+        Omission retains offline catalog behavior. This performs no printer I/O
+        and does not change settings or the selected paper preset.
+        """
         vendor_page, preview_canvas = self._open_vendor_page(plan, page, device, settings)
         pipeline, dither_mode, gamma_handle, gamma_value = self._render_options(
             vendor_page,
             device,
             settings,
+            runtime_capabilities=runtime_capabilities,
         )
         preview = self.image_renderer.preview_image(
             vendor_page.image,
