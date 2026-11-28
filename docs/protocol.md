@@ -96,6 +96,12 @@ and after preparation with `printer.print_options(settings)`. `PrintSettings`
 holds per-job values; `PrintOptions` describes available choices without I/O
 or changing those values. See [the print options API](print-options.md).
 
+Built-in raw connection `send()` accepts only stream bytes: jobs containing
+execution steps or `wait_for_completion=True` must use
+`ConnectedPrinter.send_job()`. The prepared sender owns those steps and waits,
+including when it falls back to a stream write; transport writes alone do not
+prove mechanical completion.
+
 ## Preview Images
 
 `DocumentRenderer.preview_page(plan, page, device, settings)` returns a
@@ -420,6 +426,10 @@ async with await connect_printer(device, BleakBluetoothConnector()) as printer:
 `print_text(...)` uses the same text converter and print pipeline as a temporary `.txt` file.
 
 Long text is split into bounded raster chunks for rendering and preview, but those chunks form one continuous print flow. Intermediate chunks do not add the page-positioning commands used between PDF pages.
+
+A preset's fixed raster-height limit also applies to already placed or merged
+pages. Overflow raises `ValueError` before protocol encoding; text chunks are
+not automatically paginated across separate labels.
 
 ## Paper Choice
 
