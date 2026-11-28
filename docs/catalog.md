@@ -230,6 +230,13 @@ Runtime settings describe stateful session behavior that cannot live in static p
 
 `printer_paper_presets.json` stores reusable paper choices. Profiles reference presets by exact key, so repeated geometry is not copied across every profile.
 
+A profile's `paper_presets` or a model's `additional_paper_presets` may also
+contain a qualified reference such as
+`{"key": "plain_384r", "nominal_width_mm": 50}`. Only `nominal_width_mm`,
+`nominal_height_mm` and `standard_format` may be overridden there. This keeps
+owner-specific stock dimensions separate from shared geometry; it cannot
+change a preset's media recipe, printable canvas or protocol behavior.
+
 A `PaperPreset` contains:
 
 - `key`: stable preset key used in configs and CLI/GUI selection

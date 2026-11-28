@@ -278,12 +278,19 @@ class PrinterCatalog:
             raise ValueError(f"{context} {field} must be an array")
         resolved = []
         for reference in references:
+            metadata = {}
+            if isinstance(reference, Mapping):
+                # A shared recipe can describe different stock for different owners.
+                metadata = dict(reference)
+                reference = metadata.pop("key", None)
+                if set(metadata) - {"nominal_width_mm", "nominal_height_mm", "standard_format"}:
+                    raise ValueError(f"{context} preset references may override only physical metadata")
             if not isinstance(reference, str):
                 raise ValueError(f"{context} {field} must contain preset keys")
             preset = paper_presets.get(reference)
             if preset is None:
                 raise ValueError(f"{context} references unknown paper preset {reference!r}")
-            resolved.append(preset)
+            resolved.append(dict(preset, **metadata))
         payload[field] = resolved
         return payload
 

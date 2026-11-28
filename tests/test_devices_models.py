@@ -287,7 +287,8 @@ class DevicesModelsTests(unittest.TestCase):
         for profile in profiles:
             with self.subTest(profile=profile["profile_key"]):
                 self.assertTrue(profile["paper_presets"])
-                for preset_key in profile["paper_presets"]:
+                for reference in profile["paper_presets"]:
+                    preset_key = reference["key"] if isinstance(reference, dict) else reference
                     self.assertIsInstance(preset_key, str)
                     self.assertIn(preset_key, paper_presets)
 

@@ -355,7 +355,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r",
+      {"key":"plain_384r","nominal_width_mm":50},
       "tag_384r",
       "blacktag_384r",
       "tattoo_384r"
@@ -413,7 +413,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_576r",
+      {"key":"plain_576r","nominal_width_mm":50},
       "tag_576r",
       "blacktag_576r",
       "tattoo_576r"
@@ -475,7 +475,7 @@
     "a4xii": false,
     "paper_presets": [
       "tag_384r",
-      "plain_384r",
+      {"key":"plain_384r","nominal_width_mm":50},
       "blacktag_384r",
       "tattoo_384r"
     ]
@@ -536,7 +536,7 @@
     "a4xii": false,
     "paper_presets": [
       "tag_576r",
-      "plain_576r",
+      {"key":"plain_576r","nominal_width_mm":50},
       "blacktag_576r",
       "tattoo_576r"
     ]
@@ -1524,7 +1524,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r",
+      {"key":"plain_384r","nominal_width_mm":50},
       "tag_384r",
       "blacktag_384r",
       "tattoo_384r"
@@ -1583,7 +1583,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_576r",
+      {"key":"plain_576r","nominal_width_mm":50},
       "tag_576r",
       "blacktag_576r",
       "tattoo_576r"
@@ -6343,7 +6343,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r",
+      {"key":"plain_384r","nominal_width_mm":53},
       "tag_384r"
     ]
   },
@@ -6400,7 +6400,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_576r",
+      {"key":"plain_576r","nominal_width_mm":53},
       "tag_576r"
     ]
   },
@@ -6457,7 +6457,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r"
+      {"key":"plain_384r","nominal_width_mm":53}
     ]
   },
   {
@@ -6513,7 +6513,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_384r",
+      {"key":"plain_384r","nominal_width_mm":53},
       "tag_384r"
     ]
   },
@@ -6570,7 +6570,7 @@
     },
     "a4xii": false,
     "paper_presets": [
-      "plain_576r",
+      {"key":"plain_576r","nominal_width_mm":53},
       "tag_576r"
     ]
   },

@@ -1,8 +1,8 @@
 {
-  "v5x_tag_40x20": {"label": "40 × 20 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 320, "raster_width_px": 384, "render_height_px": 160, "raster_height_px": 160, "paper_height_px": 160},
-  "v5x_tag_50x15": {"label": "50 × 15 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 384, "raster_width_px": 384, "render_height_px": 120, "raster_height_px": 120, "paper_height_px": 120},
-  "v5x_tag_50x70": {"label": "50 × 70 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 384, "raster_width_px": 384, "render_height_px": 560, "raster_height_px": 560, "paper_height_px": 560},
-  "v5x_tag_50x30": {"label": "50 × 30 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 384, "raster_width_px": 384, "render_height_px": 240, "raster_height_px": 240, "paper_height_px": 240},
+  "v5x_tag_40x20": {"label": "40 × 20 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 320, "raster_width_px": 384, "render_height_px": 160, "raster_height_px": 160, "paper_height_px": 160, "nominal_width_mm":40, "nominal_height_mm":20},
+  "v5x_tag_50x15": {"label": "50 × 15 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 384, "raster_width_px": 384, "render_height_px": 120, "raster_height_px": 120, "paper_height_px": 120, "nominal_width_mm":50, "nominal_height_mm":15},
+  "v5x_tag_50x70": {"label": "50 × 70 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 384, "raster_width_px": 384, "render_height_px": 560, "raster_height_px": 560, "paper_height_px": 560, "nominal_width_mm":50, "nominal_height_mm":70},
+  "v5x_tag_50x30": {"label": "50 × 30 mm gap label", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 384, "raster_width_px": 384, "render_height_px": 240, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":50, "nominal_height_mm":30},
   "yk_snap_catalog_tag_15x30": {
     "label": "Snap catalog 15 x 30 mm White",
     "paper_mode": "tag",
@@ -10,75 +10,78 @@
     "render_width_px": 88,
     "render_height_px": 208,
     "paper_height_px": 240,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 15,
+    "nominal_height_mm": 30
   },
-  "luck_label_50x15_384r_203dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 120, "raster_width_px": 384, "raster_height_px": 120, "paper_height_px": 120},
-  "luck_label_50x20_384r_203dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 160, "raster_width_px": 384, "raster_height_px": 160, "paper_height_px": 160},
-  "luck_label_50x30_384r_203dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 240, "raster_width_px": 384, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_50x40_384r_203dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 320, "raster_width_px": 384, "raster_height_px": 320, "paper_height_px": 320},
-  "luck_label_50x50_384r_203dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 400, "raster_width_px": 384, "raster_height_px": 400, "paper_height_px": 400},
-  "luck_label_50x60_384r_203dpi": {"label": "50 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 480, "raster_width_px": 384, "raster_height_px": 480, "paper_height_px": 480},
-  "luck_label_50x70_384r_203dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 560, "raster_width_px": 384, "raster_height_px": 560, "paper_height_px": 560},
-  "luck_label_50x80_384r_203dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 640, "raster_width_px": 384, "raster_height_px": 640, "paper_height_px": 640},
-  "luck_label_50x90_384r_203dpi": {"label": "50 × 90 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 720, "raster_width_px": 384, "raster_height_px": 720, "paper_height_px": 720},
-  "luck_label_50x100_384r_203dpi": {"label": "50 × 100 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 800, "raster_width_px": 384, "raster_height_px": 800, "paper_height_px": 800},
-  "luck_label_50x110_384r_203dpi": {"label": "50 × 110 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 880, "raster_width_px": 384, "raster_height_px": 880, "paper_height_px": 880},
-  "luck_label_50x120_384r_203dpi": {"label": "50 × 120 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 960, "raster_width_px": 384, "raster_height_px": 960, "paper_height_px": 960},
-  "luck_label_50x15_576r_300dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 180, "raster_width_px": 576, "raster_height_px": 180, "paper_height_px": 180},
-  "luck_label_50x20_576r_300dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 240, "raster_width_px": 576, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_50x30_576r_300dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 360, "raster_width_px": 576, "raster_height_px": 360, "paper_height_px": 360},
-  "luck_label_50x40_576r_300dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 480, "raster_width_px": 576, "raster_height_px": 480, "paper_height_px": 480},
-  "luck_label_50x50_576r_300dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 600, "raster_width_px": 576, "raster_height_px": 600, "paper_height_px": 600},
-  "luck_label_50x60_576r_300dpi": {"label": "50 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 720, "raster_width_px": 576, "raster_height_px": 720, "paper_height_px": 720},
-  "luck_label_50x70_576r_300dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 840, "raster_width_px": 576, "raster_height_px": 840, "paper_height_px": 840},
-  "luck_label_50x80_576r_300dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 960, "raster_width_px": 576, "raster_height_px": 960, "paper_height_px": 960},
-  "luck_label_50x90_576r_300dpi": {"label": "50 × 90 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1080, "raster_width_px": 576, "raster_height_px": 1080, "paper_height_px": 1080},
-  "luck_label_50x100_576r_300dpi": {"label": "50 × 100 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1200, "raster_width_px": 576, "raster_height_px": 1200, "paper_height_px": 1200},
-  "luck_label_50x110_576r_300dpi": {"label": "50 × 110 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1320, "raster_width_px": 576, "raster_height_px": 1320, "paper_height_px": 1320},
-  "luck_label_50x120_576r_300dpi": {"label": "50 × 120 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1440, "raster_width_px": 576, "raster_height_px": 1440, "paper_height_px": 1440},
-  "luck_label_50x15_400r_203dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 120, "raster_width_px": 400, "raster_height_px": 120, "paper_height_px": 120},
-  "luck_label_50x20_400r_203dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 160, "raster_width_px": 400, "raster_height_px": 160, "paper_height_px": 160},
-  "luck_label_50x30_400r_203dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 240, "raster_width_px": 400, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_50x40_400r_203dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 320, "raster_width_px": 400, "raster_height_px": 320, "paper_height_px": 320},
-  "luck_label_50x50_400r_203dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 400, "raster_width_px": 400, "raster_height_px": 400, "paper_height_px": 400},
-  "luck_label_50x70_400r_203dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 560, "raster_width_px": 400, "raster_height_px": 560, "paper_height_px": 560},
-  "luck_label_50x80_400r_203dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 640, "raster_width_px": 400, "raster_height_px": 640, "paper_height_px": 640},
-  "luck_label_50x15_600r_300dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 180, "raster_width_px": 600, "raster_height_px": 180, "paper_height_px": 180},
-  "luck_label_50x20_600r_300dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 240, "raster_width_px": 600, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_50x30_600r_300dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 360, "raster_width_px": 600, "raster_height_px": 360, "paper_height_px": 360},
-  "luck_label_50x40_600r_300dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 480, "raster_width_px": 600, "raster_height_px": 480, "paper_height_px": 480},
-  "luck_label_50x50_600r_300dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 600, "raster_width_px": 600, "raster_height_px": 600, "paper_height_px": 600},
-  "luck_label_50x70_600r_300dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 840, "raster_width_px": 600, "raster_height_px": 840, "paper_height_px": 840},
-  "luck_label_50x80_600r_300dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 960, "raster_width_px": 600, "raster_height_px": 960, "paper_height_px": 960},
-  "luck_label_40x30_320r_203dpi": {"label": "40 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 240, "raster_width_px": 320, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_20x10_160r_203dpi": {"label": "20 × 10 mm labels", "paper_mode": "tag", "paper_width_px": 160, "render_width_px": 152, "render_height_px": 80, "raster_width_px": 160, "raster_height_px": 80, "paper_height_px": 80},
-  "luck_label_25x15_200r_203dpi": {"label": "25 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 200, "render_width_px": 190, "render_height_px": 120, "raster_width_px": 200, "raster_height_px": 120, "paper_height_px": 120},
-  "luck_label_30x15_240r_203dpi": {"label": "30 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 120, "raster_width_px": 240, "raster_height_px": 120, "paper_height_px": 120},
-  "luck_label_30x20_240r_203dpi": {"label": "30 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 160, "raster_width_px": 240, "raster_height_px": 160, "paper_height_px": 160},
-  "luck_label_30x30_240r_203dpi": {"label": "30 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 240, "raster_width_px": 240, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_40x20_320r_203dpi": {"label": "40 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 160, "raster_width_px": 320, "raster_height_px": 160, "paper_height_px": 160},
-  "luck_label_40x40_320r_203dpi": {"label": "40 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 320, "raster_width_px": 320, "raster_height_px": 320, "paper_height_px": 320},
-  "luck_label_40x60_320r_203dpi": {"label": "40 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 480, "raster_width_px": 320, "raster_height_px": 480, "paper_height_px": 480},
-  "luck_label_40x80_320r_203dpi": {"label": "40 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 640, "raster_width_px": 320, "raster_height_px": 640, "paper_height_px": 640},
-  "luck_label_45x57_360r_203dpi": {"label": "45 × 57 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 456, "raster_width_px": 360, "raster_height_px": 456, "paper_height_px": 456},
-  "luck_label_20x10_240r_300dpi": {"label": "20 × 10 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 120, "raster_width_px": 240, "raster_height_px": 120, "paper_height_px": 120},
-  "luck_label_25x15_300r_300dpi": {"label": "25 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 300, "render_width_px": 285, "render_height_px": 180, "raster_width_px": 300, "raster_height_px": 180, "paper_height_px": 180},
-  "luck_label_30x15_360r_300dpi": {"label": "30 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 180, "raster_width_px": 360, "raster_height_px": 180, "paper_height_px": 180},
-  "luck_label_30x20_360r_300dpi": {"label": "30 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 240, "raster_width_px": 360, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_30x30_360r_300dpi": {"label": "30 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 360, "raster_width_px": 360, "raster_height_px": 360, "paper_height_px": 360},
-  "luck_label_40x20_480r_300dpi": {"label": "40 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 240, "raster_width_px": 480, "raster_height_px": 240, "paper_height_px": 240},
-  "luck_label_40x30_480r_300dpi": {"label": "40 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 360, "raster_width_px": 480, "raster_height_px": 360, "paper_height_px": 360},
-  "luck_label_40x40_480r_300dpi": {"label": "40 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 480, "raster_width_px": 480, "raster_height_px": 480, "paper_height_px": 480},
-  "luck_label_40x60_480r_300dpi": {"label": "40 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 720, "raster_width_px": 480, "raster_height_px": 720, "paper_height_px": 720},
-  "luck_label_40x80_480r_300dpi": {"label": "40 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 960, "raster_width_px": 480, "raster_height_px": 960, "paper_height_px": 960},
-  "luck_label_45x57_540r_300dpi": {"label": "45 × 57 mm labels", "paper_mode": "tag", "paper_width_px": 540, "render_width_px": 513, "render_height_px": 684, "raster_width_px": 540, "raster_height_px": 684, "paper_height_px": 684},
+  "luck_label_50x15_384r_203dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 120, "raster_width_px": 384, "raster_height_px": 120, "paper_height_px": 120, "nominal_width_mm":50, "nominal_height_mm":15},
+  "luck_label_50x20_384r_203dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 160, "raster_width_px": 384, "raster_height_px": 160, "paper_height_px": 160, "nominal_width_mm":50, "nominal_height_mm":20},
+  "luck_label_50x30_384r_203dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 240, "raster_width_px": 384, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":50, "nominal_height_mm":30},
+  "luck_label_50x40_384r_203dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 320, "raster_width_px": 384, "raster_height_px": 320, "paper_height_px": 320, "nominal_width_mm":50, "nominal_height_mm":40},
+  "luck_label_50x50_384r_203dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 400, "raster_width_px": 384, "raster_height_px": 400, "paper_height_px": 400, "nominal_width_mm":50, "nominal_height_mm":50},
+  "luck_label_50x60_384r_203dpi": {"label": "50 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 480, "raster_width_px": 384, "raster_height_px": 480, "paper_height_px": 480, "nominal_width_mm":50, "nominal_height_mm":60},
+  "luck_label_50x70_384r_203dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 560, "raster_width_px": 384, "raster_height_px": 560, "paper_height_px": 560, "nominal_width_mm":50, "nominal_height_mm":70},
+  "luck_label_50x80_384r_203dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 640, "raster_width_px": 384, "raster_height_px": 640, "paper_height_px": 640, "nominal_width_mm":50, "nominal_height_mm":80},
+  "luck_label_50x90_384r_203dpi": {"label": "50 × 90 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 720, "raster_width_px": 384, "raster_height_px": 720, "paper_height_px": 720, "nominal_width_mm":50, "nominal_height_mm":90},
+  "luck_label_50x100_384r_203dpi": {"label": "50 × 100 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 800, "raster_width_px": 384, "raster_height_px": 800, "paper_height_px": 800, "nominal_width_mm":50, "nominal_height_mm":100},
+  "luck_label_50x110_384r_203dpi": {"label": "50 × 110 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 880, "raster_width_px": 384, "raster_height_px": 880, "paper_height_px": 880, "nominal_width_mm":50, "nominal_height_mm":110},
+  "luck_label_50x120_384r_203dpi": {"label": "50 × 120 mm labels", "paper_mode": "tag", "paper_width_px": 384, "render_width_px": 380, "render_height_px": 960, "raster_width_px": 384, "raster_height_px": 960, "paper_height_px": 960, "nominal_width_mm":50, "nominal_height_mm":120},
+  "luck_label_50x15_576r_300dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 180, "raster_width_px": 576, "raster_height_px": 180, "paper_height_px": 180, "nominal_width_mm":50, "nominal_height_mm":15},
+  "luck_label_50x20_576r_300dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 240, "raster_width_px": 576, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":50, "nominal_height_mm":20},
+  "luck_label_50x30_576r_300dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 360, "raster_width_px": 576, "raster_height_px": 360, "paper_height_px": 360, "nominal_width_mm":50, "nominal_height_mm":30},
+  "luck_label_50x40_576r_300dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 480, "raster_width_px": 576, "raster_height_px": 480, "paper_height_px": 480, "nominal_width_mm":50, "nominal_height_mm":40},
+  "luck_label_50x50_576r_300dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 600, "raster_width_px": 576, "raster_height_px": 600, "paper_height_px": 600, "nominal_width_mm":50, "nominal_height_mm":50},
+  "luck_label_50x60_576r_300dpi": {"label": "50 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 720, "raster_width_px": 576, "raster_height_px": 720, "paper_height_px": 720, "nominal_width_mm":50, "nominal_height_mm":60},
+  "luck_label_50x70_576r_300dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 840, "raster_width_px": 576, "raster_height_px": 840, "paper_height_px": 840, "nominal_width_mm":50, "nominal_height_mm":70},
+  "luck_label_50x80_576r_300dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 960, "raster_width_px": 576, "raster_height_px": 960, "paper_height_px": 960, "nominal_width_mm":50, "nominal_height_mm":80},
+  "luck_label_50x90_576r_300dpi": {"label": "50 × 90 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1080, "raster_width_px": 576, "raster_height_px": 1080, "paper_height_px": 1080, "nominal_width_mm":50, "nominal_height_mm":90},
+  "luck_label_50x100_576r_300dpi": {"label": "50 × 100 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1200, "raster_width_px": 576, "raster_height_px": 1200, "paper_height_px": 1200, "nominal_width_mm":50, "nominal_height_mm":100},
+  "luck_label_50x110_576r_300dpi": {"label": "50 × 110 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1320, "raster_width_px": 576, "raster_height_px": 1320, "paper_height_px": 1320, "nominal_width_mm":50, "nominal_height_mm":110},
+  "luck_label_50x120_576r_300dpi": {"label": "50 × 120 mm labels", "paper_mode": "tag", "paper_width_px": 576, "render_width_px": 570, "render_height_px": 1440, "raster_width_px": 576, "raster_height_px": 1440, "paper_height_px": 1440, "nominal_width_mm":50, "nominal_height_mm":120},
+  "luck_label_50x15_400r_203dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 120, "raster_width_px": 400, "raster_height_px": 120, "paper_height_px": 120, "nominal_width_mm":50, "nominal_height_mm":15},
+  "luck_label_50x20_400r_203dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 160, "raster_width_px": 400, "raster_height_px": 160, "paper_height_px": 160, "nominal_width_mm":50, "nominal_height_mm":20},
+  "luck_label_50x30_400r_203dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 240, "raster_width_px": 400, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":50, "nominal_height_mm":30},
+  "luck_label_50x40_400r_203dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 320, "raster_width_px": 400, "raster_height_px": 320, "paper_height_px": 320, "nominal_width_mm":50, "nominal_height_mm":40},
+  "luck_label_50x50_400r_203dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 400, "raster_width_px": 400, "raster_height_px": 400, "paper_height_px": 400, "nominal_width_mm":50, "nominal_height_mm":50},
+  "luck_label_50x70_400r_203dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 560, "raster_width_px": 400, "raster_height_px": 560, "paper_height_px": 560, "nominal_width_mm":50, "nominal_height_mm":70},
+  "luck_label_50x80_400r_203dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 400, "render_width_px": 380, "render_height_px": 640, "raster_width_px": 400, "raster_height_px": 640, "paper_height_px": 640, "nominal_width_mm":50, "nominal_height_mm":80},
+  "luck_label_50x15_600r_300dpi": {"label": "50 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 180, "raster_width_px": 600, "raster_height_px": 180, "paper_height_px": 180, "nominal_width_mm":50, "nominal_height_mm":15},
+  "luck_label_50x20_600r_300dpi": {"label": "50 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 240, "raster_width_px": 600, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":50, "nominal_height_mm":20},
+  "luck_label_50x30_600r_300dpi": {"label": "50 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 360, "raster_width_px": 600, "raster_height_px": 360, "paper_height_px": 360, "nominal_width_mm":50, "nominal_height_mm":30},
+  "luck_label_50x40_600r_300dpi": {"label": "50 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 480, "raster_width_px": 600, "raster_height_px": 480, "paper_height_px": 480, "nominal_width_mm":50, "nominal_height_mm":40},
+  "luck_label_50x50_600r_300dpi": {"label": "50 × 50 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 600, "raster_width_px": 600, "raster_height_px": 600, "paper_height_px": 600, "nominal_width_mm":50, "nominal_height_mm":50},
+  "luck_label_50x70_600r_300dpi": {"label": "50 × 70 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 840, "raster_width_px": 600, "raster_height_px": 840, "paper_height_px": 840, "nominal_width_mm":50, "nominal_height_mm":70},
+  "luck_label_50x80_600r_300dpi": {"label": "50 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 600, "render_width_px": 570, "render_height_px": 960, "raster_width_px": 600, "raster_height_px": 960, "paper_height_px": 960, "nominal_width_mm":50, "nominal_height_mm":80},
+  "luck_label_40x30_320r_203dpi": {"label": "40 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 240, "raster_width_px": 320, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":40, "nominal_height_mm":30},
+  "luck_label_20x10_160r_203dpi": {"label": "20 × 10 mm labels", "paper_mode": "tag", "paper_width_px": 160, "render_width_px": 152, "render_height_px": 80, "raster_width_px": 160, "raster_height_px": 80, "paper_height_px": 80, "nominal_width_mm":20, "nominal_height_mm":10},
+  "luck_label_25x15_200r_203dpi": {"label": "25 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 200, "render_width_px": 190, "render_height_px": 120, "raster_width_px": 200, "raster_height_px": 120, "paper_height_px": 120, "nominal_width_mm":25, "nominal_height_mm":15},
+  "luck_label_30x15_240r_203dpi": {"label": "30 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 120, "raster_width_px": 240, "raster_height_px": 120, "paper_height_px": 120, "nominal_width_mm":30, "nominal_height_mm":15},
+  "luck_label_30x20_240r_203dpi": {"label": "30 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 160, "raster_width_px": 240, "raster_height_px": 160, "paper_height_px": 160, "nominal_width_mm":30, "nominal_height_mm":20},
+  "luck_label_30x30_240r_203dpi": {"label": "30 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 240, "raster_width_px": 240, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":30, "nominal_height_mm":30},
+  "luck_label_40x20_320r_203dpi": {"label": "40 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 160, "raster_width_px": 320, "raster_height_px": 160, "paper_height_px": 160, "nominal_width_mm":40, "nominal_height_mm":20},
+  "luck_label_40x40_320r_203dpi": {"label": "40 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 320, "raster_width_px": 320, "raster_height_px": 320, "paper_height_px": 320, "nominal_width_mm":40, "nominal_height_mm":40},
+  "luck_label_40x60_320r_203dpi": {"label": "40 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 480, "raster_width_px": 320, "raster_height_px": 480, "paper_height_px": 480, "nominal_width_mm":40, "nominal_height_mm":60},
+  "luck_label_40x80_320r_203dpi": {"label": "40 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 320, "render_width_px": 304, "render_height_px": 640, "raster_width_px": 320, "raster_height_px": 640, "paper_height_px": 640, "nominal_width_mm":40, "nominal_height_mm":80},
+  "luck_label_45x57_360r_203dpi": {"label": "45 × 57 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 456, "raster_width_px": 360, "raster_height_px": 456, "paper_height_px": 456, "nominal_width_mm":45, "nominal_height_mm":57},
+  "luck_label_20x10_240r_300dpi": {"label": "20 × 10 mm labels", "paper_mode": "tag", "paper_width_px": 240, "render_width_px": 228, "render_height_px": 120, "raster_width_px": 240, "raster_height_px": 120, "paper_height_px": 120, "nominal_width_mm":20, "nominal_height_mm":10},
+  "luck_label_25x15_300r_300dpi": {"label": "25 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 300, "render_width_px": 285, "render_height_px": 180, "raster_width_px": 300, "raster_height_px": 180, "paper_height_px": 180, "nominal_width_mm":25, "nominal_height_mm":15},
+  "luck_label_30x15_360r_300dpi": {"label": "30 × 15 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 180, "raster_width_px": 360, "raster_height_px": 180, "paper_height_px": 180, "nominal_width_mm":30, "nominal_height_mm":15},
+  "luck_label_30x20_360r_300dpi": {"label": "30 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 240, "raster_width_px": 360, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":30, "nominal_height_mm":20},
+  "luck_label_30x30_360r_300dpi": {"label": "30 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 360, "render_width_px": 342, "render_height_px": 360, "raster_width_px": 360, "raster_height_px": 360, "paper_height_px": 360, "nominal_width_mm":30, "nominal_height_mm":30},
+  "luck_label_40x20_480r_300dpi": {"label": "40 × 20 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 240, "raster_width_px": 480, "raster_height_px": 240, "paper_height_px": 240, "nominal_width_mm":40, "nominal_height_mm":20},
+  "luck_label_40x30_480r_300dpi": {"label": "40 × 30 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 360, "raster_width_px": 480, "raster_height_px": 360, "paper_height_px": 360, "nominal_width_mm":40, "nominal_height_mm":30},
+  "luck_label_40x40_480r_300dpi": {"label": "40 × 40 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 480, "raster_width_px": 480, "raster_height_px": 480, "paper_height_px": 480, "nominal_width_mm":40, "nominal_height_mm":40},
+  "luck_label_40x60_480r_300dpi": {"label": "40 × 60 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 720, "raster_width_px": 480, "raster_height_px": 720, "paper_height_px": 720, "nominal_width_mm":40, "nominal_height_mm":60},
+  "luck_label_40x80_480r_300dpi": {"label": "40 × 80 mm labels", "paper_mode": "tag", "paper_width_px": 480, "render_width_px": 456, "render_height_px": 960, "raster_width_px": 480, "raster_height_px": 960, "paper_height_px": 960, "nominal_width_mm":40, "nominal_height_mm":80},
+  "luck_label_45x57_540r_300dpi": {"label": "45 × 57 mm labels", "paper_mode": "tag", "paper_width_px": 540, "render_width_px": 513, "render_height_px": 684, "raster_width_px": 540, "raster_height_px": 684, "paper_height_px": 684, "nominal_width_mm":45, "nominal_height_mm":57},
   "xeasy_96_bm1_plain_15": {
     "label": "15 mm continuous",
     "paper_mode": "plain",
     "paper_width_px": 93,
     "render_width_px": 88,
     "left_padding_px": 5,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 15
   },
   "xeasy_96_bm1_tag_12x40": {
     "label": "40 x 12 mm",
@@ -90,7 +93,9 @@
     "paper_height_px": 320,
     "top_padding_px": 20,
     "raster_height_px": 300,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 12,
+    "nominal_height_mm": 40
   },
   "xeasy_96_bm1_tag_cable_12_5x74": {
     "label": "74 x 12.5 mm (rotated)",
@@ -102,7 +107,9 @@
     "paper_height_px": 592,
     "top_padding_px": 24,
     "raster_height_px": 568,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 12.5,
+    "nominal_height_mm": 74
   },
   "xeasy_96_bm1_tag_15x30": {
     "label": "30 x 15 mm",
@@ -114,7 +121,9 @@
     "paper_height_px": 240,
     "top_padding_px": 16,
     "raster_height_px": 224,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 15,
+    "nominal_height_mm": 30
   },
   "xeasy_96_bm1_tag_14x22": {
     "label": "22 x 14 mm",
@@ -126,7 +135,9 @@
     "paper_height_px": 176,
     "top_padding_px": 16,
     "raster_height_px": 160,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 22
   },
   "xeasy_96_bm1_tag_14x30": {
     "label": "30 x 14 mm",
@@ -138,7 +149,9 @@
     "paper_height_px": 240,
     "top_padding_px": 16,
     "raster_height_px": 224,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 30
   },
   "xeasy_96_bm1_tag_14x40": {
     "label": "40 x 14 mm (88 x 280 dots printable, left 5)",
@@ -150,7 +163,9 @@
     "paper_height_px": 320,
     "top_padding_px": 20,
     "raster_height_px": 300,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 40
   },
   "xeasy_96_bm1_tag_14x40_36": {
     "label": "40 x 14 mm (88 x 288 dots printable, left 5)",
@@ -162,7 +177,9 @@
     "paper_height_px": 320,
     "top_padding_px": 16,
     "raster_height_px": 304,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 40
   },
   "xeasy_96_bm1_tag_14x50": {
     "label": "50 x 14 mm",
@@ -174,31 +191,33 @@
     "paper_height_px": 400,
     "top_padding_px": 20,
     "raster_height_px": 380,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 50
   },
-  "toprint_p11_tag": {"label":"Label","paper_mode":"tag","paper_width_px":88,"render_width_px":88},
-  "toprint_p11_black_mark": {"label":"Black mark","paper_mode":"black_tag","paper_width_px":88,"render_width_px":88},
+  "toprint_p11_tag": {"label":"Label","paper_mode":"tag","paper_width_px":88,"render_width_px":88, "nominal_width_mm":12},
+  "toprint_p11_black_mark": {"label":"Black mark","paper_mode":"black_tag","paper_width_px":88,"render_width_px":88, "nominal_width_mm":12},
   "toprint_yhk_plain": {"label":"Plain roll","paper_mode":"plain","paper_width_px":376,"render_width_px":376},
-  "luck_a4_roll_56mm": {"label":"56 mm roll","paper_mode":"plain","paper_width_px":432,"render_width_px":432},
-  "luck_a4_roll_77mm": {"label":"77 mm roll","paper_mode":"plain","paper_width_px":591,"render_width_px":591},
-  "luck_a4_roll_107mm": {"label":"107 mm roll","paper_mode":"plain","paper_width_px":832,"render_width_px":832},
-  "luck_a4_roll_148mm": {"label":"148 mm roll","paper_mode":"plain","paper_width_px":1184,"render_width_px":1184},
-  "luck_a4_roll_210mm": {"label":"210 mm roll","paper_mode":"plain","paper_width_px":1616,"render_width_px":1616},
-  "luck_a4_roll_216mm": {"label":"216 mm roll","paper_mode":"plain","paper_width_px":1648,"render_width_px":1648},
-  "luck_a4_folder_a4": {"label":"A4 sheet","paper_mode":"folder","paper_width_px":1616,"render_width_px":1616,"render_height_px":2300},
-  "luck_a4_folder_a5": {"label":"A5 sheet","paper_mode":"folder","paper_width_px":1108,"render_width_px":1108,"render_height_px":1616},
-  "luck_a4_folder_letter": {"label":"Letter sheet","paper_mode":"folder","paper_width_px":1648,"render_width_px":1648,"render_height_px":2160},
-  "luck_a4_folder_legal": {"label":"Legal sheet","paper_mode":"folder","paper_width_px":1648,"render_width_px":1648,"render_height_px":2768},
-  "luck_a4_roll_56mm_300dpi": {"label":"56 mm roll","paper_mode":"plain","paper_width_px":648,"render_width_px":648},
-  "luck_a4_roll_77mm_300dpi": {"label":"77 mm roll","paper_mode":"plain","paper_width_px":887,"render_width_px":887},
-  "luck_a4_roll_107mm_300dpi": {"label":"107 mm roll","paper_mode":"plain","paper_width_px":1248,"render_width_px":1248},
-  "luck_a4_roll_148mm_300dpi": {"label":"148 mm roll","paper_mode":"plain","paper_width_px":1776,"render_width_px":1776},
-  "luck_a4_roll_210mm_300dpi": {"label":"210 mm roll","paper_mode":"plain","paper_width_px":2400,"render_width_px":2400},
-  "luck_a4_roll_216mm_300dpi": {"label":"216 mm roll","paper_mode":"plain","paper_width_px":2496,"render_width_px":2496},
-  "luck_a4_folder_a4_300dpi": {"label":"A4 sheet","paper_mode":"folder","paper_width_px":2400,"render_width_px":2400,"render_height_px":3480},
-  "luck_a4_folder_a5_300dpi": {"label":"A5 sheet","paper_mode":"folder","paper_width_px":1692,"render_width_px":1692,"render_height_px":2400},
-  "luck_a4_folder_letter_300dpi": {"label":"Letter sheet","paper_mode":"folder","paper_width_px":2496,"render_width_px":2496,"render_height_px":3240},
-  "luck_a4_folder_legal_300dpi": {"label":"Legal sheet","paper_mode":"folder","paper_width_px":2496,"render_width_px":2496,"render_height_px":4152},
+  "luck_a4_roll_56mm": {"label":"56 mm roll","paper_mode":"plain","paper_width_px":432,"render_width_px":432, "nominal_width_mm":56},
+  "luck_a4_roll_77mm": {"label":"77 mm roll","paper_mode":"plain","paper_width_px":591,"render_width_px":591, "nominal_width_mm":77},
+  "luck_a4_roll_107mm": {"label":"107 mm roll","paper_mode":"plain","paper_width_px":832,"render_width_px":832, "nominal_width_mm":107},
+  "luck_a4_roll_148mm": {"label":"148 mm roll","paper_mode":"plain","paper_width_px":1184,"render_width_px":1184, "nominal_width_mm":148},
+  "luck_a4_roll_210mm": {"label":"210 mm roll","paper_mode":"plain","paper_width_px":1616,"render_width_px":1616, "nominal_width_mm":210},
+  "luck_a4_roll_216mm": {"label":"216 mm roll","paper_mode":"plain","paper_width_px":1648,"render_width_px":1648, "nominal_width_mm":216},
+  "luck_a4_folder_a4": {"label":"A4 sheet","paper_mode":"folder","paper_width_px":1616,"render_width_px":1616,"render_height_px":2300, "nominal_width_mm":210, "standard_format":"a4"},
+  "luck_a4_folder_a5": {"label":"A5 sheet","paper_mode":"folder","paper_width_px":1108,"render_width_px":1108,"render_height_px":1616, "nominal_width_mm":148, "standard_format":"a5"},
+  "luck_a4_folder_letter": {"label":"Letter sheet","paper_mode":"folder","paper_width_px":1648,"render_width_px":1648,"render_height_px":2160, "nominal_width_mm":216, "standard_format":"letter"},
+  "luck_a4_folder_legal": {"label":"Legal sheet","paper_mode":"folder","paper_width_px":1648,"render_width_px":1648,"render_height_px":2768, "nominal_width_mm":216, "standard_format":"legal"},
+  "luck_a4_roll_56mm_300dpi": {"label":"56 mm roll","paper_mode":"plain","paper_width_px":648,"render_width_px":648, "nominal_width_mm":56},
+  "luck_a4_roll_77mm_300dpi": {"label":"77 mm roll","paper_mode":"plain","paper_width_px":887,"render_width_px":887, "nominal_width_mm":77},
+  "luck_a4_roll_107mm_300dpi": {"label":"107 mm roll","paper_mode":"plain","paper_width_px":1248,"render_width_px":1248, "nominal_width_mm":107},
+  "luck_a4_roll_148mm_300dpi": {"label":"148 mm roll","paper_mode":"plain","paper_width_px":1776,"render_width_px":1776, "nominal_width_mm":148},
+  "luck_a4_roll_210mm_300dpi": {"label":"210 mm roll","paper_mode":"plain","paper_width_px":2400,"render_width_px":2400, "nominal_width_mm":210},
+  "luck_a4_roll_216mm_300dpi": {"label":"216 mm roll","paper_mode":"plain","paper_width_px":2496,"render_width_px":2496, "nominal_width_mm":216},
+  "luck_a4_folder_a4_300dpi": {"label":"A4 sheet","paper_mode":"folder","paper_width_px":2400,"render_width_px":2400,"render_height_px":3480, "nominal_width_mm":210, "standard_format":"a4"},
+  "luck_a4_folder_a5_300dpi": {"label":"A5 sheet","paper_mode":"folder","paper_width_px":1692,"render_width_px":1692,"render_height_px":2400, "nominal_width_mm":148, "standard_format":"a5"},
+  "luck_a4_folder_letter_300dpi": {"label":"Letter sheet","paper_mode":"folder","paper_width_px":2496,"render_width_px":2496,"render_height_px":3240, "nominal_width_mm":216, "standard_format":"letter"},
+  "luck_a4_folder_legal_300dpi": {"label":"Legal sheet","paper_mode":"folder","paper_width_px":2496,"render_width_px":2496,"render_height_px":4152, "nominal_width_mm":216, "standard_format":"legal"},
   "tattoo_1648r": {"label":"Tattoo","paper_mode":"tattoo","paper_width_px":1648,"render_width_px":1648},
   "tag_1648r": {"label":"Tag","paper_mode":"tag","paper_width_px":1648,"render_width_px":1648},
   "blacktag_1648r": {"label":"Black mark","paper_mode":"black_tag","paper_width_px":1648,"render_width_px":1648},
@@ -424,7 +443,8 @@
     "paper_mode": "plain",
     "paper_width_px": 90,
     "render_width_px": 88,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 15
   },
   "yk_snap_catalog_tag_14x22": {
     "label": "Snap catalog 14 x 22 mm",
@@ -433,7 +453,9 @@
     "render_width_px": 88,
     "render_height_px": 144,
     "paper_height_px": 176,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 22
   },
   "yk_snap_catalog_tag_14x30": {
     "label": "Snap catalog 14 x 30 mm",
@@ -442,7 +464,9 @@
     "render_width_px": 88,
     "render_height_px": 208,
     "paper_height_px": 240,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 30
   },
   "yk_snap_catalog_tag_12x40": {
     "label": "Snap catalog 12 x 40 mm",
@@ -451,7 +475,9 @@
     "render_width_px": 80,
     "render_height_px": 280,
     "paper_height_px": 320,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 12,
+    "nominal_height_mm": 40
   },
   "yk_snap_catalog_tag_14x40_blue": {
     "label": "Snap catalog 14 x 40 mm Blue",
@@ -460,7 +486,9 @@
     "render_width_px": 88,
     "render_height_px": 288,
     "paper_height_px": 320,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 40
   },
   "yk_snap_catalog_tag_14x40": {
     "label": "Snap catalog 14 x 40 mm",
@@ -469,7 +497,9 @@
     "render_width_px": 88,
     "render_height_px": 280,
     "paper_height_px": 320,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 40
   },
   "yk_snap_catalog_tag_14x40_bubbles": {
     "label": "Snap catalog 14 x 40 mm Blue Bubbles",
@@ -478,7 +508,9 @@
     "render_width_px": 88,
     "render_height_px": 256,
     "paper_height_px": 320,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 40
   },
   "yk_snap_catalog_tag_14x40_planet": {
     "label": "Snap catalog 14 x 40 mm Planet Odyssey",
@@ -487,7 +519,9 @@
     "render_width_px": 88,
     "render_height_px": 196,
     "paper_height_px": 320,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 40
   },
   "yk_snap_catalog_tag_14x50": {
     "label": "Snap catalog 14 x 50 mm",
@@ -496,7 +530,9 @@
     "render_width_px": 88,
     "render_height_px": 360,
     "paper_height_px": 400,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 50
   },
   "yk_snap_catalog_tag_12_5x74": {
     "label": "Snap catalog 12.5 x 74 mm",
@@ -505,7 +541,9 @@
     "render_width_px": 84,
     "render_height_px": 544,
     "paper_height_px": 592,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 12.5,
+    "nominal_height_mm": 74
   },
   "yk_snap_catalog_s001_transparent_14x40": {
     "label": "Snap catalog 14 x 40 mm transparent",
@@ -514,7 +552,9 @@
     "render_width_px": 88,
     "render_height_px": 280,
     "paper_height_px": 320,
-    "rotation_degrees": 270
+    "rotation_degrees": 270,
+    "nominal_width_mm": 14,
+    "nominal_height_mm": 40
   },
   "yk_s001_custom_plain_90r": {
     "label": "Custom continuous paper",
