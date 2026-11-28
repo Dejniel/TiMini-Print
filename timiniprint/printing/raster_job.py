@@ -42,6 +42,9 @@ def build_raster_page_job(
     paper = resolve_paper(device, effective_settings)
     if not _paper_layout_applied:
         raster_set = apply_paper_layout_to_raster_set(raster_set, paper)
+    elif paper.raster_height_px is not None and raster_set.height > paper.raster_height_px:
+        # Placed fragments must obey the same fixed canvas bound as raw content.
+        raise ValueError("Raster height exceeds paper raster height")
     return PrinterProtocol(device).build_job(
         raster_set,
         is_text=is_text,
