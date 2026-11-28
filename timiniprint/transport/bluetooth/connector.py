@@ -11,6 +11,7 @@ from ...devices import (
 from ...devices.device import BluetoothEndpointTransport
 from ...devices.bluetooth_profiles import BleTransportProfile
 from ...protocol import ProtocolJob
+from ..base import _require_stream_job
 from .backend import SppBackend
 from .types import DeviceInfo, DeviceTransport
 from .device_information import BleDeviceInformation
@@ -140,10 +141,7 @@ class BleakBluetoothConnection:
 
     async def send(self, job: ProtocolJob) -> None:
         """Send a stream-only protocol job using the device's stream settings."""
-        if job.steps:
-            raise RuntimeError(
-                "Protocol jobs with execution steps must be sent through ConnectedPrinter.send_job()"
-            )
+        _require_stream_job(job)
         await self._send_payload(job.payload)
 
     async def send_standard_payload(self, data: bytes) -> None:

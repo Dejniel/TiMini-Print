@@ -10,7 +10,7 @@ from ..devices import PrinterDevice, SerialTarget
 from ..devices.profiles import StreamProfile
 from ..protocol import ProtocolJob
 from ._stream_receive import StreamReceiveHub
-from .base import ConnectionCleanupError
+from .base import ConnectionCleanupError, _require_stream_job
 from ._stream_session import StreamRuntimeSession, run_blocking
 
 _READ_POLL_SEC = 0.05
@@ -183,8 +183,7 @@ class SerialConnection:
         return hub.wait_for_reply(label, match, timeout=timeout, required=required)
 
     async def send(self, job: ProtocolJob) -> None:
-        if job.steps:
-            raise RuntimeError("Protocol jobs with execution steps must be sent through ConnectedPrinter.send_job()")
+        _require_stream_job(job)
         await self.send_standard_payload(job.payload)
 
     async def send_standard_payload(self, data: bytes) -> None:

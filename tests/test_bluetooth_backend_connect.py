@@ -238,7 +238,7 @@ class BluetoothBackendConnectTests(unittest.TestCase):
             (None, selectors.EVENT_READ)
         ]
 
-    def test_connection_rejects_job_with_execution_steps(self) -> None:
+    def test_connection_rejects_runtime_jobs_before_writing(self) -> None:
         endpoint = BluetoothEndpoint(
             name="MXW01",
             address="UUID-1",
@@ -256,11 +256,13 @@ class BluetoothBackendConnectTests(unittest.TestCase):
         )
         backend = SimpleNamespace(write=AsyncMock())
         connection = BleakBluetoothConnection(backend, device, reporting.DUMMY_REPORTER)
-        job = ProtocolJob(steps=(ProtocolStep.send("print data", b"abc"),))
-
         async def run() -> None:
-            with self.assertRaisesRegex(RuntimeError, "ConnectedPrinter.send_job"):
-                await connection.send(job)
+            for job in (ProtocolJob(steps=(ProtocolStep.send("print data", b"abc"),)),
+                        ProtocolJob(payload=b"abc", wait_for_completion=True)):
+                with self.subTest(steps=bool(job.steps), wait_for_completion=job.wait_for_completion):
+                    with self.assertRaisesRegex(RuntimeError, "ConnectedPrinter.send_job"):
+                        await connection.send(job)
+                    backend.write.assert_not_awaited()
 
         asyncio.run(run())
         backend.write.assert_not_awaited()

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import asynccontextmanager
+import asyncio
 import unittest
 from unittest.mock import AsyncMock, patch
 
@@ -163,6 +165,29 @@ class _RuntimeStepController(RuntimeController):
         return True
 
 
+class _CompletionController(RuntimeController):
+    def __init__(self) -> None:
+        self.jobs: list[ProtocolJob] = []
+        self.waits = 0
+        self.scope_exits = 0
+        self.active = False
+        self.waited_in_scope = False
+
+    @asynccontextmanager
+    async def job_scope(self, session, job, *, timeout: float):
+        self.jobs.append(job)
+        self.active = True
+        try:
+            yield
+        finally:
+            self.active = False
+            self.scope_exits += 1
+
+    async def wait_for_completion(self, session, *, timeout: float) -> None:
+        self.waits += 1
+        self.waited_in_scope = self.active
+
+
 class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
     async def test_protocol_job_can_be_step_only(self) -> None:
         steps = (
@@ -241,7 +266,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
         await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
         self.assertEqual(connection.attached_runtime_controllers, [])
-        self.assertEqual(connection.sent_jobs, [job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [job.payload])
 
     async def test_send_prepared_job_does_not_resolve_runtime(self) -> None:
         connection = _Connection()
@@ -257,7 +282,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
 
         runtime_factory.assert_not_called()
         self.assertEqual(connection.attached_runtime_controllers, [])
-        self.assertEqual(connection.sent_jobs, [job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [job.payload])
 
     async def test_v5c_runtime_executes_status_steps(self) -> None:
         connection = _Connection()
@@ -298,7 +323,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
 
         await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
-        self.assertEqual(connection.sent_jobs, [job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [job.payload])
         self.assertFalse(controller.debug_snapshot()["print_complete_seen"])
 
     async def test_v5g_runtime_combines_page_steps_before_standard_send(self) -> None:
@@ -329,7 +354,7 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
 
         await send_prepared_job(PreparedPrinter(object(), runtime_controller=controller), connection, job, timeout=0.1)
 
-        self.assertEqual(connection.sent_jobs, [job])
+        self.assertEqual([sent.payload for sent in connection.sent_jobs], [job.payload])
         self.assertFalse(controller.debug_snapshot()["printing"])
 
     async def test_send_prepared_job_executes_wait_steps(self) -> None:
@@ -383,8 +408,85 @@ class PrintingSendTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(len(connection.sent_jobs), 1)
         self.assertEqual(connection.sent_jobs[0].payload, b"B")
+        self.assertEqual(connection.sent_jobs[0].steps, ())
         self.assertEqual(len(reporter.warnings), 1)
         self.assertIn("raw standard payload chunks", reporter.warnings[0][1])
+
+    async def test_runtime_owns_original_job_and_completion_on_every_send_path(self) -> None:
+        for path in ("payload", "steps", "runtime_steps", "stream_fallback"):
+            for wait in (False, True):
+                with self.subTest(path=path, wait=wait):
+                    connection = _SendOnlyConnection() if path == "stream_fallback" else _Connection()
+                    controller = _CompletionController()
+                    if path == "runtime_steps":
+                        async def send_steps(session, steps, *, timeout):
+                            await session.send_standard_payload(b"AB")
+                            return True
+                        controller.send_protocol_steps = AsyncMock(side_effect=send_steps)
+                    job = (ProtocolJob(payload_segments=(b"A", b"B"), wait_for_completion=wait) if path == "payload" else
+                           ProtocolJob(steps=(ProtocolStep.send("image", b"AB"),), wait_for_completion=wait))
+
+                    await send_prepared_job(PreparedPrinter(object(), controller), connection, job)
+
+                    self.assertEqual(controller.jobs, [job])
+                    self.assertEqual(controller.waits, int(wait))
+                    self.assertEqual(controller.waited_in_scope, wait)
+                    self.assertEqual(controller.scope_exits, 1)
+                    self.assertFalse(controller.active)
+                    if path in ("payload", "stream_fallback"):
+                        self.assertEqual(len(connection.sent_jobs), 1)
+                        raw = connection.sent_jobs[0]
+                        self.assertEqual(raw.payload, b"AB")
+                        self.assertEqual(raw.steps, ())
+                        self.assertFalse(raw.wait_for_completion)
+                        self.assertIsNot(raw, job)
+                    else:
+                        self.assertEqual(connection.standard_payloads, [b"AB"])
+                        self.assertEqual(connection.sent_jobs, [])
+
+    async def test_send_failure_or_cancellation_never_waits_for_completion(self) -> None:
+        for path in ("payload", "steps", "stream_fallback"):
+            for error in (OSError("write failed"), asyncio.CancelledError()):
+                with self.subTest(path=path, error=type(error).__name__):
+                    connection = _SendOnlyConnection() if path == "stream_fallback" else _Connection()
+                    controller = _CompletionController()
+                    if path == "steps":
+                        connection.send_standard_payload = AsyncMock(side_effect=error)
+                    else:
+                        connection.send = AsyncMock(side_effect=error)
+                    job = (ProtocolJob(payload=b"AB", wait_for_completion=True) if path == "payload" else
+                           ProtocolJob(steps=(ProtocolStep.send("image", b"AB"),), wait_for_completion=True))
+
+                    with self.assertRaises(type(error)) as caught:
+                        await send_prepared_job(PreparedPrinter(object(), controller), connection, job)
+
+                    self.assertIs(caught.exception, error)
+                    self.assertEqual(controller.jobs, [job])
+                    self.assertEqual(controller.waits, 0)
+                    self.assertEqual(controller.scope_exits, 1)
+                    self.assertFalse(controller.active)
+
+    async def test_required_reply_never_falls_back_or_writes_a_partial_plan(self) -> None:
+        matcher = ProtocolReplyMatcher(complete=lambda data: data == b"ACK")
+        required = (
+            ProtocolStep.query("setup", b"Q", expect=ProtocolReplyExpectation.OK, reply_required=True),
+            ProtocolStep.wait("finished", reply_matcher=matcher, reply_required=True),
+        )
+        for step in required:
+            for connection in (_Connection(can_query=False), _SendOnlyConnection()):
+                with self.subTest(step=step.operation, connection=type(connection).__name__):
+                    controller = _CompletionController()
+                    job = ProtocolJob(steps=(ProtocolStep.send("before", b"A"), step,
+                                             ProtocolStep.send("after", b"B")), wait_for_completion=True)
+
+                    with self.assertRaisesRegex(RuntimeError, "requires protocol replies"):
+                        await send_prepared_job(PreparedPrinter(object(), controller), connection, job)
+
+                    self.assertEqual(connection.sent_jobs, [])
+                    self.assertEqual(getattr(connection, "standard_payloads", []), [])
+                    self.assertEqual(getattr(connection, "query_packets", []), [])
+                    self.assertEqual(controller.waits, 0)
+                    self.assertEqual(controller.scope_exits, 1)
 
     async def test_send_prepared_job_can_query_via_ble_notification(self) -> None:
         matcher = ProtocolReplyMatcher(

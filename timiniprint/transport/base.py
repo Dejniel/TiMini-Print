@@ -39,10 +39,20 @@ class ConnectionCleanupError(RuntimeError):
         return False
 
 
+def _require_stream_job(job: ProtocolJob) -> None:
+    """Reject job semantics that a raw transport cannot execute safely."""
+    if job.steps or job.wait_for_completion:
+        raise RuntimeError(
+            "Protocol jobs requiring runtime execution must be sent through ConnectedPrinter.send_job()"
+        )
+
+
 class PrinterConnection(Protocol):
     """Active transport connection able to send stream-only ``ProtocolJob`` objects."""
 
-    async def send(self, job: ProtocolJob) -> None: ...
+    async def send(self, job: ProtocolJob) -> None:
+        """Send raw bytes only; reject execution steps and runtime completion waits."""
+        ...
 
     async def disconnect(self) -> None: ...
 

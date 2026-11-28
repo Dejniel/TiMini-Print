@@ -49,7 +49,9 @@ async def send_prepared_job(
                 raise RuntimeError(
                     "This job requires protocol replies; stream-only sending cannot confirm them"
                 )
-            await connection.send(job)
+            # Runtime scope and completion remain here, including on fallback;
+            # the raw transport receives only the bytes for this execution.
+            await connection.send(ProtocolJob(payload=job.payload))
 
         # The transport returns as soon as the bytes are written, but some printers
         # (e.g. V5X/MXW01) keep printing for several seconds afterwards. Give the

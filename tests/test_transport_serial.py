@@ -111,7 +111,7 @@ class TransportSerialTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(connection, SerialConnection)
         self.assertIsNone(connection.active_ble_profile)
         self.assertTrue(connection.can_query_control_packet())
-        await connection.send(ProtocolJob(payload=b"abcdef"))
+        await connection.send(ProtocolJob(payload_segments=(b"ab", b"cdef")))
         await connection.send_standard_payload(b"gh")
         self.assertEqual(self.port.writes, [b"ab", b"cd", b"ef", b"gh"])
         self.assertEqual(len(self.factory_calls), 1)
@@ -343,10 +343,14 @@ class TransportSerialTests(unittest.IsolatedAsyncioTestCase):
         )))
         self.assertEqual(self.port.writes, [b"ab", b"cd", b"query", b"ef", b"gh"])
 
-    async def test_direct_send_rejects_execution_steps(self):
+    async def test_direct_send_rejects_runtime_jobs_before_writing(self):
         connection = await self.connect()
-        with self.assertRaisesRegex(RuntimeError, "ConnectedPrinter.send_job"):
-            await connection.send(ProtocolJob(steps=(ProtocolStep.send("image", b"abc"),)))
+        for job in (ProtocolJob(steps=(ProtocolStep.send("image", b"abc"),)),
+                    ProtocolJob(payload=b"abc", wait_for_completion=True)):
+            with self.subTest(steps=bool(job.steps), wait_for_completion=job.wait_for_completion):
+                with self.assertRaisesRegex(RuntimeError, "ConnectedPrinter.send_job"):
+                    await connection.send(job)
+                self.assertEqual(self.port.writes, [])
 
     async def test_connect_failure_is_reported_at_connect_not_first_print(self):
         def failing_open(*_, **__):
